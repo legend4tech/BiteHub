@@ -1,0 +1,88 @@
+import type { Order } from "@/lib/types";
+import { ORDER_STATUS_CONFIG } from "@/lib/constants";
+import type { OrderStatus } from "@/lib/types";
+import { StatusBadge } from "@/components/vendor/StatusBadge";
+
+interface OrderTableProps {
+  orders: Order[];
+  onStatusChange?: (orderId: string, status: OrderStatus) => void;
+}
+
+const ALL_STATUSES: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "ready",
+  "completed",
+  "cancelled",
+];
+
+export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
+  if (orders.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-muted/30 py-16 text-center">
+        <p className="text-2xl mb-2">📋</p>
+        <p className="text-sm text-muted-foreground font-medium">No orders yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Orders from students will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Order ID</th>
+            <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Customer</th>
+            <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Items</th>
+            <th className="text-right py-3 px-3 text-xs font-semibold text-muted-foreground">Total</th>
+            <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Status</th>
+            <th className="text-left py-3 px-3 text-xs font-semibold text-muted-foreground">Time</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {orders.map((order) => (
+            <tr key={order.orderId} className="hover:bg-muted/30 transition-colors">
+              <td className="py-3 px-3">
+                <span className="font-mono text-xs font-semibold text-primary">{order.orderId}</span>
+              </td>
+              <td className="py-3 px-3">
+                <p className="font-medium">{order.customerName}</p>
+                <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
+              </td>
+              <td className="py-3 px-3">
+                <p className="text-xs text-muted-foreground">
+                  {order.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                </p>
+              </td>
+              <td className="py-3 px-3 text-right font-bold">
+                ₦{order.total.toLocaleString()}
+              </td>
+              <td className="py-3 px-3">
+                {onStatusChange ? (
+                  <select
+                    value={order.status}
+                    onChange={(e) => onStatusChange(order.orderId, e.target.value as OrderStatus)}
+                    className="rounded-lg border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:border-primary"
+                  >
+                    {ALL_STATUSES.map((s) => (
+                      <option key={s} value={s}>{ORDER_STATUS_CONFIG[s].label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <StatusBadge status={order.status} />
+                )}
+              </td>
+              <td className="py-3 px-3 text-xs text-muted-foreground whitespace-nowrap">
+                {new Date(order.createdAt).toLocaleString("en-NG", {
+                  month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

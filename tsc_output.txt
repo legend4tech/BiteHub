@@ -1,0 +1,22 @@
+app/admin/page.tsx(53,7): error TS2353: Object literal may only specify known properties, and 'password' does not exist in type 'Vendor'.
+app/vendor/login/page.tsx(48,13): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+app/vendor/login/page.tsx(48,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+components/student/OrderForm.tsx(63,15): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+components/student/OrderForm.tsx(63,31): error TS7006: Parameter 'err' implicitly has an 'any' type.
+components/vendor/MenuItemForm.tsx(21,58): error TS2345: Argument of type 'string' is not assignable to parameter of type 'MenuCategory | (() => MenuCategory)'.
+components/vendor/MenuItemForm.tsx(54,15): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+components/vendor/MenuItemForm.tsx(54,31): error TS7006: Parameter 'err' implicitly has an 'any' type.
+hooks/useCart.ts(64,53): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+  Type 'undefined' is not assignable to type 'string | null'.
+hooks/useCart.ts(74,9): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
+  Type 'undefined' is not assignable to type 'string | null'.
+hooks/useVendorAuth.ts(66,39): error TS2339: Property 'password' does not exist on type 'Vendor'.
+models/MenuItem.ts(28,13): error TS2339: Property 'id' does not exist on type 'FlatRecord<{ name: string; vendorId: string; price: number; category: string; isAvailable: boolean; description?: string | null | undefined; image?: string | null | undefined; }> & { ...; } & { ...; }'.
+models/MenuItem.ts(29,16): error TS2790: The operand of a 'delete' operator must be optional.
+models/MenuItem.ts(30,16): error TS2790: The operand of a 'delete' operator must be optional.
+models/Vendor.ts(41,13): error TS2339: Property 'id' does not exist on type 'FlatRecord<{ name: string; slug: string; tags: string[]; isActive: boolean; description?: string | null | undefined; category?: string | null | undefined; phone?: string | null | undefined; whatsappNumber?: string | ... 1 more ... | undefined; school?: string | ... 1 more ... | undefined; campus?: string | ... 1 mor...'.
+models/Vendor.ts(42,16): error TS2790: The operand of a 'delete' operator must be optional.
+models/Vendor.ts(43,16): error TS2790: The operand of a 'delete' operator must be optional.
+models/Vendor.ts(54,10): error TS2339: Property 'split' does not exist on type '{}'.
+models/Vendor.ts(69,25): error TS2339: Property 'charCodeAt' does not exist on type '{}'.
+models/Vendor.ts(74,25): error TS2339: Property 'length' does not exist on type '{}'.

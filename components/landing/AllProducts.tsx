@@ -1,0 +1,133 @@
+"use client";
+
+import { useState } from "react";
+import { MenuItemCard } from "@/components/menus/MenuItemCard";
+import { CartSummary } from "@/components/cart/CartSummary";
+import { OrderForm } from "@/components/cart/OrderForm";
+import { useMenus } from "@/hooks/useMenus";
+import { MENU_CATEGORIES } from "@/lib/constants";
+import { useCart } from "@/hooks/useCart";
+import type { MenuItem } from "@/lib/types";
+import { FadeIn } from "@/components/FadeIn";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+export function AllProducts() {
+  const { data: menuItems = [], isLoading } = useMenus();
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [orderFormOpen, setOrderFormOpen] = useState(false);
+  const [conflictItem, setConflictItem] = useState<MenuItem | null>(null);
+  const { clearAndAdd } = useCart();
+
+  const filtered = activeCategory === "all"
+    ? menuItems
+    : menuItems.filter((m) => m.category === activeCategory);
+    
+  const displayItems = filtered.slice(0, 10);
+
+  const handleDifferentVendor = (item: MenuItem) => setConflictItem(item);
+
+  const handleClearAndAdd = () => {
+    if (!conflictItem) return;
+    clearAndAdd(conflictItem);
+    setConflictItem(null);
+  };
+
+  return (
+    <section id="menu" className="py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        {/* Header */}
+        <FadeIn delay={0.1}>
+          <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+            <div>
+              <p className="text-sm font-semibold text-primary uppercase tracking-wider">
+                Everything on campus
+              </p>
+              <h2 className="font-heading text-3xl md:text-5xl font-bold mt-2">
+                Meals, snacks &amp; drinks
+              </h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">{filtered.length} items</p>
+              <Button asChild variant="hero" size="sm">
+                <Link href="/menus">View all menus</Link>
+              </Button>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* Category filter tabs */}
+        <FadeIn delay={0.2}>
+          <div className="flex gap-2 flex-wrap mb-8">
+            {MENU_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setActiveCategory(cat.value)}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 border ${
+                  activeCategory === cat.value
+                    ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
+                    : "bg-background border-border text-muted-foreground hover:border-primary hover:text-foreground"
+                }`}
+              >
+                <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                  <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="24px" />
+                </div>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </FadeIn>
+
+        {/* Grid */}
+        {isLoading ? (
+          <div className="py-8">
+            <PageSkeleton variant="menu-item-grid" count={10} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-20 text-center text-muted-foreground">No items in this category.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {displayItems.map((item, i) => (
+              <FadeIn key={item.id} delay={0.05 * Math.min(i, 20)}>
+                <MenuItemCard
+                  item={item}
+                  onDifferentVendor={handleDifferentVendor}
+                />
+              </FadeIn>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Floating cart */}
+      <CartSummary onCheckout={() => setOrderFormOpen(true)} />
+
+      {/* Order form */}
+      <OrderForm open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
+
+      {/* Cross-vendor conflict dialog */}
+      {conflictItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConflictItem(null)} />
+          <div className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 className="font-heading font-bold text-lg">Start a new cart?</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Your cart has items from a different vendor. Adding{" "}
+              <strong>{conflictItem.name}</strong> will clear your current cart.
+            </p>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setConflictItem(null)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium hover:bg-muted transition-colors">
+                Keep cart
+              </button>
+              <button onClick={handleClearAndAdd} className="flex-1 rounded-xl bg-primary text-white py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+                Clear &amp; add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

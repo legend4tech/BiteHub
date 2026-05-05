@@ -1,19 +1,34 @@
-import { Button } from "@/components/ui/button"
+import type { Metadata } from "next";
+import { Navbar } from "@/components/Navbar";
+import { Hero } from "@/components/landing/Hero";
+import { AllProducts } from "@/components/landing/AllProducts";
+import { FeaturedVendors } from "@/components/landing/FeaturedVendors";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { VendorCTA } from "@/components/landing/VendorCTA";
+import { Footer } from "@/components/Footer";
+
+import { FadeIn } from "@/components/FadeIn";
+
+export const metadata: Metadata = {
+  title: "CampusBites — Campus food, delivered fast",
+  description:
+    "Discover the best campus vendors at COOU Uli, browse menus and order food in seconds — all from one app.",
+  openGraph: {
+    title: "CampusBites — Campus food, delivered fast",
+    description: "Order from your favorite campus kitchens in seconds.",
+  },
+};
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
-  )
+    <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <Navbar />
+      <Hero />
+      <AllProducts />
+      <FeaturedVendors />
+      <HowItWorks />
+      <VendorCTA />
+      <Footer />
+    </main>
+  );
 }
