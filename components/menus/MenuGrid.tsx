@@ -9,11 +9,11 @@ import { useCart } from "@/hooks/useCart";
 import type { MenuItem } from "@/lib/types";
 import { FadeIn } from "@/components/FadeIn";
 import Image from "next/image";
-
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 interface MenuGridProps {
   initialItems: MenuItem[];
@@ -86,10 +86,11 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
           <PageSkeleton variant="menu-item-grid" count={12} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-32 text-center text-muted-foreground">
-          <p className="text-lg font-medium">No items found</p>
-          <p className="text-sm mt-1">Try selecting a different category or change your search.</p>
-        </div>
+        <EmptyState
+          title={`No items found`}
+          description="Nothing matched your search or filter. Try a different category or clear the search."
+          action={{ label: "Clear filters", href: "/menus" }}
+        />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
           {filtered.map((item, i) => (

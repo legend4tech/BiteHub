@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { MenuItemCard } from "@/components/menus/MenuItemCard";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { FetchError } from "@/components/shared/FetchError";
 import type { MenuItem } from "@/lib/types";
 import apiClient from "@/lib/axios";
 import { useCart } from "@/hooks/useCart";
@@ -15,9 +17,6 @@ interface LoadMoreMenusProps {
 }
 
 export function LoadMoreMenus({ initialPage, searchParams }: LoadMoreMenusProps) {
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [page, setPage] = useState(initialPage);
-  const [hasMore, setHasMore] = useState(true);
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null);
   const { clearAndAdd } = useCart();
   const { ref, inView } = useInView();
@@ -30,49 +29,65 @@ export function LoadMoreMenus({ initialPage, searchParams }: LoadMoreMenusProps)
     setConflictItem(null);
   };
 
+  const q = searchParams.q ? `&q=${encodeURIComponent(searchParams.q)}` : "";
+  const category = searchParams.category && searchParams.category !== "all" 
+    ? `&category=${encodeURIComponent(searchParams.category)}` 
+    : "";
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["menus", searchParams.q || "", searchParams.category || "all"],
+    initialPageParam: initialPage + 1,
+    queryFn: async ({ pageParam }) => {
+      const response = await apiClient.get(`/menus?page=${pageParam}${q}${category}`);
+      return response.data as MenuItem[];
+    },
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      if (lastPage.length === 0) return undefined;
+      return lastPageParam + 1;
+    },
+  });
+
   useEffect(() => {
-    if (inView && hasMore) {
-      loadMore();
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [inView, hasMore]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const loadMore = async () => {
-    const nextPage = page + 1;
-    try {
-      const q = searchParams.q ? `&q=${encodeURIComponent(searchParams.q)}` : "";
-      const category = searchParams.category && searchParams.category !== "all" 
-        ? `&category=${encodeURIComponent(searchParams.category)}` 
-        : "";
-        
-      const response = await apiClient.get(`/menus?page=${nextPage}${q}${category}`);
-      const newItems = response.data;
-
-      if (newItems.length === 0) {
-        setHasMore(false);
-      } else {
-        setItems((prev) => [...prev, ...newItems]);
-        setPage(nextPage);
-      }
-    } catch (error) {
-      console.error("Failed to load more menus", error);
-      setHasMore(false);
-    }
-  };
+  // Combine all pages of menus into a single array
+  const items = data ? data.pages.flat() : [];
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mt-5">
-        {items.map((item, i) => (
-          <FadeIn key={`${item.id}-${i}`} delay={0.05 * Math.min(i, 20)}>
-            <MenuItemCard item={item} onDifferentVendor={handleDifferentVendor} />
-          </FadeIn>
-        ))}
-      </div>
+      {items.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mt-5">
+          {items.map((item, i) => (
+            <FadeIn key={`${item.id}-${i}`} delay={0.05 * Math.min(i, 20)}>
+              <MenuItemCard item={item} onDifferentVendor={handleDifferentVendor} />
+            </FadeIn>
+          ))}
+        </div>
+      )}
 
-      {hasMore && (
+      {(hasNextPage || isFetchingNextPage) && (
         <div ref={ref} className="mt-8">
           <PageSkeleton variant="menu-item-grid" count={5} />
         </div>
+      )}
+
+      {status === "error" && (
+        <FetchError
+          size="sm"
+          title="Couldn't load more items"
+          message={error?.message || "Something went wrong while fetching the next batch of menu items."}
+          onRetry={() => fetchNextPage()}
+        />
       )}
 
       {/* Cross-vendor conflict dialog for newly loaded items */}

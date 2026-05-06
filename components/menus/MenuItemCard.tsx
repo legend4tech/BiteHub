@@ -29,7 +29,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
   };
 
   return (
-    <article className="group rounded-3xl bg-card border border-border overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_-6px_rgba(255,107,0,0.25)] flex flex-col">
+    <article className="group rounded-xl bg-card border border-border overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_-6px_rgba(255,107,0,0.25)] flex flex-col">
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {item.image && !imgError ? (

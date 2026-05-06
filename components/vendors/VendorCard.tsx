@@ -10,7 +10,7 @@ interface VendorCardProps {
 export function VendorCard({ vendor, itemCount }: VendorCardProps) {
   return (
     <Link
-      href={`/vendors/${vendor.id}`}
+      href={`/vendors/${vendor.slug}`}
       className="group rounded-3xl bg-background border border-border p-6 hover:border-primary transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_-6px_rgba(255,107,0,0.25)] flex flex-col"
     >
       <div className="flex items-start justify-between">
@@ -44,7 +44,7 @@ export function VendorCard({ vendor, itemCount }: VendorCardProps) {
           {vendor.location}
         </span>
         {itemCount !== undefined && (
-          <span className="ml-auto text-primary font-semibold">{itemCount} items</span>
+          <span className="ml-auto text-primary font-semibold">{itemCount} menus</span>
         )}
       </div>
     </Link>

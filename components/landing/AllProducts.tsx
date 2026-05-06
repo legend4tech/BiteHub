@@ -4,27 +4,32 @@ import { useState } from "react";
 import { MenuItemCard } from "@/components/menus/MenuItemCard";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { OrderForm } from "@/components/cart/OrderForm";
-import { useMenus } from "@/hooks/useMenus";
 import { MENU_CATEGORIES } from "@/lib/constants";
 import { useCart } from "@/hooks/useCart";
 import type { MenuItem } from "@/lib/types";
 import { FadeIn } from "@/components/FadeIn";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
-export function AllProducts() {
-  const { data: menuItems = [], isLoading } = useMenus();
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+interface AllProductsProps {
+  initialItems: MenuItem[];
+  activeCategory: string;
+}
+
+export function AllProducts({ initialItems, activeCategory }: AllProductsProps) {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null);
   const { clearAndAdd } = useCart();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  const filtered = activeCategory === "all"
-    ? menuItems
-    : menuItems.filter((m) => m.category === activeCategory);
-    
+  const filtered = initialItems;
   const displayItems = filtered.slice(0, 10);
 
   const handleDifferentVendor = (item: MenuItem) => setConflictItem(item);
@@ -52,7 +57,9 @@ export function AllProducts() {
             <div className="flex items-center gap-4">
               <p className="text-sm text-muted-foreground">{filtered.length} items</p>
               <Button asChild variant="hero" size="sm">
-                <Link href="/menus">View all menus</Link>
+                <Link href={activeCategory === "all" ? "/menus" : `/menus?category=${activeCategory}`}>
+                  View all menus
+                </Link>
               </Button>
             </div>
           </div>
@@ -61,32 +68,54 @@ export function AllProducts() {
         {/* Category filter tabs */}
         <FadeIn delay={0.2}>
           <div className="flex gap-2 flex-wrap mb-8">
-            {MENU_CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 border ${
-                  activeCategory === cat.value
-                    ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
-                    : "bg-background border-border text-muted-foreground hover:border-primary hover:text-foreground"
-                }`}
-              >
-                <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
-                  <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="24px" />
-                </div>
-                {cat.label}
-              </button>
-            ))}
+            {MENU_CATEGORIES.map((cat) => {
+              const params = new URLSearchParams(searchParams);
+              if (cat.value === "all") {
+                params.delete("category");
+              } else {
+                params.set("category", cat.value);
+              }
+              const href = `?${params.toString()}#menu`;
+
+              const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault();
+                startTransition(() => {
+                  router.push(href);
+                });
+              };
+
+              return (
+                <a
+                  key={cat.value}
+                  href={href}
+                  onClick={handleClick}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-150 border ${
+                    activeCategory === cat.value
+                      ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
+                      : "bg-background border-border text-muted-foreground hover:border-primary hover:text-foreground"
+                  }`}
+                >
+                  <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                    <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="24px" />
+                  </div>
+                  {cat.label}
+                </a>
+              );
+            })}
           </div>
         </FadeIn>
 
         {/* Grid */}
-        {isLoading ? (
+        {isPending ? (
           <div className="py-8">
             <PageSkeleton variant="menu-item-grid" count={10} />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-muted-foreground">No items in this category.</div>
+          <EmptyState
+            title="Nothing in this category"
+            description="No meals are available for this filter right now. Try another category or check back soon."
+            action={{ label: "View all menus", href: "/menus" }}
+          />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {displayItems.map((item, i) => (

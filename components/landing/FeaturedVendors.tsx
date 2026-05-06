@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/FadeIn";
 import dbConnect from "@/lib/db";
 import Vendor from "@/models/Vendor";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 export async function FeaturedVendors() {
   await dbConnect();
@@ -15,6 +16,7 @@ export async function FeaturedVendors() {
     initials: v.initials,
     tagline: v.tagline,
     location: v.location,
+    slug: v.slug,
   }));
 
   return (
@@ -36,32 +38,40 @@ export async function FeaturedVendors() {
           </div>
         </FadeIn>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {fetchedVendors.map((v, i) => (
-            <FadeIn key={v.id} delay={0.1 * (i + 1)}>
-              <Link
-                href={`/vendors/${v.id}`}
-                className="group rounded-3xl bg-background border border-border p-6 hover:border-primary transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_-6px_rgba(255,107,0,0.25)] flex flex-col h-full"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="h-14 w-14 rounded-2xl grid place-items-center text-white font-bold text-lg bg-primary">
-                    {v.initials}
+        {fetchedVendors.length === 0 ? (
+          <EmptyState
+            title="No featured vendors yet"
+            description="We're onboarding campus kitchens — check back soon to discover great food near you."
+            action={{ label: "Browse all vendors", href: "/vendors" }}
+          />
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {fetchedVendors.map((v, i) => (
+              <FadeIn key={v.id} delay={0.1 * (i + 1)}>
+                <Link
+                  href={`/vendors/${v.slug}`}
+                  className="group rounded-3xl bg-background border border-border p-6 hover:border-primary transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_32px_-6px_rgba(255,107,0,0.25)] flex flex-col h-full"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="h-14 w-14 rounded-2xl grid place-items-center text-white font-bold text-lg bg-primary">
+                      {v.initials}
+                    </div>
+                    <ArrowUpRight className="text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
-                  <ArrowUpRight className="text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-                <h3 className="font-heading font-bold text-lg mt-5 leading-tight">{v.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1 flex-1 line-clamp-2">{v.tagline}</p>
+                  <h3 className="font-heading font-bold text-lg mt-5 leading-tight">{v.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1 flex-1 line-clamp-2">{v.tagline}</p>
 
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-5 pt-4 border-t border-border">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="size-3.5" />
-                    {v.location}
-                  </span>
-                </div>
-              </Link>
-            </FadeIn>
-          ))}
-        </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-5 pt-4 border-t border-border">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="size-3.5" />
+                      {v.location}
+                    </span>
+                  </div>
+                </Link>
+              </FadeIn>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

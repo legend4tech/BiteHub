@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { VendorCard } from "@/components/vendors/VendorCard";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { FetchError } from "@/components/shared/FetchError";
 import apiClient from "@/lib/axios";
 import { FadeIn } from "@/components/FadeIn";
 
@@ -22,6 +24,7 @@ interface Vendor {
   whatsappNumber: string;
   school: string;
   campus: string;
+  itemCount: number;
 }
 
 interface LoadMoreVendorsProps {
@@ -30,52 +33,63 @@ interface LoadMoreVendorsProps {
 }
 
 export function LoadMoreVendors({ initialPage, searchParams }: LoadMoreVendorsProps) {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [page, setPage] = useState(initialPage);
-  const [hasMore, setHasMore] = useState(true);
   const { ref, inView } = useInView();
+  const q = searchParams.q ? `&q=${encodeURIComponent(searchParams.q)}` : "";
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["vendors", searchParams.q || ""],
+    initialPageParam: initialPage + 1,
+    queryFn: async ({ pageParam }) => {
+      const response = await apiClient.get(`/vendors?page=${pageParam}${q}`);
+      return response.data as Vendor[];
+    },
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      if (lastPage.length === 0) return undefined;
+      return lastPageParam + 1;
+    },
+  });
 
   useEffect(() => {
-    if (inView && hasMore) {
-      loadMore();
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [inView, hasMore]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const loadMore = async () => {
-    const nextPage = page + 1;
-    try {
-      const q = searchParams.q ? `&q=${encodeURIComponent(searchParams.q)}` : "";
-        
-      const response = await apiClient.get(`/vendors?page=${nextPage}${q}`);
-      const newVendors = response.data;
-
-      if (newVendors.length === 0) {
-        setHasMore(false);
-      } else {
-        setVendors((prev) => [...prev, ...newVendors]);
-        setPage(nextPage);
-      }
-    } catch (error) {
-      console.error("Failed to load more vendors", error);
-      setHasMore(false);
-    }
-  };
+  // Combine all pages of vendors into a single array
+  const vendors = data ? data.pages.flat() : [];
 
   return (
     <>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
-        {vendors.map((vendor, i) => (
-          <FadeIn key={`${vendor.id}-${i}`} delay={0.05 * Math.min(i, 20)}>
-            {/* We pass a default itemCount=0 because calculating item counts on infinite scroll requires extra backend logic. Alternatively, update API to return itemCount. */}
-            <VendorCard vendor={vendor as any} itemCount={0} />
-          </FadeIn>
-        ))}
-      </div>
+      {vendors.length > 0 && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
+          {vendors.map((vendor, i) => (
+            <FadeIn key={`${vendor.id}-${i}`} delay={0.05 * Math.min(i, 20)}>
+              <VendorCard vendor={vendor as any} itemCount={vendor.itemCount || 0} />
+            </FadeIn>
+          ))}
+        </div>
+      )}
 
-      {hasMore && (
+      {(hasNextPage || isFetchingNextPage) && (
         <div ref={ref} className="mt-8">
           <PageSkeleton variant="menu-item-grid" count={4} />
         </div>
+      )}
+
+      {status === "error" && (
+        <FetchError
+          size="sm"
+          title="Couldn't load more vendors"
+          message={error?.message || "Something went wrong while fetching the next page of vendors."}
+          onRetry={() => fetchNextPage()}
+        />
       )}
     </>
   );

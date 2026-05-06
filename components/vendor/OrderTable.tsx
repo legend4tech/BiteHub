@@ -2,6 +2,7 @@ import type { Order } from "@/lib/types";
 import { ORDER_STATUS_CONFIG } from "@/lib/constants";
 import type { OrderStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/vendor/StatusBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 interface OrderTableProps {
   orders: Order[];
@@ -20,11 +21,13 @@ const ALL_STATUSES: OrderStatus[] = [
 export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-muted/30 py-16 text-center">
-        <p className="text-2xl mb-2">📋</p>
-        <p className="text-sm text-muted-foreground font-medium">No orders yet</p>
-        <p className="text-xs text-muted-foreground mt-1">Orders from students will appear here.</p>
-      </div>
+      <EmptyState
+        size="sm"
+        icon="📋"
+        showImage={false}
+        title="No orders yet"
+        description="Orders placed by students will appear here as they come in."
+      />
     );
   }
 

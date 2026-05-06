@@ -8,6 +8,7 @@ import { MenuItemForm } from "@/components/vendor/MenuItemForm";
 import { Button } from "@/components/ui/button";
 import { menuItems as staticItems } from "@/lib/data";
 import type { MenuItem } from "@/lib/types";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 const LS_MENU_KEY = "cb_menu_overrides";
 
@@ -110,10 +111,14 @@ export default function VendorMenuPage() {
       {/* Items list */}
       <div className="space-y-3">
         {items.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-muted/30 py-16 text-center">
-            <p className="text-2xl mb-2">🍽️</p>
-            <p className="text-sm text-muted-foreground">No menu items yet. Add your first item!</p>
-          </div>
+          <EmptyState
+            size="sm"
+            icon="🍽️"
+            showImage={false}
+            title="No menu items yet"
+            description="Start building your menu. Add your first dish and make it visible to students on campus."
+            action={{ label: "Add first item", onClick: () => { setEditing(null); setShowForm(true); } }}
+          />
         ) : (
           items.map((item) => (
             <MenuItemRow key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} onToggleAvailability={handleToggle} />

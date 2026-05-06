@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Vendor from "@/models/Vendor";
+import MenuItem from "@/models/MenuItem";
 
 export async function GET(request: Request) {
   try {
@@ -24,22 +25,29 @@ export async function GET(request: Request) {
     
     const vendors = await Vendor.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
     
-    const mappedVendors = vendors.map(v => ({
-      id: v.id,
-      name: v.name,
-      initials: v.initials,
-      tagline: v.tagline,
-      location: v.location,
-      isActive: v.isActive,
-      slug: v.slug,
-      description: v.description,
-      category: v.category,
-      tags: v.tags,
-      phone: v.phone,
-      whatsappNumber: v.whatsappNumber,
-      school: v.school,
-      campus: v.campus,
-    }));
+    const vendorIds = vendors.map(v => v._id);
+    const menuItems = await MenuItem.find({ vendorId: { $in: vendorIds }, isAvailable: true });
+    
+    const mappedVendors = vendors.map(v => {
+      const itemCount = menuItems.filter(m => m.vendorId.toString() === v._id.toString()).length;
+      return {
+        id: v.id,
+        name: v.name,
+        initials: v.initials,
+        tagline: v.tagline,
+        location: v.location,
+        isActive: v.isActive,
+        slug: v.slug,
+        description: v.description,
+        category: v.category,
+        tags: v.tags,
+        phone: v.phone,
+        whatsappNumber: v.whatsappNumber,
+        school: v.school,
+        campus: v.campus,
+        itemCount,
+      };
+    });
     
     return NextResponse.json(mappedVendors);
   } catch (error) {
