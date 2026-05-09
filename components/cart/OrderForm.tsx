@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { ShoppingBag, X, Minus, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
-import { useOrders } from "@/hooks/useOrders";
-import { getVendorById } from "@/lib/data";
 import { orderFormSchema } from "@/lib/schemas";
 import { ZodError } from "zod";
+import { formatPrice } from "@/lib/format";
+import apiClient from "@/lib/axios";
 
 interface OrderFormProps {
   open: boolean;
@@ -17,7 +17,6 @@ interface OrderFormProps {
 
 export function OrderForm({ open, onClose }: OrderFormProps) {
   const { cart, updateQuantity, removeItem, clearCart, total } = useCart();
-  const { placeOrder } = useOrders();
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -25,25 +24,40 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
 
   if (!open) return null;
-
-  const vendor = cart.vendorId ? getVendorById(cart.vendorId) : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
-    try {
-      const validData = orderFormSchema.parse({ name, phone, notes });
-      
-      if (cart.items.length === 0 || !vendor) return;
+    setServerError(null);
 
-      setLoading(true);
-      const orderId = placeOrder({
-        vendorId: vendor.id,
-        vendorName: vendor.name,
-        vendorPhone: vendor.phone,
+    const validationResult = orderFormSchema.safeParse({ name, phone, notes });
+
+    if (!validationResult.success) {
+      const newErrors: Record<string, string> = {};
+      validationResult.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          newErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      return;
+    }
+
+    const validData = validationResult.data;
+
+    if (cart.items.length === 0 || !cart.vendorId) return;
+
+    setLoading(true);
+    console.log("vendorWhatsappNumber", cart.vendorWhatsappNumber);
+    try {
+      // POST to the real API — order is saved to MongoDB.
+      const response = await apiClient.post("/orders", {
+        vendorId: cart.vendorId,
+        vendorName: cart.vendorName,
+        vendorWhatsappNumber: cart.vendorWhatsappNumber || "",
         items: cart.items.map((ci) => ({
           menuItemId: ci.menuItem.id,
           name: ci.menuItem.name,
@@ -55,18 +69,16 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         notes: validData.notes,
         total,
       });
+
+      const { orderId } = response.data;
       clearCart();
       router.push(`/order/${orderId}`);
     } catch (error) {
-      if (error instanceof ZodError) {
-        const newErrors: Record<string, string> = {};
-        (error as any).errors.forEach((err: any) => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(newErrors);
-      }
+      // API or network error
+      const apiError = (error as any).response?.data?.error;
+      setServerError(apiError || "Something went wrong placing your order. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,10 +91,12 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         {/* Header */}
         <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between rounded-t-3xl">
           <div>
-            <p className="text-xs text-muted-foreground">{vendor?.name}</p>
+            <p className="text-xs text-muted-foreground">{cart.vendorName}</p>
             <h2 className="font-heading font-bold text-lg">Place your order</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X />
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -90,24 +104,47 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           <div className="space-y-2">
             <p className="text-sm font-semibold">Your items</p>
             {cart.items.map((ci) => (
-              <div key={ci.menuItem.id} className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3">
-                <p className="flex-1 text-sm font-medium line-clamp-1">{ci.menuItem.name}</p>
+              <div
+                key={ci.menuItem.id}
+                className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3"
+              >
+                <p className="flex-1 text-sm font-medium line-clamp-1">
+                  {ci.menuItem.name}
+                </p>
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)} className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted">
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)}
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted"
+                  >
                     <Minus className="size-3" />
                   </button>
-                  <span className="w-5 text-center text-sm font-bold">{ci.quantity}</span>
-                  <button type="button" onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)} className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted">
+                  <span className="w-5 text-center text-sm font-bold">
+                    {ci.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)}
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted"
+                  >
                     <Plus className="size-3" />
                   </button>
                 </div>
-                <p className="text-sm font-bold w-20 text-right">₦{(ci.menuItem.price * ci.quantity).toLocaleString()}</p>
-                <button type="button" onClick={() => removeItem(ci.menuItem.id)} className="text-muted-foreground hover:text-destructive"><X className="size-3.5" /></button>
+                <p className="text-sm font-bold w-20 text-right">
+                  {formatPrice(ci.menuItem.price * ci.quantity)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeItem(ci.menuItem.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="size-3.5" />
+                </button>
               </div>
             ))}
             <div className="flex justify-between pt-2 border-t border-border text-sm font-bold">
               <span>Total</span>
-              <span className="text-primary">₦{total.toLocaleString()}</span>
+              <span className="text-primary">{formatPrice(total)}</span>
             </div>
           </div>
 
@@ -119,20 +156,30 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 type="text"
                 placeholder="Your name *"
                 value={name}
-                onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setErrors((p) => ({ ...p, name: "" }));
+                }}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
-              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-xs text-destructive mt-1">{errors.name}</p>
+              )}
             </div>
             <div>
               <input
                 type="tel"
                 placeholder="Phone number * (e.g. 08012345678)"
                 value={phone}
-                onChange={(e) => { setPhone(e.target.value); setErrors((p) => ({ ...p, phone: "" })); }}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setErrors((p) => ({ ...p, phone: "" }));
+                }}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
-              {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
+              {errors.phone && (
+                <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+              )}
             </div>
             <textarea
               placeholder="Notes for vendor (optional)"
@@ -143,9 +190,24 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             />
           </div>
 
-          <Button type="submit" variant="hero" size="xl" className="w-full" disabled={loading || cart.items.length === 0}>
-            {loading ? <Loader2 className="animate-spin size-4" /> : <ShoppingBag className="size-4" />}
-            {loading ? "Placing order…" : `Place order · ₦${total.toLocaleString()}`}
+          {/* Server error */}
+          {serverError && (
+            <p className="text-sm text-destructive text-center">{serverError}</p>
+          )}
+
+          <Button
+            type="submit"
+            variant="hero"
+            size="xl"
+            className="w-full"
+            disabled={loading || cart.items.length === 0}
+          >
+            {loading ? (
+              <Loader2 className="animate-spin size-4" />
+            ) : (
+              <ShoppingBag className="size-4" />
+            )}
+            {loading ? "Placing order…" : `Place order · ${formatPrice(total)}`}
           </Button>
         </form>
       </div>

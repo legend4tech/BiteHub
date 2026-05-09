@@ -18,7 +18,7 @@ export function Footer() {
       <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-6 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} CampusBites. Crafted on campus.</p>
-          <p>Built with ❤️ for COOU Uli</p>
+        
         </div>
       </div>
     </footer>

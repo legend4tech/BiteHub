@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
+// ── Isolated async component: only this throws if DB is down ─────────────────
 async function VendorListContent({ q }: { q: string }) {
   await dbConnect();
 
@@ -32,11 +33,48 @@ async function VendorListContent({ q }: { q: string }) {
     ];
   }
 
-  const [vendorDocs, totalVendors, menuItems] = await Promise.all([
-    Vendor.find(query).sort({ createdAt: -1 }).limit(20),
-    Vendor.countDocuments(query),
-    MenuItem.find({ isAvailable: true }),
+  // 1. Fetch vendors
+  const vendorDocs = await Vendor.find(query).sort({ createdAt: -1 }).limit(20);
+  const totalVendors = await Vendor.countDocuments(query);
+
+  if (vendorDocs.length === 0) {
+    return (
+      <div className="col-span-full">
+        <EmptyState
+          title={q ? `No vendors matched "${q}"` : "No vendors yet"}
+          description={
+            q
+              ? "Try a different search term or browse all vendors."
+              : "No active vendors are available right now. Check back soon!"
+          }
+          action={q ? { label: "Clear search", href: "/vendors" } : undefined}
+        />
+      </div>
+    );
+  }
+
+  // 2. Efficiently count available menu items for ONLY the displayed vendors.
+  // This aggregation replaces the previous "fetch all items" approach,
+  // which was a major performance bottleneck.
+  const vendorIds = vendorDocs.map((v) => v._id);
+  const itemCounts = await MenuItem.aggregate([
+    {
+      $match: {
+        vendorId: { $in: vendorIds },
+        isAvailable: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$vendorId",
+        count: { $sum: 1 },
+      },
+    },
   ]);
+
+  // Map counts for O(1) lookup during render
+  const countMap = new Map<string, number>();
+  itemCounts.forEach((ic) => countMap.set(ic._id.toString(), ic.count));
 
   const fetchedVendors = vendorDocs.map((v) => ({
     id: v.id,
@@ -62,30 +100,14 @@ async function VendorListContent({ q }: { q: string }) {
       </p>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {fetchedVendors.length === 0 ? (
-          <div className="col-span-full">
-            <EmptyState
-              title={q ? `No vendors matched "${q}"` : "No vendors yet"}
-              description={
-                q
-                  ? "Try a different search term or browse all vendors."
-                  : "No active vendors are available right now. Check back soon!"
-              }
-              action={q ? { label: "Clear search", href: "/vendors" } : undefined}
-            />
-          </div>
-        ) : (
-          fetchedVendors.map((vendor, i) => {
-            const itemCount = menuItems.filter(
-              (m) => m.vendorId.toString() === vendor.id
-            ).length;
-            return (
-              <FadeIn key={vendor.id} delay={0.05 * Math.min(i, 20)}>
-                <VendorCard vendor={vendor} itemCount={itemCount} />
-              </FadeIn>
-            );
-          })
-        )}
+        {fetchedVendors.map((vendor, i) => {
+          const itemCount = countMap.get(vendor.id) || 0;
+          return (
+            <FadeIn key={vendor.id} delay={0.05 * Math.min(i, 20)}>
+              <VendorCard vendor={vendor} itemCount={itemCount} />
+            </FadeIn>
+          );
+        })}
       </div>
 
       {vendorDocs.length === 20 && (

@@ -35,7 +35,7 @@ export default function RootLayout({
         "font-sans",
       )}
     >
-      <body>
+      <body suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </QueryProvider>

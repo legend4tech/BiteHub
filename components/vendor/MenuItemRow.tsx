@@ -6,6 +6,8 @@ import type { MenuItem } from "@/lib/types";
 import { MENU_CATEGORIES } from "@/lib/constants";
 import Image from "next/image";
 
+import { formatPrice } from "@/lib/format";
+
 interface MenuItemRowProps {
   item: MenuItem;
   onEdit: (item: MenuItem) => void;
@@ -30,7 +32,7 @@ export function MenuItemRow({ item, onEdit, onDelete, onToggleAvailability }: Me
       </div>
 
       {/* Price */}
-      <p className="font-bold text-sm text-primary shrink-0">₦{item.price.toLocaleString()}</p>
+      <p className="font-bold text-sm text-primary shrink-0">{formatPrice(item.price)}</p>
 
       {/* Availability toggle */}
       <button

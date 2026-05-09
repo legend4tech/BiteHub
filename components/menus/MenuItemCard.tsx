@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import type { MenuItem } from "@/lib/types";
 import { useState } from "react";
+import { formatPrice } from "@/lib/format";
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -64,7 +65,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           {item.name}
         </h3>
         <div className="mt-3 flex items-center justify-between">
-          <p className="font-bold text-lg text-primary">₦{item.price.toLocaleString()}</p>
+          <p className="font-bold text-lg text-primary">{formatPrice(item.price)}</p>
 
           {qty === 0 ? (
             <Button

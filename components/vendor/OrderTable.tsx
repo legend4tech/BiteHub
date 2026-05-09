@@ -3,6 +3,7 @@ import { ORDER_STATUS_CONFIG } from "@/lib/constants";
 import type { OrderStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/vendor/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatPrice } from "@/lib/format";
 
 interface OrderTableProps {
   orders: Order[];
@@ -60,7 +61,7 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                 </p>
               </td>
               <td className="py-3 px-3 text-right font-bold">
-                ₦{order.total.toLocaleString()}
+                {formatPrice(order.total)}
               </td>
               <td className="py-3 px-3">
                 {onStatusChange ? (
@@ -78,8 +79,14 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                 )}
               </td>
               <td className="py-3 px-3 text-xs text-muted-foreground whitespace-nowrap">
-                {new Date(order.createdAt).toLocaleString("en-NG", {
-                  month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                {new Date(order.createdAt).toLocaleDateString("en-NG", {
+                  month: "short",
+                  day: "numeric",
+                })}
+                {" "}
+                {new Date(order.createdAt).toLocaleTimeString("en-NG", {
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </td>
             </tr>

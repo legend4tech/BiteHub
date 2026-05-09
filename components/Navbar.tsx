@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-background/70 border-b border-border/60">
-      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between" suppressHydrationWarning>
         <Link href="/" className="flex items-center gap-2 group">
           <div className="h-9 w-9 rounded-xl grid place-items-center text-white font-bold text-lg bg-primary">
             C

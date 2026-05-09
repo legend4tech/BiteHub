@@ -3,15 +3,28 @@ import { Navbar } from "@/components/Navbar";
 import { Circle, Phone, MessageCircle, Calendar, GraduationCap, Tag } from "lucide-react";
 import { VendorMenu } from "@/components/vendors/VendorMenu";
 import { ShareButton } from "@/components/vendors/ShareButton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-async function getVendorData(slug: string) {
+async function getVendorData(slug: string, category?: string, q?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/vendors/${slug}`, {
+  let url = `${baseUrl}/api/vendors/${slug}`;
+  
+  const params = new URLSearchParams();
+  if (category && category !== "all") params.set("category", category);
+  if (q) params.set("q", q);
+  
+  const queryString = params.toString();
+  if (queryString) url += `?${queryString}`;
+
+  const res = await fetch(url, {
     cache: "no-store"
   });
   
@@ -35,27 +48,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function VendorDetailPage({ params }: Props) {
-  const { slug } = await params;
+export default async function VendorDetailPage({ params, searchParams }: Props) {
+  const [{ slug }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const category = typeof resolvedSearchParams.category === "string" ? resolvedSearchParams.category : "all";
+  const q = typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
 
-  const data = await getVendorData(slug);
+  const data = await getVendorData(slug, category, q);
   
   if (!data || !data.vendor) notFound();
 
-  const { vendor, menuItems: rawMenuItems } = data;
+  const { vendor, menuItems: rawMenuItems, allCategories } = data;
+  console.log("VENDOR FROM API", vendor); 
 
   const menuItems = rawMenuItems.map((item: any) => ({
-    id: item._id.toString(),
+    id: item.id,
     vendorId: item.vendorId,
     vendorName: vendor.name,
+    // Pass vendor WhatsApp number onto each item so the cart can forward it
+    // to the order API. Without this, cart.vendorWhatsappNumber is always null.
+    vendorWhatsappNumber: vendor.whatsappNumber ?? "",
     name: item.name,
     description: item.description ?? "",
     price: item.price,
     image: item.image ?? null,
     category: item.category,
     isAvailable: item.isAvailable,
-    tag: item.price > 1000 ? "🔥 Hot" : null,
+    tag: item.tag,
   }));
+
+  console.log("FIRST MENU ITEM", menuItems[0]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -159,14 +180,33 @@ export default async function VendorDetailPage({ params }: Props) {
         </div>
 
         {/* VendorMenu owns: category tabs, grid, cart, conflict dialog */}
-        {menuItems.length > 0 ? (
-          <VendorMenu initialItems={menuItems} />
-        ) : (
-          <div className="text-center py-20 bg-card rounded-3xl border border-border">
-            <h3 className="text-xl font-heading font-semibold mb-2">No menu items found</h3>
-            <p className="text-muted-foreground">This vendor hasn't added any items to their menu yet.</p>
-          </div>
-        )}
+        <Suspense
+          key={category + q}
+          fallback={
+            <div className="py-12">
+              <PageSkeleton variant="vendor-detail" />
+            </div>
+          }
+        >
+          {menuItems.length > 0 ? (
+            <VendorMenu
+              initialItems={menuItems}
+              activeCategory={category}
+              allCategories={allCategories ?? []}
+            />
+          ) : (
+            <EmptyState
+              title={category === "all" ? "No menu items found" : "No items in this category"}
+              description={
+                category === "all"
+                  ? "This vendor hasn't added any items to their menu yet."
+                  : "Try a different category or search term."
+              }
+              className="py-20 bg-card rounded-3xl border border-border"
+              action={category !== "all" ? { label: "Clear filter", href: `/vendors/${vendor.slug}` } : undefined}
+            />
+          )}
+        </Suspense>
       </div>
     </main>
   );

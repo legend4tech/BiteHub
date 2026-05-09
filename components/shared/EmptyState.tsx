@@ -108,7 +108,7 @@ export function EmptyState({
           style={{ width: s.lottie, height: s.lottie }}
         >
           <DotLottieReact
-            src="https://lottie.host/d67851ec-8bba-457f-be24-0f3f0983c5b0/XCBGFgLquq.lottie"
+            src="https://lottie.host/0a5fc4f9-6839-4556-a424-a8883ec9845d/rsIE5Bl9Fp.lottie"
             loop
             autoplay
             style={{ width: "100%", height: "100%" }}

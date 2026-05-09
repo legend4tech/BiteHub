@@ -1,13 +1,27 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { CartItem, CartState, MenuItem } from "@/lib/types";
+import type { CartItem, MenuItem } from "@/lib/types";
 import { LS_CART } from "@/lib/constants";
 
-const EMPTY_CART: CartState = { items: [], vendorId: null, vendorName: null };
+// Added vendorWhatsappNumber to CartState so OrderForm can pass it to the API
+// without needing to look up the vendor separately.
+// Previously OrderForm called getVendorById() from static mock data —
+// that broke for real DB vendors since they aren't in the local data file.
+interface CartState {
+  items: CartItem[];
+  vendorId: string | null;
+  vendorName: string | null;
+  vendorWhatsappNumber: string | null; // NEW
+}
 
-// Custom event used to broadcast cart changes to every useCart instance
-// on the page (e.g. MenuItemCard ↔ CartSummary).
+const EMPTY_CART: CartState = {
+  items: [],
+  vendorId: null,
+  vendorName: null,
+  vendorWhatsappNumber: null,
+};
+
 const CART_EVENT = "cb:cart:update";
 
 function readCart(): CartState {
@@ -22,7 +36,6 @@ function readCart(): CartState {
 
 function writeCart(state: CartState) {
   localStorage.setItem(LS_CART, JSON.stringify(state));
-  // Notify every other useCart instance on this page immediately
   window.dispatchEvent(new Event(CART_EVENT));
 }
 
@@ -30,17 +43,15 @@ export function useCart() {
   const [cart, setCart] = useState<CartState>(EMPTY_CART);
 
   useEffect(() => {
-    // Hydrate on mount
     setCart(readCart());
-    // Listen for updates from other hook instances (e.g. MenuItemCard → CartSummary)
     const handler = () => setCart(readCart());
     window.addEventListener(CART_EVENT, handler);
     return () => window.removeEventListener(CART_EVENT, handler);
   }, []);
 
   const persist = useCallback((next: CartState) => {
-    writeCart(next); // broadcasts CART_EVENT → all instances re-sync
-    setCart(next);   // optimistic update for the calling component
+    writeCart(next);
+    setCart(next);
   }, []);
 
   const isDifferentVendor = useCallback(
@@ -53,6 +64,10 @@ export function useCart() {
     (menuItem: MenuItem, quantity = 1) => {
       const current = readCart();
       if (current.vendorId && current.vendorId !== menuItem.vendorId) return;
+
+          console.log("ADDING ITEM vendorWhatsappNumber", menuItem.vendorWhatsappNumber); // ← add this
+
+
       const existing = current.items.find((ci) => ci.menuItem.id === menuItem.id);
       const items: CartItem[] = existing
         ? current.items.map((ci) =>
@@ -61,7 +76,15 @@ export function useCart() {
               : ci
           )
         : [...current.items, { menuItem, quantity }];
-      persist({ items, vendorId: menuItem.vendorId, vendorName: menuItem.vendorName || null });
+      persist({
+        items,
+        vendorId: menuItem.vendorId,
+        vendorName: menuItem.vendorName || null,
+        // vendorWhatsappNumber comes from the menuItem — MenuItemCard and VendorMenu
+        // pass the full item object which includes vendorWhatsappNumber when mapped
+        // from the API response in the vendor detail page.
+        vendorWhatsappNumber: menuItem.vendorWhatsappNumber || null,
+      });
     },
     [persist]
   );
@@ -72,6 +95,7 @@ export function useCart() {
         items: [{ menuItem, quantity }],
         vendorId: menuItem.vendorId,
         vendorName: menuItem.vendorName || null,
+        vendorWhatsappNumber: menuItem.vendorWhatsappNumber || null,
       });
     },
     [persist]
@@ -88,7 +112,10 @@ export function useCart() {
 
   const updateQuantity = useCallback(
     (menuItemId: string, quantity: number) => {
-      if (quantity <= 0) { removeItem(menuItemId); return; }
+      if (quantity <= 0) {
+        removeItem(menuItemId);
+        return;
+      }
       const current = readCart();
       persist({
         ...current,
@@ -102,7 +129,10 @@ export function useCart() {
 
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist]);
 
-  const total = cart.items.reduce((sum, ci) => sum + ci.menuItem.price * ci.quantity, 0);
+  const total = cart.items.reduce(
+    (sum, ci) => sum + ci.menuItem.price * ci.quantity,
+    0
+  );
   const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0);
 
   return {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 import { MenuItemCard } from "@/components/menus/MenuItemCard";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { OrderForm } from "@/components/cart/OrderForm";
@@ -9,19 +11,28 @@ import { useCart } from "@/hooks/useCart";
 import type { MenuItem } from "@/lib/types";
 import { FadeIn } from "@/components/FadeIn";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import Image from "next/image";
 
 interface VendorMenuProps {
+  // All items already filtered by the server (category/q applied on the backend)
   initialItems: MenuItem[];
+  // The currently active category — read from the URL by the parent server component
+  activeCategory: string;
+  // All categories this vendor has (unfiltered), used to build the tab list
+  allCategories: string[];
 }
 
-export function VendorMenu({ initialItems }: VendorMenuProps) {
-  const [activeCategory, setActiveCategory] = useState("all");
+export function VendorMenu({ initialItems, activeCategory, allCategories }: VendorMenuProps) {
   const [orderFormOpen, setOrderFormOpen] = useState(false);
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null);
   const { clearAndAdd } = useCart();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  // Build category tabs from items that actually exist in this vendor's menu
+  // Build tabs from categories this vendor actually has (not from the filtered subset).
+  // This ensures tabs don't disappear when you select a different category.
   const availableCategories = [
     {
       value: "all",
@@ -29,41 +40,64 @@ export function VendorMenu({ initialItems }: VendorMenuProps) {
       image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop",
     },
     ...MENU_CATEGORIES.filter(
-      (c) => c.value !== "all" && initialItems.some((i) => i.category === c.value)
+      (c) => c.value !== "all" && allCategories.includes(c.value)
     ),
   ];
 
-  const filtered =
-    activeCategory === "all"
-      ? initialItems
-      : initialItems.filter((i) => i.category === activeCategory);
+  // Items are already filtered by the backend — no client-side filtering needed
+  const filtered = initialItems;
+
+  const handleCategoryClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href, { scroll: false });
+    });
+  };
 
   return (
     <>
       {/* Category tabs */}
       {availableCategories.length > 1 && (
         <div className="flex gap-2 flex-wrap mb-6">
-          {availableCategories.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setActiveCategory(cat.value)}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all border ${
-                activeCategory === cat.value
-                  ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
-                  : "bg-background border-border text-muted-foreground hover:border-primary hover:text-foreground"
-              }`}
-            >
-              <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
-                <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="24px" />
-              </div>
-              {cat.label}
-            </button>
-          ))}
+          {availableCategories.map((cat) => {
+            const params = new URLSearchParams(searchParams);
+            if (cat.value === "all") {
+              params.delete("category");
+            } else {
+              params.set("category", cat.value);
+            }
+            const href = `?${params.toString()}`;
+
+            return (
+              <a
+                key={cat.value}
+                href={href}
+                onClick={(e) => handleCategoryClick(e, href)}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all border ${
+                  activeCategory === cat.value
+                    ? "bg-primary text-white border-primary shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
+                    : "bg-background border-border text-muted-foreground hover:border-primary hover:text-foreground"
+                } ${isPending ? "opacity-60 pointer-events-none" : ""}`}
+              >
+                <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0">
+                  <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="24px" />
+                </div>
+                {cat.label}
+              </a>
+            );
+          })}
         </div>
       )}
 
-      {/* Menu grid */}
-      {filtered.length === 0 ? (
+      {/* Menu grid — show skeleton while category re-fetch is in flight */}
+      {isPending ? (
+        <div className="py-4">
+          <PageSkeleton variant="menu-item-grid" count={8} />
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           title={activeCategory === "all" ? "No items available" : "Nothing in this category"}
           description={
@@ -73,7 +107,7 @@ export function VendorMenu({ initialItems }: VendorMenuProps) {
           }
           action={
             activeCategory !== "all"
-              ? { label: "Show all items", onClick: () => setActiveCategory("all") }
+              ? { label: "Show all items", href: "?" }
               : undefined
           }
         />

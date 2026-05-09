@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Star, Timer } from "lucide-react";
+import { ArrowRight, MapPin, Smartphone, Timer, Zap } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
 
 const slides = [
@@ -52,7 +52,8 @@ export function Hero() {
           <FadeIn delay={0.1}>
             <div className="inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-3 py-1 text-xs font-semibold">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-  Your campus. Your vendors. Your meal.          </div>
+              Your campus. Your vendors. Your meal.
+            </div>
           </FadeIn>
           <FadeIn delay={0.2}>
             <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
@@ -77,11 +78,24 @@ export function Hero() {
             </div>
           </FadeIn>
 
+          {/* Stats — honest pre-launch values */}
           <FadeIn delay={0.5}>
             <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-border/60">
-              <Stat icon={<Star className="text-primary" />} value="4.9" label="Avg. rating" />
-              <Stat icon={<Timer className="text-primary" />} value="12 min" label="Prep time" />
-              <Stat icon={<MapPin className="text-primary" />} value="40+" label="Vendors" />
+              <Stat
+                icon={<Zap className="text-primary" />}
+                value="60 sec"
+                label="To place an order"
+              />
+              <Stat
+                icon={<Timer className="text-primary" />}
+                value="~15 min"
+                label="Est. prep time"
+              />
+              <Stat
+                icon={<MapPin className="text-primary" />}
+                value="10+"
+                label="Vendors at launch"
+              />
             </div>
           </FadeIn>
         </div>
@@ -90,7 +104,10 @@ export function Hero() {
         <div className="lg:col-span-6 relative animate-fade-in-scale">
           <div
             className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-border/60 bg-muted"
-            style={{ boxShadow: "0 20px 60px -12px color-mix(in oklch, var(--color-primary) 40%, transparent), 0 4px 20px -4px color-mix(in oklch, var(--color-primary) 20%, transparent)" }}
+            style={{
+              boxShadow:
+                "0 20px 60px -12px color-mix(in oklch, var(--color-primary) 40%, transparent), 0 4px 20px -4px color-mix(in oklch, var(--color-primary) 20%, transparent)",
+            }}
           >
             {mounted &&
               slides.map((slide, i) => (
@@ -122,8 +139,8 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Order status chip */}
-          <div className="absolute -bottom-6 -left-6 bg-card border border-border rounded-2xl p-4 shadow-[var(--shadow-soft)] w-56 hidden md:block animate-slide-up">
+          {/* Feature chip — replaces fake order number */}
+         <div className="absolute -bottom-6 -left-6 bg-card border border-border rounded-2xl p-4 shadow-[var(--shadow-soft)] w-56 hidden md:block animate-slide-up">
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 rounded-full overflow-hidden shrink-0 border border-border">
                 <Image
@@ -144,11 +161,11 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Social proof chip */}
+          {/* Value prop chip — replaces fake "ordered today" count */}
           <FadeIn delay={0.7}>
             <div className="absolute -top-4 -right-4 bg-card border border-border rounded-2xl px-4 py-3 shadow-[var(--shadow-soft)] hidden md:flex items-center gap-2 animate-slide-down">
-              <Star className="size-4 fill-primary text-primary" />
-              <span className="text-sm font-semibold">+420 students ordered today</span>
+              <Zap className="size-4 fill-primary text-primary" />
+              <span className="text-sm font-semibold">Order in under 60 seconds</span>
             </div>
           </FadeIn>
         </div>

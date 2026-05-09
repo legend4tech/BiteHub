@@ -1,3 +1,4 @@
+import { formatPrice } from "./format";
 import type { MenuCategory, OrderStatus } from "./types";
 
 // ─── App Constants ────────────────────────────────────────────────────────────
@@ -98,7 +99,7 @@ export function buildOrderWhatsAppMessage(order: {
   const itemList = order.items
     .map(
       (i) =>
-        `• ${i.name} ×${i.quantity} — ₦${(i.price * i.quantity).toLocaleString()}`
+        `• ${i.name} ×${i.quantity} — ${formatPrice(i.price * i.quantity)}`
     )
     .join("\n");
 
@@ -111,7 +112,7 @@ export function buildOrderWhatsAppMessage(order: {
     `*Items:*`,
     itemList,
     ``,
-    `*Total:* ₦${order.total.toLocaleString()}`,
+    `*Total:* ${formatPrice(order.total)}`,
     order.notes ? `*Notes:* ${order.notes}` : null,
     ``,
     `Please confirm when you receive this. Thank you! 🙏`,

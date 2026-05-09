@@ -4,6 +4,8 @@ import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 
+import { formatPrice } from "@/lib/format";
+
 interface CartSummaryProps {
   onCheckout: () => void;
 }
@@ -20,7 +22,7 @@ export function CartSummary({ onCheckout }: CartSummaryProps) {
       >
         <div className="flex-1">
           <p className="text-primary-foreground font-bold text-sm">
-            {count} item{count !== 1 ? "s" : ""} · ₦{total.toLocaleString()}
+            {count} item{count !== 1 ? "s" : ""} · {formatPrice(total)}
           </p>
           <p className="text-primary-foreground/80 text-xs">{cart.vendorName}</p>
         </div>
