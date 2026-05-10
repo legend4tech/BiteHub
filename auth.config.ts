@@ -13,6 +13,8 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
       const isLoginRoute = nextUrl.pathname === "/admin/login";
+      const isOnVendor = nextUrl.pathname === "/vendor" || nextUrl.pathname.startsWith("/vendor/");
+      const isVendorLoginRoute = nextUrl.pathname === "/vendor/login";
 
       // Allow API routes to be handled by the route itself
       if (nextUrl.pathname.startsWith("/api")) {
@@ -38,13 +40,32 @@ export const authConfig: NextAuthConfig = {
         return true;
       }
 
-      // Default allow for public routes (e.g. vendors view, etc)
+      if (isOnVendor) {
+        if (isVendorLoginRoute) {
+          if (isLoggedIn) {
+            return Response.redirect(new URL("/vendor/dashboard", nextUrl));
+          }
+          return true;
+        }
+
+        if (!isLoggedIn) {
+          return Response.redirect(new URL("/vendor/login", nextUrl));
+        }
+
+        // Only allow vendors (and possibly admins if needed, but for now restrict to vendors)
+        // NextAuth authorized callback doesn't have full session token easily without typing, 
+        // but we'll allow standard isLoggedIn. More strict checks can be in API or pages.
+        return true;
+      }
+
+      // Default allow for public routes (e.g. landing page, vendor store view)
       return true;
     },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        token.vendorId = (user as any).vendorId;
       }
       return token;
     },
@@ -52,6 +73,7 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as any).role = token.role as string;
+        (session.user as any).vendorId = token.vendorId as string | undefined;
       }
       return session;
     },

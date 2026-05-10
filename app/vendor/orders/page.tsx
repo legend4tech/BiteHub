@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useVendorAuth } from "@/hooks/useVendorAuth";
-import { useOrders } from "@/hooks/useOrders";
+import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { OrderTable } from "@/components/vendor/OrderTable";
-import { StatusBadge } from "@/components/vendor/StatusBadge";
 import type { Order, OrderStatus } from "@/lib/types";
 import { ORDER_STATUS_CONFIG } from "@/lib/constants";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import apiClient from "@/lib/axios";
+import { toast } from "sonner";
 
 const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -19,20 +20,33 @@ const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
 ];
 
 export default function VendorOrdersPage() {
-  const { session } = useVendorAuth();
-  const { getOrdersByVendor, updateStatus } = useOrders();
+  const { data: session } = useSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
+  const [loading, setLoading] = useState(true);
 
-  const load = () => {
-    if (session) setOrders(getOrdersByVendor(session.vendorId));
-  };
+  const load = useCallback(async () => {
+    try {
+      const res = await apiClient.get("/vendor/orders");
+      setOrders(res.data);
+    } catch (error) {
+      toast.error("Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { load(); }, [session]);
+  useEffect(() => {
+    if (session?.user) load();
+  }, [session, load]);
 
-  const handleStatusChange = (orderId: string, status: OrderStatus) => {
-    updateStatus(orderId, status);
-    load();
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      await apiClient.patch(`/vendor/orders/${orderId}`, { status: newStatus });
+      load();
+    } catch (error) {
+      toast.error("Failed to update order status");
+    }
   };
 
   const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
@@ -66,7 +80,11 @@ export default function VendorOrdersPage() {
       </div>
 
       <div className="rounded-2xl bg-card border border-border p-6">
-        <OrderTable orders={filtered} onStatusChange={handleStatusChange} />
+        {loading ? (
+          <PageSkeleton variant="orders-table" count={5} />
+        ) : (
+          <OrderTable orders={filtered} onStatusChange={handleStatusChange} />
+        )}
       </div>
     </div>
   );

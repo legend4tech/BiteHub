@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { CredentialsSignin } from "next-auth";
 import dbConnect from "@/lib/db";
 import AdminUser from "@/models/AdminUser"; 
+import VendorUserModel from "@/models/VendorUser";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -15,36 +16,67 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         try {
           const parsedCredentials = z
-            .object({ email: z.string().email(), password: z.string().min(6) })
+            .object({ 
+              email: z.string().email(), 
+              password: z.string().min(6),
+              loginType: z.enum(["admin", "vendor"]).optional()
+            })
             .safeParse(credentials);
 
           if (!parsedCredentials.success) {
             throw new CredentialsSignin("Invalid inputs");
           }
 
-          const { email, password } = parsedCredentials.data;
+          const { email, password, loginType } = parsedCredentials.data;
           
           await dbConnect();
-          const admin = await AdminUser.findOne({ email: email.toLowerCase() });
           
-          if (!admin || !admin.isActive) {
+          let user = null;
+          let role = "";
+          let vendorId = undefined;
+
+          // Prevent conflicts by checking explicit loginType
+          if (loginType === "vendor") {
+            user = await VendorUserModel.findOne({ email: email.toLowerCase() });
+            role = "vendor";
+            if (user) vendorId = user.vendorId.toString();
+          } else if (loginType === "admin") {
+            user = await AdminUser.findOne({ email: email.toLowerCase() });
+            role = user?.role || "admin";
+          } else {
+            // Fallback
+            user = await AdminUser.findOne({ email: email.toLowerCase() });
+            role = user?.role || "admin";
+            if (!user) {
+              user = await VendorUserModel.findOne({ email: email.toLowerCase() });
+              role = "vendor";
+              if (user) vendorId = user.vendorId.toString();
+            }
+          }
+
+          if (!user || !user.isActive) {
             throw new CredentialsSignin("Invalid credentials");
           }
 
-          const passwordsMatch = await bcrypt.compare(password, admin.password);
+          const passwordsMatch = await bcrypt.compare(password, user.password);
           
           if (!passwordsMatch) {
             throw new CredentialsSignin("Invalid credentials");
           }
 
-          // Update last login (fire and forget to not block login)
-          AdminUser.findByIdAndUpdate(admin._id, { lastLoginAt: new Date() }).exec();
+          // Update last login (fire and forget)
+          if (role === "admin" || role === "superadmin") {
+            AdminUser.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
+          } else {
+            VendorUserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
+          }
           
           return {
-            id: admin._id.toString(),
-            name: admin.name,
-            email: admin.email,
-            role: admin.role,
+            id: user._id.toString(),
+            name: user.name || user.email,
+            email: user.email,
+            role: role,
+            vendorId: vendorId,
           };
         } catch (error) {
           if (error instanceof CredentialsSignin) {

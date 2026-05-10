@@ -4,17 +4,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, UtensilsCrossed, ClipboardList, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useVendorAuth } from "@/hooks/useVendorAuth";
-
+import { useSession, signOut } from "next-auth/react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 const navItems = [
   { href: "/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vendor/menu",      label: "Menu",      icon: UtensilsCrossed },
   { href: "/vendor/orders",    label: "Orders",    icon: ClipboardList },
 ];
 
-export function VendorSidebar() {
+  export function VendorSidebar() {
   const pathname = usePathname();
-  const { session, logout } = useVendorAuth();
+  const { data: session } = useSession();
 
   return (
     <aside className="flex flex-col w-64 shrink-0 border-r border-border bg-card min-h-screen">
@@ -25,8 +37,8 @@ export function VendorSidebar() {
           <span className="font-heading font-bold text-base">Campus<span className="text-primary">Bites</span></span>
         </Link>
         <p className="text-xs text-muted-foreground mt-3">Vendor Portal</p>
-        {session && (
-          <p className="text-sm font-semibold mt-1 truncate">{session.vendorName}</p>
+        {session?.user && (
+          <p className="text-sm font-semibold mt-1 truncate">{session.user.name}</p>
         )}
       </div>
 
@@ -52,15 +64,41 @@ export function VendorSidebar() {
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 pb-5 border-t border-border pt-4">
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-        >
-          <LogOut className="size-4" />
-          Log out
-        </button>
+      {/* Logout & Theme Toggle */}
+      <div className="px-3 pb-5 border-t border-border pt-4 space-y-3">
+        <div className="flex items-center justify-between px-3">
+          <span className="text-sm text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all">
+              <LogOut className="size-4" />
+              Log out
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will log you out of your vendor portal. You will need to sign in again to manage your store.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  toast.success("Successfully logged out");
+                  signOut({ callbackUrl: "/vendor/login" });
+                }}
+              >
+                Yes, log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </aside>
   );

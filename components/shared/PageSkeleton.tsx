@@ -18,7 +18,8 @@ type SkeletonVariant =
   | "order-detail"
   | "dashboard"
   | "orders-table"
-  | "menu-management";
+  | "menu-management"
+  | "menu-item-edit";
 
 interface PageSkeletonProps {
   variant: SkeletonVariant;
@@ -41,6 +42,8 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <OrdersTableSkeleton count={count} />;
     case "menu-management":
       return <MenuManagementSkeleton count={count} />;
+    case "menu-item-edit":
+      return <MenuItemEditSkeleton />;
     default:
       return null;
   }
@@ -224,6 +227,74 @@ function MenuManagementSkeleton({ count }: { count: number }) {
           <Skeleton className="h-8 w-8 rounded-lg" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function MenuItemEditSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Page heading */}
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-32" />
+      </div>
+
+      {/* Form card */}
+      <div className="rounded-3xl bg-card border border-border p-6 max-w-2xl space-y-6">
+        {/* Image upload area */}
+        <Skeleton className="h-40 w-full rounded-2xl" />
+
+        {/* Name + Category row */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </div>
+
+        {/* Price + Prep time row */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-10" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+
+        {/* Availability toggle */}
+        <div className="flex items-center justify-between rounded-xl border border-border p-4">
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+          <Skeleton className="h-6 w-10 rounded-full" />
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3 justify-end pt-2">
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-10 w-28 rounded-lg" />
+        </div>
+      </div>
     </div>
   );
 }

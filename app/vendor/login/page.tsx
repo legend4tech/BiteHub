@@ -3,17 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useVendorAuth } from "@/hooks/useVendorAuth";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { vendorLoginSchema, type VendorLoginValues } from "@/lib/schemas";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 
+const vendorLoginSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+type VendorLoginValues = z.infer<typeof vendorLoginSchema>;
+
 export default function VendorLoginPage() {
-  const { login } = useVendorAuth();
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,28 +28,33 @@ export default function VendorLoginPage() {
     // `as any` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
     resolver: zodResolver(vendorLoginSchema as any),
     defaultValues: {
-      phone: "",
+      email: "",
       password: "",
     },
   });
 
-  const onSubmit = (values: VendorLoginValues) => {
+  const onSubmit = async (values: VendorLoginValues) => {
     setError("");
     setLoading(true);
     
-    setTimeout(() => {
-      const result = login(values.phone.trim(), values.password);
-      if (result.ok) {
-        if (values.phone.trim() === "admin") {
-          router.replace("/admin");
-        } else {
-          router.replace("/vendor/dashboard");
-        }
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: values.email.trim(),
+        password: values.password,
+        loginType: "vendor",
+      });
+
+      if (res?.error) {
+        setError(res.error === "CredentialsSignin" ? "Invalid email or password." : "Login failed. Please try again.");
       } else {
-        setError(result.error ?? "Login failed.");
-        setLoading(false);
+        router.replace("/vendor/dashboard");
       }
-    }, 600);
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,19 +76,19 @@ export default function VendorLoginPage() {
             )}
 
             <Controller
-              name="phone"
+              name="email"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Phone / ID</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>Email Address</FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
-                    placeholder="e.g. 2348012345678"
+                    placeholder="e.g. vendor@example.com"
                     autoComplete="username"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  <FieldError errors={[fieldState.error]} />
                 </Field>
               )}
             />
@@ -115,7 +125,7 @@ export default function VendorLoginPage() {
           </form>
 
           <p className="text-center text-xs text-muted-foreground mt-6">
-            Default password: <span className="font-mono font-semibold">vendor123</span>
+            Default password: <span className="font-mono font-semibold">Provided by Admin</span>
           </p>
         </div>
 
