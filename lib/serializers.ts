@@ -24,7 +24,6 @@ export function serializeVendor(doc: any) {
     description: doc.description ?? null,
     category: doc.category ?? null,
     tags: doc.tags ?? [],
-    phone: doc.phone ?? null,
     whatsappNumber: doc.whatsappNumber ?? null,
     school: doc.school ?? null,
     campus: doc.campus ?? null,

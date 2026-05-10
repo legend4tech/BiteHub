@@ -26,17 +26,15 @@ export interface Vendor {
   description: string;
   category: string;
   tags: string[];
-  phone: string;
   whatsappNumber: string;
   school: string;
   campus: string;
   isActive: boolean;
-  
-  // Fabricated UI properties
+
+  // Computed/virtual UI properties
   initials?: string;
   location?: string;
   tagline?: string;
-  password?: string;
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────

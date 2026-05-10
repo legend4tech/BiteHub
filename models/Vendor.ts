@@ -6,31 +6,28 @@ export interface IVendor extends Document {
   description: string;
   category: string;
   tags: string[];
-  phone: string;
   whatsappNumber: string;
   school: string;
   campus: string;
   isActive: boolean;
 
+  // Virtuals
   initials: string;
   tagline: string;
   location: string;
-  password?: string;
 }
 
 const VendorSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
-    slug: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
     category: { type: String },
     tags: { type: [String], default: [] },
-    phone: { type: String },
     whatsappNumber: { type: String },
     school: { type: String },
     campus: { type: String },
     isActive: { type: Boolean, default: true },
-    password: { type: String },
   },
   {
     timestamps: true,
@@ -40,7 +37,6 @@ const VendorSchema: Schema = new Schema(
         (ret as any).id = (ret as any)._id.toString();
         delete (ret as any)._id;
         delete (ret as any).__v;
-        delete (ret as any).password;
       },
     },
     toObject: { virtuals: true },
