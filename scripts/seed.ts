@@ -2,7 +2,9 @@ import { vendors, menuItems } from "../lib/data";
 import dbConnect from "../lib/db";
 import Vendor from "../models/Vendor";
 import MenuItem from "../models/MenuItem";
+import AdminUser from "../models/AdminUser";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 async function seed() {
   try {
@@ -12,7 +14,19 @@ async function seed() {
     // Clear existing data
     await Vendor.deleteMany({});
     await MenuItem.deleteMany({});
+    await AdminUser.deleteMany({});
     console.log("Cleared existing collections.");
+
+    // Create default admin
+    const adminPassword = await bcrypt.hash("admin123", 12);
+    await AdminUser.create({
+      name: "System Admin",
+      email: "admin@campusbites.com",
+      password: adminPassword,
+      role: "superadmin",
+      isActive: true,
+    });
+    console.log("Created default admin: admin@campusbites.com / admin123");
 
     // vendorMap: maps original string id (e.g. "vendor-1") → real ObjectId
     // This is used so menu items can reference the correct vendor _id

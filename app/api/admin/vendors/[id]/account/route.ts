@@ -4,6 +4,7 @@ import VendorUserModel from "@/models/VendorUser";
 import VendorModel from "@/models/Vendor";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
+import { auth } from "@/auth";
 
 // POST — create a login account for an existing vendor that doesn't have one
 export async function POST(
@@ -11,6 +12,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
     const { id } = await params;
 

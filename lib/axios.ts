@@ -7,4 +7,25 @@ const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        const { toast } = await import("sonner");
+        const { signOut } = await import("next-auth/react");
+        
+        // Prevent duplicate toasts if multiple requests fail at once
+        toast.error("Session expired. Please login again.", { id: "session-expired" });
+        signOut({ callbackUrl: "/admin/login" });
+        
+        // Return a pending promise so the component's catch block doesn't execute
+        // while the page is redirecting to login. This prevents the double toast!
+        return new Promise(() => {});
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;

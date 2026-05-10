@@ -2,13 +2,27 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
+import apiClient from "@/lib/axios";
 import {
   Store, ShoppingBag, CheckCircle2, Clock, Users,
   TrendingUp, Plus, X, Power, ArrowLeft, Loader2,
   ChevronRight, RefreshCw, KeyRound, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/format";
@@ -103,16 +117,7 @@ function AddLoginModal({
   const onSubmit = async (values: AddLoginValues) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/vendors/${vendor.id}/account`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to create login");
-        return;
-      }
+      await apiClient.post(`/admin/vendors/${vendor.id}/account`, values);
       toast.success(`Login account created for ${vendor.name}`);
       onSuccess();
       onClose();
@@ -199,8 +204,10 @@ export default function AdminPage() {
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const res = await fetch("/api/admin/stats");
-      if (res.ok) setStats(await res.json());
+      const res = await apiClient.get("/admin/stats");
+      setStats(res.data);
+    } catch (error) {
+      console.error("Failed to load stats", error);
     } finally {
       setLoadingStats(false);
     }
@@ -209,8 +216,10 @@ export default function AdminPage() {
   const fetchVendors = useCallback(async () => {
     setLoadingVendors(true);
     try {
-      const res = await fetch("/api/admin/vendors");
-      if (res.ok) setVendors(await res.json());
+      const res = await apiClient.get("/admin/vendors");
+      setVendors(res.data);
+    } catch (error) {
+      console.error("Failed to load vendors", error);
     } finally {
       setLoadingVendors(false);
     }
@@ -224,17 +233,14 @@ export default function AdminPage() {
   const toggleVendorActive = async (vendor: AdminVendor) => {
     setTogglingId(vendor.id);
     try {
-      const res = await fetch(`/api/admin/vendors/${vendor.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !vendor.isActive }),
-      });
-      if (res.ok) {
-        setVendors((prev) =>
-          prev.map((v) => v.id === vendor.id ? { ...v, isActive: !v.isActive } : v)
-        );
-        toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
-      }
+      await apiClient.patch(`/admin/vendors/${vendor.id}`, { isActive: !vendor.isActive });
+
+      setVendors((prev) =>
+        prev.map((v) => v.id === vendor.id ? { ...v, isActive: !v.isActive } : v)
+      );
+      toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "An error occurred");
     } finally {
       setTogglingId(null);
     }
@@ -261,10 +267,42 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => { fetchStats(); fetchVendors(); }}>
-            <RefreshCw className="size-3.5" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => { fetchStats(); fetchVendors(); }}>
+              <RefreshCw className="size-3.5" />
+              Refresh
+            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <Power className="size-3.5" />
+                  Logout
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will log you out of the secure admin portal. You will need to re-authenticate to access it again.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      toast.success("Successfully logged out");
+                      signOut({ callbackUrl: "/admin/login" });
+                    }}
+                  >
+                    Yes, log out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </header>
 

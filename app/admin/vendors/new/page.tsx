@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Eye, EyeOff, X, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import apiClient from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +40,11 @@ const schema = z.object({
   description: z.string().trim().optional(),
   category: z.string().min(1, "Category is required"),
   tags: z.string().trim().optional(), // comma-separated, parsed before submit
-  whatsappNumber: z.string().trim().min(7, "WhatsApp number is required"),
+  whatsappNumber: z
+    .string()
+    .trim()
+    .length(11, "WhatsApp number must be exactly 11 digits (e.g., 08012345678)")
+    .regex(/^0\d{10}$/, "Must start with 0 and contain only numbers"),
   school: z.string().trim().optional(),
   campus: z.string().trim().optional(),
   isActive: z.boolean().default(true),
@@ -81,34 +86,26 @@ export default function NewVendorPage() {
         ? values.tags.split(",").map((t) => t.trim()).filter(Boolean)
         : [];
 
-      const res = await fetch("/api/admin/vendors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          description: values.description,
-          category: values.category,
-          tags: tagsArray,
-          whatsappNumber: values.whatsappNumber,
-          school: values.school || "COOU",
-          campus: values.campus || "Uli",
-          isActive: values.isActive,
-          email: values.email,
-          password: values.password,
-        }),
+      // Format WhatsApp number (e.g., 08012345678 -> 2348012345678)
+      const formattedPhone = "234" + values.whatsappNumber.substring(1);
+
+      await apiClient.post("/admin/vendors", {
+        name: values.name,
+        description: values.description,
+        category: values.category,
+        tags: tagsArray,
+        whatsappNumber: formattedPhone,
+        school: values.school || "COOU",
+        campus: values.campus || "Uli",
+        isActive: values.isActive,
+        email: values.email,
+        password: values.password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || "Failed to create vendor");
-        return;
-      }
-
-      toast.success("Vendor and login account created!");
+      toast.success("Vendor created successfully!");
       router.push("/admin");
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to create vendor");
     } finally {
       setSubmitting(false);
     }
@@ -168,8 +165,8 @@ export default function NewVendorPage() {
               <Controller name="whatsappNumber" control={form.control} render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>WhatsApp Number *</FieldLabel>
-                  <Input {...field} id={field.name} placeholder="2348012345678" aria-invalid={fieldState.invalid} />
-                  <FieldDescription>Include country code (234 for Nigeria)</FieldDescription>
+                  <Input {...field} id={field.name} placeholder="08012345678" aria-invalid={fieldState.invalid} />
+                  <FieldDescription>Must be exactly 11 digits starting with 0</FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )} />

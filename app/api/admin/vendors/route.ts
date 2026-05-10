@@ -3,10 +3,16 @@ import dbConnect from "@/lib/db";
 import VendorModel from "@/models/Vendor";
 import VendorUserModel from "@/models/VendorUser";
 import bcrypt from "bcryptjs";
+import { auth } from "@/auth";
 
 // GET — all vendors for admin (no isActive filter)
 export async function GET() {
   try {
+    const session = await auth();
+    if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
 
     const vendors = await VendorModel.find({}).sort({ createdAt: -1 }).lean();
@@ -56,6 +62,11 @@ export async function GET() {
 // POST — create vendor profile + login account atomically
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
     const body = await request.json();
 

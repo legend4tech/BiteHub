@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db";
 import VendorModel from "@/models/Vendor";
 import VendorUserModel from "@/models/VendorUser";
 import mongoose from "mongoose";
+import { auth } from "@/auth";
 
 // PATCH — toggle vendor isActive or update fields
 export async function PATCH(
@@ -10,6 +11,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
     const { id } = await params;
 
