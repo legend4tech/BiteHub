@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, ArrowUpRight } from "lucide-react";
+import { MapPin, ArrowUpRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/FadeIn";
 import dbConnect from "@/lib/db";
@@ -30,11 +30,6 @@ export async function FeaturedVendors() {
                 Hand-picked vendors students love
               </h2>
             </div>
-            <Button asChild variant="hero" size="sm">
-              <Link href="/vendors">
-                View all vendors &rarr;
-              </Link>
-            </Button>
           </div>
         </FadeIn>
 
@@ -72,6 +67,16 @@ export async function FeaturedVendors() {
             ))}
           </div>
         )}
+
+        <FadeIn delay={0.5}>
+          <div className="mt-12 flex justify-center">
+            <Button asChild variant="hero" size="xl" className="px-10 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform group">
+              <Link href="/vendors" className="flex items-center gap-2 font-bold tracking-tight">
+                View all vendors <ExternalLink className="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            </Button>
+          </div>
+        </FadeIn>
       </div>
     </section>
   );

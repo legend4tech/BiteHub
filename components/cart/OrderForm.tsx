@@ -4,9 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, X, Minus, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/hooks/useCart";
-import { orderFormSchema } from "@/lib/schemas";
-import { ZodError } from "zod";
+import { orderFormInputSchema, type OrderFormInputValues } from "@/lib/schemas";
+import { normaliseNigerianPhone } from "@/lib/schemas";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, Controller } from "react-hook-form";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { toast } from "sonner";
 import { formatPrice } from "@/lib/format";
 import apiClient from "@/lib/axios";
 
@@ -18,40 +24,30 @@ interface OrderFormProps {
 export function OrderForm({ open, onClose }: OrderFormProps) {
   const { cart, updateQuantity, removeItem, clearCart, total } = useCart();
   const router = useRouter();
-
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const form = useForm<OrderFormInputValues>({
+    // `as any` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
+    resolver: zodResolver(orderFormInputSchema as any),
+    defaultValues: {
+      name: "",
+      phone: "",
+      notes: "",
+    },
+  });
 
   if (!open) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  const onSubmit = async (values: OrderFormInputValues) => {
     setServerError(null);
-
-    const validationResult = orderFormSchema.safeParse({ name, phone, notes });
-
-    if (!validationResult.success) {
-      const newErrors: Record<string, string> = {};
-      validationResult.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          newErrors[err.path[0] as string] = err.message;
-        }
-      });
-      setErrors(newErrors);
-      return;
-    }
-
-    const validData = validationResult.data;
 
     if (cart.items.length === 0 || !cart.vendorId) return;
 
+    // Normalise the phone number before sending to the API
+    const customerPhone = normaliseNigerianPhone(values.phone);
+
     setLoading(true);
-    console.log("vendorWhatsappNumber", cart.vendorWhatsappNumber);
     try {
       // POST to the real API — order is saved to MongoDB.
       const response = await apiClient.post("/orders", {
@@ -64,14 +60,15 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           price: ci.menuItem.price,
           quantity: ci.quantity,
         })),
-        customerName: validData.name,
-        customerPhone: validData.phone,
-        notes: validData.notes,
+        customerName: values.name,
+        customerPhone,
+        notes: values.notes,
         total,
       });
 
       const { orderId } = response.data;
       clearCart();
+      toast.success("Order placed successfully!");
       router.push(`/order/${orderId}`);
     } catch (error) {
       // API or network error
@@ -99,7 +96,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Cart items */}
           <div className="space-y-2">
             <p className="text-sm font-semibold">Your items</p>
@@ -115,7 +112,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                   <button
                     type="button"
                     onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)}
-                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted"
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
                   >
                     <Minus className="size-3" />
                   </button>
@@ -125,7 +122,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                   <button
                     type="button"
                     onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)}
-                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted"
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
                   >
                     <Plus className="size-3" />
                   </button>
@@ -136,7 +133,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 <button
                   type="button"
                   onClick={() => removeItem(ci.menuItem.id)}
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -149,50 +146,64 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           </div>
 
           {/* Customer info */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <p className="text-sm font-semibold">Your details</p>
-            <div>
-              <input
-                type="text"
-                placeholder="Your name *"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setErrors((p) => ({ ...p, name: "" }));
-                }}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-              {errors.name && (
-                <p className="text-xs text-destructive mt-1">{errors.name}</p>
+            
+            <Controller
+              name="name"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    placeholder="Your name *"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
               )}
-            </div>
-            <div>
-              <input
-                type="tel"
-                placeholder="Phone number * (e.g. 08012345678)"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value);
-                  setErrors((p) => ({ ...p, phone: "" }));
-                }}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-              {errors.phone && (
-                <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+            />
+
+            <Controller
+              name="phone"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    type="tel"
+                    placeholder="Phone number * (e.g. 08012345678)"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
               )}
-            </div>
-            <textarea
-              placeholder="Notes for vendor (optional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+            />
+
+            <Controller
+              name="notes"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Textarea
+                    {...field}
+                    id={field.name}
+                    placeholder="Notes for vendor (optional)"
+                    rows={2}
+                    className="resize-none"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
             />
           </div>
 
           {/* Server error */}
           {serverError && (
-            <p className="text-sm text-destructive text-center">{serverError}</p>
+            <p className="text-sm text-destructive text-center bg-destructive/10 rounded-xl py-2 px-4">{serverError}</p>
           )}
 
           <Button

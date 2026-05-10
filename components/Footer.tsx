@@ -1,39 +1,129 @@
+import Link from "next/link";
+import { Mail, MapPin } from "lucide-react";
+
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card/40">
-      <div className="mx-auto max-w-7xl px-6 py-14 grid md:grid-cols-4 gap-10">
-        <div className="md:col-span-1">
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl grid place-items-center text-primary-foreground font-bold" style={{ background: "var(--gradient-primary)" }}>C</div>
-            <span className="font-heading text-xl font-bold">Campus<span className="text-primary">Bites</span></span>
+    <footer className="relative border-t border-border bg-card/40 overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] -ml-48 -mb-48 pointer-events-none" />
+
+      <div className="mx-auto max-w-7xl px-6 py-20 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8">
+          {/* Brand section */}
+          <div className="lg:col-span-2 space-y-6">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="h-10 w-10 rounded-2xl grid place-items-center text-white font-bold text-lg bg-gradient-to-br from-primary to-orange-600 shadow-lg shadow-primary/20">
+                C
+              </div>
+              <span className="font-heading text-2xl font-black tracking-tight leading-none uppercase">
+                Campus<span className="text-primary">Bites</span>
+              </span>
+            </Link>
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+              Empowering campus vendors and students through seamless food discovery and ordering. Built for the modern Nigerian campus life.
+            </p>
+            <div className="flex items-center gap-4">
+              <SocialLink href="#" alt="Twitter" />
+              <SocialLink href="#" alt="Instagram" />
+              <SocialLink href="#" alt="Facebook" />
+              <SocialLink href="#" alt="Github" />
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-4 max-w-xs">
-            Campus food ordering, made delightful. Built for COOU Uli students and vendors.
-          </p>
+
+          {/* Links sections */}
+          <div className="lg:col-span-1">
+            <FooterHeading>Product</FooterHeading>
+            <ul className="space-y-3 mt-4">
+              <FooterLink href="/vendors">Browse Vendors</FooterLink>
+              <FooterLink href="/menus">Our Menus</FooterLink>
+              <FooterLink href="/#how">How it Works</FooterLink>
+              <FooterLink href="/#pricing">Pricing</FooterLink>
+            </ul>
+          </div>
+
+          <div className="lg:col-span-1">
+            <FooterHeading>Company</FooterHeading>
+            <ul className="space-y-3 mt-4">
+              <FooterLink href="/about">About Us</FooterLink>
+              <FooterLink href="/careers">Join the Team</FooterLink>
+              <FooterLink href="/contact">Contact Support</FooterLink>
+              <FooterLink href="/press">Media Kit</FooterLink>
+            </ul>
+          </div>
+
+          {/* Contact info */}
+          <div className="lg:col-span-2 space-y-6">
+            <FooterHeading>Get in Touch</FooterHeading>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground group hover:text-foreground transition-colors cursor-pointer">
+                <div className="h-9 w-9 rounded-xl bg-accent grid place-items-center shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <Mail className="size-4" />
+                </div>
+                <span>hello@campusbites.com</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground group hover:text-foreground transition-colors cursor-pointer">
+                <div className="h-9 w-9 rounded-xl bg-accent grid place-items-center shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <MapPin className="size-4" />
+                </div>
+                <span>Available across campuses nationwide</span>
+              </div>
+            </div>
+            
+            <div className="pt-2">
+              <p className="text-xs font-bold text-foreground mb-2">Subscribe to our updates</p>
+              <div className="flex gap-2">
+                <input 
+                  type="email" 
+                  placeholder="Your email" 
+                  className="bg-accent/50 border border-border px-4 py-2 rounded-xl text-xs flex-1 focus:outline-none focus:border-primary transition-colors"
+                />
+                <button className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary/90 transition-colors">
+                  Join
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <FooterCol title="Product" links={["Vendors", "Menu", "How it works", "Pricing"]} />
-        <FooterCol title="Company" links={["About", "Careers", "Contact", "Press"]} />
-        <FooterCol title="Legal" links={["Privacy", "Terms", "Cookies"]} />
-      </div>
-      <div className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-6 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} CampusBites. Crafted on campus.</p>
-        
+
+        <div className="mt-20 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-medium">
+          <p>© {new Date().getFullYear()} CampusBites. Crafted with ❤️ for students everywhere.</p>
+          <div className="flex items-center gap-8">
+            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link href="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: string[] }) {
+function FooterHeading({ children }: { children: React.ReactNode }) {
+  return <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">{children}</h4>;
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="font-semibold text-sm">{title}</p>
-      <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
-        {links.map((l) => (
-          <li key={l}><a href="#" className="hover:text-primary transition-colors">{l}</a></li>
-        ))}
-      </ul>
-    </div>
+    <li>
+      <Link href={href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+function SocialLink({ href, alt, src }: { href: string; alt: string; src?: string }) {
+  return (
+    <a 
+      href={href} 
+      className="h-9 w-9 rounded-xl bg-accent grid place-items-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+    >
+      {src ? (
+        <img src={src} alt={alt} className="size-5 object-contain" />
+      ) : (
+        <div className="size-4 bg-muted-foreground/30 rounded-sm" title={alt} />
+      )}
+    </a>
   );
 }

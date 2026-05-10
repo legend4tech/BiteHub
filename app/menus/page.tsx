@@ -42,12 +42,14 @@ async function MenuListContent({
     Vendor.find({}),
   ]);
 
-  const vendorMap = new Map<string, string>();
-  vendors.forEach((v) => vendorMap.set(v._id.toString(), v.name));
+  const vendorMap = new Map<string, { name: string; slug: string }>();
+  vendors.forEach((v) => vendorMap.set(v._id.toString(), { name: v.name, slug: v.slug }));
 
   const mappedItems = items.map((item) => {
     const doc = item.toJSON();
-    doc.vendorName = vendorMap.get(doc.vendorId) || "Campus Vendor";
+    const vendorData = vendorMap.get(doc.vendorId);
+    doc.vendorName = vendorData?.name || "Campus Vendor";
+    doc.vendorSlug = vendorData?.slug || "";
     doc.tag = doc.price > 1000 ? "🔥 Hot" : null;
     return doc;
   });

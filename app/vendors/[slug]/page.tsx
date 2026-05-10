@@ -64,6 +64,7 @@ export default async function VendorDetailPage({ params, searchParams }: Props) 
     id: item.id,
     vendorId: item.vendorId,
     vendorName: vendor.name,
+    vendorSlug: vendor.slug,
     // Pass vendor WhatsApp number onto each item so the cart can forward it
     // to the order API. Without this, cart.vendorWhatsappNumber is always null.
     vendorWhatsappNumber: vendor.whatsappNumber ?? "",

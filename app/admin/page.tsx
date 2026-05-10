@@ -4,11 +4,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useVendorAuth } from "@/hooks/useVendorAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { vendors as staticVendors } from "@/lib/data";
-import { LS_VENDORS, ADMIN_PHONE } from "@/lib/constants";
+import { LS_VENDORS } from "@/lib/constants";
 import type { Vendor } from "@/lib/types";
 import { Plus, X, Power, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { toast } from "sonner";
 
 function loadVendors(): Vendor[] {
   try {
@@ -26,8 +32,23 @@ export default function AdminPage() {
   const router = useRouter();
   const [extraVendors, setExtraVendors] = useState<Vendor[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", location: "", campus: "COOU Uli", password: "" });
   const [error, setError] = useState("");
+
+  const vendorSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    phone: z.string().min(1, "Phone is required"),
+    location: z.string().optional(),
+    campus: z.string().default("COOU Uli"),
+    password: z.string().optional(),
+  });
+
+  type VendorFormValues = z.infer<typeof vendorSchema>;
+
+  const vendorForm = useForm<VendorFormValues>({
+    // `as any` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
+    resolver: zodResolver(vendorSchema as any),
+    defaultValues: { name: "", phone: "", location: "", campus: "COOU Uli", password: "" },
+  });
 
   useEffect(() => {
     // Authentication redirect removed for open access
@@ -36,33 +57,35 @@ export default function AdminPage() {
 
   const allVendors = [...staticVendors, ...extraVendors];
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.phone) { setError("Name and phone are required."); return; }
-    if (allVendors.find((v) => v.phone === form.phone)) { setError("A vendor with this phone already exists."); return; }
+  const handleCreate = (values: VendorFormValues) => {
+    if (allVendors.find((v) => v.phone === values.phone)) {
+      setError("A vendor with this phone already exists.");
+      return;
+    }
     const newVendor: Vendor = {
       id: `vendor-${Date.now()}`,
-      name: form.name.trim(),
-      initials: form.name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase(),
-      phone: form.phone.trim(),
-      campus: form.campus,
-      location: form.location.trim() || "TBD",
-      slug: form.name.trim().toLowerCase().replace(/\s+/g, "-"),
+      name: values.name.trim(),
+      initials: values.name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase(),
+      phone: values.phone.trim(),
+      campus: values.campus || "COOU Uli",
+      location: values.location?.trim() || "TBD",
+      slug: values.name.trim().toLowerCase().replace(/\s+/g, "-"),
       description: "Fresh campus food, served daily.",
       category: "general",
       tags: [],
-      whatsappNumber: form.phone.trim(),
+      whatsappNumber: values.phone.trim(),
       school: "COOU",
       tagline: "Fresh campus food, served daily.",
       isActive: true,
-      password: form.password || "vendor123",
+      password: values.password || "vendor123",
     };
     const updated = [...extraVendors, newVendor];
     saveVendors(updated);
     setExtraVendors(updated);
-    setForm({ name: "", phone: "", location: "", campus: "COOU Uli", password: "" });
+    vendorForm.reset();
     setShowForm(false);
     setError("");
+    toast.success("Vendor created successfully!");
   };
 
   const toggleActive = (id: string) => {
@@ -95,25 +118,69 @@ export default function AdminPage() {
             <h2 className="font-heading font-bold text-lg">New Vendor</h2>
             <Button variant="ghost" size="icon" onClick={() => { setShowForm(false); setError(""); }}><X /></Button>
           </div>
-          <form onSubmit={handleCreate} className="grid sm:grid-cols-2 gap-3">
+          <form onSubmit={vendorForm.handleSubmit(handleCreate)} className="grid sm:grid-cols-2 gap-4">
             {error && <p className="sm:col-span-2 text-xs text-destructive bg-destructive/10 rounded-xl px-4 py-2">{error}</p>}
-            {[
-              { label: "Vendor name *", key: "name", placeholder: "e.g. Mama Nkechi's Kitchen" },
-              { label: "Phone (WhatsApp) *", key: "phone", placeholder: "2348012345678" },
-              { label: "Location", key: "location", placeholder: "e.g. Block C" },
-              { label: "Campus", key: "campus", placeholder: "COOU Uli" },
-              { label: "Password (default: vendor123)", key: "password", placeholder: "vendor123" },
-            ].map((f) => (
-              <div key={f.key}>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">{f.label}</label>
-                <input
-                  value={form[f.key as keyof typeof form]}
-                  onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
-                  placeholder={f.placeholder}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            ))}
+            
+            <Controller
+              name="name"
+              control={vendorForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Vendor name *</FieldLabel>
+                  <Input {...field} id={field.name} placeholder="e.g. Mama Nkechi's Kitchen" aria-invalid={fieldState.invalid} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="phone"
+              control={vendorForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Phone (WhatsApp) *</FieldLabel>
+                  <Input {...field} id={field.name} placeholder="2348012345678" aria-invalid={fieldState.invalid} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="location"
+              control={vendorForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Location</FieldLabel>
+                  <Input {...field} id={field.name} placeholder="e.g. Block C" aria-invalid={fieldState.invalid} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="campus"
+              control={vendorForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>Campus</FieldLabel>
+                  <Input {...field} id={field.name} placeholder="COOU Uli" aria-invalid={fieldState.invalid} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="password"
+              control={vendorForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid} className="sm:col-span-2">
+                  <FieldLabel htmlFor={field.name}>Password (default: vendor123)</FieldLabel>
+                  <Input {...field} id={field.name} placeholder="vendor123" aria-invalid={fieldState.invalid} />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
             <div className="sm:col-span-2 flex gap-3 pt-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button>
               <Button type="submit" variant="hero" className="flex-1">Create vendor</Button>

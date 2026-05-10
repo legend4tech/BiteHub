@@ -1,9 +1,11 @@
 import { Bricolage_Grotesque, Inter, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { QueryProvider } from "@/components/providers/QueryProvider"
+
+import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils";
+import { QueryProvider } from "@/components/providers/QueryProvider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -37,7 +39,10 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning>
         <QueryProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton expand />
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

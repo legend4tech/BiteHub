@@ -15,6 +15,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { ExternalLink } from "lucide-react";
 
 interface AllProductsProps {
   initialItems: MenuItem[];
@@ -56,11 +57,6 @@ export function AllProducts({ initialItems, activeCategory }: AllProductsProps) 
             </div>
             <div className="flex items-center gap-4">
               <p className="text-sm text-muted-foreground">{filtered.length} items</p>
-              <Button asChild variant="hero" size="sm">
-                <Link href={activeCategory === "all" ? "/menus" : `/menus?category=${activeCategory}`}>
-                  View all menus
-                </Link>
-              </Button>
             </div>
           </div>
         </FadeIn>
@@ -128,6 +124,16 @@ export function AllProducts({ initialItems, activeCategory }: AllProductsProps) 
             ))}
           </div>
         )}
+
+        <FadeIn delay={0.4}>
+          <div className="mt-12 flex justify-center">
+            <Button asChild variant="hero" size="xl" className="px-10 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform group">
+              <Link href={activeCategory === "all" ? "/menus" : `/menus?category=${activeCategory}`} className="flex items-center gap-2 font-bold tracking-tight">
+                View all menus <ExternalLink className="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            </Button>
+          </div>
+        </FadeIn>
       </div>
 
       {/* Floating cart */}

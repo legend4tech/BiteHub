@@ -25,6 +25,26 @@ export function normaliseNigerianPhone(raw: string): string {
 
 // ─── Order Form Schema ────────────────────────────────────────────────────────
 
+/** Input schema — no transforms, safe for react-hook-form + zodResolver */
+export const orderFormInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters."),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Please enter your phone number.")
+    .refine(
+      (v) => /^\+234[789]\d{9}$/.test(normaliseNigerianPhone(v)),
+      "Enter a valid Nigerian phone number (e.g. 08012345678)."
+    ),
+  notes: z.string().trim().optional(),
+});
+
+export type OrderFormInputValues = z.infer<typeof orderFormInputSchema>;
+
+/** Full schema with phone normalisation — use for final data processing */
 export const orderFormSchema = z.object({
   name: z
     .string()
@@ -58,7 +78,7 @@ export const menuItemFormSchema = z.object({
     .string()
     .min(1, "Price is required.")
     .refine((v) => !isNaN(Number(v)) && Number(v) > 0, "Enter a valid price."),
-  category: z.enum(["rice", "soup", "snack", "drink", "protein", "shawarma"]),
+  category: z.enum(["rice", "soup", "snack", "drink", "protein", "shawarma", "food"]),
   isAvailable: z.boolean(),
   image: z.string().trim().optional(),
 });

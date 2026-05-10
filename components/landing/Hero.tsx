@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Smartphone, Timer, Zap } from "lucide-react";
+import { ArrowRight, MapPin, Smartphone, Timer, Zap, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { FadeIn } from "@/components/FadeIn";
 
 const slides = [
@@ -69,11 +70,16 @@ export function Hero() {
           </FadeIn>
           <FadeIn delay={0.4}>
             <div className="flex flex-wrap gap-3">
-              <Button variant="hero" size="xl">
-                Browse vendors <ArrowRight />
+              <Button asChild variant="hero" size="xl">
+                <Link href="/menus">
+                  Browse menus             
+                   <ExternalLink className="ml-2 size-5" />
+                </Link>
               </Button>
-              <Button variant="outline" size="xl">
-                How it works
+              <Button asChild variant="outline" size="xl">
+                <Link href="/vendors">
+                  Browse vendors <ExternalLink className="ml-2 size-5" />
+                </Link>
               </Button>
             </div>
           </FadeIn>
@@ -151,7 +157,7 @@ export function Hero() {
                 />
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight">Order #COOU-2841</p>
+                <p className="text-sm font-semibold leading-tight">Order #CB-24-GJY</p>
                 <p className="text-xs text-muted-foreground">CampusBites</p>
               </div>
             </div>

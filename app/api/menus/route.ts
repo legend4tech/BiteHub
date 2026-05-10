@@ -49,24 +49,28 @@ export async function GET(request: Request) {
       .lean();
 
     // Fetch only active vendors — no point including inactive ones in the map
-    const vendors = await Vendor.find({ isActive: true }).select("name whatsappNumber").lean();
+    const vendors = await Vendor.find({ isActive: true }).select("name slug whatsappNumber").lean();
 
-    const vendorMap = new Map<string, string>();
+    const vendorMap = new Map<string, { name: string, slug: string }>();
     const vendorWhatsappNumberMap = new Map<string, string>();
     vendors.forEach((v) => {
-      vendorMap.set(v._id.toString(), v.name);
+      vendorMap.set(v._id.toString(), { name: v.name, slug: (v as any).slug });
       vendorWhatsappNumberMap.set(v._id.toString(), (v as any).whatsappNumber || "");
     });
 
-    const mappedItems = items.map((item) => ({
+    const mappedItems = items.map((item) => {
+      const vendorData = vendorMap.get(item.vendorId.toString());
+      return {
       ...serializeMenuItem(item),
       // Attach vendor name — falls back to "Campus Vendor" only if vendor
       // was deleted after item was created (orphaned item)
-      vendorName: vendorMap.get(item.vendorId.toString()) || "Campus Vendor",
+      vendorName: vendorData?.name || "Campus Vendor",
+      vendorSlug: vendorData?.slug || "",
       vendorWhatsappNumber: vendorWhatsappNumberMap.get(item.vendorId.toString()) || "",
       // Tag computed in one place
       tag: getItemTag(item.price),
-    }));
+    };
+    });
 
     return NextResponse.json(mappedItems);
   } catch (error) {

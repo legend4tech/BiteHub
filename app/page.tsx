@@ -36,12 +36,14 @@ async function LandingMenuSection({ category }: { category: string }) {
     Vendor.find({}),
   ]);
 
-  const vendorMap = new Map<string, string>();
-  vendors.forEach((v) => vendorMap.set(v._id.toString(), v.name));
+  const vendorMap = new Map<string, { name: string; slug: string }>();
+  vendors.forEach((v) => vendorMap.set(v._id.toString(), { name: v.name, slug: v.slug }));
 
   const mappedItems = items.map((item) => {
     const doc = item.toJSON();
-    doc.vendorName = vendorMap.get(doc.vendorId) || "Campus Vendor";
+    const vendorData = vendorMap.get(doc.vendorId);
+    doc.vendorName = vendorData?.name || "Campus Vendor";
+    doc.vendorSlug = vendorData?.slug || "";
     doc.tag = doc.price > 1000 ? "🔥 Hot" : null;
     return doc;
   });
@@ -62,54 +64,55 @@ export default async function Page({
       : "all";
 
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      {/* Always render — no data dependency */}
+    <>
+      {/* Navbar must be outside main to avoid overflow-x-hidden breaking sticky */}
       <Navbar />
-      <Hero />
-
-      {/* Menu section — shows inline error if DB unreachable */}
-      <SectionErrorBoundary
-        title="Couldn't load menu items"
-        message="We couldn't reach the server. Check your connection and try again."
-        padded
-      >
-        <Suspense
-          key={category}
-          fallback={
-            <section className="py-20">
-              <div className="mx-auto max-w-7xl px-6">
-                <PageSkeleton variant="menu-item-grid" count={10} />
-              </div>
-            </section>
-          }
+      <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
+        {/* Menu section — shows inline error if DB unreachable */}
+        <Hero />
+        <SectionErrorBoundary
+          title="Couldn't load menu items"
+          message="We couldn't reach the server. Check your connection and try again."
+          padded
         >
-          <LandingMenuSection category={category} />
-        </Suspense>
-      </SectionErrorBoundary>
+          <Suspense
+            key={category}
+            fallback={
+              <section className="py-20">
+                <div className="mx-auto max-w-7xl px-6">
+                  <PageSkeleton variant="menu-item-grid" count={10} />
+                </div>
+              </section>
+            }
+          >
+            <LandingMenuSection category={category} />
+          </Suspense>
+        </SectionErrorBoundary>
 
-      {/* Featured vendors — self-contained async component with its own DB call */}
-      <SectionErrorBoundary
-        title="Couldn't load featured vendors"
-        message="We couldn't reach the server. Check your connection and try again."
-        padded
-      >
-        <Suspense
-          fallback={
-            <section className="py-24 bg-card/40 border-y border-border/60">
-              <div className="mx-auto max-w-7xl px-6">
-                <PageSkeleton variant="menu-item-grid" count={4} />
-              </div>
-            </section>
-          }
+        {/* Featured vendors — self-contained async component with its own DB call */}
+        <SectionErrorBoundary
+          title="Couldn't load featured vendors"
+          message="We couldn't reach the server. Check your connection and try again."
+          padded
         >
-          <FeaturedVendors />
-        </Suspense>
-      </SectionErrorBoundary>
+          <Suspense
+            fallback={
+              <section className="py-24 bg-card/40 border-y border-border/60">
+                <div className="mx-auto max-w-7xl px-6">
+                  <PageSkeleton variant="menu-item-grid" count={4} />
+                </div>
+              </section>
+            }
+          >
+            <FeaturedVendors />
+          </Suspense>
+        </SectionErrorBoundary>
 
-      {/* Always render — no data dependency */}
-      <HowItWorks />
-      <VendorCTA />
-      <Footer />
-    </main>
+        {/* Always render — no data dependency */}
+        <HowItWorks />
+        <VendorCTA />
+        <Footer />
+      </main>
+    </>
   );
 }

@@ -53,6 +53,7 @@ export interface MenuItem {
 
   // Fabricated UI properties
   vendorName?: string;
+  vendorSlug?: string;
   vendorWhatsappNumber?: string; // Carried from vendor so the cart can send it with the order
   tag?: string | null;
 }

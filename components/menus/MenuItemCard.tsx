@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Plus, Minus } from "lucide-react";
+import Link from "next/link";
+import { Plus, Minus, Store, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import type { MenuItem } from "@/lib/types";
@@ -60,7 +61,20 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
 
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
-        <p className="text-xs text-muted-foreground">{item.vendorName}</p>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          {item.vendorSlug ? (
+            <Link
+              href={`/vendors/${item.vendorSlug}`}
+              className="group/vendor flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary transition-colors"
+              title={`Go to ${item.vendorName} profile`}
+            >
+              <span className="truncate">{item.vendorName}</span>
+              <ExternalLink className="size-3 text-primary/70 group-hover/vendor:text-primary" />
+            </Link>
+          ) : (
+            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground truncate">{item.vendorName}</p>
+          )}
+        </div>
         <h3 className="font-heading font-semibold text-base mt-1 leading-tight flex-1">
           {item.name}
         </h3>
