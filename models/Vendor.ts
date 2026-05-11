@@ -33,10 +33,10 @@ const VendorSchema: Schema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (doc, ret) => {
-        (ret as any).id = (ret as any)._id.toString();
-        delete (ret as any)._id;
-        delete (ret as any).__v;
+      transform: (_doc, ret: Record<string, unknown>) => {
+        ret.id = String(ret._id);
+        delete ret._id;
+        delete ret.__v;
       },
     },
     toObject: { virtuals: true },
@@ -44,8 +44,8 @@ const VendorSchema: Schema = new Schema(
 );
 
 // Virtuals for UI (Fabricated data)
-VendorSchema.virtual("initials").get(function () {
-  const name = this.name as string;
+VendorSchema.virtual("initials").get(function (this: IVendor) {
+  const name = this.name;
   return name
     ? name
         .split(" ")
@@ -55,10 +55,10 @@ VendorSchema.virtual("initials").get(function () {
         .toUpperCase()
     : "";
 });
-VendorSchema.virtual("tagline").get(function () {
+VendorSchema.virtual("tagline").get(function (this: IVendor) {
   return this.description || "The best food on campus";
 });
-VendorSchema.virtual("location").get(function () {
+VendorSchema.virtual("location").get(function (this: IVendor) {
   return this.campus || "Main Campus";
 });
 

@@ -55,11 +55,11 @@ const OrderSchema = new Schema<IOrder>(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (doc, ret) => {
-        (ret as any).id = (ret as any)._id.toString();
-        (ret as any).vendorId = (ret as any).vendorId.toString();
-        delete (ret as any)._id;
-        delete (ret as any).__v;
+      transform: (_doc, ret: Record<string, unknown>) => {
+        ret.id = String(ret._id);
+        ret.vendorId = String(ret.vendorId);
+        delete ret._id;
+        delete ret.__v;
       },
     },
   }

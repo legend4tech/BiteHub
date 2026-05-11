@@ -9,7 +9,6 @@ import { ORDER_STATUS } from "@/lib/constants";
 export async function GET() {
   try {
     const session = await auth();
-    console.log("[ADMIN STATS] Session:", JSON.stringify(session));
     if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

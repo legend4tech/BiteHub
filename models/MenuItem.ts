@@ -28,14 +28,14 @@ const MenuItemSchema: Schema = new Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (doc, ret) => {
-        (ret as any).id = (ret as any)._id.toString();
+      transform: (_doc, ret: Record<string, unknown>) => {
+        ret.id = String(ret._id);
         // Serialize vendorId as string for the frontend
-        if ((ret as any).vendorId) {
-          (ret as any).vendorId = (ret as any).vendorId.toString();
+        if (ret.vendorId) {
+          ret.vendorId = String(ret.vendorId);
         }
-        delete (ret as any)._id;
-        delete (ret as any).__v;
+        delete ret._id;
+        delete ret.__v;
       },
     },
     toObject: { virtuals: true },

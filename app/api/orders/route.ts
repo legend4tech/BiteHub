@@ -127,13 +127,11 @@ export async function POST(request: Request) {
       item.price = dbItem.price;
     }
 
-    // Generate a human-readable order ID
-    // Format: ORD-ULI-XXXX where XXXX is a random 4-digit number
-   const orderId = `CB-${Date.now().toString().slice(-4)}-${Math.random()
-  .toString(36)
-  .substring(2, 5)
-  .toUpperCase()}`
-  
+    // Generate a collision-resistant order ID
+    // Format: CB-<full base-36 timestamp>-<6 UUID hex chars>
+    // e.g. CB-LKZM4X8C-A3F1B2
+    const orderId = `CB-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+
     const order = await Order.create({
       orderId,
       vendorId,

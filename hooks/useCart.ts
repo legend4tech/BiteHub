@@ -65,9 +65,6 @@ export function useCart() {
       const current = readCart();
       if (current.vendorId && current.vendorId !== menuItem.vendorId) return;
 
-          console.log("ADDING ITEM vendorWhatsappNumber", menuItem.vendorWhatsappNumber); // ← add this
-
-
       const existing = current.items.find((ci) => ci.menuItem.id === menuItem.id);
       const items: CartItem[] = existing
         ? current.items.map((ci) =>
@@ -79,11 +76,11 @@ export function useCart() {
       persist({
         items,
         vendorId: menuItem.vendorId,
-        vendorName: menuItem.vendorName || null,
+        vendorName: menuItem.vendorName ?? null,
         // vendorWhatsappNumber comes from the menuItem — MenuItemCard and VendorMenu
         // pass the full item object which includes vendorWhatsappNumber when mapped
         // from the API response in the vendor detail page.
-        vendorWhatsappNumber: menuItem.vendorWhatsappNumber || null,
+        vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
       });
     },
     [persist]
@@ -94,8 +91,8 @@ export function useCart() {
       persist({
         items: [{ menuItem, quantity }],
         vendorId: menuItem.vendorId,
-        vendorName: menuItem.vendorName || null,
-        vendorWhatsappNumber: menuItem.vendorWhatsappNumber || null,
+        vendorName: menuItem.vendorName ?? null,
+        vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
       });
     },
     [persist]

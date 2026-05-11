@@ -35,3 +35,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# compiler output / local build artifacts
+tsc_output.txt
+
+# scripts
+scripts/

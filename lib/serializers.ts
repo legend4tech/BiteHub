@@ -6,7 +6,28 @@
  * explicit mapping so the frontend always receives clean JSON matching lib/types.ts.
  */
 
-export function serializeVendor(doc: any) {
+import type { Types } from "mongoose";
+import type { IVendor } from "@/models/Vendor";
+import type { IMenuItem } from "@/models/MenuItem";
+import type { IOrder } from "@/models/Order";
+
+/**
+ * Represents a .lean() Mongoose document: _id is an ObjectId, timestamps are
+ * Date objects, and Mongoose Document methods are absent.
+ */
+type LeanDoc<T> = Omit<T, keyof import("mongoose").Document> & {
+  _id: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type LeanVendor = LeanDoc<IVendor>;
+export type LeanMenuItem = LeanDoc<IMenuItem>;
+export type LeanOrder = LeanDoc<IOrder>;
+
+// ─── Vendor ───────────────────────────────────────────────────────────────────
+
+export function serializeVendor(doc: LeanVendor | null) {
   if (!doc) return null;
 
   const name: string = doc.name;
@@ -37,7 +58,9 @@ export function serializeVendor(doc: any) {
   };
 }
 
-export function serializeMenuItem(doc: any) {
+// ─── MenuItem ─────────────────────────────────────────────────────────────────
+
+export function serializeMenuItem(doc: LeanMenuItem | null) {
   if (!doc) return null;
 
   return {
@@ -55,7 +78,9 @@ export function serializeMenuItem(doc: any) {
   };
 }
 
-export function serializeOrder(doc: any) {
+// ─── Order ────────────────────────────────────────────────────────────────────
+
+export function serializeOrder(doc: LeanOrder | null) {
   if (!doc) return null;
 
   return {
@@ -66,7 +91,7 @@ export function serializeOrder(doc: any) {
     vendorWhatsappNumber: doc.vendorWhatsappNumber,
     customerName: doc.customerName,
     customerPhone: doc.customerPhone,
-    items: doc.items.map((item: any) => ({
+    items: doc.items.map((item) => ({
       menuItemId: item.menuItemId,
       name: item.name,
       price: item.price,

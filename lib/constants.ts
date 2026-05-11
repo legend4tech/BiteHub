@@ -153,8 +153,8 @@ export const MENU_CATEGORIES: {
 
 export function generateOrderId(): string {
   const ts = Date.now().toString(36).toUpperCase()
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase()
-  return `COOU-${ts}-${rand}`
+  const rand = crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()
+  return `CB-${ts}-${rand}`
 }
 
 export function buildWhatsAppLink(phone: string, message: string): string {
@@ -194,7 +194,3 @@ export function buildOrderWhatsAppMessage(order: {
     .join("\n")
 }
 
-// Vendor default password for MVP — all vendors share this password
-export const VENDOR_DEFAULT_PASSWORD = "vendor123"
-export const ADMIN_PHONE = "admin"
-export const ADMIN_PASSWORD = "admin123"
