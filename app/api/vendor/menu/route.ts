@@ -15,7 +15,17 @@ export async function GET(request: Request) {
     await dbConnect();
     const vendorId = new Types.ObjectId((session.user as any).vendorId);
     
-    const items = await MenuItem.find({ vendorId }).sort({ createdAt: -1 }).lean();
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const skip = (page - 1) * limit;
+
+    const items = await MenuItem.find({ vendorId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+      
     return NextResponse.json(items.map(serializeMenuItem));
   } catch (error) {
     console.error("[vendor/menu GET]", error);

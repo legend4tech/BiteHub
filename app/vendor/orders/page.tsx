@@ -1,91 +1,43 @@
-"use client";
+import { auth } from "@/auth";
+import dbConnect from "@/lib/db";
+import Order from "@/models/Order";
+import { serializeOrder } from "@/lib/serializers";
+import { VendorOrders } from "@/components/vendor/VendorOrders";
+import { Types } from "mongoose";
+import { redirect } from "next/navigation";
+import type { Order as OrderType } from "@/lib/types";
 
-import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
-import { OrderTable } from "@/components/vendor/OrderTable";
-import type { Order, OrderStatus } from "@/lib/types";
-import { ORDER_STATUS_CONFIG } from "@/lib/constants";
-import { PageSkeleton } from "@/components/shared/PageSkeleton";
-import apiClient from "@/lib/axios";
-import { toast } from "sonner";
+export default async function VendorOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const session = await auth();
+  if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
+    redirect("/vendor/login");
+  }
 
-const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "preparing", label: "Preparing" },
-  { value: "ready", label: "Ready" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-];
+  await dbConnect();
+  const vendorId = new Types.ObjectId(session.user.vendorId);
+  
+  const resolvedSearchParams = await searchParams;
+  const activeStatus = resolvedSearchParams.status || "all";
 
-export default function VendorOrdersPage() {
-  const { data: session } = useSession();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filter, setFilter] = useState<OrderStatus | "all">("all");
-  const [loading, setLoading] = useState(true);
+  // Fetch all orders for counts
+  const allOrdersDocs = await Order.find({ vendorId }).sort({ createdAt: -1 }).lean();
+  const allOrders = allOrdersDocs.map(serializeOrder).filter(Boolean) as OrderType[];
 
-  const load = useCallback(async () => {
-    try {
-      const res = await apiClient.get("/vendor/orders");
-      setOrders(res.data);
-    } catch (error) {
-      toast.error("Failed to load orders");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (session?.user) load();
-  }, [session, load]);
-
-  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    try {
-      await apiClient.patch(`/vendor/orders/${orderId}`, { status: newStatus });
-      load();
-    } catch (error) {
-      toast.error("Failed to update order status");
-    }
-  };
-
-  const filtered = filter === "all" ? orders : orders.filter((o) => o.status === filter);
+  // Filter orders by status
+  const ordersDocs = activeStatus === "all"
+    ? allOrdersDocs
+    : await Order.find({ vendorId, status: activeStatus }).sort({ createdAt: -1 }).lean();
+  const orders = ordersDocs.map(serializeOrder).filter(Boolean) as OrderType[];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Orders</h1>
-        <p className="text-sm text-muted-foreground mt-1">{orders.length} total orders</p>
-      </div>
-
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTER_OPTIONS.map((opt) => {
-          const count = opt.value === "all" ? orders.length : orders.filter((o) => o.status === opt.value).length;
-          return (
-            <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all border ${
-                filter === opt.value
-                  ? "bg-primary text-white border-primary"
-                  : "bg-background border-border text-muted-foreground hover:border-primary"
-              }`}
-            >
-              {opt.label}
-              <span className="ml-1.5 text-xs opacity-70">({count})</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="rounded-2xl bg-card border border-border p-6">
-        {loading ? (
-          <PageSkeleton variant="orders-table" count={5} />
-        ) : (
-          <OrderTable orders={filtered} onStatusChange={handleStatusChange} />
-        )}
-      </div>
-    </div>
+    <VendorOrders 
+      orders={orders} 
+      allOrders={allOrders} 
+      activeStatus={activeStatus} 
+    />
   );
 }

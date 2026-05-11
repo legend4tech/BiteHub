@@ -1,97 +1,47 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { MenuItemRow } from "@/components/vendor/MenuItemRow";
+import { auth } from "@/auth";
+import dbConnect from "@/lib/db";
+import MenuItemModel from "@/models/MenuItem";
+import { serializeMenuItem } from "@/lib/serializers";
+import { VendorMenuManagement } from "@/components/vendor/VendorMenuManagement";
+import { Types } from "mongoose";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 import type { MenuItem } from "@/lib/types";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { PageSkeleton } from "@/components/shared/PageSkeleton";
-import apiClient from "@/lib/axios";
-import { toast } from "sonner";
 
-export default function VendorMenuPage() {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function VendorMenuPage() {
+  const session = await auth();
+  if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
+    redirect("/vendor/login");
+  }
 
-  const load = async () => {
-    try {
-      const res = await apiClient.get("/vendor/menu");
-      setItems(res.data);
-    } catch (error) {
-      console.error("Failed to fetch menu items", error);
-      toast.error("Failed to load menu items");
-    } finally {
-      setLoading(false);
-    }
-  };
+  await dbConnect();
+  const vendorId = new Types.ObjectId(session.user.vendorId);
 
-  useEffect(() => {
-    if (session?.user) load();
-  }, [session]);
-
-
-
-  const handleDelete = async (id: string) => {
-    try {
-      await apiClient.delete(`/vendor/menu/${id}`);
-      toast.success("Menu item deleted");
-      load();
-    } catch (error) {
-      toast.error("Failed to delete menu item");
-    }
-  };
-
-  const handleToggle = async (id: string, available: boolean) => {
-    try {
-      await apiClient.patch(`/vendor/menu/${id}`, { isAvailable: available });
-      toast.success(available ? "Item is now available" : "Item marked as out of stock");
-      load();
-    } catch (error) {
-      toast.error("Failed to update status");
-    }
-  };
-
-  const handleEdit = (item: MenuItem) => {
-    const itemId = item.id || (item as any)._id;
-    router.push(`/vendor/menu/${itemId}/edit`);
-  };
+  // Fetch initial 10 items
+  const itemsDocs = await MenuItemModel.find({ vendorId })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .lean();
+    
+  const items = itemsDocs.map(serializeMenuItem).filter(Boolean) as MenuItem[];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold">Menu Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">{items.length} items</p>
+          <p className="text-sm text-muted-foreground mt-1">Add, edit, or remove items from your store</p>
         </div>
-        <Button variant="hero" onClick={() => router.push("/vendor/menu/new")}>
-          <Plus className="size-4" /> Add item
+        <Button variant="hero" asChild className="gap-2">
+          <Link href="/vendor/menu/new">
+            <Plus className="size-4" /> Add Item
+          </Link>
         </Button>
       </div>
 
-      {/* Items list */}
-      <div className="space-y-3">
-        {loading ? (
-          <PageSkeleton variant="menu-management" count={5} />
-        ) : items.length === 0 ? (
-          <EmptyState
-            size="sm"
-            icon="🍽️"
-            showImage={false}
-            title="No menu items yet"
-            description="Start building your menu. Add your first dish and make it visible to students on campus."
-            action={{ label: "Add first item", onClick: () => router.push("/vendor/menu/new") }}
-          />
-        ) : (
-          items.map((item) => (
-            <MenuItemRow key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} onToggleAvailability={handleToggle} />
-          ))
-        )}
-      </div>
+      <VendorMenuManagement initialItems={items} />
     </div>
   );
 }

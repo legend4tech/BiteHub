@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { MenuItem } from "@/lib/types";
 import { MENU_CATEGORIES } from "@/lib/constants";
 import Image from "next/image";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 import { formatPrice } from "@/lib/format";
 
@@ -50,9 +51,18 @@ export function MenuItemRow({ item, onEdit, onDelete, onToggleAvailability }: Me
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(item)}>
           <Pencil className="size-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDelete(item.id)}>
-          <Trash2 className="size-3.5" />
-        </Button>
+        <ConfirmDialog
+          trigger={
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="size-3.5" />
+            </Button>
+          }
+          title="Are you absolutely sure?"
+          description={`This will permanently delete the menu item "${item.name}". This action cannot be undone.`}
+          confirmText="Yes, delete"
+          isDestructive
+          onConfirm={() => onDelete(item.id)}
+        />
       </div>
     </div>
   );

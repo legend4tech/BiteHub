@@ -80,6 +80,7 @@ export interface OrderItem {
 }
 
 export interface Order {
+  id: string;
   orderId: string;
   vendorId: string;
   vendorName: string;
@@ -87,10 +88,11 @@ export interface Order {
   items: OrderItem[];
   customerName: string;
   customerPhone: string;
-  notes?: string;
+  notes?: string | null;
   status: OrderStatus;
-  total: number;
+  totalAmount: number;
   createdAt: string; // ISO string
+  updatedAt: string; // ISO string
 }
 
 // ─── Vendor Auth Session ──────────────────────────────────────────────────────

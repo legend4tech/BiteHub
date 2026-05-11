@@ -23,7 +23,7 @@ import { useForm, Controller } from "react-hook-form";
 
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>;
-  onSave: (data: Omit<MenuItem, "id" | "vendorId" | "vendorName">) => void;
+  onSave: (data: Omit<MenuItem, "id" | "vendorId" | "vendorName">) => void | Promise<void>;
   onCancel: () => void;
 }
 

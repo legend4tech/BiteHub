@@ -2,9 +2,30 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Vendor from "@/models/Vendor";
 import Order from "@/models/Order";
+import MenuItem from "@/models/MenuItem";
 import { serializeOrder } from "@/lib/serializers";
 import { sendVendorOrderNotification } from "@/lib/whatsapp";
+import { ORDER_STATUS } from "@/lib/constants";
+import { z } from "zod";
 
+const orderItemSchema = z.object({
+  menuItemId: z.string().min(1, "Menu item ID is required"),
+  name: z.string().min(1, "Name is required"),
+  price: z.number().min(0, "Price must be non-negative"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1"),
+});
+
+const createOrderSchema = z.object({
+  vendorId: z.string().min(1, "Vendor ID is required"),
+  vendorName: z.string().min(1, "Vendor name is required"),
+  vendorWhatsappNumber: z.string().optional(),
+  vendorPhone: z.string().optional(),
+  items: z.array(orderItemSchema).min(1, "At least one item is required"),
+  customerName: z.string().min(1, "Customer name is required"),
+  customerPhone: z.string().min(1, "Customer phone is required"),
+  notes: z.string().optional(),
+  total: z.number().optional(), // We accept it but ignore it for calculation
+});
 
 export async function GET(request: Request) {
   try {
@@ -46,6 +67,16 @@ export async function POST(request: Request) {
     await dbConnect();
 
     const body = await request.json();
+    
+    // Validate request body using Zod
+    const parsedBody = createOrderSchema.safeParse(body);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsedBody.error.format() },
+        { status: 400 }
+      );
+    }
+
     const {
       vendorId,
       vendorName,
@@ -55,16 +86,13 @@ export async function POST(request: Request) {
       customerName,
       customerPhone,
       notes,
-      total,
-    } = body;
+    } = parsedBody.data;
 
     const finalWhatsapp = vendorWhatsappNumber !== undefined ? vendorWhatsappNumber : vendorPhone;
 
-    // Basic validation
-    // Note: vendorWhatsappNumber might be "" if the vendor hasn't set one, so we check for undefined instead of truthiness.
-    if (!vendorId || !vendorName || finalWhatsapp === undefined || !items?.length || !customerName || !customerPhone) {
+    if (finalWhatsapp === undefined) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Vendor WhatsApp number is required" },
         { status: 400 }
       );
     }
@@ -76,6 +104,27 @@ export async function POST(request: Request) {
         { error: "Vendor not found or inactive" },
         { status: 404 }
       );
+    }
+
+    // Server-side Price Calculation (Fixes Client-Side Pricing Trust Vulnerability)
+    let calculatedTotal = 0;
+    const itemIds = items.map(item => item.menuItemId);
+    const dbMenuItems = await MenuItem.find({ _id: { $in: itemIds }, vendorId }).lean();
+    
+    const dbMenuItemsMap = new Map(dbMenuItems.map((item: any) => [item._id.toString(), item]));
+
+    for (const item of items) {
+      const dbItem: any = dbMenuItemsMap.get(item.menuItemId);
+      if (!dbItem) {
+        return NextResponse.json(
+          { error: `Menu item not found: ${item.name}` },
+          { status: 404 }
+        );
+      }
+      calculatedTotal += dbItem.price * item.quantity;
+      
+      // Update item price to the actual DB price just to be safe
+      item.price = dbItem.price;
     }
 
     // Generate a human-readable order ID
@@ -94,8 +143,8 @@ export async function POST(request: Request) {
       customerName,
       customerPhone,
       notes: notes || "",
-      totalAmount: total,
-      status: "pending",
+      totalAmount: calculatedTotal,
+      status: ORDER_STATUS.PENDING,
     });
 
     // Send WhatsApp Notification (fire and forget to not block response)
@@ -105,8 +154,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ orderId: order.orderId }, { status: 201 });
   } catch (error) {
-  console.error("FULL ERROR", JSON.stringify(error, Object.getOwnPropertyNames(error))); // ← add this
-    console.error("Error creating order:", error);
+    console.error("[POST /api/orders] Error creating order:", error);
     return NextResponse.json(
       { error: "Failed to create order" },
       { status: 500 }

@@ -1,80 +1,43 @@
-"use client";
+"use client"
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { OrderStatusTracker } from "@/components/cart/OrderStatusTracker";
-import { WhatsAppButton } from "@/components/cart/WhatsAppButton";
-import { StatusBadge } from "@/components/vendor/StatusBadge";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { FetchError } from "@/components/shared/FetchError";
-import { PageSkeleton } from "@/components/shared/PageSkeleton";
-import { RefreshCw, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/format";
-import apiClient from "@/lib/axios";
-import type { OrderStatus } from "@/lib/types";
-
-interface OrderItem {
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface Order {
-  orderId: string;
-  vendorId: string;
-  vendorName: string;
-  vendorWhatsappNumber: string;
-  customerName: string;
-  customerPhone: string;
-  items: OrderItem[];
-  notes?: string;
-  totalAmount: number;
-  status: OrderStatus;
-  createdAt: string;
-}
+import { useState } from "react"
+import { useParams } from "next/navigation"
+import Link from "next/link"
+import { Navbar } from "@/components/Navbar"
+import { Footer } from "@/components/Footer"
+import { OrderStatusTracker } from "@/components/cart/OrderStatusTracker"
+import { WhatsAppButton } from "@/components/cart/WhatsAppButton"
+import { StatusBadge } from "@/components/vendor/StatusBadge"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { FetchError } from "@/components/shared/FetchError"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { RefreshCw, Home } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { formatPrice } from "@/lib/format"
+import type { OrderStatus } from "@/lib/types"
+import { useOrder } from "@/hooks/queries/useOrder"
 
 export default function OrderPage() {
-  const { orderId } = useParams<{ orderId: string }>();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const { orderId } = useParams<{ orderId: string }>()
+  const [lastRefreshed, setLastRefreshed] = useState(new Date())
 
+  // Fetch order using React Query
+  const {
+    data: order,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useOrder(orderId)
 
-
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const response = await apiClient.get(`/orders?orderId=${orderId}`);
-      setOrder(response.data);
-      setLastRefreshed(new Date());
-    } catch (err: any) {
-      if (err?.response?.status === 404) {
-        setError("not_found");
-      } else {
-        setError("server_error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleRefresh = () => {
-    setLoading(true);
-    load();
-  };
+  const handleRefresh = async () => {
+    await refetch()
+    setLastRefreshed(new Date())
+  }
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-background text-foreground">
         <Navbar />
@@ -83,32 +46,33 @@ export default function OrderPage() {
         </div>
         <Footer />
       </main>
-    );
+    )
   }
 
-  // Not found
-  if (error === "not_found" || !order) {
-    return (
-      <main className="min-h-screen bg-background text-foreground">
-        <Navbar />
-        <EmptyState
-        
-          title="Order not found"
-          description={`We couldn't find an order with ID "${orderId}". Please check the ID or try again later.`}
-          action={{
-            label: "Go home",
-            href: "/",
-            icon: <Home className="size-4" />,
-          }}
-          className="py-40"
-        />
-        <Footer />
-      </main>
-    );
-  }
+  // Error states
+  if (isError || !order) {
+    const isNotFound = (error as any)?.response?.status === 404
 
-  // Server error
-  if (error === "server_error") {
+    if (isNotFound) {
+      return (
+        <main className="min-h-screen bg-background text-foreground">
+          <Navbar />
+          <EmptyState
+            title="Order not found"
+            description={`We couldn't find an order with ID "${orderId}". Please check the ID or try again later.`}
+            action={{
+              label: "Go home",
+              href: "/",
+              icon: <Home className="size-4" />,
+            }}
+            className="py-40"
+          />
+          <Footer />
+        </main>
+      )
+    }
+
+    // Server error
     return (
       <main className="min-h-screen bg-background text-foreground">
         <Navbar />
@@ -121,23 +85,27 @@ export default function OrderPage() {
         />
         <Footer />
       </main>
-    );
+    )
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground pb-20">
+    <main className="min-h-screen bg-background pb-20 text-foreground">
       <Navbar />
 
-      <div className="mx-auto max-w-2xl px-6 py-12 space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6 px-6 py-12">
         {/* Order ID card */}
-        <div className="rounded-3xl bg-card border border-border p-8">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider">
+        <div className="rounded-3xl border border-border bg-card p-8">
+          <p className="text-sm font-semibold tracking-wider text-primary uppercase">
             Order placed!
           </p>
-          <h1 className="font-heading text-3xl font-bold mt-1">{order.orderId}</h1>
-          <p className="text-muted-foreground text-sm mt-2">
+          <h1 className="mt-1 font-heading text-3xl font-bold">
+            {order.orderId}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             from{" "}
-            <span className="font-semibold text-foreground">{order.vendorName}</span>
+            <span className="font-semibold text-foreground">
+              {order.vendorName}
+            </span>
             {" · "}
             {new Date(order.createdAt).toLocaleDateString("en-NG", {
               month: "short",
@@ -154,14 +122,17 @@ export default function OrderPage() {
         </div>
 
         {/* Status tracker */}
-        <div className="rounded-3xl bg-card border border-border p-8">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-heading font-bold text-lg">Order status</h2>
+        <div className="rounded-3xl border border-border bg-card p-8">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="font-heading text-lg font-bold">Order status</h2>
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isRefetching}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
             >
-              <RefreshCw className="size-3.5" />
+              <RefreshCw
+                className={`size-3.5 ${isRefetching ? "animate-spin" : ""}`}
+              />
               Refresh ·{" "}
               {lastRefreshed.toLocaleTimeString("en-NG", {
                 hour: "2-digit",
@@ -173,14 +144,19 @@ export default function OrderPage() {
         </div>
 
         {/* Items */}
-        <div className="rounded-3xl bg-card border border-border p-8">
-          <h2 className="font-heading font-bold text-lg mb-4">Your items</h2>
+        <div className="rounded-3xl border border-border bg-card p-8">
+          <h2 className="mb-4 font-heading text-lg font-bold">Your items</h2>
           <div className="space-y-3">
             {order.items.map((item) => (
-              <div key={item.menuItemId} className="flex justify-between text-sm">
+              <div
+                key={item.menuItemId}
+                className="flex justify-between text-sm"
+              >
                 <span>
                   {item.name}{" "}
-                  <span className="text-muted-foreground">×{item.quantity}</span>
+                  <span className="text-muted-foreground">
+                    ×{item.quantity}
+                  </span>
                 </span>
                 <span className="font-semibold">
                   {formatPrice(item.price * item.quantity)}
@@ -188,9 +164,11 @@ export default function OrderPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between font-bold mt-4 pt-4 border-t border-border">
+          <div className="mt-4 flex justify-between border-t border-border pt-4 font-bold">
             <span>Total</span>
-            <span className="text-primary">{formatPrice(order.totalAmount)}</span>
+            <span className="text-primary">
+              {formatPrice(order.totalAmount)}
+            </span>
           </div>
           {order.notes && (
             <div className="mt-4 rounded-xl bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
@@ -201,11 +179,11 @@ export default function OrderPage() {
         </div>
 
         {/* WhatsApp */}
-        <div className="rounded-3xl bg-card border border-border p-8 space-y-3">
-          <h2 className="font-heading font-bold text-lg">Contact vendor</h2>
+        <div className="space-y-3 rounded-3xl border border-border bg-card p-8">
+          <h2 className="font-heading text-lg font-bold">Contact vendor</h2>
           <p className="text-sm text-muted-foreground">
-            Send your order details to the vendor via WhatsApp to confirm and get
-            updates.
+            Send your order details to the vendor via WhatsApp to confirm and
+            get updates.
           </p>
           <WhatsAppButton
             vendorPhone={order.vendorWhatsappNumber}
@@ -220,5 +198,5 @@ export default function OrderPage() {
         </div>
       </div>
     </main>
-  );
+  )
 }

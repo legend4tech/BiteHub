@@ -7,8 +7,11 @@ import { serializeOrder } from "@/lib/serializers";
 
 /**
  * GET /api/vendor/orders
- * Returns all orders for the authenticated vendor, sorted newest first.
- * Optionally accepts ?status=pending|confirmed|preparing|ready|completed|cancelled
+ * Returns orders for the authenticated vendor, sorted newest first.
+ *
+ * Query params:
+ *  - status: filter by order status (or "all" to skip)
+ *  - limit: max number of orders to return (default: no limit)
  */
 export async function GET(request: Request) {
   try {
@@ -22,13 +25,19 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    const limit = parseInt(searchParams.get("limit") || "0", 10);
 
     const query: Record<string, any> = { vendorId };
     if (status && status !== "all") {
       query.status = status;
     }
 
-    const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
+    let q = Order.find(query).sort({ createdAt: -1 });
+    if (limit > 0) {
+      q = q.limit(limit);
+    }
+
+    const orders = await q.lean();
     return NextResponse.json(orders.map(serializeOrder));
   } catch (error) {
     console.error("[vendor/orders GET]", error);

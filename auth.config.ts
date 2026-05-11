@@ -11,6 +11,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const role = (auth?.user as any)?.role;
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
       const isLoginRoute = nextUrl.pathname === "/admin/login";
       const isOnVendor = nextUrl.pathname === "/vendor" || nextUrl.pathname.startsWith("/vendor/");
@@ -36,6 +37,11 @@ export const authConfig: NextAuthConfig = {
           return false;
         }
         
+        // Block vendors from admin pages
+        if (role !== "admin" && role !== "superadmin") {
+           return Response.redirect(new URL("/vendor/dashboard", nextUrl));
+        }
+
         // Logged in user accessing /admin routes
         return true;
       }
@@ -52,9 +58,11 @@ export const authConfig: NextAuthConfig = {
           return Response.redirect(new URL("/vendor/login", nextUrl));
         }
 
-        // Only allow vendors (and possibly admins if needed, but for now restrict to vendors)
-        // NextAuth authorized callback doesn't have full session token easily without typing, 
-        // but we'll allow standard isLoggedIn. More strict checks can be in API or pages.
+        // Only allow vendors on vendor pages
+        if (role !== "vendor") {
+           return Response.redirect(new URL("/admin", nextUrl));
+        }
+
         return true;
       }
 

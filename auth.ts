@@ -5,6 +5,7 @@ import { CredentialsSignin } from "next-auth";
 import dbConnect from "@/lib/db";
 import AdminUser from "@/models/AdminUser"; 
 import VendorUserModel from "@/models/VendorUser";
+import VendorModel from "@/models/Vendor";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -71,9 +72,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             VendorUserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
           }
           
+          // Fetch the store name for vendor logins
+          let displayName = user.name || user.email;
+          if (role === "vendor" && vendorId) {
+            const vendor = await VendorModel.findById(vendorId).select("name").lean();
+            if (vendor) displayName = (vendor as any).name;
+          }
+
           return {
             id: user._id.toString(),
-            name: user.name || user.email,
+            name: displayName,
             email: user.email,
             role: role,
             vendorId: vendorId,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import apiClient from "@/lib/axios";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Store, ShoppingBag, CheckCircle2, Clock, Users,
   TrendingUp, Plus, X, Power, ArrowLeft, Loader2,
@@ -12,17 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/format";
@@ -194,50 +185,33 @@ function AddLoginModal({
 
 export default function AdminPage() {
   const [tab, setTab] = useState<"overview" | "vendors">("overview");
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [vendors, setVendors] = useState<AdminVendor[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [loadingVendors, setLoadingVendors] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchStats = useCallback(async () => {
-    setLoadingStats(true);
-    try {
+  const { data: stats, isLoading: loadingStats, refetch: fetchStats } = useQuery<AdminStats>({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
       const res = await apiClient.get("/admin/stats");
-      setStats(res.data);
-    } catch (error) {
-      console.error("Failed to load stats", error);
-    } finally {
-      setLoadingStats(false);
-    }
-  }, []);
+      return res.data;
+    },
+  });
 
-  const fetchVendors = useCallback(async () => {
-    setLoadingVendors(true);
-    try {
+  const { data: vendorsData, isLoading: loadingVendors, refetch: fetchVendors } = useQuery<AdminVendor[]>({
+    queryKey: ["admin-vendors"],
+    queryFn: async () => {
       const res = await apiClient.get("/admin/vendors");
-      setVendors(res.data);
-    } catch (error) {
-      console.error("Failed to load vendors", error);
-    } finally {
-      setLoadingVendors(false);
-    }
-  }, []);
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchStats();
-    fetchVendors();
-  }, [fetchStats, fetchVendors]);
+  const vendors = vendorsData || [];
 
   const toggleVendorActive = async (vendor: AdminVendor) => {
     setTogglingId(vendor.id);
     try {
       await apiClient.patch(`/admin/vendors/${vendor.id}`, { isActive: !vendor.isActive });
-
-      setVendors((prev) =>
-        prev.map((v) => v.id === vendor.id ? { ...v, isActive: !v.isActive } : v)
-      );
+      await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
       toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
     } catch (error: any) {
       toast.error(error.response?.data?.error || "An error occurred");
@@ -274,34 +248,22 @@ export default function AdminPage() {
               Refresh
             </Button>
             
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+            <ConfirmDialog
+              trigger={
                 <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
                   <Power className="size-3.5" />
                   Logout
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will log you out of the secure admin portal. You will need to re-authenticate to access it again.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => {
-                      toast.success("Successfully logged out");
-                      signOut({ callbackUrl: "/admin/login" });
-                    }}
-                  >
-                    Yes, log out
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              }
+              title="Are you absolutely sure?"
+              description="This will log you out of the secure admin dashboard. You will need to re-authenticate to access it again."
+              confirmText="Yes, log out"
+              isDestructive
+              onConfirm={() => {
+                toast.success("Successfully logged out");
+                signOut({ callbackUrl: "/admin/login" });
+              }}
+            />
           </div>
         </div>
       </header>

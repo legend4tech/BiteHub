@@ -17,7 +17,7 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   notes?: string;
   totalAmount: number;
-  status: "pending" | "confirmed" | "preparing" | "ready" | "cancelled";
+  status: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -47,7 +47,7 @@ const OrderSchema = new Schema<IOrder>(
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "preparing", "ready", "cancelled"],
+      enum: ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"],
       default: "pending",
     },
   },
@@ -65,10 +65,16 @@ const OrderSchema = new Schema<IOrder>(
   }
 );
 
-// Index for fast lookups by orderId (used by order page)
-// Removed manual index because unique: true in schema already creates it
-// Index for vendor dashboard — fetching all orders for a vendor
-OrderSchema.index({ vendorId: 1, createdAt: -1 });
+// orderId is already indexed via unique:true above.
+//
+// Compound index: vendorId → status → createdAt
+// Covers ALL vendor queries in one index:
+//   - Stats aggregation:  $match vendorId  → $group by status
+//   - Orders list:        $match vendorId  → $sort  by createdAt
+//   - Filtered list:      $match vendorId + status → $sort by createdAt
+// MongoDB uses the leftmost prefix, so { vendorId } and { vendorId, status }
+// queries are also covered without a separate index.
+OrderSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
 
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", OrderSchema);

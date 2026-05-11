@@ -4,10 +4,12 @@ import VendorModel from "@/models/Vendor";
 import VendorUserModel from "@/models/VendorUser";
 import OrderModel from "@/models/Order";
 import { auth } from "@/auth";
+import { ORDER_STATUS } from "@/lib/constants";
 
 export async function GET() {
   try {
     const session = await auth();
+    console.log("[ADMIN STATS] Session:", JSON.stringify(session));
     if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -41,7 +43,7 @@ export async function GET() {
 
     // Revenue: sum totalAmount for completed orders
     const revenueAgg = await OrderModel.aggregate([
-      { $match: { status: "completed" } },
+      { $match: { status: ORDER_STATUS.COMPLETED } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
     ]);
     const totalRevenue = revenueAgg[0]?.total ?? 0;
@@ -51,11 +53,11 @@ export async function GET() {
       activeVendors,
       totalOrders,
       todayOrders,
-      pendingOrders: byStatus["pending"] ?? 0,
-      confirmedOrders: byStatus["confirmed"] ?? 0,
-      preparingOrders: byStatus["preparing"] ?? 0,
-      completedOrders: byStatus["completed"] ?? 0,
-      cancelledOrders: byStatus["cancelled"] ?? 0,
+      pendingOrders: byStatus[ORDER_STATUS.PENDING] ?? 0,
+      confirmedOrders: byStatus[ORDER_STATUS.CONFIRMED] ?? 0,
+      preparingOrders: byStatus[ORDER_STATUS.PREPARING] ?? 0,
+      completedOrders: byStatus[ORDER_STATUS.COMPLETED] ?? 0,
+      cancelledOrders: byStatus[ORDER_STATUS.CANCELLED] ?? 0,
       totalRevenue,
     });
   } catch (error) {
