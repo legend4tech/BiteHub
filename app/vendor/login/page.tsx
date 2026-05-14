@@ -31,7 +31,7 @@ export default function VendorLoginPage() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
 
   const form = useForm<VendorLoginValues>({
     resolver: zodResolver(vendorLoginSchema as any),
@@ -39,7 +39,7 @@ export default function VendorLoginPage() {
   });
 
   const onSubmit = async (values: VendorLoginValues) => {
-    setError("");
+
     setLoading(true);
     try {
       const res = await signIn("credentials", {
@@ -49,13 +49,17 @@ export default function VendorLoginPage() {
         loginType: "vendor",
       });
       if (res?.error) {
-        setError(res.error === "CredentialsSignin" ? "Invalid email or password." : "Login failed. Please try again.");
+        if (res.error.includes("Too Many Requests")) {
+          toast.error(res.error);
+        } else {
+          toast.error("Invalid email or password");
+        }
       } else {
         toast.success("Login successful. Welcome back!");
         router.replace("/vendor/dashboard");
       }
     } catch {
-      setError("An unexpected error occurred.");
+      toast.error("Too Many Requests, try again in 1 minute");
     } finally {
       setLoading(false);
     }
@@ -108,12 +112,7 @@ export default function VendorLoginPage() {
               <p className="text-muted-foreground mt-1.5 text-sm">Sign in to your vendor dashboard</p>
             </div>
 
-            {/* Error */}
-            {error && (
-              <div className="mb-5 rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
+
 
             {/* Form */}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

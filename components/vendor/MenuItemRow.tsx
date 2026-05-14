@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MenuItem } from "@/lib/types";
@@ -13,10 +14,17 @@ interface MenuItemRowProps {
   item: MenuItem;
   onEdit: (item: MenuItem) => void;
   onDelete: (id: string) => void;
-  onToggleAvailability: (id: string, available: boolean) => void;
+  onToggleAvailability: (id: string, available: boolean) => void | Promise<void>;
 }
 
 export function MenuItemRow({ item, onEdit, onDelete, onToggleAvailability }: MenuItemRowProps) {
+  const [localAvailable, setLocalAvailable] = useState(item.isAvailable);
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    setLocalAvailable(item.isAvailable);
+  }, [item.isAvailable]);
+
   const cat = MENU_CATEGORIES.find((c) => c.value === item.category);
 
   return (
@@ -37,12 +45,25 @@ export function MenuItemRow({ item, onEdit, onDelete, onToggleAvailability }: Me
 
       {/* Availability toggle */}
       <button
-        onClick={() => onToggleAvailability(item.id, !item.isAvailable)}
-        className="shrink-0"
-        title={item.isAvailable ? "Mark unavailable" : "Mark available"}
+        onClick={async () => {
+          if (isToggling) return;
+          const newValue = !localAvailable;
+          setLocalAvailable(newValue);
+          setIsToggling(true);
+          try {
+            await onToggleAvailability(item.id, newValue);
+          } catch (error) {
+            setLocalAvailable(!newValue);
+          } finally {
+            setIsToggling(false);
+          }
+        }}
+        disabled={isToggling}
+        className={`shrink-0 transition-opacity ${isToggling ? "opacity-50 cursor-not-allowed" : ""}`}
+        title={localAvailable ? "Mark unavailable" : "Mark available"}
       >
-        <div className={`w-10 h-6 rounded-full transition-colors relative ${item.isAvailable ? "bg-primary" : "bg-muted"}`}>
-          <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${item.isAvailable ? "translate-x-4" : ""}`} />
+        <div className={`w-10 h-6 rounded-full transition-colors relative ${localAvailable ? "bg-primary" : "bg-muted"}`}>
+          <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${localAvailable ? "translate-x-4" : ""} ${isToggling ? "scale-75" : ""}`} />
         </div>
       </button>
 

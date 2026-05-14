@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useOptimistic } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import apiClient from "@/lib/axios";
@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Store, ShoppingBag, CheckCircle2, Clock, Users,
   TrendingUp, Plus, X, Power, ArrowLeft, Loader2,
-  ChevronRight, RefreshCw, KeyRound, Eye, EyeOff,
+  ChevronRight, RefreshCw, KeyRound, Eye, EyeOff, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -184,7 +184,7 @@ function AddLoginModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"overview" | "vendors">("overview");
+  const [tab, setTab] = useState<"overview" | "vendors" | "feedback">("overview");
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null);
   const queryClient = useQueryClient();
@@ -205,22 +205,40 @@ export default function AdminPage() {
     },
   });
 
+  const { data: feedbacks, isLoading: loadingFeedback } = useQuery<any[]>({
+    queryKey: ["admin-feedback"],
+    queryFn: async () => {
+      const res = await apiClient.get("/admin/feedback");
+      return res.data;
+    },
+  });
+
   const vendors = vendorsData || [];
 
-  const toggleVendorActive = async (vendor: AdminVendor) => {
-    setTogglingId(vendor.id);
-    try {
-      await apiClient.patch(`/admin/vendors/${vendor.id}`, { isActive: !vendor.isActive });
-      await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-      toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "An error occurred");
-    } finally {
-      setTogglingId(null);
-    }
-  };
+  const [isPending, startTransition] = useTransition();
+  const [optimisticVendors, addOptimisticVendor] = useOptimistic(
+    vendors,
+    (state, updatedVendor: AdminVendor) =>
+      state.map((v) => (v.id === updatedVendor.id ? updatedVendor : v))
+  );
 
-  const noAccountVendors = vendors.filter((v) => !v.account);
+  const noAccountVendors = optimisticVendors.filter((v) => !v.account);
+
+  const toggleVendorActive = (vendor: AdminVendor) => {
+    setTogglingId(vendor.id);
+    addOptimisticVendor({ ...vendor, isActive: !vendor.isActive });
+    startTransition(async () => {
+      try {
+        await apiClient.patch(`/admin/vendors/${vendor.id}`, { isActive: !vendor.isActive });
+        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
+        toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
+      } catch (error: any) {
+        toast.error(error.response?.data?.error || "An error occurred");
+      } finally {
+        setTogglingId(null);
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -243,10 +261,6 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => { fetchStats(); fetchVendors(); }}>
-              <RefreshCw className="size-3.5" />
-              Refresh
-            </Button>
             
             <ConfirmDialog
               trigger={
@@ -271,7 +285,7 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Tab nav */}
         <div className="flex items-center gap-1 border-b border-border">
-          {(["overview", "vendors"] as const).map((t) => (
+          {(["overview", "vendors", "feedback"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -354,8 +368,8 @@ export default function AdminPage() {
             {/* Vendors list */}
             <div className="rounded-3xl border border-border bg-card overflow-hidden">
               <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-                <p className="font-semibold text-sm">{vendors.length} vendors total</p>
-                <p className="text-xs text-muted-foreground">{vendors.filter((v) => v.isActive).length} active · {noAccountVendors.length} without login</p>
+                <p className="font-semibold text-sm">{optimisticVendors.length} vendors total</p>
+                <p className="text-xs text-muted-foreground">{optimisticVendors.filter((v) => v.isActive).length} active · {noAccountVendors.length} without login</p>
               </div>
 
               {loadingVendors ? (
@@ -380,7 +394,7 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-border">
-                  {vendors.map((vendor) => {
+                  {optimisticVendors.map((vendor) => {
                     const initials = vendor.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
                     return (
                       <div key={vendor.id} className="px-6 py-4 flex items-center gap-4 hover:bg-muted/30 transition-colors">
@@ -430,16 +444,12 @@ export default function AdminPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "opacity-50 cursor-not-allowed" : ""}`}
                             title={vendor.isActive ? "Deactivate storefront" : "Activate storefront"}
                             onClick={() => toggleVendorActive(vendor)}
                             disabled={togglingId === vendor.id}
                           >
-                            {togglingId === vendor.id ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : (
-                              <Power className={`size-4 ${vendor.isActive ? "text-destructive" : "text-green-600"}`} />
-                            )}
+                            <Power className={`size-4 ${vendor.isActive ? "text-destructive" : "text-green-600"} ${togglingId === vendor.id ? "scale-75" : ""}`} />
                           </Button>
 
                           <Link href={`/vendors/${vendor.slug}`} target="_blank">
@@ -451,6 +461,61 @@ export default function AdminPage() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── FEEDBACK ── */}
+        {tab === "feedback" && (
+          <div className="space-y-8">
+            <div>
+              <h1 className="font-heading font-bold text-2xl">Platform Feedback</h1>
+              <p className="text-sm text-muted-foreground mt-1">What users are saying about CampusBites</p>
+            </div>
+
+            <div className="rounded-[28px] border border-border bg-card shadow-sm p-6">
+              {loadingFeedback ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-20 rounded-xl bg-muted/50 animate-pulse" />
+                  ))}
+                </div>
+              ) : feedbacks?.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No feedback received yet.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {feedbacks?.map((feedback: any) => (
+                    <div key={feedback._id} className="p-4 rounded-2xl border border-border bg-muted/30 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`size-4 ${feedback.rating >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(feedback.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {feedback.comments && (
+                        <p className="text-sm text-foreground leading-relaxed">{feedback.comments}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {feedback.orderId && (
+                          <span>Order: <span className="font-mono text-primary">{feedback.orderId}</span></span>
+                        )}
+                        {feedback.vendorId && (
+                          <span>· Vendor: <span className="font-mono">{feedback.vendorId}</span></span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

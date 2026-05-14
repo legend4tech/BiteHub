@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { DashboardStats } from "@/components/vendor/DashboardStats"
 import { OrderTable } from "@/components/vendor/OrderTable"
 import type { OrderStatus } from "@/lib/types"
@@ -10,17 +10,51 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import { RefreshCw, ArrowRight } from "lucide-react"
+import { RefreshCw, ArrowRight, Star } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
-import { useVendorStats } from "@/hooks/queries/useVendorStats"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
+import { useVendorStats } from "@/hooks/queries/useVendorStats"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 
 export default function VendorDashboardPage() {
   const { data: session, status } = useSession()
   const queryClient = useQueryClient()
   const isReady = !!session?.user
 
+  const [showPlatformFeedbackModal, setShowPlatformFeedbackModal] = useState(false)
+  const [platformRating, setPlatformRating] = useState(0)
+  const [platformComments, setPlatformComments] = useState("")
+  const [hoveredRating, setHoveredRating] = useState(0)
+
+  useEffect(() => {
+    if (isReady) {
+      const submitted = localStorage.getItem("vendor_feedback_submitted");
+      const snoozed = localStorage.getItem("vendor_feedback_snoozed");
+      
+      if (!submitted) {
+        if (!snoozed) {
+          setShowPlatformFeedbackModal(true);
+        } else {
+          const snoozeTime = parseInt(snoozed, 10);
+          if (new Date().getTime() > snoozeTime) {
+            setShowPlatformFeedbackModal(true);
+          }
+        }
+      }
+    }
+  }, [isReady]);
   // ── Stats: server-side aggregation, just a handful of numbers ─────────────
   // No matter how many orders exist, MongoDB counts them — not the browser.
   const {
@@ -39,11 +73,9 @@ export default function VendorDashboardPage() {
     refetch: refetchOrders,
   } = useVendorOrders({ limit: 10, enabled: isReady })
 
-  const refreshing = refreshingStats || refreshingOrders
-  const handleRefresh = () => {
-    refetchStats()
-    refetchOrders()
-  }
+
+
+
 
   if (status === "loading") {
     return <PageSkeleton variant="dashboard" />
@@ -92,16 +124,15 @@ export default function VendorDashboardPage() {
               })}
             </p>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="mt-1 flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5"
+            onClick={() => setShowPlatformFeedbackModal(true)}
           >
-            <RefreshCw
-              className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
+            <Star className="size-4" />
+            Rate Platform
+          </Button>
         </div>
 
         {/* Total Revenue banner */}
@@ -181,7 +212,101 @@ export default function VendorDashboardPage() {
             )}
           </div>
         </div>
+
+
       </div>
+
+      {/* ── Platform Feedback Modal for Vendors ────────────────── */}
+      <AlertDialog open={showPlatformFeedbackModal} onOpenChange={setShowPlatformFeedbackModal}>
+        <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-heading text-xl font-bold">Rate the Platform</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              How was your experience using CampusBites as a vendor? We'd love to hear your thoughts!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-semibold mb-1.5 block">Rating</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setPlatformRating(star)}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    className="p-1 transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`size-6 transition-colors ${
+                        (hoveredRating || platformRating) >= star
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold mb-1.5 block">Comments</label>
+              <textarea
+                value={platformComments}
+                onChange={(e) => setPlatformComments(e.target.value)}
+                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                rows={4}
+                placeholder="Tell us what you liked or what we can improve..."
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel 
+              onClick={() => {
+                const snoozeTime = new Date().getTime() + 5 * 24 * 60 * 60 * 1000; // 5 days
+                localStorage.setItem("vendor_feedback_snoozed", snoozeTime.toString());
+                setShowPlatformFeedbackModal(false);
+              }} 
+              className="w-full sm:w-auto"
+            >
+              Maybe later
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                try {
+                  const response = await fetch("/api/feedback", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      vendorId: (session?.user as any)?.vendorId,
+                      platform: { rating: platformRating, comments: platformComments },
+                    }),
+                  });
+                  
+                  if (response.ok) {
+                    toast.success("Feedback submitted! Thank you.");
+                    localStorage.setItem("vendor_feedback_submitted", "true");
+                    setShowPlatformFeedbackModal(false);
+                    setPlatformRating(0);
+                    setPlatformComments("");
+                  } else {
+                    toast.error("Failed to submit feedback.");
+                  }
+                } catch (error) {
+                  toast.error("An error occurred.");
+                }
+              }}
+              disabled={platformRating === 0}
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SectionErrorBoundary>
   )
 }

@@ -8,6 +8,7 @@ import VendorUserModel from "@/models/VendorUser";
 import VendorModel from "@/models/Vendor";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -30,6 +31,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const { email, password, loginType } = parsedCredentials.data;
           
+          if (isRateLimitingEnabled) {
+            const { success, reset } = await strictRateLimiter.limit(`login_email_${email.toLowerCase()}`);
+            if (!success) {
+              const seconds = Math.ceil((reset - Date.now()) / 1000);
+              if (seconds < 60) {
+                throw new CredentialsSignin(`Too Many Requests, try again in ${seconds} seconds`);
+              } else {
+                const minutes = Math.ceil(seconds / 60);
+                throw new CredentialsSignin(`Too Many Requests, try again in ${minutes} minute${minutes > 1 ? 's' : ''}`);
+              }
+            }
+          }
+
           await dbConnect();
           
           let user = null;

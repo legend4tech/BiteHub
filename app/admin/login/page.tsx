@@ -47,14 +47,18 @@ export default function AdminLoginPage() {
         loginType: "admin",
       });
       if (res?.error) {
-        toast.error("Invalid email or password");
+        if (res.error.includes("Too Many Requests")) {
+          toast.error(res.error);
+        } else {
+          toast.error("Invalid email or password");
+        }
       } else {
         toast.success("Welcome back, Admin!");
         router.push("/admin");
         router.refresh();
       }
     } catch {
-      toast.error("An error occurred during login.");
+      toast.error("Too Many Requests, try again in 1 minute");
     } finally {
       setIsLoading(false);
     }

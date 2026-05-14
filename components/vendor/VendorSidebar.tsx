@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
@@ -35,6 +36,7 @@ const navItems = [
   { href: "/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vendor/menu",      label: "Menu",      icon: UtensilsCrossed },
   { href: "/vendor/orders",    label: "Orders",    icon: ClipboardList },
+  { href: "/vendor/feedback",  label: "Feedback",  icon: Star },
 ];
 
 function NavLinks({ pathname, collapsed = false, onNavigate }: { pathname: string; collapsed?: boolean; onNavigate?: () => void }) {

@@ -25,6 +25,9 @@ export const authConfig: NextAuthConfig = {
       if (isOnAdmin) {
         if (isLoginRoute) {
           if (isLoggedIn) {
+            if (role === "vendor") {
+              return Response.redirect(new URL("/vendor/dashboard", nextUrl));
+            }
             // Redirect to admin dashboard if already logged in
             return Response.redirect(new URL("/admin", nextUrl));
           }
@@ -49,6 +52,9 @@ export const authConfig: NextAuthConfig = {
       if (isOnVendor) {
         if (isVendorLoginRoute) {
           if (isLoggedIn) {
+            if (role === "admin" || role === "superadmin") {
+              return Response.redirect(new URL("/admin", nextUrl));
+            }
             return Response.redirect(new URL("/vendor/dashboard", nextUrl));
           }
           return true;

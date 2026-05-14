@@ -67,9 +67,12 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       });
 
       const { orderId } = response.data;
-      clearCart();
       toast.success("Order placed successfully!");
       router.push(`/order/${orderId}`);
+      // Delay clearing the cart to avoid UI glitch before redirection
+      setTimeout(() => {
+        clearCart();
+      }, 500);
     } catch (error) {
       // API or network error
       const apiError = (error as any).response?.data?.error;

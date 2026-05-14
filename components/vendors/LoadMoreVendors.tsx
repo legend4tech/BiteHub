@@ -48,6 +48,7 @@ export function LoadMoreVendors({
   } = useVendors({
     q: searchQuery,
     initialPage: initialPage + 1,
+    limit: 20,
     enabled: true,
   })
 

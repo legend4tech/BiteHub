@@ -49,6 +49,18 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --color-status-pending: var(--status-pending);
+    --color-status-confirmed: var(--status-confirmed);
+    --color-status-preparing: var(--status-preparing);
+    --color-status-ready: var(--status-ready);
+    --color-status-completed: var(--status-completed);
+    --color-status-cancelled: var(--status-cancelled);
+    --color-status-pending-foreground: var(--status-pending-foreground);
+    --color-status-confirmed-foreground: var(--status-confirmed-foreground);
+    --color-status-preparing-foreground: var(--status-preparing-foreground);
+    --color-status-ready-foreground: var(--status-ready-foreground);
+    --color-status-completed-foreground: var(--status-completed-foreground);
+    --color-status-cancelled-foreground: var(--status-cancelled-foreground);
 }
 
 /* Light theme — Primary: #FF6B00, Background: #FFF4EC, Text: #1A1A1A */
@@ -85,6 +97,18 @@
     --sidebar-accent-foreground:  oklch(0.580 0.220 41.5);
     --sidebar-border:             oklch(0.912 0.022 56);
     --sidebar-ring:               oklch(0.638 0.225 41.5);
+    --status-pending: #f59e0b;
+    --status-confirmed: #3b82f6;
+    --status-preparing: #f97316;
+    --status-ready: #8b5cf6;
+    --status-completed: #10b981;
+    --status-cancelled: #ef4444;
+    --status-pending-foreground: #b45309;
+    --status-confirmed-foreground: #1d4ed8;
+    --status-preparing-foreground: #c2410c;
+    --status-ready-foreground: #6d28d9;
+    --status-completed-foreground: #047857;
+    --status-cancelled-foreground: #b91c1c;
 }
 
 /* Dark theme — warm brown-black surfaces, orange primary glows */
@@ -120,6 +144,18 @@
     --sidebar-accent-foreground:  oklch(0.672 0.228 41.5);
     --sidebar-border:             oklch(1 0 0 / 9%);
     --sidebar-ring:               oklch(0.672 0.228 41.5);
+    --status-pending: #fbbf24;
+    --status-confirmed: #60a5fa;
+    --status-preparing: #fb923c;
+    --status-ready: #a78bfa;
+    --status-completed: #34d399;
+    --status-cancelled: #f87171;
+    --status-pending-foreground: #fef08a;
+    --status-confirmed-foreground: #bfdbfe;
+    --status-preparing-foreground: #fed7aa;
+    --status-ready-foreground: #ddd6fe;
+    --status-completed-foreground: #a7f3d0;
+    --status-cancelled-foreground: #fecaca;
 }
 
 @layer base {

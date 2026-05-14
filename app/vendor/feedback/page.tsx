@@ -1,0 +1,112 @@
+"use client"
+
+import { useSession } from "next-auth/react"
+import { useQuery } from "@tanstack/react-query"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
+import apiClient from "@/lib/axios"
+import { Star } from "lucide-react"
+
+export default function VendorFeedbackPage() {
+  const { data: session, status } = useSession()
+  const isReady = !!session?.user
+
+  const { data: feedbacks = [], isLoading: loadingFeedback } = useQuery<any[]>({
+    queryKey: ["vendor-feedback"],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get("/vendor/feedback");
+        return Array.isArray(res.data) ? res.data : [];
+      } catch (error) {
+        console.error("Error fetching feedback:", error);
+        return [];
+      }
+    },
+    enabled: isReady,
+  });
+
+  if (status === "loading") {
+    return <PageSkeleton variant="dashboard" />
+  }
+
+  const now = new Date()
+  const greeting =
+    now.getHours() < 12
+      ? "Good morning"
+      : now.getHours() < 17
+        ? "Good afternoon"
+        : "Good evening"
+
+  return (
+    <SectionErrorBoundary title="Couldn't load feedback">
+      <div className="space-y-6 md:space-y-8">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              {greeting},
+            </p>
+            <h1 className="mt-0.5 font-heading text-2xl font-bold md:text-3xl">
+              Customer Feedback 👋
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              What customers are saying about your order and service
+            </p>
+          </div>
+        </div>
+
+        {/* Feedback List */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="p-5">
+            {loadingFeedback ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+                ))}
+              </div>
+            ) : feedbacks.length === 0 ? (
+              <EmptyState
+                size="sm"
+                title="No feedback yet"
+                description="When customers leave feedback, it will appear here."
+              />
+            ) : (
+              <div className="space-y-4">
+                {feedbacks.map((feedback: any) => (
+                  <div key={feedback._id} className="p-4 rounded-xl border border-border bg-muted/30 flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`size-3.5 ${feedback.rating >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(feedback.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {feedback.comments && (
+                      <p className="text-sm text-foreground leading-relaxed">{feedback.comments}</p>
+                    )}
+                    {feedback.orderId === "Anonymous" ? (
+                      <div className="mt-1">
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          Anonymous Review
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground font-mono">Order: {feedback.orderId}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </SectionErrorBoundary>
+  )
+}
