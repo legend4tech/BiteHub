@@ -40,49 +40,47 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
 
   if (!open) return null;
 
-  const onSubmit = async (values: OrderFormInputValues) => {
-    setServerError(null);
+const onSubmit = async (values: OrderFormInputValues) => {
+  setServerError(null);
 
-    if (cart.items.length === 0 || !cart.vendorId) return;
+  if (cart.items.length === 0 || !cart.vendorId) return;
 
-    // Normalise the phone number before sending to the API
-    const customerPhone = normaliseNigerianPhone(values.phone);
+  const customerPhone = normaliseNigerianPhone(values.phone);
 
-    setLoading(true);
-    try {
-      // POST to the real API — order is saved to MongoDB.
-      const response = await apiClient.post("/orders", {
-        vendorId: cart.vendorId,
-        vendorName: cart.vendorName,
-        vendorWhatsappNumber: cart.vendorWhatsappNumber || "",
-        items: cart.items.map((ci) => ({
-          menuItemId: ci.menuItem.id,
-          name: ci.menuItem.name,
-          price: ci.menuItem.price,
-          quantity: ci.quantity,
-        })),
-        customerName: values.name,
-        customerPhone,
-        location: values.location,
-        notes: values.notes,
-        total,
-      });
+  setLoading(true);
+  try {
+    const response = await apiClient.post("/orders", {
+      vendorId: cart.vendorId,
+      vendorName: cart.vendorName,
+      vendorWhatsappNumber: cart.vendorWhatsappNumber || "",
+      items: cart.items.map((ci) => ({
+        menuItemId: ci.menuItem.id,
+        name: ci.menuItem.name,
+        price: ci.menuItem.price,
+        quantity: ci.quantity,
+      })),
+      customerName: values.name,
+      customerPhone,
+      location: values.location,
+      notes: values.notes,
+      total,
+    });
 
-      const { orderId } = response.data;
-      toast.success("Order placed successfully!");
-      
-      // Simplest solution: clear cart, close the form so the user doesn't see it empty, then redirect.
-      clearCart();
-      onClose();
-      router.push(`/order/${orderId}`);
-    } catch (error) {
-      // API or network error
-      const apiError = (error as any).response?.data?.error;
-      setServerError(apiError || "Something went wrong placing your order. Please try again.");
-      setLoading(false);
-    }
-  };
+    const { orderId } = response.data;
+    toast.success("Order placed successfully!");
 
+    // 1. Close modal first — user stops seeing the form immediately
+    onClose();
+    // 2. Navigate — React will unmount the form before the cart clears
+    router.push(`/order/${orderId}`);
+    // 3. Clear cart last — doesn't matter, form is already gone
+    clearCart();
+  } catch (error) {
+    const apiError = (error as any).response?.data?.error;
+    setServerError(apiError || "Something went wrong placing your order. Please try again.");
+    setLoading(false);
+  }
+};
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}

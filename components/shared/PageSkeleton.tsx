@@ -52,22 +52,42 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
 function MenuItemGridSkeleton({ count }: { count: number }) {
-  return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-3xl bg-card border border-border overflow-hidden">
-          <Skeleton className="aspect-[4/3] w-full" />
-          <div className="p-4 space-y-2">
-            <Skeleton className="h-3 w-1/3" />
-            <Skeleton className="h-5 w-3/4" />
-            <div className="flex items-center justify-between pt-2">
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-8 w-8 rounded-lg" />
-            </div>
-          </div>
+  const items = Array.from({ length: count });
+  
+  const SkeletonCard = () => (
+    <div className="rounded-3xl bg-card border border-border overflow-hidden flex flex-col h-full">
+      <Skeleton className="aspect-[4/3] w-full" />
+      <div className="p-4 space-y-2 flex-1 flex flex-col">
+        <Skeleton className="h-3 w-1/3" />
+        <Skeleton className="h-5 w-3/4" />
+        <div className="flex items-center justify-between pt-2 mt-auto">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-8 w-8 rounded-lg" />
         </div>
-      ))}
+      </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* ── Mobile staggered layout skeleton ── */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:hidden">
+        {items.map((_, i) => (
+          <div key={`mob-${i}`} className={i % 2 === 0 ? "mt-6" : ""}>
+            <SkeletonCard />
+          </div>
+        ))}
+      </div>
+
+      {/* ── Desktop standard grid skeleton ── */}
+      <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {items.map((_, i) => (
+          <div key={`desk-${i}`}>
+            <SkeletonCard />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
