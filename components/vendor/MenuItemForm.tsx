@@ -20,6 +20,8 @@ import { MENU_CATEGORIES } from "@/lib/constants";
 import { menuItemFormSchema, type MenuItemFormValues } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
+import { ImageUpload } from "@/components/shared/ImageUpload";
+import { formatInputNumber, parseInputNumber } from "@/lib/format";
 
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>;
@@ -36,28 +38,30 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
     defaultValues: {
       name: initial?.name ?? "",
       description: initial?.description ?? "",
-      price: initial?.price?.toString() ?? "",
+      price: initial?.price ? formatInputNumber(initial.price.toString()) : "",
       category: (initial?.category as any) ?? "snack",
       isAvailable: initial?.isAvailable ?? true,
-      image: initial?.image ?? "",
+      image: typeof initial?.image === "string" ? { url: initial.image, publicId: "" } : initial?.image,
+      availableFrom: initial?.availableFrom ?? "",
+      availableTo: initial?.availableTo ?? "",
     },
   });
 
-  const onSubmit = (values: MenuItemFormValues) => {
+  const onSubmit = async (values: MenuItemFormValues) => {
     setSaving(true);
     try {
-      onSave({
+      await onSave({
         name: values.name,
         description: values.description,
-        price: Number(values.price),
+        price: parseInputNumber(values.price),
         category: values.category,
         isAvailable: values.isAvailable,
         image: values.image,
+        availableFrom: values.availableFrom || undefined,
+        availableTo: values.availableTo || undefined,
         tag: null,
       });
-      toast.success(initial?.id ? "Item updated successfully" : "Item added successfully");
     } catch (error) {
-      toast.error("Failed to save item");
       setSaving(false);
     }
   };
@@ -113,8 +117,12 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
                 id={field.name}
                 type="text"
                 inputMode="numeric"
-                placeholder="e.g. 1200"
+                placeholder="e.g. 1,200"
                 aria-invalid={fieldState.invalid}
+                onChange={(e) => {
+                  const formatted = formatInputNumber(e.target.value);
+                  field.onChange(formatted);
+                }}
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -149,17 +157,62 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <Controller
+          name="availableFrom"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Available From</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                type="time"
+                aria-invalid={fieldState.invalid}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch (error) {}
+                }}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="availableTo"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Available To</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                type="time"
+                aria-invalid={fieldState.invalid}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch (error) {}
+                }}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+      </div>
+
       <Controller
         name="image"
         control={form.control}
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Image URL (optional)</FieldLabel>
-            <Input
-              {...field}
-              id={field.name}
-              placeholder="https://..."
-              aria-invalid={fieldState.invalid}
+            <FieldLabel htmlFor={field.name}>Image</FieldLabel>
+            <ImageUpload
+              value={field.value}
+              onChange={field.onChange}
+              type="menu"
             />
             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>

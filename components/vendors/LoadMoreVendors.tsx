@@ -24,6 +24,7 @@ interface Vendor {
   school: string
   campus: string
   itemCount: number
+  image?: { url: string; publicId: string } | null
 }
 
 interface LoadMoreVendorsProps {

@@ -39,6 +39,11 @@ export const orderFormInputSchema = z.object({
       (v) => /^\+234[789]\d{9}$/.test(normaliseNigerianPhone(v)),
       "Enter a valid Nigerian phone number (e.g. 08012345678)."
     ),
+  location: z
+    .string()
+    .trim()
+    .min(1, "Please enter your delivery location.")
+    .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
 });
 
@@ -60,6 +65,11 @@ export const orderFormSchema = z.object({
       (v) => /^\+234[789]\d{9}$/.test(v),
       "Enter a valid Nigerian phone number (e.g. 08012345678)."
     ),
+  location: z
+    .string()
+    .trim()
+    .min(1, "Please enter your delivery location.")
+    .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
 });
 
@@ -77,13 +87,45 @@ export const menuItemFormSchema = z.object({
   price: z
     .string()
     .min(1, "Price is required.")
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, "Enter a valid price."),
+    .refine((v) => {
+      const cleanValue = v.replace(/,/g, "");
+      return !isNaN(Number(cleanValue)) && Number(cleanValue) > 0;
+    }, "Enter a valid price."),
   category: z.enum(["rice", "soup", "snack", "drink", "protein", "shawarma", "food"]),
   isAvailable: z.boolean(),
-  image: z.string().trim().optional(),
+  image: z.object({
+    url: z.string(),
+    publicId: z.string(),
+  }).optional(),
+  availableFrom: z.string().optional(),
+  availableTo: z.string().optional(),
+}).refine((data) => {
+  if (data.availableFrom && !data.availableTo) return false;
+  if (!data.availableFrom && data.availableTo) return false;
+  if (data.availableFrom && data.availableTo) {
+    return data.availableFrom < data.availableTo;
+  }
+  return true;
+}, {
+  message: "Both start and end time must be specified, and start time must be before end time.",
+  path: ["availableFrom"],
 });
 
 export type MenuItemFormValues = z.infer<typeof menuItemFormSchema>;
+
+export const vendorSettingsSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  whatsappNumber: z.string().optional(),
+  category: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  image: z.object({
+    url: z.string(),
+    publicId: z.string(),
+  }).optional(),
+});
+
+export type VendorSettingsValues = z.infer<typeof vendorSettingsSchema>;
 
 // ─── Vendor Login Schema ──────────────────────────────────────────────────────
 

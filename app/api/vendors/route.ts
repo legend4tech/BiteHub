@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     // in .lean() output — they are computed manually in the map below.
     const vendors = await VendorModel.find(query)
       .select(
-        "name isActive slug description category tags phone whatsappNumber school campus createdAt updatedAt"
+        "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
       )
       .sort({ createdAt: -1 })
       .skip(skip)

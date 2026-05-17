@@ -15,9 +15,15 @@ export function VendorCard({ vendor, itemCount }: VendorCardProps) {
     >
       <div className="flex items-start justify-between">
         <div
-          className="h-14 w-14 rounded-2xl grid place-items-center text-primary-foreground font-bold text-lg bg-primary shadow-lg shadow-primary/20"
+          className="h-14 w-14 rounded-2xl overflow-hidden grid place-items-center text-primary-foreground font-bold text-lg bg-primary shadow-lg shadow-primary/20"
         >
-          {vendor.initials}
+          {typeof vendor.image === "string" ? (
+            <img src={vendor.image} alt={vendor.name} className="h-full w-full object-cover" />
+          ) : vendor.image?.url ? (
+            <img src={vendor.image.url} alt={vendor.name} className="h-full w-full object-cover" />
+          ) : (
+            vendor.initials
+          )}
         </div>
         <div className="flex flex-col items-end gap-1">
           <ArrowUpRight className="text-muted-foreground group-hover:text-primary transition-colors size-4" />

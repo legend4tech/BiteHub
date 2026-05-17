@@ -49,6 +49,7 @@ export function serializeVendor(doc: LeanVendor | null) {
     school: doc.school ?? null,
     campus: doc.campus ?? null,
     isActive: doc.isActive,
+    image: doc.image ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     // Virtuals
@@ -72,6 +73,8 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
     category: doc.category,
     image: doc.image ?? null,
     isAvailable: doc.isAvailable,
+    availableFrom: doc.availableFrom ?? null,
+    availableTo: doc.availableTo ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     // vendorName, vendorWhatsappNumber, tag — merged at route level
@@ -91,6 +94,7 @@ export function serializeOrder(doc: LeanOrder | null) {
     vendorWhatsappNumber: doc.vendorWhatsappNumber,
     customerName: doc.customerName,
     customerPhone: doc.customerPhone,
+    location: doc.location,
     items: doc.items.map((item) => ({
       menuItemId: item.menuItemId,
       name: item.name,

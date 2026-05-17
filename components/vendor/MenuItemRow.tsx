@@ -8,7 +8,7 @@ import { MENU_CATEGORIES } from "@/lib/constants";
 import Image from "next/image";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatTime } from "@/lib/format";
 
 interface MenuItemRowProps {
   item: MenuItem;
@@ -27,17 +27,58 @@ export function MenuItemRow({ item, onEdit, onDelete, onToggleAvailability }: Me
 
   const cat = MENU_CATEGORIES.find((c) => c.value === item.category);
 
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const isScheduled = item.availableFrom && item.availableTo;
+  const isOffSchedule = isScheduled && (currentTime < item.availableFrom! || currentTime > item.availableTo!);
+  const imageUrl = typeof item.image === "string" ? item.image : item.image?.url;
+
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 hover:border-primary/30 transition-colors">
-      {/* Category image */}
+      {/* Menu Item Image */}
       <div className="h-12 w-12 rounded-xl bg-muted overflow-hidden shrink-0 relative">
-        {cat?.image && <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="48px" />}
+        {imageUrl ? (
+          <Image src={imageUrl} alt={item.name} fill className="object-cover" sizes="48px" />
+        ) : cat?.image ? (
+          <Image src={cat.image} alt={cat.label} fill className="object-cover" sizes="48px" />
+        ) : (
+          <div className="h-full w-full grid place-items-center text-xs font-bold text-muted-foreground">
+            {item.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate">{item.name}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{cat?.label ?? item.category}</p>
+        
+        <div className="flex flex-wrap gap-1 mt-1">
+          {!localAvailable && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-destructive/10 text-destructive uppercase tracking-wider">
+              Out of stock
+            </span>
+          )}
+          {isScheduled && (
+            <>
+              {isOffSchedule ? (
+                currentTime < item.availableFrom! ? (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    Opens order at {formatTime(item.availableFrom!)}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                    Closed
+                  </span>
+                )
+              ) : (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                  {formatTime(item.availableFrom!)} - {formatTime(item.availableTo!)}
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Price */}

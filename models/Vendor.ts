@@ -10,6 +10,10 @@ export interface IVendor extends Document {
   school: string;
   campus: string;
   isActive: boolean;
+  image?: {
+    url: string;
+    publicId: string;
+  };
 
   // Virtuals
   initials: string;
@@ -28,6 +32,10 @@ const VendorSchema: Schema = new Schema(
     school: { type: String },
     campus: { type: String },
     isActive: { type: Boolean, default: true },
+    image: {
+      url: { type: String },
+      publicId: { type: String },
+    },
   },
   {
     timestamps: true,

@@ -40,7 +40,7 @@ export default function TrackOrderPage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="e.g. ord_123456"
+                placeholder="e.g. CB-MTY-123456"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 className="pl-11 rounded-xl h-12"

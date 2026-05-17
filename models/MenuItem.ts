@@ -6,8 +6,13 @@ export interface IMenuItem extends Document {
   description?: string;
   price: number;
   category: string;
-  image?: string;
+  image?: {
+    url: string;
+    publicId: string;
+  };
   isAvailable: boolean;
+  availableFrom?: string;
+  availableTo?: string;
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -21,8 +26,13 @@ const MenuItemSchema: Schema = new Schema(
     description: { type: String },
     price: { type: Number, required: true },
     category: { type: String, required: true },
-    image: { type: String },
+    image: {
+      url: { type: String },
+      publicId: { type: String },
+    },
     isAvailable: { type: Boolean, default: true },
+    availableFrom: { type: String },
+    availableTo: { type: String },
   },
   {
     timestamps: true,

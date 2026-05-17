@@ -88,9 +88,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           
           // Fetch the store name for vendor logins
           let displayName = user.name || user.email;
+          let image = undefined;
           if (role === "vendor" && vendorId) {
-            const vendor = await VendorModel.findById(vendorId).select("name").lean();
-            if (vendor) displayName = (vendor as any).name;
+            const vendor = await VendorModel.findById(vendorId).select("name image").lean();
+            if (vendor) {
+              displayName = (vendor as any).name;
+              image = (vendor as any).image?.url;
+            }
           }
 
           return {
@@ -99,6 +103,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: role,
             vendorId: vendorId,
+            image: image,
           };
         } catch (error) {
           if (error instanceof CredentialsSignin) {

@@ -75,11 +75,15 @@ export const authConfig: NextAuthConfig = {
       // Default allow for public routes (e.g. landing page, vendor store view)
       return true;
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
         token.vendorId = (user as any).vendorId;
+        token.image = (user as any).image;
+      }
+      if (trigger === "update" && session?.name) {
+        token.name = session.name;
       }
       return token;
     },
@@ -88,6 +92,10 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         (session.user as any).role = token.role as string;
         (session.user as any).vendorId = token.vendorId as string | undefined;
+        session.user.image = token.image as string | undefined;
+        if (token.name) {
+          session.user.name = token.name as string;
+        }
       }
       return session;
     },

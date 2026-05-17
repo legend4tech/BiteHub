@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Menu,
   Star,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
@@ -37,6 +38,7 @@ const navItems = [
   { href: "/vendor/menu",      label: "Menu",      icon: UtensilsCrossed },
   { href: "/vendor/orders",    label: "Orders",    icon: ClipboardList },
   { href: "/vendor/feedback",  label: "Feedback",  icon: Star },
+  { href: "/vendor/settings",  label: "Settings",  icon: Settings },
 ];
 
 function NavLinks({ pathname, collapsed = false, onNavigate }: { pathname: string; collapsed?: boolean; onNavigate?: () => void }) {
@@ -119,8 +121,12 @@ function SidebarContent({ collapsed, setCollapsed, onNavigate }: { collapsed: bo
       {/* User badge */}
       {!collapsed && session?.user && (
         <div className="mx-3 mt-4 px-3 py-2.5 rounded-xl bg-accent/40 border border-border/30 flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary/80 to-orange-500/80 grid place-items-center text-white text-xs font-bold shrink-0">
-            {session.user.name?.charAt(0).toUpperCase() ?? "V"}
+          <div className="h-7 w-7 rounded-lg overflow-hidden bg-gradient-to-br from-primary/80 to-orange-500/80 grid place-items-center text-white text-xs font-bold shrink-0">
+            {session.user.image ? (
+              <img src={session.user.image} alt={session.user.name ?? "Vendor"} className="h-full w-full object-cover" />
+            ) : (
+              session.user.name?.charAt(0).toUpperCase() ?? "V"
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold truncate">{session.user.name}</p>

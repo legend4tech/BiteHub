@@ -91,6 +91,7 @@ async function VendorListContent({ q }: { q: string }) {
     whatsappNumber: v.whatsappNumber,
     school: v.school,
     campus: v.campus,
+    image: v.image,
   }));
 
   return (

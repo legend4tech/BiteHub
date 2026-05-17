@@ -11,6 +11,7 @@ interface Order {
   vendorWhatsappNumber: string
   customerName: string
   customerPhone: string
+  location: string
   items: Array<{
     menuItemId: string
     name: string

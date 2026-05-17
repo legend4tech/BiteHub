@@ -44,13 +44,16 @@ export async function POST(request: Request) {
     const vendorId = new Types.ObjectId((session.user as any).vendorId);
     const body = await request.json();
 
-    const { name, description, price, category, image, isAvailable } = body;
+    const { name, description, price, category, image, isAvailable, availableFrom, availableTo } = body;
 
     if (!name || !price || !category) {
       return NextResponse.json({ error: "Name, price, and category are required" }, { status: 400 });
     }
 
-    const imageUrl = image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400";
+    const imageObj = image || {
+      url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400",
+      publicId: "default_menu_image",
+    };
 
     const newItem = await MenuItem.create({
       vendorId,
@@ -58,8 +61,10 @@ export async function POST(request: Request) {
       description: description?.trim(),
       price: Number(price),
       category: category.trim(),
-      image: imageUrl,
+      image: imageObj,
       isAvailable: isAvailable ?? true,
+      availableFrom,
+      availableTo,
     });
 
     return NextResponse.json(serializeMenuItem(newItem.toObject()), { status: 201 });

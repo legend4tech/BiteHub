@@ -91,6 +91,24 @@ export const ORDER_STATUS_CONFIG: Record<
     description: "Order was cancelled",
   },
 }
+// ─── Vendor Categories ────────────────────────────────────────────────────────
+
+export const VENDOR_CATEGORIES = [
+  { value: "meals", label: "Meals (e.g. Rice, Swallow)" },
+  { value: "fast-food", label: "Fast Food (e.g. Shawarma, Pastries, cakes)" },
+  { value: "drinks", label: "Drinks (e.g. Smoothies, Soft Drinks)" },
+] as const;
+
+// ─── Schools & Campuses ───────────────────────────────────────────────────────
+
+export const SCHOOLS = [
+  { value: "COOU", label: "COOU" },
+] as const;
+
+export const CAMPUSES = [
+  { value: "Uli", label: "Uli" },
+  { value: "Igbariam", label: "Igbariam" },
+] as const;
 
 // ─── Category Config ──────────────────────────────────────────────────────────
 

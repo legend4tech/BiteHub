@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MenuItemCard } from "@/components/menus/MenuItemCard";
+import { MenuItemGrid } from "@/components/menus/MenuItemGrid";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { OrderForm } from "@/components/cart/OrderForm";
 import { MENU_CATEGORIES } from "@/lib/constants";
@@ -92,16 +92,7 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
           action={{ label: "Clear filters", href: "/menus" }}
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          {filtered.map((item, i) => (
-            <FadeIn key={item.id} delay={0.05 * Math.min(i, 20)}>
-              <MenuItemCard
-                item={item}
-                onDifferentVendor={handleDifferentVendor}
-              />
-            </FadeIn>
-          ))}
-        </div>
+        <MenuItemGrid items={filtered} onDifferentVendor={handleDifferentVendor} />
       )}
 
       {/* Floating cart */}

@@ -9,7 +9,7 @@ import type { OrderStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import { formatPrice } from "@/lib/format"
+import { formatPrice, formatTime } from "@/lib/format"
 
 interface OrderTableProps {
   orders: Order[]
@@ -66,6 +66,9 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
                 Status
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+                Location
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
                 Date&Time
@@ -137,15 +140,15 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                     <StatusBadge status={order.status} />
                   )}
                 </td>
+                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[150px] truncate" title={order.location}>
+                  {order.location}
+                </td>
                 <td className="px-3 py-3 text-xs whitespace-nowrap text-muted-foreground">
                   {new Date(order.createdAt).toLocaleDateString("en-NG", {
                     month: "short",
                     day: "numeric",
                   })}{" "}
-                  {new Date(order.createdAt).toLocaleTimeString("en-NG", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(order.createdAt)}
                 </td>
               </tr>
             ))}

@@ -17,7 +17,7 @@ export function Navbar() {
     { name: "Track Order", href: "/order", icon: Search },
     { name: "Vendor Login", href: "/vendor/login", icon: LogIn },
     { name: "How it works", href: "/#how", icon: Info },
-    { name: "Support", href: "/#contact", icon: PhoneCall },
+    { name: "Contact Us", href: "/contact", icon: PhoneCall },
   ];
 
   return (

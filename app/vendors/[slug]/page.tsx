@@ -74,6 +74,8 @@ export default async function VendorDetailPage({ params, searchParams }: Props) 
     image: item.image ?? null,
     category: item.category,
     isAvailable: item.isAvailable,
+    availableFrom: item.availableFrom,
+    availableTo: item.availableTo,
     tag: item.tag,
   }));
 
@@ -105,8 +107,12 @@ export default async function VendorDetailPage({ params, searchParams }: Props) 
           
           <div className="flex flex-col md:flex-row gap-8 relative z-10">
             {/* Logo/Initials */}
-            <div className="h-28 w-28 rounded-3xl grid place-items-center text-primary-foreground font-bold text-4xl shrink-0 bg-gradient-to-br from-primary to-orange-600 shadow-xl shadow-primary/20">
-              {vendor.initials || vendor.name.substring(0, 2).toUpperCase()}
+            <div className="h-28 w-28 rounded-3xl overflow-hidden grid place-items-center text-primary-foreground font-bold text-4xl shrink-0 bg-gradient-to-br from-primary to-orange-600 shadow-xl shadow-primary/20">
+              {vendor.image?.url ? (
+                <img src={vendor.image.url} alt={vendor.name} className="h-full w-full object-cover" />
+              ) : (
+                vendor.initials || vendor.name.substring(0, 2).toUpperCase()
+              )}
             </div>
             
             <div className="flex-1 space-y-4">
@@ -157,12 +163,14 @@ export default async function VendorDetailPage({ params, searchParams }: Props) 
                 </div>
 
                 <div className="space-y-3">
+                {vendor.phone && (
                   <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                     <Phone className="size-4 text-primary" />
                     <span>
-                      <strong className="text-foreground font-medium">Phone:</strong> {vendor.phone || "N/A"}
+                      <strong className="text-foreground font-medium">Phone:</strong> {vendor.phone}
                     </span>
                   </div>
+                )}
                   <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                     <MessageCircle className="size-4 text-green-500" />
                     <span className="flex items-center gap-2">

@@ -30,6 +30,7 @@ export interface Vendor {
   school: string;
   campus: string;
   isActive: boolean;
+  image?: string | { url: string; publicId: string; };
 
   // Computed/virtual UI properties
   initials?: string;
@@ -46,8 +47,10 @@ export interface MenuItem {
   description?: string;
   price: number;
   category: string; // Made this string instead of MenuCategory enum to match user schema flexibility
-  image?: string;
+  image?: string | { url: string; publicId: string; };
   isAvailable: boolean;
+  availableFrom?: string;
+  availableTo?: string;
 
   // Fabricated UI properties
   vendorName?: string;
@@ -88,6 +91,7 @@ export interface Order {
   items: OrderItem[];
   customerName: string;
   customerPhone: string;
+  location: string;
   notes?: string | null;
   status: OrderStatus;
   totalAmount: number;

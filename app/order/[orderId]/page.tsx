@@ -21,9 +21,9 @@ import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
-import { RefreshCw, Home, ShoppingBag, MessageCircle, ChevronRight, Receipt, Star } from "lucide-react"
+import { RefreshCw, Home, ShoppingBag, MessageCircle, ChevronRight, Receipt, Star, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { formatPrice } from "@/lib/format"
+import { formatPrice, formatTime } from "@/lib/format"
 import type { OrderStatus } from "@/lib/types"
 import { useOrder } from "@/hooks/queries/useOrder"
 import { toast } from "sonner"
@@ -245,13 +245,29 @@ export default function OrderPage() {
       return (
         <main className="min-h-screen bg-background text-foreground">
           <Navbar />
+          <div className="relative mx-auto max-w-2xl px-4 pt-6">
+            <div className="flex justify-between items-center pb-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/order">
+                  <ShoppingBag className="size-4 mr-2" />
+                  Back to order track
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/">
+                  <Home className="size-4 mr-2" />
+                  Back to home
+                </Link>
+              </Button>
+            </div>
+          </div>
           <EmptyState
             title="Order not found"
             description={`We couldn't find an order with ID "${orderId}". Please check the ID or try again later.`}
             action={{
-              label: "Go home",
-              href: "/",
-              icon: <Home className="size-4" />,
+              label: "Back to order",
+              href: "/order",
+              icon: <ShoppingBag className="size-4" />,
             }}
             className="py-40"
           />
@@ -286,6 +302,21 @@ export default function OrderPage() {
       </div>
 
       <div className="relative mx-auto max-w-2xl space-y-4 px-4 py-10 sm:px-6 sm:py-14">
+        {/* ── Back links ─────────────────────────────────────── */}
+        <div className="flex justify-between items-center pb-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/order">
+              <ShoppingBag className="size-4 mr-2" />
+              Back to order track
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/">
+              <Home className="size-4 mr-2" />
+              Back to home
+            </Link>
+          </Button>
+        </div>
 
         {/* ── Hero card: Order confirmed ─────────────────────────── */}
         <div className="overflow-hidden rounded-[28px] border border-border bg-card shadow-sm">
@@ -304,9 +335,26 @@ export default function OrderPage() {
                 </div>
 
                 {/* Order ID */}
-                <h1 className="mt-3 font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
-                  {order.orderId}
-                </h1>
+                <div className="flex items-center gap-2 mt-3">
+                  <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
+                    {order.orderId}
+                  </h1>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => {
+                      navigator.clipboard.writeText(order.orderId);
+                      toast.success("Order ID copied!");
+                    }}
+                  >
+                    <Copy className="size-4 text-muted-foreground hover:text-foreground transition-colors" />
+                    <span className="sr-only">Copy Order ID</span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Copy this ID to track your order later on the "Track Order" page.
+                </p>
 
                 {/* Meta */}
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
@@ -323,10 +371,11 @@ export default function OrderPage() {
                       day: "numeric",
                     })}{" "}
                     at{" "}
-                    {new Date(order.createdAt).toLocaleTimeString("en-NG", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatTime(order.createdAt)}
+                  </span>
+                  <span className="text-border">·</span>
+                  <span>
+                    Deliver to: <span className="font-semibold text-foreground">{order.location}</span>
                   </span>
                 </p>
               </div>
@@ -430,8 +479,7 @@ export default function OrderPage() {
 
           <div className="px-7 py-5 sm:px-8">
             <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-              Send your order details directly to the vendor on WhatsApp to
-              confirm and get real-time updates.
+              Message the vendor on WhatsApp for any updates or questions about your order.
             </p>
             <WhatsAppButton
               vendorPhone={order.vendorWhatsappNumber}
@@ -458,16 +506,7 @@ export default function OrderPage() {
           />
         )}
 
-        {/* ── Back home link ─────────────────────────────────────── */}
-        <div className="flex justify-center pt-2">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Home className="size-3.5" />
-            Back to home
-          </Link>
-        </div>
+
       </div>
     </main>
   )

@@ -38,17 +38,17 @@ export function Footer() {
               <FooterLink href="/vendors">Browse Vendors</FooterLink>
               <FooterLink href="/menus">Our Menus</FooterLink>
               <FooterLink href="/#how">How it Works</FooterLink>
-              <FooterLink href="/#pricing">Pricing</FooterLink>
+              {/* <FooterLink href="/#pricing">Pricing</FooterLink> */}
             </ul>
           </div>
 
           <div className="lg:col-span-1">
             <FooterHeading>Company</FooterHeading>
             <ul className="space-y-3 mt-4">
-              <FooterLink href="/about">About Us</FooterLink>
-              <FooterLink href="/careers">Join the Team</FooterLink>
+              {/* <FooterLink href="/about">About Us</FooterLink> */}
+              {/* <FooterLink href="/careers">Join the Team</FooterLink> */}
               <FooterLink href="/contact">Contact Support</FooterLink>
-              <FooterLink href="/press">Media Kit</FooterLink>
+              {/* <FooterLink href="/press">Media Kit</FooterLink> */}
             </ul>
           </div>
 
@@ -89,9 +89,9 @@ export function Footer() {
         <div className="mt-20 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-medium">
           <p>© {new Date().getFullYear()} CampusBites. Crafted with ❤️ for students everywhere.</p>
           <div className="flex items-center gap-8">
-            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-            <Link href="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
+            {/* <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link> */}
+            {/* <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> */}
+            {/* <Link href="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link> */}
           </div>
         </div>
       </div>

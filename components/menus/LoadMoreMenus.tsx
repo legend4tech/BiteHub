@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react"
 import { useInView } from "react-intersection-observer"
 import { useMenuItems } from "@/hooks/queries/useMenuItems"
-import { MenuItemCard } from "@/components/menus/MenuItemCard"
+import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import type { MenuItem } from "@/lib/types"
 import { useCart } from "@/hooks/useCart"
-import { FadeIn } from "@/components/FadeIn"
 
 interface LoadMoreMenusProps {
   initialPage: number
@@ -61,15 +60,12 @@ export function LoadMoreMenus({
   return (
     <>
       {items.length > 0 && (
-        <div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {items.map((item, i) => (
-            <FadeIn key={`${item.id}-${i}`} delay={0.05 * Math.min(i, 20)}>
-              <MenuItemCard
-                item={item}
-                onDifferentVendor={handleDifferentVendor}
-              />
-            </FadeIn>
-          ))}
+        <div className="mt-5">
+          <MenuItemGrid
+            items={items}
+            onDifferentVendor={handleDifferentVendor}
+            keyPrefix="more-"
+          />
         </div>
       )}
 

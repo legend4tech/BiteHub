@@ -39,6 +39,7 @@ export async function GET() {
         campus: v.campus,
         school: v.school,
         isActive: v.isActive,
+        image: v.image,
         createdAt: (v as any).createdAt,
         // Login account info (may be null if not yet created)
         account: user
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
     await dbConnect();
     const body = await request.json();
 
-    const { name, whatsappNumber, campus, school, description, category, tags, email, password } = body;
+    const { name, whatsappNumber, campus, school, description, category, tags, email, password, image } = body;
 
     if (!name || !whatsappNumber || !email || !password) {
       return NextResponse.json(
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
       whatsappNumber: whatsappNumber.trim(),
       campus: campus?.trim() || "COOU Uli",
       school: school?.trim() || "COOU",
+      image: image,
       isActive: true,
     });
 

@@ -23,6 +23,7 @@ const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
   customerName: z.string().min(1, "Customer name is required"),
   customerPhone: z.string().min(1, "Customer phone is required"),
+  location: z.string().min(1, "Location is required"),
   notes: z.string().optional(),
   total: z.number().optional(), // We accept it but ignore it for calculation
 });
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
       items,
       customerName,
       customerPhone,
+      location,
       notes,
     } = parsedBody.data;
 
@@ -140,6 +142,7 @@ export async function POST(request: Request) {
       items,
       customerName,
       customerPhone,
+      location,
       notes: notes || "",
       totalAmount: calculatedTotal,
       status: ORDER_STATUS.PENDING,

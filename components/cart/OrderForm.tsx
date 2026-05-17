@@ -33,6 +33,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     defaultValues: {
       name: "",
       phone: "",
+      location: "",
       notes: "",
     },
   });
@@ -62,6 +63,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         })),
         customerName: values.name,
         customerPhone,
+        location: values.location,
         notes: values.notes,
         total,
       });
@@ -178,6 +180,22 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                     id={field.name}
                     type="tel"
                     placeholder="Phone number * (e.g. 08012345678)"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="location"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    placeholder="Delivery location * (e.g. Bella Hostel)"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
