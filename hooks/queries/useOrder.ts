@@ -36,5 +36,6 @@ export function useOrder(orderId: string | undefined) {
     gcTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!orderId,
     retry: 2, // Retry more for order data (important)
+    refetchInterval: 5000, // Auto-refresh every 5 seconds for live tracking
   })
 }

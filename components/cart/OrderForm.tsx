@@ -71,15 +71,13 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       const { orderId } = response.data;
       toast.success("Order placed successfully!");
       router.push(`/order/${orderId}`);
-      // Delay clearing the cart to avoid UI glitch before redirection
-      setTimeout(() => {
-        clearCart();
-      }, 500);
+      // Note: We intentionally do NOT clear the cart here or set loading to false.
+      // This keeps the UI frozen with the spinning button while Next.js redirects,
+      // preventing the 0 flash. The cart will be cleared on the tracking page.
     } catch (error) {
       // API or network error
       const apiError = (error as any).response?.data?.error;
       setServerError(apiError || "Something went wrong placing your order. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

@@ -193,10 +193,13 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
   );
 }
 
+import { useCart } from "@/hooks/useCart"
+
 export default function OrderPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const { clearCart } = useCart()
 
   const {
     data: order,
@@ -206,6 +209,13 @@ export default function OrderPage() {
     refetch,
     isRefetching,
   } = useOrder(orderId)
+
+  // Clear cart when order loads successfully (moving this from the form to prevent UI flash)
+  useEffect(() => {
+    if (order) {
+      clearCart()
+    }
+  }, [order?.orderId, clearCart])
 
   useEffect(() => {
     if (order?.status === "completed") {
