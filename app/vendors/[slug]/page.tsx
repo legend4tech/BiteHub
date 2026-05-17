@@ -15,6 +15,7 @@ interface Props {
 
 async function getVendorData(slug: string, category?: string, q?: string) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   let url = `${baseUrl}/api/vendors/${slug}`;
   
   const params = new URLSearchParams();
