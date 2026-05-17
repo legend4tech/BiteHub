@@ -27,6 +27,12 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const [frozenCart, setFrozenCart] = useState<typeof cart | null>(null);
+  const [frozenTotal, setFrozenTotal] = useState<number | null>(null);
+
+  const displayCart = frozenCart || cart;
+  const displayTotal = frozenTotal ?? total;
+
   const form = useForm<OrderFormInputValues>({
     // `as any` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
     resolver: zodResolver(orderFormInputSchema as any),
@@ -48,6 +54,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     // Normalise the phone number before sending to the API
     const customerPhone = normaliseNigerianPhone(values.phone);
 
+    // Freeze the UI state so it doesn't flash empty when the cart clears
+    setFrozenCart(cart);
+    setFrozenTotal(total);
     setLoading(true);
     try {
       // POST to the real API — order is saved to MongoDB.
@@ -78,6 +87,8 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       // API or network error
       const apiError = (error as any).response?.data?.error;
       setServerError(apiError || "Something went wrong placing your order. Please try again.");
+      setFrozenCart(null);
+      setFrozenTotal(null);
       setLoading(false);
     }
   };
@@ -91,10 +102,10 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         {/* Header */}
         <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between rounded-t-3xl">
           <div>
-            <p className="text-xs text-muted-foreground">{cart.vendorName}</p>
+            <p className="text-xs text-muted-foreground">{displayCart.vendorName}</p>
             <h2 className="font-heading font-bold text-lg">Place your order</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} disabled={loading}>
             <X />
           </Button>
         </div>
@@ -103,7 +114,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           {/* Cart items */}
           <div className="space-y-2">
             <p className="text-sm font-semibold">Your items</p>
-            {cart.items.map((ci) => (
+            {displayCart.items.map((ci) => (
               <div
                 key={ci.menuItem.id}
                 className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3"
@@ -114,8 +125,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)}
-                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     <Minus className="size-3" />
                   </button>
@@ -124,8 +136,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                   </span>
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => updateQuantity(ci.menuItem.id, ci.quantity + 1)}
-                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                    className="h-6 w-6 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     <Plus className="size-3" />
                   </button>
@@ -135,8 +148,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 </p>
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => removeItem(ci.menuItem.id)}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                 >
                   <X className="size-3.5" />
                 </button>
@@ -144,7 +158,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             ))}
             <div className="flex justify-between pt-2 border-t border-border text-sm font-bold">
               <span>Total</span>
-              <span className="text-primary">{formatPrice(total)}</span>
+              <span className="text-primary">{formatPrice(displayTotal)}</span>
             </div>
           </div>
 
