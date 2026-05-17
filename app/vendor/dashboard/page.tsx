@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import { RefreshCw, ArrowRight, Star } from "lucide-react"
+import { RefreshCw, ArrowRight, Star, Banknote } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
@@ -150,7 +150,7 @@ export default function VendorDashboardPage() {
               </p>
             </div>
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10">
-              <span className="text-2xl">💰</span>
+              <Banknote className="size-6 text-primary" />
             </div>
           </div>
         )}
