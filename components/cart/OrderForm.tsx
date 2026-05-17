@@ -110,7 +110,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 key={ci.menuItem.id}
                 className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3"
               >
-                <p className="flex-1 text-sm font-medium line-clamp-1">
+                <p className="flex-1 text-sm font-medium leading-snug">
                   {ci.menuItem.name}
                 </p>
                 <div className="flex items-center gap-1">
