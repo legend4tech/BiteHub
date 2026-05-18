@@ -10,12 +10,12 @@ const feedbackSchema = z.object({
   vendorId: z.string().optional(), // For vendor giving platform feedback
   platform: z.object({
     rating: z.number().min(1).max(5),
-    comments: z.string().optional(),
+    comments: z.string().min(3, "Comments must be at least 3 characters long"),
   }).optional(),
   vendor: z.object({
     vendorId: z.string().min(1, "Vendor ID is required"),
     rating: z.number().min(1).max(5),
-    comments: z.string().optional(),
+    comments: z.string().min(3, "Comments must be at least 3 characters long"),
     isAnonymous: z.boolean().optional(),
   }).optional(),
 }).refine(data => data.platform || data.vendor, {

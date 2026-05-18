@@ -54,7 +54,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
   const onSubmit = async (values: VendorSettingsValues) => {
     setSaving(true);
     try {
-      await apiClient.patch("/vendor/settings", {
+      const response = await apiClient.patch("/vendor/settings", {
         name: values.name,
         description: values.description,
         whatsappNumber: values.whatsappNumber,
@@ -63,10 +63,20 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         image: values.image,
       });
 
-      // Update session if name changed
-      if (values.name !== initial.name) {
-        await update({ name: values.name });
+      const updatedVendor = response.data;
+      const initialImageUrl = typeof initial.image === "string" ? initial.image : initial.image?.url;
+      const updatedImageUrl = updatedVendor.image?.url || null;
+
+      const nameChanged = values.name !== initial.name;
+      const imageChanged = updatedImageUrl !== (initialImageUrl || null);
+
+      if (nameChanged || imageChanged) {
+        await update({
+          name: values.name,
+          image: updatedImageUrl,
+        });
       }
+
       toast.success("Settings updated successfully");
       router.refresh();
     } catch (error) {

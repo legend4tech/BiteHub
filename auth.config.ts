@@ -82,8 +82,13 @@ export const authConfig: NextAuthConfig = {
         token.vendorId = (user as any).vendorId;
         token.image = (user as any).image;
       }
-      if (trigger === "update" && session?.name) {
-        token.name = session.name;
+      if (trigger === "update") {
+        if (session?.name) {
+          token.name = session.name;
+        }
+        if (session?.image !== undefined) {
+          token.image = session.image;
+        }
       }
       return token;
     },

@@ -102,13 +102,15 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
           </div>
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">Comments</label>
+            <label className="text-sm font-semibold mb-2 block">
+              Comments <span className="text-destructive">*</span>
+            </label>
             <textarea
               value={feedbackStep === 1 ? platformComments : vendorComments}
               onChange={(e) => feedbackStep === 1 ? setPlatformComments(e.target.value) : setVendorComments(e.target.value)}
               className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               rows={4}
-              placeholder={feedbackStep === 1 ? "Tell us what you liked or what we can improve..." : "How was the quality? Was everything delivered on time?"}
+              placeholder={feedbackStep === 1 ? "Tell us what you liked or what we can improve (required, min 3 chars)..." : "How was the food and service? (required, min 3 chars)..."}
             />
           </div>
 
@@ -152,7 +154,7 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
           {feedbackStep === 1 ? (
             <Button 
               onClick={() => setFeedbackStep(2)} 
-              disabled={platformRating === 0}
+              disabled={platformRating === 0 || platformComments.trim().length < 3}
               className="w-full sm:w-auto"
             >
               Next
@@ -183,7 +185,7 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
                   toast.error("An error occurred.");
                 }
               }}
-              disabled={vendorRating === 0}
+              disabled={vendorRating === 0 || vendorComments.trim().length < 3}
               className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Submit Feedback
