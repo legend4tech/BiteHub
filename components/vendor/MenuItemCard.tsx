@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Trash2, Clock, PackageX } from "lucide-react";
+import { Pencil, Trash2, Clock, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MenuItem } from "@/lib/types";
 import { MENU_CATEGORIES } from "@/lib/constants";
@@ -76,7 +76,7 @@ export function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability }: M
           )}
           {!localAvailable && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/80 text-white backdrop-blur-sm uppercase tracking-wider flex items-center gap-1">
-              <PackageX className="size-2.5" /> Out of stock
+              <EyeOff className="size-2.5" /> Unlisted
             </span>
           )}
         </div>
@@ -118,7 +118,7 @@ export function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability }: M
           trigger={
             <button
               disabled={isToggling}
-              title={localAvailable ? "Mark out of stock" : "Mark in stock"}
+              title={localAvailable ? "Unlist item" : "List item"}
               className={cn("flex items-center gap-2 transition-opacity", isToggling && "opacity-50 cursor-not-allowed")}
             >
               <div className={cn("w-9 h-5 rounded-full relative transition-colors", localAvailable ? "bg-primary" : "bg-muted")}>
@@ -129,17 +129,17 @@ export function MenuItemCard({ item, onEdit, onDelete, onToggleAvailability }: M
                 )} />
               </div>
               <span className="text-[11px] text-muted-foreground font-medium leading-none">
-                {localAvailable ? "In stock" : "Out of stock"}
+                {localAvailable ? "Listed" : "Unlisted"}
               </span>
             </button>
           }
-          title={localAvailable ? "Mark as out of stock?" : "Mark as in stock?"}
+          title={localAvailable ? "Unlist this item?" : "List this item?"}
           description={
             localAvailable
-              ? `"${item.name}" will be hidden from students and cannot be ordered until you mark it back in stock.`
-              : `"${item.name}" will become visible to students and available to order again.`
+              ? `"${item.name}" will be unlisted and hidden from students until you list it again.`
+              : `"${item.name}" will be listed and become visible to students for ordering.`
           }
-          confirmText={localAvailable ? "Yes, mark out of stock" : "Yes, mark in stock"}
+          confirmText={localAvailable ? "Yes, unlist" : "Yes, list"}
           isDestructive={localAvailable}
           onConfirm={handleToggle}
         />

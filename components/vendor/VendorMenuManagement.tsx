@@ -25,13 +25,13 @@ const ALL = "all";
 
 function StatsStrip({ items }: { items: MenuItem[] }) {
   const total      = items.length;
-  const inStock    = items.filter((i) => i.isAvailable).length;
-  const outOfStock = total - inStock;
+  const listed     = items.filter((i) => i.isAvailable).length;
+  const unlisted   = total - listed;
 
   const stats = [
     { label: "Total Items",  value: total,      color: "text-foreground" },
-    { label: "In Stock",     value: inStock,    color: "text-green-600 dark:text-green-400" },
-    { label: "Out of Stock", value: outOfStock, color: "text-destructive" },
+    { label: "Listed",       value: listed,     color: "text-green-600 dark:text-green-400" },
+    { label: "Unlisted",     value: unlisted,   color: "text-destructive" },
   ];
 
   return (
@@ -172,10 +172,10 @@ export function VendorMenuManagement({ initialItems, allItems, activeCategory }:
   const handleToggleAvailability = async (id: string, isAvailable: boolean) => {
     try {
       await apiClient.patch(`/vendor/menu/${id}`, { isAvailable });
-      toast.success(isAvailable ? "Marked as in stock" : "Marked as out of stock");
+      toast.success(isAvailable ? "Menu item listed successfully" : "Menu item unlisted successfully");
       router.refresh(); // dynamically triggers server data refresh
     } catch {
-      toast.error("Failed to update stock status");
+      toast.error("Failed to update menu status");
       throw new Error("API action failed"); // propagate to let MenuItemCard restore local toggle state on error
     }
   };
