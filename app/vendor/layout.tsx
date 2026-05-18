@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { VendorSidebar, MobileSidebarTrigger } from "@/components/vendor/VendorSidebar";
 import { SessionProvider, useSession } from "next-auth/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useVendorOrderAlerts } from "@/hooks/useVendorOrderAlerts";
 
 const pageTitles: Record<string, string> = {
   "/vendor/dashboard": "Dashboard",
@@ -15,6 +16,10 @@ const pageTitles: Record<string, string> = {
 function VendorLayoutContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const pathname = usePathname();
+  
+  // Register global real-time notifications, audio chimes, and browser notifications
+  useVendorOrderAlerts();
+
   const isLoginPage = pathname === "/vendor/login";
 
   if (isLoginPage) {

@@ -8,10 +8,20 @@ interface UseVendorOrdersOptions {
   status?: string
   limit?: number  
   enabled?: boolean
+  refetchInterval?: number
+  refetchIntervalInBackground?: boolean
+  staleTime?: number
 }
 
 export function useVendorOrders(options?: UseVendorOrdersOptions) {
-  const { status, limit, enabled = true } = options || {}
+  const { 
+    status, 
+    limit, 
+    enabled = true,
+    refetchInterval,
+    refetchIntervalInBackground,
+    staleTime = 1000 * 30
+  } = options || {}
 
   return useQuery({
     queryKey: ["vendor-orders", status, limit],
@@ -23,9 +33,11 @@ export function useVendorOrders(options?: UseVendorOrdersOptions) {
       const { data } = await apiClient.get("/vendor/orders", { params })
       return data as Order[]
     },
-    staleTime: 1000 * 30,
+    staleTime,
     gcTime: 1000 * 60 * 5,
     enabled,
     retry: 1,
+    refetchInterval,
+    refetchIntervalInBackground,
   })
 }
