@@ -93,10 +93,7 @@ export const menuItemFormSchema = z.object({
     }, "Enter a valid price."),
   category: z.enum(["rice", "soup", "snack", "drink", "protein", "shawarma", "food"]),
   isAvailable: z.boolean(),
-  image: z.object({
-    url: z.string(),
-    publicId: z.string(),
-  }).optional(),
+  image: z.any().nullable().optional(),
   availableFrom: z.string().optional(),
   availableTo: z.string().optional(),
 }).refine((data) => {
@@ -119,10 +116,7 @@ export const vendorSettingsSchema = z.object({
   whatsappNumber: z.string().optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  image: z.object({
-    url: z.string(),
-    publicId: z.string(),
-  }).optional(),
+  image: z.any().nullable().optional(),
 });
 
 export type VendorSettingsValues = z.infer<typeof vendorSettingsSchema>;

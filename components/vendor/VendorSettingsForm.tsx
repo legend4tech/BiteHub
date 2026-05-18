@@ -54,13 +54,37 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
   const onSubmit = async (values: VendorSettingsValues) => {
     setSaving(true);
     try {
+      let imageToSave = values.image;
+
+      if (values.image && typeof values.image === "object" && "file" in values.image && values.image.file) {
+        const formData = new FormData();
+        formData.append("file", values.image.file);
+        formData.append("type", "vendor");
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errData = await uploadResponse.json();
+          throw new Error(errData.error || "Failed to upload image");
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageToSave = {
+          url: uploadData.imageUrl,
+          publicId: uploadData.publicId,
+        };
+      }
+
       const response = await apiClient.patch("/vendor/settings", {
         name: values.name,
         description: values.description,
         whatsappNumber: values.whatsappNumber,
         category: values.category,
         tags: values.tags,
-        image: values.image,
+        image: imageToSave,
       });
 
       const updatedVendor = response.data;
@@ -79,8 +103,9 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
 
       toast.success("Settings updated successfully");
       router.refresh();
-    } catch (error) {
-      toast.error("Failed to update settings");
+    } catch (error: any) {
+      console.error("Save settings error:", error);
+      toast.error(error.message || "Failed to update settings");
     } finally {
       setSaving(false);
     }

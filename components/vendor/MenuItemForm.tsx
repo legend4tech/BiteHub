@@ -50,18 +50,45 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
   const onSubmit = async (values: MenuItemFormValues) => {
     setSaving(true);
     try {
+      let imageToSave = values.image;
+
+      if (values.image && typeof values.image === "object" && "file" in values.image && values.image.file) {
+        const formData = new FormData();
+        formData.append("file", values.image.file);
+        formData.append("type", "menu");
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errData = await uploadResponse.json();
+          throw new Error(errData.error || "Failed to upload image");
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageToSave = {
+          url: uploadData.imageUrl,
+          publicId: uploadData.publicId,
+        };
+      }
+
       await onSave({
         name: values.name,
         description: values.description,
         price: parseInputNumber(values.price),
         category: values.category,
         isAvailable: values.isAvailable,
-        image: values.image,
+        image: imageToSave ?? undefined,
         availableFrom: values.availableFrom || undefined,
         availableTo: values.availableTo || undefined,
         tag: null,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Save menu item error:", error);
+      toast.error(error.message || "Failed to save menu item");
+    } finally {
       setSaving(false);
     }
   };
