@@ -118,9 +118,8 @@ export function VendorOrders({
         <OrderTable orders={orders} onStatusChange={handleStatusChange} />
         
         {/* Pagination UI */}
-        {totalPages > 1 && (
-          <div className="mt-6 border-t border-border pt-4">
-            <Pagination>
+        <div className="mt-6 border-t border-border pt-4">
+          <Pagination>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious 
@@ -170,7 +169,6 @@ export function VendorOrders({
               </PaginationContent>
             </Pagination>
           </div>
-        )}
       </div>
     </div>
   )

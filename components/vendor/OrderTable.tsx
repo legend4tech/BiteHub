@@ -102,8 +102,7 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
     return (
       <EmptyState
         size="sm"
-        icon="📋"
-        showImage={false}
+     
         title="No orders yet"
         description="Orders placed by students will appear here as they come in."
       />
