@@ -80,24 +80,12 @@ export async function POST(request: Request) {
 
     const {
       vendorId,
-      vendorName,
-      vendorWhatsappNumber,
-      vendorPhone, // Fallback for cached frontends
       items,
       customerName,
       customerPhone,
       location,
       notes,
     } = parsedBody.data;
-
-    const finalWhatsapp = vendorWhatsappNumber !== undefined ? vendorWhatsappNumber : vendorPhone;
-
-    if (finalWhatsapp === undefined) {
-      return NextResponse.json(
-        { error: "Vendor WhatsApp number is required" },
-        { status: 400 }
-      );
-    }
 
     // Verify vendor exists and is active before accepting the order
     const vendor = await Vendor.findById(vendorId).lean();
@@ -107,6 +95,17 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    // Securely source the vendor's WhatsApp number directly from the database (Source of Truth)
+    const finalWhatsapp = vendor.whatsappNumber;
+    if (!finalWhatsapp) {
+      return NextResponse.json(
+        { error: "Vendor does not have a configured WhatsApp number" },
+        { status: 400 }
+      );
+    }
+
+    const finalVendorName = vendor.name;
 
     // Server-side Price Calculation (Fixes Client-Side Pricing Trust Vulnerability)
     let calculatedTotal = 0;
@@ -135,7 +134,7 @@ export async function POST(request: Request) {
     const order = await Order.create({
       orderId,
       vendorId,
-      vendorName,
+      vendorName: finalVendorName,
       vendorWhatsappNumber: finalWhatsapp,
       items,
       customerName,
@@ -149,7 +148,7 @@ export async function POST(request: Request) {
     // Send WhatsApp Notification (fire and forget to not block response)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const trackingLink = `${baseUrl}/order/${order.orderId}`;
-    sendVendorOrderNotification(finalWhatsapp, vendorName, customerName, order.orderId, trackingLink);
+    sendVendorOrderNotification(finalWhatsapp, finalVendorName, customerName, order.orderId, trackingLink);
 
     return NextResponse.json({ orderId: order.orderId }, { status: 201 });
   } catch (error) {

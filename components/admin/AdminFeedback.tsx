@@ -2,6 +2,7 @@
 
 import { Star } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 interface AdminFeedbackProps {
   feedbacks: any[] | undefined;
@@ -24,7 +25,11 @@ export function AdminFeedback({ feedbacks, loadingFeedback }: AdminFeedbackProps
             ))}
           </div>
         ) : feedbacks?.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No feedback received yet.</div>
+          <EmptyState
+            size="sm"
+            title="No feedback received yet"
+            description="When users submit platform feedback, it will show up here."
+          />
         ) : (
           <div className="space-y-4">
             {feedbacks?.map((feedback: any) => (
