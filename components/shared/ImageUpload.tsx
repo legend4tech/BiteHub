@@ -16,6 +16,7 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
   const [loading, setLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadedPublicIdsRef = useRef<Set<string>>(new Set());
 
   // Normalize value to object or string
   const currentUrl = typeof value === "string" ? value : value?.url;
@@ -48,6 +49,8 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
       if (!response.ok) {
         throw new Error(data.error || "Upload failed");
       }
+
+      uploadedPublicIdsRef.current.add(data.publicId);
 
       onChange({
         url: data.imageUrl,
@@ -90,10 +93,24 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
     }
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    const currentPublicId = typeof value === "string" ? null : value?.publicId;
     onChange(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+
+    if (currentPublicId && uploadedPublicIdsRef.current.has(currentPublicId)) {
+      try {
+        await fetch("/api/upload", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: currentPublicId }),
+        });
+        uploadedPublicIdsRef.current.delete(currentPublicId);
+      } catch (error) {
+        console.error("Failed to delete freshly uploaded image:", error);
+      }
     }
   };
 

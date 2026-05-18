@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { uploadStream } from "@/lib/cloudinary";
+import { uploadStream, deleteFromCloudinary } from "@/lib/cloudinary";
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +33,24 @@ export async function POST(request: Request) {
     console.error("[POST /api/upload] Error:", error);
     return NextResponse.json(
       { error: "Upload failed", details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { publicId } = await request.json();
+    if (!publicId) {
+      return NextResponse.json({ error: "Missing publicId" }, { status: 400 });
+    }
+
+    await deleteFromCloudinary(publicId);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("[DELETE /api/upload] Error:", error);
+    return NextResponse.json(
+      { error: "Deletion failed", details: error.message },
       { status: 500 }
     );
   }
