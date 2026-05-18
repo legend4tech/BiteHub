@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import MenuItem from "@/models/MenuItem";
 import { auth } from "@/auth";
 import { serializeMenuItem } from "@/lib/serializers";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -41,6 +42,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const vendorId = new Types.ObjectId((session.user as any).vendorId);
     const body = await request.json();
 
+    // Fetch existing menu item to check for image changes
+    const existingItem = await MenuItem.findOne({ _id: id, vendorId });
+    if (!existingItem) {
+      return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
+    }
+
+    // Clean up old Cloudinary image if it was replaced or removed
+    if (body.image !== undefined) {
+      const oldPublicId = existingItem.image?.publicId;
+      const newPublicId = body.image?.publicId;
+      if (oldPublicId && oldPublicId !== newPublicId) {
+        await deleteFromCloudinary(oldPublicId);
+      }
+    }
+
     const item = await MenuItem.findOneAndUpdate(
       { _id: id, vendorId },
       { $set: body },
@@ -68,6 +84,17 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     await dbConnect();
     const vendorId = new Types.ObjectId((session.user as any).vendorId);
+
+    // Fetch the menu item first to clean up its Cloudinary asset
+    const existingItem = await MenuItem.findOne({ _id: id, vendorId });
+    if (!existingItem) {
+      return NextResponse.json({ error: "Menu item not found" }, { status: 404 });
+    }
+
+    // Clean up Cloudinary image
+    if (existingItem.image?.publicId) {
+      await deleteFromCloudinary(existingItem.image.publicId);
+    }
 
     const item = await MenuItem.findOneAndDelete({ _id: id, vendorId });
 

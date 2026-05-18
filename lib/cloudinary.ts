@@ -30,3 +30,16 @@ export async function uploadStream(
     stream.end(buffer);
   });
 }
+
+/**
+ * Deletes a file from Cloudinary using its public ID.
+ */
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  if (!publicId) return;
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log(`[Cloudinary] Deleted asset: ${publicId}`, result);
+  } catch (error) {
+    console.error(`[Cloudinary] Failed to delete asset: ${publicId}`, error);
+  }
+}

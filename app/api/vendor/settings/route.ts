@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import Vendor from "@/models/Vendor";
 import { auth } from "@/auth";
 import { serializeVendor } from "@/lib/serializers";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 export async function PATCH(request: Request) {
   try {
@@ -17,6 +18,21 @@ export async function PATCH(request: Request) {
     const body = await request.json();
 
     const { name, description, category, tags, whatsappNumber, image } = body;
+
+    // Fetch existing vendor to check for image changes
+    const existingVendor = await Vendor.findById(vendorId);
+    if (!existingVendor) {
+      return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+
+    // Clean up old Cloudinary image if it was replaced or removed
+    if (image !== undefined) {
+      const oldPublicId = existingVendor.image?.publicId;
+      const newPublicId = image?.publicId;
+      if (oldPublicId && oldPublicId !== newPublicId) {
+        await deleteFromCloudinary(oldPublicId);
+      }
+    }
 
     // Build update object
     const updateData: Record<string, any> = {};
