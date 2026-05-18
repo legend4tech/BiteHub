@@ -14,18 +14,25 @@ export async function GET(request: Request) {
 
     await dbConnect();
     const vendorId = new Types.ObjectId((session.user as any).vendorId);
-    
+
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const page     = parseInt(searchParams.get("page")     || "1",  10);
+    const limit    = parseInt(searchParams.get("limit")    || "10", 10);
+    const search   = searchParams.get("search")?.trim()   || "";
+    const category = searchParams.get("category")?.trim() || "";
     const skip = (page - 1) * limit;
 
-    const items = await MenuItem.find({ vendorId })
+    // Build filter — always scope to the authenticated vendor
+    const filter: Record<string, any> = { vendorId };
+    if (search)   filter.name     = { $regex: search,   $options: "i" };
+    if (category) filter.category = { $regex: category, $options: "i" };
+
+    const items = await MenuItem.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
-      
+
     return NextResponse.json(items.map(serializeMenuItem));
   } catch (error) {
     console.error("[vendor/menu GET]", error);

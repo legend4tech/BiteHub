@@ -24,7 +24,7 @@ function VendorLayoutContent({ children }: { children: React.ReactNode }) {
   const pageTitle = pageTitles[pathname] ?? pageTitles[Object.keys(pageTitles).find(k => pathname.startsWith(k)) ?? ""] ?? "Vendor Dashboard";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="fixed inset-0 flex bg-background">
       {/* Desktop sidebar */}
       <VendorSidebar />
 

@@ -10,22 +10,40 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import type { MenuItem } from "@/lib/types";
 
-export default async function VendorMenuPage() {
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function VendorMenuPage({ searchParams }: Props) {
   const session = await auth();
   if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
     redirect("/vendor/login");
   }
 
+  const resolvedParams = await searchParams;
+  const activeCategory = typeof resolvedParams.category === "string" ? resolvedParams.category : "all";
+  const search         = typeof resolvedParams.search   === "string" ? resolvedParams.search   : "";
+
   await dbConnect();
   const vendorId = new Types.ObjectId(session.user.vendorId);
 
-  // Fetch initial 10 items
-  const itemsDocs = await MenuItemModel.find({ vendorId })
+  // Fetch all items for stats and full category list
+  const allItemsDocs = await MenuItemModel.find({ vendorId })
     .sort({ createdAt: -1 })
-    .limit(10)
     .lean();
-    
-  const items = itemsDocs.map(serializeMenuItem).filter(Boolean) as MenuItem[];
+
+  const allItems = allItemsDocs.map(serializeMenuItem).filter(Boolean) as MenuItem[];
+
+  // Fetch filtered items for rendering
+  const filter: Record<string, any> = { vendorId };
+  if (search) filter.name = { $regex: search, $options: "i" };
+  if (activeCategory && activeCategory !== "all") filter.category = activeCategory;
+
+  const filteredDocs = await MenuItemModel.find(filter)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const filteredItems = filteredDocs.map(serializeMenuItem).filter(Boolean) as MenuItem[];
 
   return (
     <div className="space-y-6">
@@ -41,7 +59,11 @@ export default async function VendorMenuPage() {
         </Button>
       </div>
 
-      <VendorMenuManagement initialItems={items} />
+      <VendorMenuManagement
+        initialItems={filteredItems}
+        allItems={allItems}
+        activeCategory={activeCategory}
+      />
     </div>
   );
 }

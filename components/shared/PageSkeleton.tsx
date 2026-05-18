@@ -19,6 +19,7 @@ type SkeletonVariant =
   | "dashboard"
   | "orders-table"
   | "menu-management"
+  | "menu-card-grid"
   | "menu-item-edit";
 
 interface PageSkeletonProps {
@@ -42,6 +43,8 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <OrdersTableSkeleton count={count} />;
     case "menu-management":
       return <MenuManagementSkeleton count={count} />;
+    case "menu-card-grid":
+      return <MenuCardGridSkeleton count={count} />;
     case "menu-item-edit":
       return <MenuItemEditSkeleton />;
     default:
@@ -245,6 +248,35 @@ function MenuManagementSkeleton({ count }: { count: number }) {
           <Skeleton className="h-5 w-16" />
           <Skeleton className="h-6 w-10 rounded-full" />
           <Skeleton className="h-8 w-8 rounded-lg" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MenuCardGridSkeleton({ count }: { count: number }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
+          <Skeleton className="h-40 w-full" />
+          <div className="px-3.5 pt-3 pb-1 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-14 shrink-0" />
+            </div>
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+          <div className="flex items-center justify-between px-3.5 pt-2 pb-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-9 rounded-full" />
+              <Skeleton className="h-3 w-14" />
+            </div>
+            <div className="flex gap-1">
+              <Skeleton className="h-7 w-7 rounded-lg" />
+              <Skeleton className="h-7 w-7 rounded-lg" />
+            </div>
+          </div>
         </div>
       ))}
     </div>
