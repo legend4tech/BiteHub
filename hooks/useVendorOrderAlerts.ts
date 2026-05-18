@@ -6,12 +6,34 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders";
 import { toast } from "sonner";
 
-// Synthesize a beautiful high-fidelity "Ding-Dong" notification chime
-function playNotificationSound() {
+// Auto-unlock helper to satisfy strict browser autoplay policies
+let globalAudioContext: AudioContext | null = null;
+
+function getUnlockedAudioContext(): AudioContext | null {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
+    if (!AudioContextClass) return null;
+    
+    if (!globalAudioContext) {
+      globalAudioContext = new AudioContextClass();
+    }
+    
+    if (globalAudioContext.state === "suspended") {
+      globalAudioContext.resume();
+    }
+    
+    return globalAudioContext;
+  } catch (e) {
+    console.error("Failed to initialize AudioContext:", e);
+    return null;
+  }
+}
+
+// Synthesize a beautiful high-fidelity "Ding-Dong" notification chime
+export function playNotificationSound() {
+  try {
+    const ctx = getUnlockedAudioContext();
+    if (!ctx) return;
 
     // First Tone: G5
     const osc1 = ctx.createOscillator();
@@ -41,6 +63,20 @@ function playNotificationSound() {
   } catch (error) {
     console.error("Failed to play synthesized notification chime:", error);
   }
+}
+
+// Expose testing function globally to make developer testing 100% painless in DevTools console
+if (typeof window !== "undefined") {
+  (window as any).testChime = playNotificationSound;
+  
+  // Unlock on first interaction
+  const unlock = () => {
+    getUnlockedAudioContext();
+    window.removeEventListener("click", unlock);
+    window.removeEventListener("touchstart", unlock);
+  };
+  window.addEventListener("click", unlock);
+  window.addEventListener("touchstart", unlock);
 }
 
 // Trigger browser native system notification
