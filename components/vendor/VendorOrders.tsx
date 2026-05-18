@@ -6,6 +6,15 @@ import type { Order, OrderStatus } from "@/lib/types"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
 import { ORDER_STATUS, ORDER_STATUS_CONFIG } from "@/lib/constants"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -37,14 +46,18 @@ const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
 
 interface VendorOrdersProps {
   orders: Order[]
-  allOrders: Order[]
+  counts: Record<string, number>
   activeStatus: string
+  currentPage: number
+  totalPages: number
 }
 
 export function VendorOrders({
   orders,
-  allOrders,
+  counts,
   activeStatus,
+  currentPage,
+  totalPages,
 }: VendorOrdersProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -67,17 +80,14 @@ export function VendorOrders({
       <div>
         <h1 className="font-heading text-2xl font-bold">Orders</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {allOrders.length} total orders
+          {counts["all"] || 0} total orders
         </p>
       </div>
 
       {/* Filter tabs */}
       <div className="flex flex-wrap gap-2">
         {FILTER_OPTIONS.map((opt) => {
-          const count =
-            opt.value === "all"
-              ? allOrders.length
-              : allOrders.filter((o) => o.status === opt.value).length
+          const count = counts[opt.value] || 0
           return (
             <button
               key={opt.value}
@@ -88,6 +98,7 @@ export function VendorOrders({
                 } else {
                   params.set("status", opt.value)
                 }
+                params.delete("page") // Reset to page 1 on status change
                 router.push(`?${params.toString()}`, { scroll: false })
               }}
               className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-all ${
@@ -105,6 +116,61 @@ export function VendorOrders({
 
       <div className="rounded-2xl border border-border bg-card p-6">
         <OrderTable orders={orders} onStatusChange={handleStatusChange} />
+        
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="mt-6 border-t border-border pt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href={currentPage > 1 ? `?status=${activeStatus}&page=${currentPage - 1}` : "#"} 
+                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                
+                {/* Generate explicit page numbers if we have a small amount of pages, or ellipsize */}
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const page = idx + 1;
+                  // Simple display logic: show first, last, current, and adjacent
+                  if (
+                    page === 1 || 
+                    page === totalPages || 
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink 
+                          href={`?status=${activeStatus}&page=${page}`}
+                          isActive={page === currentPage}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+                  
+                  // Show ellipsis only once per gap
+                  if (page === 2 && currentPage > 3) {
+                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                  }
+                  if (page === totalPages - 1 && currentPage < totalPages - 2) {
+                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                  }
+                  
+                  return null;
+                })}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    href={currentPage < totalPages ? `?status=${activeStatus}&page=${currentPage + 1}` : "#"} 
+                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
     </div>
   )
