@@ -10,6 +10,70 @@ import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { formatPrice, formatTime } from "@/lib/format"
+import { Copy, Check } from "lucide-react"
+
+function CopyableText({ text, className, iconClassName }: { text: string; className?: string; iconClassName?: string }) {
+  const [copied, setCopied] = useState(false)
+  
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  
+  return (
+    <div className={`inline-flex items-center gap-1.5 ${className || ""}`}>
+      <span>{text}</span>
+      <button
+        onClick={handleCopy}
+        className={`text-muted-foreground/40 transition-all hover:text-primary active:scale-95 ${iconClassName || ""}`}
+        title="Copy to clipboard"
+      >
+        {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+      </button>
+    </div>
+  )
+}
+
+function OrderItemsDisplay({ items }: { items: Order["items"] }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  if (items.length <= 2) {
+    return (
+      <div className="flex flex-col gap-1.5 min-w-[150px]">
+        {items.map((i, idx) => (
+          <div key={idx} className="text-sm leading-tight">
+            <span className="font-medium">{i.name}</span>
+            <span className="text-muted-foreground ml-1.5 text-xs">×{i.quantity}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const displayedItems = isExpanded ? items : items.slice(0, 1)
+
+  return (
+    <div className="flex flex-col gap-1.5 min-w-[150px]">
+      {displayedItems.map((i, idx) => (
+        <div key={idx} className="text-sm leading-tight">
+          <span className="font-medium">{i.name}</span>
+          <span className="text-muted-foreground ml-1.5 text-xs">×{i.quantity}</span>
+        </div>
+      ))}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsExpanded(!isExpanded)
+        }}
+        className="text-xs text-primary font-medium text-left mt-0.5 hover:underline w-fit active:scale-95 transition-transform"
+      >
+        {isExpanded ? "Show less" : `+ ${items.length - 1} more items`}
+      </button>
+    </div>
+  )
+}
 
 interface OrderTableProps {
   orders: Order[]
@@ -49,29 +113,29 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm md:text-sm">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
                 Order ID
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
                 Customer
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground">
                 Items
               </th>
-              <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-right text-sm font-semibold text-muted-foreground whitespace-nowrap">
                 Total
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
                 Status
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
                 Location
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground">
-                Date&Time
+              <th className="px-3 py-3 text-left text-sm font-semibold text-muted-foreground whitespace-nowrap">
+                Ordered Time
               </th>
             </tr>
           </thead>
@@ -81,28 +145,26 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                 key={order.orderId}
                 className="transition-colors hover:bg-muted/30"
               >
-                <td className="px-3 py-3">
-                  <span className="font-mono text-xs font-semibold text-primary">
-                    {order.orderId}
-                  </span>
+                <td className="px-3 py-3 align-top">
+                  <CopyableText 
+                    text={order.orderId} 
+                    className="font-mono text-sm font-semibold text-primary" 
+                  />
                 </td>
-                <td className="px-3 py-3">
-                  <p className="font-medium">{order.customerName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {order.customerPhone}
-                  </p>
+                <td className="px-3 py-3 align-top whitespace-nowrap">
+                  <p className="font-medium text-sm">{order.customerName}</p>
+                  <CopyableText 
+                    text={order.customerPhone} 
+                    className="text-xs text-muted-foreground mt-0.5" 
+                  />
                 </td>
-                <td className="px-3 py-3">
-                  <p className="text-xs text-muted-foreground">
-                    {order.items
-                      .map((i) => `${i.name} ×${i.quantity}`)
-                      .join(", ")}
-                  </p>
+                <td className="px-3 py-3 align-top">
+                  <OrderItemsDisplay items={order.items} />
                 </td>
-                <td className="px-3 py-3 text-right font-bold">
+                <td className="px-3 py-3 text-right font-bold align-top text-sm">
                   {formatPrice(order.totalAmount)}
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-3 py-3 align-top">
                   {onStatusChange ? (
                     <select
                       value={order.status}
@@ -115,7 +177,7 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                         })
                         // the visual revert will happen automatically because value={order.status}
                       }}
-                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs focus:border-primary focus:outline-none disabled:opacity-50"
+                      className="rounded-lg border border-border bg-background px-2 py-1 text-sm md:text-xs focus:border-primary focus:outline-none disabled:opacity-50"
                       disabled={
                         order.status === ORDER_STATUS.CANCELLED ||
                         order.status === ORDER_STATUS.COMPLETED
@@ -140,10 +202,10 @@ export function OrderTable({ orders, onStatusChange }: OrderTableProps) {
                     <StatusBadge status={order.status} />
                   )}
                 </td>
-                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[150px] truncate" title={order.location}>
-                  {order.location}
+                <td className="px-3 py-3 text-sm md:text-xs text-muted-foreground max-w-[150px] align-top" title={order.location}>
+                  <div className="line-clamp-2">{order.location}</div>
                 </td>
-                <td className="px-3 py-3 text-xs whitespace-nowrap text-muted-foreground">
+                <td className="px-3 py-3 text-sm md:text-xs whitespace-nowrap text-muted-foreground align-top">
                   {new Date(order.createdAt).toLocaleDateString("en-NG", {
                     month: "short",
                     day: "numeric",
