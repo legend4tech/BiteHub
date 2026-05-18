@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { RefreshCw, ArrowRight, Star, Banknote } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
+import { APP_NAME } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
 import { useVendorStats } from "@/hooks/queries/useVendorStats"
 import { useState, useEffect } from "react"
@@ -222,7 +223,7 @@ export default function VendorDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-heading text-xl font-bold">Rate the Platform</AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              How was your experience using CampusBites as a vendor? We'd love to hear your thoughts!
+              How was your experience using {APP_NAME} as a vendor? We'd love to hear your thoughts!
             </AlertDialogDescription>
           </AlertDialogHeader>
           

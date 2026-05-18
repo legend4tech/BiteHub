@@ -4,6 +4,8 @@ import VendorModel from "@/models/Vendor";
 import VendorUserModel from "@/models/VendorUser";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
+import { CAMPUSES, SCHOOLS } from "@/lib/constants";
+
 
 // GET — all vendors for admin (no isActive filter)
 export async function GET() {
@@ -98,8 +100,8 @@ export async function POST(request: Request) {
       category: category?.trim() || "general",
       tags: Array.isArray(tags) ? tags : [],
       whatsappNumber: whatsappNumber.trim(),
-      campus: campus?.trim() || "COOU Uli",
-      school: school?.trim() || "COOU",
+      campus: campus?.trim() || CAMPUSES[0].value,
+      school: school?.trim() || SCHOOLS[0].value,
       image: image,
       isActive: true,
     });

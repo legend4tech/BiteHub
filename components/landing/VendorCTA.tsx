@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight } from "lucide-react";
 import { FadeIn } from "@/components/FadeIn";
+import { APP_NAME } from "@/lib/constants";
+
 
 export function VendorCTA() {
   const perks = [
@@ -24,7 +26,7 @@ export function VendorCTA() {
                 </FadeIn>
                 <FadeIn delay={0.3}>
                   <h2 className="font-heading text-3xl md:text-5xl font-bold mt-2 leading-tight">
-                    Run a kitchen on campus? List it on CampusBites.
+                    Selling food, snacks, or drinks on campus? List on {APP_NAME}.
                   </h2>
                 </FadeIn>
                 <FadeIn delay={0.4}>

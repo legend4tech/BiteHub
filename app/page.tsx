@@ -15,11 +15,11 @@ import MenuItem from "@/models/MenuItem";
 import Vendor from "@/models/Vendor";
 
 export const metadata: Metadata = {
-  title: "CampusBites — Campus food, delivered fast",
+  title: "BiteHub — Campus food, delivered fast",
   description:
-    "Discover the best campus vendors at COOU Uli, browse menus and order food in seconds — all from one app.",
+    "Discover the best campus food vendors around you, browse menus and order food in seconds — all from one app.",
   openGraph: {
-    title: "CampusBites — Campus food, delivered fast",
+    title: "BiteHub — Campus food, delivered fast",
     description: "Order from your favorite campus kitchens in seconds.",
   },
 };

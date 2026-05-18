@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
+import { CAMPUS_NAME } from "@/lib/constants"
+;
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
@@ -66,7 +68,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold">Email Us</p>
-                    <p className="text-sm text-muted-foreground">hello@campusbites.com</p>
+                    <p className="text-sm text-muted-foreground">contact@bitehubapp.com</p>
                     <p className="text-xs text-muted-foreground">We reply within 24 hours</p>
                   </div>
                 </div>
@@ -88,7 +90,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold">Location</p>
-                    <p className="text-sm text-muted-foreground">COOU Uli Campus</p>
+                    <p className="text-sm text-muted-foreground">{CAMPUS_NAME}</p>
                     <p className="text-xs text-muted-foreground">Anambra, Nigeria</p>
                   </div>
                 </div>

@@ -16,7 +16,7 @@ export const globalRateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(50, "10 s"),
   analytics: true,
-  prefix: "campusbites:ratelimit:global",
+  prefix: "bitehub:ratelimit:global",
 });
 
 // Strict Rate Limiter for Auth / Sensitive Routes: 10 requests per 1 minute per IP
@@ -24,5 +24,5 @@ export const strictRateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   analytics: true,
-  prefix: "campusbites:ratelimit:strict",
+  prefix: "bitehub:ratelimit:strict",
 });

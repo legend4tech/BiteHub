@@ -13,6 +13,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { AuthPanel } from "@/components/shared/AuthPanel";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -73,7 +75,7 @@ export default function AdminLoginPage() {
         badge="Admin Access Only"
         badgeIcon={Lock}
         headline="Platform control<br />centre"
-        subline="Manage vendors, monitor orders, and keep the CampusBites platform running smoothly."
+        subline={`Manage vendors, monitor orders, and keep the ${APP_NAME} platform running smoothly.`}
         features={[
           { icon: Users, text: "Manage all vendor accounts" },
           { icon: BarChart3, text: "Platform-wide analytics & revenue" },
@@ -94,9 +96,15 @@ export default function AdminLoginPage() {
             Back to Home
           </Link>
           {/* Mobile brand */}
-          <div className="lg:hidden flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-primary grid place-items-center text-white font-bold text-sm">C</div>
-            <span className="font-heading font-bold text-sm">CampusBites</span>
+          <div className="lg:hidden flex items-center gap-2.5">
+            <img 
+              src={APP_LOGO_URL} 
+              alt={APP_NAME} 
+              className="h-9 w-auto object-contain rounded-lg" 
+            />
+            <span className="font-heading font-black text-2xl tracking-tight text-foreground leading-none">
+              Bite<span className="text-primary">Hub</span>
+            </span>
           </div>
         </div>
 
@@ -118,7 +126,7 @@ export default function AdminLoginPage() {
               <Controller name="email" control={form.control} render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={field.name}>Email Address</FieldLabel>
-                  <Input {...field} id={field.name} type="email" placeholder="admin@campusbites.com" autoComplete="email" aria-invalid={fieldState.invalid} className="h-11" />
+                  <Input {...field} id={field.name} type="email" placeholder="admin@bitehubapp.com" autoComplete="email" aria-invalid={fieldState.invalid} className="h-11" />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )} />

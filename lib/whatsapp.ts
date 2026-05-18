@@ -3,8 +3,11 @@ import https from "https";
 
 const httpsAgent = new https.Agent({ family: 4 });
 
+import { APP_LOGO_URL } from "@/lib/constants";
+
 export async function sendVendorOrderNotification(
   vendorPhone: string,
+  vendorName: string,
   customerName: string,
   orderId: string,
   trackingLink: string
@@ -31,15 +34,34 @@ export async function sendVendorOrderNotification(
       to: cleanPhone,
       type: "template",
       template: {
-        name: "jaspers_market_order_confirmation_v1",
+        name: "vendor_new_order_alert",
         language: { code: "en_US" },
         components: [
           {
+            type: "header",
+            parameters: [
+              {
+                type: "image",
+                image: {
+                  link: APP_LOGO_URL,
+                },
+              },
+            ],
+          },
+          {
             type: "body",
             parameters: [
-              { type: "text", text: customerName || "Customer" },
-              { type: "text", text: orderId },
-              { type: "text", text: trackingLink },
+              { type: "text", parameter_name: "vendor_name", text: vendorName || "Vendor" },
+              { type: "text", parameter_name: "customer_name", text: customerName || "Customer" },
+              { type: "text", parameter_name: "order_id", text: orderId },
+            ],
+          },
+          {
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [
+              { type: "text", parameter_name: "order_id", text: orderId },
             ],
           },
         ],

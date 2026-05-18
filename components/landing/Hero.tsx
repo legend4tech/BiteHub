@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Smartphone, Timer, Zap, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { FadeIn } from "@/components/FadeIn";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 const slides = [
   {
@@ -58,7 +60,8 @@ export function Hero() {
           </FadeIn>
           <FadeIn delay={0.2}>
             <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-              Campus food,{" "}
+              Get your favorite campus meals on{" "}
+              <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">{APP_NAME}</span>,{" "}
               <span className="text-primary">delivered</span> at the speed of hunger.
             </h1>
           </FadeIn>
@@ -148,17 +151,17 @@ export function Hero() {
           {/* Feature chip — replaces fake order number */}
          <div className="absolute -bottom-6 -left-6 bg-card border border-border rounded-2xl p-4 shadow-[var(--shadow-soft)] w-56 hidden md:block animate-slide-up">
             <div className="flex items-center gap-3">
-              <div className="relative h-10 w-10 rounded-full overflow-hidden shrink-0 border border-border">
+              <div className="relative h-10 w-auto rounded-xl overflow-hidden shrink-0">
                 <Image
-                  src="https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=100&h=100&fit=crop&auto=format"
-                  alt="CampusBites"
+                  src={APP_LOGO_URL}
+                  alt={APP_NAME}
                   fill
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight">Order #CB-24-GJY</p>
-                <p className="text-xs text-muted-foreground">CampusBites</p>
+                <p className="text-sm font-semibold leading-tight">Order #BH-24-GJY</p>
+                <p className="text-xs text-muted-foreground">{APP_NAME}</p>
               </div>
             </div>
             <div className="mt-3 flex items-center gap-2 text-xs">

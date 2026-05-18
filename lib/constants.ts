@@ -3,7 +3,8 @@ import type { MenuCategory, OrderStatus } from "./types"
 
 // ─── App Constants ────────────────────────────────────────────────────────────
 
-export const APP_NAME = "CampusBites"
+export const APP_NAME = "BiteHub"
+export const APP_LOGO_URL = "/brand_logo.png" // Temporary placeholder logo
 export const CAMPUS_NAME = "COOU Uli"
 
 // ─── localStorage Keys ────────────────────────────────────────────────────────
@@ -172,7 +173,7 @@ export const MENU_CATEGORIES: {
 export function generateOrderId(): string {
   const ts = Date.now().toString(36).toUpperCase()
   const rand = crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()
-  return `CB-${ts}-${rand}`
+  return `BH-${ts}-${rand}`
 }
 
 export function buildWhatsAppLink(phone: string, message: string): string {

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
 
     // Determine folder
-    const folder = type === "vendor" ? "campusbites/vendorsimg" : "campusbites/menuimg";
+    const folder = type === "vendor" ? "bitehub/vendorsimg" : "bitehub/menuimg";
 
     // Upload to Cloudinary
     const result = await uploadStream(buffer, folder);

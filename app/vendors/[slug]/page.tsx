@@ -41,10 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getVendorData(slug);
   
-  if (!data || !data.vendor) return { title: "Vendor Not Found — CampusBites" };
+  if (!data || !data.vendor) return { title: "Vendor Not Found — BiteHub" };
   
   return {
-    title: `${data.vendor.name} — CampusBites`,
+    title: `${data.vendor.name} — BiteHub`,
     description: data.vendor.description || data.vendor.tagline,
   };
 }

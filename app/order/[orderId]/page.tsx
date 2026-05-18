@@ -25,6 +25,8 @@ import { RefreshCw, Home, ShoppingBag, MessageCircle, ChevronRight, Receipt, Sta
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatTime } from "@/lib/format"
 import type { OrderStatus } from "@/lib/types"
+import { APP_NAME } from "@/lib/constants"
+
 import { useOrder } from "@/hooks/queries/useOrder"
 import { toast } from "sonner"
 
@@ -61,7 +63,7 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
           </AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-muted-foreground">
             {feedbackStep === 1 
-              ? "How was your experience using CampusBites? We'd love to hear your thoughts!"
+              ? `How was your experience using ${APP_NAME}? We'd love to hear your thoughts!`
               : `How was your order and service from ${vendorName}?`}
           </AlertDialogDescription>
           

@@ -5,7 +5,7 @@ import Order from "@/models/Order";
 import MenuItem from "@/models/MenuItem";
 import { serializeOrder } from "@/lib/serializers";
 import { sendVendorOrderNotification } from "@/lib/whatsapp";
-import { ORDER_STATUS } from "@/lib/constants";
+import { ORDER_STATUS, generateOrderId } from "@/lib/constants";
 import { z } from "zod";
 
 const orderItemSchema = z.object({
@@ -130,9 +130,7 @@ export async function POST(request: Request) {
     }
 
     // Generate a collision-resistant order ID
-    // Format: CB-<full base-36 timestamp>-<6 UUID hex chars>
-    // e.g. CB-LKZM4X8C-A3F1B2
-    const orderId = `CB-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+    const orderId = generateOrderId();
 
     const order = await Order.create({
       orderId,
@@ -151,7 +149,7 @@ export async function POST(request: Request) {
     // Send WhatsApp Notification (fire and forget to not block response)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const trackingLink = `${baseUrl}/order/${order.orderId}`;
-    sendVendorOrderNotification(finalWhatsapp, customerName, order.orderId, trackingLink);
+    sendVendorOrderNotification(finalWhatsapp, vendorName, customerName, order.orderId, trackingLink);
 
     return NextResponse.json({ orderId: order.orderId }, { status: 201 });
   } catch (error) {

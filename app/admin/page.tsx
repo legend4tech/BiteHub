@@ -2,362 +2,45 @@
 
 import { useState, useTransition, useOptimistic } from "react";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
-import apiClient from "@/lib/axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Store, ShoppingBag, CheckCircle2, Clock, Users,
-  TrendingUp, Plus, X, Power, ArrowLeft, Loader2,
-  ChevronRight, RefreshCw, KeyRound, Eye, EyeOff, Star
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Input } from "@/components/ui/input";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { toast } from "sonner";
-import { formatPrice } from "@/lib/format";
-import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageUpload } from "@/components/shared/ImageUpload";
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-interface AdminStats {
-  totalVendors: number;
-  activeVendors: number;
-  totalOrders: number;
-  todayOrders: number;
-  pendingOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
-  totalRevenue: number;
-}
-
-interface VendorAccount {
-  email: string;
-  isActive: boolean;
-  lastLoginAt: string | null;
-  createdAt: string;
-}
-
-interface AdminVendor {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  whatsappNumber: string;
-  campus: string;
-  isActive: boolean;
-  createdAt: string;
-  image?: { url: string; publicId: string };
-  account: VendorAccount | null;
-}
-
-// ─── Add Login Schema ─────────────────────────────────────────────────────────
-
-const addLoginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-type AddLoginValues = z.infer<typeof addLoginSchema>;
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label, value, icon: Icon, accent = false, sub,
-}: {
-  label: string; value: string | number; icon: React.ElementType; accent?: boolean; sub?: string;
-}) {
-  return (
-    <div className={`rounded-2xl border p-5 flex flex-col gap-3 ${accent ? "bg-primary/5 border-primary/20" : "bg-card border-border"}`}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-        <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${accent ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-          <Icon className="size-4" />
-        </div>
-      </div>
-      <div>
-        <p className={`text-3xl font-bold font-heading ${accent ? "text-primary" : ""}`}>{value}</p>
-        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  );
-}
-
-// ─── Add Login Modal ──────────────────────────────────────────────────────────
-
-function AddLoginModal({
-  vendor,
-  onClose,
-  onSuccess,
-}: {
-  vendor: AdminVendor;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const form = useForm<AddLoginValues>({
-    // `as any` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
-    resolver: zodResolver(addLoginSchema as any),
-    defaultValues: { email: "", password: "" },
-  });
-
-  const onSubmit = async (values: AddLoginValues) => {
-    setSubmitting(true);
-    try {
-      await apiClient.post(`/admin/vendors/${vendor.id}/account`, values);
-      toast.success(`Login account created for ${vendor.name}`);
-      onSuccess();
-      onClose();
-    } catch {
-      toast.error("Network error. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl p-6">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h2 className="font-heading font-bold text-lg">Create Login Account</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              For <span className="font-semibold text-foreground">{vendor.name}</span>
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="-mt-1 -mr-1">
-            <X className="size-4" />
-          </Button>
-        </div>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Controller name="email" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Email *</FieldLabel>
-              <Input {...field} id={field.name} type="email" placeholder="vendor@email.com" aria-invalid={fieldState.invalid} />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <Controller name="password" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
-              <div className="relative">
-                <Input
-                  {...field}
-                  id={field.name}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Min. 6 characters"
-                  aria-invalid={fieldState.invalid}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="hero" className="flex-1" disabled={submitting}>
-              {submitting && <Loader2 className="size-4 animate-spin" />}
-              Create login
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-interface AddVendorModalProps {
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-const addVendorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  image: z.object({
-    url: z.string().min(1, "Image is required"),
-    publicId: z.string().min(1),
-  }).optional().refine(val => !!val, { message: "Image is required" }),
-});
-
-type AddVendorValues = z.infer<typeof addVendorSchema>;
-
-function AddVendorModal({ onClose, onSuccess }: AddVendorModalProps) {
-  const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const form = useForm<AddVendorValues>({
-    resolver: zodResolver(addVendorSchema as any),
-    defaultValues: { name: "", whatsappNumber: "", email: "", password: "" },
-  });
-
-  const onSubmit = async (values: AddVendorValues) => {
-    setSubmitting(true);
-    try {
-      let formattedWhatsappNumber = values.whatsappNumber.trim();
-      if (formattedWhatsappNumber.startsWith("0")) {
-        formattedWhatsappNumber = "234" + formattedWhatsappNumber.slice(1);
-      }
-      
-      await apiClient.post("/admin/vendors", {
-        ...values,
-        whatsappNumber: formattedWhatsappNumber,
-      });
-      toast.success(`Vendor ${values.name} created successfully`);
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to create vendor");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h2 className="font-heading font-bold text-lg">Add New Vendor</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Create a vendor profile and login account</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="-mt-1 -mr-1">
-            <X className="size-4" />
-          </Button>
-        </div>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <Controller name="name" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Vendor Name *</FieldLabel>
-              <Input {...field} id={field.name} placeholder="e.g. Mama Put" aria-invalid={fieldState.invalid} />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <Controller name="whatsappNumber" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>WhatsApp Number *</FieldLabel>
-              <Input {...field} id={field.name} placeholder="e.g. 08012345678" aria-invalid={fieldState.invalid} />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <Controller name="email" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Email *</FieldLabel>
-              <Input {...field} id={field.name} type="email" placeholder="vendor@email.com" aria-invalid={fieldState.invalid} />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <Controller name="password" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
-              <div className="relative">
-                <Input
-                  {...field}
-                  id={field.name}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Min. 6 characters"
-                  aria-invalid={fieldState.invalid}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <Controller name="image" control={form.control} render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Profile Image</FieldLabel>
-              <ImageUpload
-                value={field.value}
-                onChange={field.onChange}
-                type="vendor"
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )} />
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="hero" className="flex-1" disabled={submitting}>
-              {submitting && <Loader2 className="size-4 animate-spin" />}
-              Create Vendor
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-// ─── Main Page ────────────────────────────────────────────────────────────────
+import apiClient from "@/lib/axios";
+import { APP_LOGO_URL, APP_NAME } from "@/lib/constants";
+import { AdminSidebar, AdminMobileTrigger, type AdminSection } from "@/components/admin/AdminSidebar";
+import { AdminOverview } from "@/components/admin/AdminOverview";
+import { AdminVendors } from "@/components/admin/AdminVendors";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
+import { AddLoginModal, AddVendorModal } from "@/components/admin/AdminModals";
+import type { AdminStats, AdminVendor } from "@/components/admin/types";
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"overview" | "vendors" | "feedback">("overview");
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null);
+  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
+  const [togglingId, setTogglingId]       = useState<string | null>(null);
+  const [addLoginFor, setAddLoginFor]     = useState<AdminVendor | null>(null);
   const [showAddVendor, setShowAddVendor] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: stats, isLoading: loadingStats, refetch: fetchStats } = useQuery<AdminStats>({
+  const { data: stats, isLoading: loadingStats } = useQuery<AdminStats>({
     queryKey: ["admin-stats"],
-    queryFn: async () => {
-      const res = await apiClient.get("/admin/stats");
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get("/admin/stats")).data,
   });
 
   const { data: vendorsData, isLoading: loadingVendors, refetch: fetchVendors } = useQuery<AdminVendor[]>({
     queryKey: ["admin-vendors"],
-    queryFn: async () => {
-      const res = await apiClient.get("/admin/vendors");
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get("/admin/vendors")).data,
   });
 
   const { data: feedbacks, isLoading: loadingFeedback } = useQuery<any[]>({
     queryKey: ["admin-feedback"],
-    queryFn: async () => {
-      const res = await apiClient.get("/admin/feedback");
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get("/admin/feedback")).data,
   });
 
-  const vendors = vendorsData || [];
+  const vendors = vendorsData ?? [];
 
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [optimisticVendors, addOptimisticVendor] = useOptimistic(
     vendors,
-    (state, updatedVendor: AdminVendor) =>
-      state.map((v) => (v.id === updatedVendor.id ? updatedVendor : v))
+    (state, updated: AdminVendor) => state.map((v) => (v.id === updated.id ? updated : v))
   );
 
   const noAccountVendors = optimisticVendors.filter((v) => !v.account);
@@ -379,307 +62,57 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Top bar */}
-      <header className="border-b border-border bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="size-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary grid place-items-center">
-                <Store className="size-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground leading-none">CampusBites</p>
-                <p className="font-heading font-bold text-sm leading-tight">Admin Dashboard</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            
-            <ConfirmDialog
-              trigger={
-                <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                  <Power className="size-3.5" />
-                  Logout
-                </Button>
-              }
-              title="Are you absolutely sure?"
-              description="This will log you out of the secure admin dashboard. You will need to re-authenticate to access it again."
-              confirmText="Yes, log out"
-              isDestructive
-              onConfirm={() => {
-                toast.success("Successfully logged out");
-                signOut({ callbackUrl: "/admin/login" });
-              }}
-            />
-          </div>
-        </div>
-      </header>
+    <div className="fixed inset-0 flex bg-background text-foreground">
+      {/* Desktop sidebar */}
+      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Tab nav */}
-        <div className="flex items-center gap-1 border-b border-border">
-          {(["overview", "vendors", "feedback"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2.5 text-sm font-semibold capitalize transition-colors relative ${tab === t ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              {t}
-              {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Mobile top-bar */}
+        <header className="md:hidden sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md px-4 h-14 flex items-center justify-between shrink-0">
+          <AdminMobileTrigger activeSection={activeSection} onSectionChange={setActiveSection} />
+          <Link href="/" className="flex items-center gap-2">
+            <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-8 object-contain rounded-lg" />
+            <span className="font-heading font-black text-lg tracking-tight leading-none">
+              Bite<span className="text-primary">Hub</span>
+            </span>
+          </Link>
+          <div className="w-9" />
+        </header>
 
-        {/* ── OVERVIEW ── */}
-        {tab === "overview" && (
-          <div className="space-y-8">
-            <div>
-              <h1 className="font-heading font-bold text-2xl">Overview</h1>
-              <p className="text-sm text-muted-foreground mt-1">Platform stats at a glance</p>
-            </div>
-
-            {loadingStats ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="rounded-2xl border border-border bg-card p-5 h-28 animate-pulse" />
-                ))}
-              </div>
-            ) : stats ? (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard label="Total Vendors" value={stats.totalVendors} icon={Store} sub={`${stats.activeVendors} active`} />
-                  <StatCard label="Total Orders" value={stats.totalOrders} icon={ShoppingBag} sub={`${stats.todayOrders} today`} />
-                  <StatCard label="Completed Orders" value={stats.completedOrders} icon={CheckCircle2} accent />
-                  <StatCard label="Total Revenue" value={formatPrice(stats.totalRevenue)} icon={TrendingUp} accent />
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard label="Pending" value={stats.pendingOrders} icon={Clock} sub="Awaiting vendor" />
-                  <StatCard label="Active Vendors" value={stats.activeVendors} icon={Users} sub={`of ${stats.totalVendors} total`} />
-                  <StatCard label="Cancelled" value={stats.cancelledOrders} icon={X} />
-                  <StatCard label="Today's Orders" value={stats.todayOrders} icon={TrendingUp} />
-                </div>
-
-                {/* Alert: vendors without login */}
-                {noAccountVendors.length > 0 && (
-                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <KeyRound className="size-5 text-amber-500 shrink-0" />
-                      <div>
-                        <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                          {noAccountVendors.length} vendor{noAccountVendors.length > 1 ? "s" : ""} without a login account
-                        </p>
-                        <p className="text-xs text-muted-foreground">They can't log in to their dashboard until you create one.</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setTab("vendors")} className="shrink-0 border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10">
-                      Fix now
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Failed to load stats.</p>
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            {activeSection === "overview" && (
+              <AdminOverview
+                stats={stats}
+                loadingStats={loadingStats}
+                noAccountVendors={noAccountVendors}
+                onGoToVendors={() => setActiveSection("vendors")}
+              />
+            )}
+            {activeSection === "vendors" && (
+              <AdminVendors
+                vendors={vendors}
+                optimisticVendors={optimisticVendors}
+                loadingVendors={loadingVendors}
+                noAccountVendors={noAccountVendors}
+                togglingId={togglingId}
+                onToggleActive={toggleVendorActive}
+                onAddLogin={setAddLoginFor}
+              />
+            )}
+            {activeSection === "feedback" && (
+              <AdminFeedback feedbacks={feedbacks} loadingFeedback={loadingFeedback} />
             )}
           </div>
-        )}
-
-        {/* ── VENDORS ── */}
-        {tab === "vendors" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="font-heading font-bold text-2xl">Vendors</h1>
-                <p className="text-sm text-muted-foreground mt-1">Manage vendor profiles and login accounts</p>
-              </div>
-              <Button variant="hero" asChild className="gap-2">
-                <Link href="/admin/vendors/new">
-                  <Plus className="size-4" /> Add Vendor
-                </Link>
-              </Button>
-            </div>
-
-            {/* Vendors list */}
-            <div className="rounded-3xl border border-border bg-card overflow-hidden">
-              <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-                <p className="font-semibold text-sm">{optimisticVendors.length} vendors total</p>
-                <p className="text-xs text-muted-foreground">{optimisticVendors.filter((v) => v.isActive).length} active · {noAccountVendors.length} without login</p>
-              </div>
-
-              {loadingVendors ? (
-                <div className="divide-y divide-border">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="px-6 py-4 flex items-center gap-4 animate-pulse">
-                      <div className="h-10 w-10 rounded-xl bg-muted shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 bg-muted rounded w-1/3" />
-                        <div className="h-2 bg-muted rounded w-1/2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : vendors.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                  <Store className="size-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-semibold">No vendors yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <Link href="/admin/vendors/new" className="text-primary hover:underline">Create your first vendor</Link>
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {optimisticVendors.map((vendor) => {
-                    const initials = vendor.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-                    return (
-                      <div key={vendor.id} className="px-6 py-4 flex items-center gap-4 hover:bg-muted/30 transition-colors">
-                        {/* Avatar */}
-                        <div className="h-10 w-10 rounded-xl overflow-hidden grid place-items-center text-primary-foreground font-bold text-sm shrink-0 bg-primary shadow-lg shadow-primary/20">
-                          {vendor.image?.url ? (
-                            <img src={vendor.image.url} alt={vendor.name} className="h-full w-full object-cover" />
-                          ) : (
-                            initials
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-sm truncate">{vendor.name}</p>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${vendor.isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                              {vendor.isActive ? "Active" : "Inactive"}
-                            </span>
-                            {vendor.account ? (
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${vendor.account.isActive ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-muted text-muted-foreground"}`}>
-                                Login {vendor.account.isActive ? "active" : "disabled"}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                                No login
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {vendor.whatsappNumber} · {vendor.campus}
-                            {vendor.account && <span className="ml-2 text-primary/70">· {vendor.account.email}</span>}
-                          </p>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          {/* Add login button for vendors without account */}
-                          {!vendor.account && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 gap-1.5 text-xs border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-                              onClick={() => setAddLoginFor(vendor)}
-                            >
-                              <KeyRound className="size-3" />
-                              Add login
-                            </Button>
-                          )}
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "opacity-50 cursor-not-allowed" : ""}`}
-                            title={vendor.isActive ? "Deactivate storefront" : "Activate storefront"}
-                            onClick={() => toggleVendorActive(vendor)}
-                            disabled={togglingId === vendor.id}
-                          >
-                            <Power className={`size-4 ${vendor.isActive ? "text-destructive" : "text-green-600"} ${togglingId === vendor.id ? "scale-75" : ""}`} />
-                          </Button>
-
-                          <Link href={`/vendors/${vendor.slug}`} target="_blank">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" title="View storefront">
-                              <ChevronRight className="size-4 text-muted-foreground" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── FEEDBACK ── */}
-        {tab === "feedback" && (
-          <div className="space-y-8">
-            <div>
-              <h1 className="font-heading font-bold text-2xl">Platform Feedback</h1>
-              <p className="text-sm text-muted-foreground mt-1">What users are saying about CampusBites</p>
-            </div>
-
-            <div className="rounded-[28px] border border-border bg-card shadow-sm p-6">
-              {loadingFeedback ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-20 rounded-xl bg-muted/50 animate-pulse" />
-                  ))}
-                </div>
-              ) : feedbacks?.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No feedback received yet.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {feedbacks?.map((feedback: any) => (
-                    <div key={feedback._id} className="p-4 rounded-2xl border border-border bg-muted/30 flex flex-col gap-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`size-4 ${feedback.rating >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(feedback.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {feedback.comments && (
-                        <p className="text-sm text-foreground leading-relaxed">{feedback.comments}</p>
-                      )}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {feedback.orderId && (
-                          <span>Order: <span className="font-mono text-primary">{feedback.orderId}</span></span>
-                        )}
-                        {feedback.vendorId && (
-                          <span>· Vendor: <span className="font-mono">{feedback.vendorId}</span></span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </main>
       </div>
 
-      {/* Add Login Modal */}
       {addLoginFor && (
-        <AddLoginModal
-          vendor={addLoginFor}
-          onClose={() => setAddLoginFor(null)}
-          onSuccess={fetchVendors}
-        />
+        <AddLoginModal vendor={addLoginFor} onClose={() => setAddLoginFor(null)} onSuccess={fetchVendors} />
       )}
-
-      {/* Add Vendor Modal */}
       {showAddVendor && (
-        <AddVendorModal
-          onClose={() => setShowAddVendor(false)}
-          onSuccess={fetchVendors}
-        />
+        <AddVendorModal onClose={() => setShowAddVendor(false)} onSuccess={fetchVendors} />
       )}
     </div>
   );

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 interface AuthPanelFeature {
   icon: LucideIcon;
@@ -85,20 +87,17 @@ export function AuthPanel({
       )}
 
       {/* ── Brand ── */}
-      <Link href="/" className="relative z-10 flex items-center gap-3 group w-fit">
-        <div
-          className={cn(
-            "h-10 w-10 rounded-xl grid place-items-center font-bold text-xl shadow-lg group-hover:scale-105 transition-transform",
-            isAdmin
-              ? "bg-primary/20 border border-primary/30 text-primary"
-              : "bg-white/20 backdrop-blur-sm text-white"
-          )}
-        >
-          C
+      <Link href="/" className="relative z-10 flex items-center gap-2.5 group w-fit">
+        <img 
+          src={APP_LOGO_URL} 
+          alt={APP_NAME} 
+          className="h-12 w-auto object-contain rounded-xl transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2" 
+        />
+        <div className="flex flex-col -space-y-1">
+          <span className="font-heading font-black text-2xl tracking-tight text-white leading-none">
+            BiteHub
+          </span>
         </div>
-        <span className={cn("font-heading font-bold text-xl tracking-tight", isAdmin ? "text-white" : "text-white")}>
-          CampusBites
-        </span>
       </Link>
 
       {/* ── Centre content ── */}

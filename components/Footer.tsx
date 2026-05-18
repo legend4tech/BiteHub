@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 export function Footer() {
   return (
@@ -12,13 +14,17 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8">
           {/* Brand section */}
           <div className="lg:col-span-2 space-y-6">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-2xl grid place-items-center text-white font-bold text-lg bg-gradient-to-br from-primary to-orange-600 shadow-lg shadow-primary/20">
-                C
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img 
+                src={APP_LOGO_URL} 
+                alt={APP_NAME} 
+                className="h-11 w-auto object-contain rounded-xl transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2" 
+              />
+              <div className="flex flex-col -space-y-1">
+                <span className="font-heading font-black text-2xl tracking-tight text-foreground transition-colors group-hover:text-primary leading-none">
+                  Bite<span className="text-primary">Hub</span>
+                </span>
               </div>
-              <span className="font-heading text-2xl font-black tracking-tight leading-none uppercase">
-                Campus<span className="text-primary">Bites</span>
-              </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
               Empowering campus vendors and students through seamless food discovery and ordering. Built for the modern Nigerian campus life.
@@ -60,7 +66,7 @@ export function Footer() {
                 <div className="h-9 w-9 rounded-xl bg-accent grid place-items-center shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                   <Mail className="size-4" />
                 </div>
-                <span>hello@campusbites.com</span>
+                <span>contact@bitehubapp.com</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground group hover:text-foreground transition-colors cursor-pointer">
                 <div className="h-9 w-9 rounded-xl bg-accent grid place-items-center shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
@@ -87,7 +93,7 @@ export function Footer() {
         </div>
 
         <div className="mt-20 pt-8 border-t border-border/50 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-medium">
-          <p>© {new Date().getFullYear()} CampusBites. Crafted with ❤️ for students everywhere.</p>
+          <p>© {new Date().getFullYear()} {APP_NAME}. Crafted with ❤️ for students everywhere.</p>
           <div className="flex items-center gap-8">
             {/* <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link> */}
             {/* <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> */}

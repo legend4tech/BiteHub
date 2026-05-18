@@ -219,8 +219,7 @@ export function VendorMenuManagement({ initialItems, allItems, activeCategory }:
         /* The vendor has never created any menu items yet */
         <EmptyState
           size="md"
-          icon="🍽️"
-          showImage={false}
+         
           title="No menu items yet"
           description="Start building your menu. Add your first dish to make it visible to students."
           action={{ label: "Add first item", href: "/vendor/menu/new" }}

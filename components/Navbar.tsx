@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -28,16 +29,15 @@ export function Navbar() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="pointer-events-auto w-full max-w-7xl rounded-3xl border border-white/20 dark:border-white/10 bg-background/60 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] px-4 sm:px-6 h-20 flex items-center justify-between"
       >
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-11 w-11 rounded-2xl grid place-items-center text-white font-bold text-xl bg-gradient-to-br from-primary to-orange-600 shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 group-hover:rotate-3">
-            C
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <img 
+            src={APP_LOGO_URL} 
+            alt={APP_NAME} 
+            className="h-12 w-auto object-contain rounded-xl transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2" 
+          />
           <div className="flex flex-col -space-y-1">
-            <span className="font-heading text-xl font-black tracking-tight leading-none uppercase">
-              Campus<span className="text-primary">Bites</span>
-            </span>
-            <span className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase pl-0.5">
-              Uli Campus
+            <span className="font-heading font-black text-2xl sm:text-3xl tracking-tight text-foreground transition-colors group-hover:text-primary leading-none">
+              Bite<span className="text-primary">Hub</span>
             </span>
           </div>
         </Link>

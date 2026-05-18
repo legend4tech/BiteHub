@@ -13,6 +13,8 @@ import { useForm, Controller } from "react-hook-form";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { AuthPanel } from "@/components/shared/AuthPanel";
 import { toast } from "sonner";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 const vendorLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -90,12 +92,18 @@ export default function VendorLoginPage() {
         <div className="flex items-center justify-between px-6 py-5 shrink-0">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
             <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back to CampusBites
+            Back to {APP_NAME}
           </Link>
           {/* Mobile brand */}
-          <div className="lg:hidden flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-primary grid place-items-center text-white font-bold text-sm">C</div>
-            <span className="font-heading font-bold text-sm">CampusBites</span>
+          <div className="lg:hidden flex items-center gap-2.5">
+            <img 
+              src={APP_LOGO_URL} 
+              alt={APP_NAME} 
+              className="h-9 w-auto object-contain rounded-lg" 
+            />
+            <span className="font-heading font-black text-2xl tracking-tight text-foreground leading-none">
+              Bite<span className="text-primary">Hub</span>
+            </span>
           </div>
         </div>
 
@@ -142,10 +150,6 @@ export default function VendorLoginPage() {
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
             </form>
-
-            <p className="text-center text-xs text-muted-foreground mt-8">
-              Your credentials are provided by your CampusBites admin.
-            </p>
           </div>
         </div>
       </div>

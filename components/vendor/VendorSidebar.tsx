@@ -32,6 +32,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+
 
 const navItems = [
   { href: "/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -91,27 +93,38 @@ function SidebarContent({ collapsed, setCollapsed, onNavigate }: { collapsed: bo
   return (
     <div className="flex flex-col h-full">
       {/* Logo + collapse toggle */}
-      <div className={cn("px-4 py-5 border-b border-border/50 flex items-center", collapsed ? "justify-center" : "justify-between")}>
+      <div className="relative px-4 py-5 border-b border-border/50 flex items-center justify-center min-h-[76px]">
         {!collapsed && (
-          <Link href="/" className="flex items-center gap-3 group" onClick={onNavigate}>
-            <div className="h-9 w-9 rounded-xl grid place-items-center text-white font-bold text-lg bg-gradient-to-br from-primary to-orange-600 shadow-lg shadow-primary/20 transform group-hover:scale-105 transition-transform shrink-0">
-              C
-            </div>
-            <div>
-              <span className="font-heading font-bold text-base tracking-tight leading-tight">Campus<span className="text-primary">Bites</span></span>
-              <p className="text-[10px] text-muted-foreground font-medium leading-tight">Vendor Dashboard</p>
+          <Link href="/" className="flex items-center gap-2.5 group" onClick={onNavigate}>
+            <img 
+              src={APP_LOGO_URL} 
+              alt={APP_NAME} 
+              className="h-10 w-auto object-contain rounded-lg transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2" 
+            />
+            <div className="flex flex-col -space-y-1">
+              <span className="font-heading font-black text-2xl tracking-tight text-foreground transition-colors group-hover:text-primary leading-none">
+                Bite<span className="text-primary">Hub</span>
+              </span>
             </div>
           </Link>
         )}
         {collapsed && (
-          <Link href="/" className="h-9 w-9 rounded-xl grid place-items-center text-white font-bold text-lg bg-gradient-to-br from-primary to-orange-600 shadow-lg shadow-primary/20 shrink-0" onClick={onNavigate}>
-            C
+          <Link href="/" className="flex items-center justify-center group" onClick={onNavigate}>
+            <img 
+              src={APP_LOGO_URL} 
+              alt={APP_NAME} 
+              className="h-9 w-auto object-contain rounded-lg transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2" 
+            />
           </Link>
         )}
         {setCollapsed && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="h-7 w-7 rounded-lg border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors ml-2 shrink-0"
+            className={cn(
+              "h-7 w-7 rounded-lg border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors shrink-0 z-10",
+              collapsed ? "ml-1.5" : "absolute right-3"
+            )}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
           </button>
@@ -138,8 +151,10 @@ function SidebarContent({ collapsed, setCollapsed, onNavigate }: { collapsed: bo
         </div>
       )}
 
-      {/* Nav */}
-      <NavLinks pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
+      {/* Nav — flex-1 here ensures bottom bar is always pinned to the bottom */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <NavLinks pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
+      </div>
 
       {/* Bottom */}
       <div className={cn("border-t border-border/50 pt-4 pb-5 space-y-2", collapsed ? "px-2" : "px-3")}>
@@ -190,7 +205,7 @@ export function VendorSidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col shrink-0 border-r border-border bg-card/60 backdrop-blur-md h-full transition-all duration-300",
+        "hidden md:flex flex-col shrink-0 border-r border-border bg-card/60 backdrop-blur-md h-full overflow-hidden transition-all duration-300",
         collapsed ? "w-[68px]" : "w-64"
       )}
     >

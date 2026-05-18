@@ -7,6 +7,7 @@ import Vendor from "@/models/Vendor";
 import MenuItem from "@/models/MenuItem";
 import { FadeIn } from "@/components/FadeIn";
 import { SearchInput } from "@/components/shared/SearchInput";
+import { CAMPUS_NAME } from "@/lib/constants";
 import { LoadMoreVendors } from "@/components/vendors/LoadMoreVendors";
 import { Suspense } from "react";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
@@ -14,8 +15,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "Vendors — CampusBites",
-  description: "Browse all active food vendors on COOU Uli campus.",
+  title: "Vendors — BiteHub",
+  description: "Browse all active food vendors on campus.",
 };
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
@@ -142,9 +143,7 @@ export default async function VendorsPage({
           <FadeIn delay={0.1}>
             <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider">
-                  COOU Uli Campus
-                </p>
+               
                 <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2">
                   All Vendors
                 </h1>
