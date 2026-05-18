@@ -253,13 +253,15 @@ export default function VendorDashboardPage() {
             </div>
 
             <div>
-              <label className="text-sm font-semibold mb-1.5 block">Comments</label>
+              <label className="text-sm font-semibold mb-1.5 block">
+                Comments <span className="text-destructive">*</span>
+              </label>
               <textarea
                 value={platformComments}
                 onChange={(e) => setPlatformComments(e.target.value)}
                 className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 rows={4}
-                placeholder="Tell us what you liked or what we can improve..."
+                placeholder="Tell us what you liked or what we can improve (required, min 3 chars)..."
               />
             </div>
           </div>
@@ -300,7 +302,7 @@ export default function VendorDashboardPage() {
                   toast.error("An error occurred.");
                 }
               }}
-              disabled={platformRating === 0}
+              disabled={platformRating === 0 || platformComments.trim().length < 3}
               className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Submit
