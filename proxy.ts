@@ -6,6 +6,24 @@ import { globalRateLimiter, strictRateLimiter, isRateLimitingEnabled } from "@/l
 const { auth } = NextAuth(authConfig);
 
 export default auth(async (req) => {
+  // 0. Maintenance Mode Check
+  if (process.env.MAINTENANCE_MODE === "true") {
+    const path = req.nextUrl.pathname;
+    
+    // If it's an API route, return 503
+    if (path.startsWith("/api/")) {
+      return new NextResponse(
+        JSON.stringify({ error: "Service Unavailable", message: "BiteHub is currently undergoing maintenance." }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Rewrite all other requests to the maintenance page (unless they are already going there)
+    if (path !== "/maintenance") {
+      return NextResponse.rewrite(new URL("/maintenance", req.url));
+    }
+  }
+
   // 1. Rate Limiting Logic
   if (isRateLimitingEnabled) {
     const ip = (req as any).ip ?? req.headers.get("x-forwarded-for") ?? "127.0.0.1";
