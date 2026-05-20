@@ -30,7 +30,7 @@ export function LoadMoreMenus({
     setConflictItem(null)
   }
 
-  const { q, category } = searchParams
+  const { q, category, school, campus } = searchParams
   const searchQuery = typeof q === "string" ? q : ""
   const categoryQuery = typeof category === "string" ? category : "all"
 
@@ -44,6 +44,8 @@ export function LoadMoreMenus({
   } = useMenuItems({
     q: searchQuery,
     category: categoryQuery,
+    school: school || undefined,
+    campus: campus || undefined,
     initialPage: initialPage + 1,
     enabled: true,
   })

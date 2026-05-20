@@ -48,6 +48,8 @@ export function LoadMoreVendors({
     status,
   } = useVendors({
     q: searchQuery,
+    school: searchParams.school || undefined,
+    campus: searchParams.campus || undefined,
     initialPage: initialPage + 1,
     limit: 20,
     enabled: true,

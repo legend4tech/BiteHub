@@ -2,22 +2,17 @@ import Link from "next/link";
 import { MapPin, ArrowUpRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/FadeIn";
-import dbConnect from "@/lib/db";
-import Vendor from "@/models/Vendor";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { getFeaturedVendors } from "@/lib/services/vendorService";
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 
-export async function FeaturedVendors() {
-  await dbConnect();
-  // Fetch real data from DB and use the fabricated virtuals
-  const vendorDocs = await Vendor.find({ isActive: true }).limit(4);
-  const fetchedVendors = vendorDocs.map(v => ({
-    id: v.id,
-    name: v.name,
-    initials: v.initials,
-    tagline: v.tagline,
-    location: v.location,
-    slug: v.slug,
-  }));
+interface FeaturedVendorsProps {
+  school?: string;
+  campus?: string;
+}
+
+export async function FeaturedVendors({ school = DEFAULT_SCHOOL_ID, campus = DEFAULT_CAMPUS_ID }: FeaturedVendorsProps) {
+  const fetchedVendors = await getFeaturedVendors({ school, campus, limit: 4 });
 
   return (
     <section id="vendors" className="py-24 bg-card/40 border-y border-border/60">

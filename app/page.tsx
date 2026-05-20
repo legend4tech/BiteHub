@@ -10,9 +10,8 @@ import { FadeIn } from "@/components/FadeIn";
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { Suspense } from "react";
-import dbConnect from "@/lib/db";
-import MenuItem from "@/models/MenuItem";
-import Vendor from "@/models/Vendor";
+import { getMenus } from "@/lib/services/menuService";
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 
 export const metadata: Metadata = {
   title: "BiteHub — Campus food, delivered fast",
@@ -25,30 +24,10 @@ export const metadata: Metadata = {
 };
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
-async function LandingMenuSection({ category }: { category: string }) {
-  await dbConnect();
+async function LandingMenuSection({ category, school, campus }: { category: string; school: string; campus: string }) {
+  const { items } = await getMenus({ category, school, campus, limit: 10 });
 
-  let query: Record<string, unknown> = { isAvailable: true };
-  if (category !== "all") query.category = category;
-
-  const [items, vendors] = await Promise.all([
-    MenuItem.find(query).sort({ createdAt: -1 }).limit(10),
-    Vendor.find({}),
-  ]);
-
-  const vendorMap = new Map<string, { name: string; slug: string }>();
-  vendors.forEach((v) => vendorMap.set(v._id.toString(), { name: v.name, slug: v.slug }));
-
-  const mappedItems = items.map((item) => {
-    const doc = item.toJSON();
-    const vendorData = vendorMap.get(doc.vendorId);
-    doc.vendorName = vendorData?.name || "Campus Vendor";
-    doc.vendorSlug = vendorData?.slug || "";
-    doc.tag = doc.price > 1000 ? "🔥 Hot" : null;
-    return doc;
-  });
-
-  return <AllProducts initialItems={mappedItems} activeCategory={category} />;
+  return <AllProducts initialItems={items} activeCategory={category} />;
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -62,6 +41,14 @@ export default async function Page({
     typeof resolvedSearchParams.category === "string"
       ? resolvedSearchParams.category
       : "all";
+  const school =
+    typeof resolvedSearchParams.school === "string"
+      ? resolvedSearchParams.school
+      : DEFAULT_SCHOOL_ID;
+  const campus =
+    typeof resolvedSearchParams.campus === "string"
+      ? resolvedSearchParams.campus
+      : DEFAULT_CAMPUS_ID;
 
   return (
     <>
@@ -76,7 +63,7 @@ export default async function Page({
           padded
         >
           <Suspense
-            key={category}
+            key={`${category}-${school}-${campus}`}
             fallback={
               <section className="py-20">
                 <div className="mx-auto max-w-7xl px-6">
@@ -85,7 +72,7 @@ export default async function Page({
               </section>
             }
           >
-            <LandingMenuSection category={category} />
+            <LandingMenuSection category={category} school={school} campus={campus} />
           </Suspense>
         </SectionErrorBoundary>
 
@@ -104,7 +91,7 @@ export default async function Page({
               </section>
             }
           >
-            <FeaturedVendors />
+            <FeaturedVendors school={school} campus={campus} />
           </Suspense>
         </SectionErrorBoundary>
 
