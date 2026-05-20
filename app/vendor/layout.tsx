@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { VendorSidebar, MobileSidebarTrigger } from "@/components/vendor/VendorSidebar";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { SessionProvider, useSession } from "next-auth/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useVendorOrderAlerts } from "@/hooks/useVendorOrderAlerts";
@@ -20,9 +21,17 @@ function VendorLayoutContent({ children }: { children: React.ReactNode }) {
   // Register global real-time notifications, audio chimes, and browser notifications
   useVendorOrderAlerts();
 
-  const isLoginPage = pathname === "/vendor/login";
+  const isAuthPage =
+    pathname === "/vendor/login" ||
+    pathname === "/vendor/forgot-password" ||
+    (status !== "authenticated" && pathname === "/vendor/reset-password") ||
+    (status !== "authenticated" && pathname === "/vendor/confirm-email");
 
-  if (isLoginPage) {
+  if (status === "loading" && (pathname === "/vendor/reset-password" || pathname === "/vendor/confirm-email")) {
+    return <PageSkeleton variant="auth" />;
+  }
+
+  if (isAuthPage) {
     return <>{children}</>;
   }
 

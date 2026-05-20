@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,19 +11,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { MENU_CATEGORIES, VENDOR_CATEGORIES, SCHOOLS, CAMPUSES, APP_LOGO_URL, APP_NAME } from "@/lib/constants";
 import apiClient from "@/lib/axios";
 import Link from "next/link";
 import { AdminSidebar, AdminMobileTrigger } from "@/components/admin/AdminSidebar";
+import { strongPasswordSchema } from "@/lib/schemas";
+import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const addVendorSchema = z.object({
   name: z.string().min(1, "Name is required"),
   whatsappNumber: z.string().min(1, "WhatsApp number is required"),
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: strongPasswordSchema,
   description: z.string().min(1, "Description is required"),
   category: z.string().min(1, "Category is required"),
   tags: z.array(z.string()).min(1, "At least one tag is required"),
@@ -49,7 +53,10 @@ export default function NewVendorPage() {
       description: "", category: "meals", tags: [],
       school: SCHOOLS[0].value, campus: CAMPUSES[0].value,
     },
+    mode: "onChange",
   });
+
+  const passwordValue = useWatch({ control: form.control, name: "password" });
 
   const onSubmit = async (values: AddVendorValues) => {
     setSubmitting(true);
@@ -222,11 +229,12 @@ export default function NewVendorPage() {
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
                       <div className="relative">
-                        <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" aria-invalid={fieldState.invalid} className="pr-10" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                        <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 8 chars, uppercase, number, symbol" aria-invalid={fieldState.invalid} className="pr-10" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                           {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
                       </div>
+                      <PasswordStrengthMeter password={passwordValue ?? ""} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )} />

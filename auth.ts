@@ -115,4 +115,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user, trigger, session }) {
+      // 1. Execute base logic from authConfig (which sets token.id, etc. on initial sign in)
+      let newToken = token;
+      if (authConfig.callbacks?.jwt) {
+        newToken = (await authConfig.callbacks.jwt({ token, user, trigger, session })) || token;
+      }
+
+      // 2. Cross-check against the DB for stateless token invalidation (Node.js runtime only)
+      if (newToken.role === "vendor" && newToken.id) {
+        try {
+          await dbConnect();
+          const dbUser = await VendorUserModel.findById(newToken.id).select("lastPasswordChangeAt isActive").lean();
+
+          if (!dbUser || !dbUser.isActive) {
+            // User no longer exists or is deactivated
+            return null as any; 
+          }
+
+          if (dbUser.lastPasswordChangeAt && newToken.iat) {
+            const passwordChangedAtSeconds = Math.floor(dbUser.lastPasswordChangeAt.getTime() / 1000);
+            if (passwordChangedAtSeconds > newToken.iat) {
+              // The password was changed AFTER this token was issued. 
+              // Returning null instantly destroys the token across all devices holding an old cookie.
+              return null as any;
+            }
+          }
+        } catch (error) {
+          console.error("Session DB validation error:", error);
+        }
+      }
+
+      return newToken;
+    },
+  },
 });

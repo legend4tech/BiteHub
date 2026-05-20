@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import VendorModel from "@/models/Vendor";
 import { serializeVendor } from "@/lib/serializers";
-import { VendorSettingsForm } from "@/components/vendor/VendorSettingsForm";
+import { VendorSettingsTabs } from "@/components/vendor/VendorSettingsTabs";
 import { redirect, notFound } from "next/navigation";
 
 export default async function VendorSettingsPage() {
@@ -19,16 +19,7 @@ export default async function VendorSettingsPage() {
   }
 
   const serializedVendor = serializeVendor(vendor);
+  const currentEmail = session.user.email || "";
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Update your store details</p>
-      </div>
-      <div className="rounded-3xl bg-card border border-border p-6 max-w-2xl">
-        <VendorSettingsForm initial={serializedVendor as any} />
-      </div>
-    </div>
-  );
+  return <VendorSettingsTabs serializedVendor={serializedVendor as any} currentEmail={currentEmail} />;
 }

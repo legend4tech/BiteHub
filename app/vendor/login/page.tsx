@@ -134,7 +134,15 @@ export default function VendorLoginPage() {
 
               <Controller name="password" control={form.control} render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                  <div className="flex items-center justify-between">
+                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                    <Link
+                      href={`/vendor/forgot-password?email=${encodeURIComponent(form.getValues("email") || "")}`}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <div className="relative">
                     <Input {...field} id={field.name} type={showPw ? "text" : "password"} placeholder="••••••••" autoComplete="current-password" aria-invalid={fieldState.invalid} className="h-11 pr-11" />
                     <button type="button" onClick={() => setShowPw((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">

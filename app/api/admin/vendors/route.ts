@@ -5,6 +5,8 @@ import VendorUserModel from "@/models/VendorUser";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { CAMPUSES, SCHOOLS } from "@/lib/constants";
+import { z } from "zod";
+import { strongPasswordSchema } from "@/lib/schemas";
 
 
 // GET — all vendors for admin (no isActive filter)
@@ -78,6 +80,14 @@ export async function POST(request: Request) {
     if (!name || !whatsappNumber || !email || !password) {
       return NextResponse.json(
         { error: "name, whatsappNumber, email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    const pwCheck = strongPasswordSchema.safeParse(password);
+    if (!pwCheck.success) {
+      return NextResponse.json(
+        { error: pwCheck.error.errors[0].message },
         { status: 400 }
       );
     }

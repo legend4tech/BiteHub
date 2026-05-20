@@ -20,7 +20,8 @@ type SkeletonVariant =
   | "orders-table"
   | "menu-management"
   | "menu-card-grid"
-  | "menu-item-edit";
+  | "menu-item-edit"
+  | "auth";
 
 interface PageSkeletonProps {
   variant: SkeletonVariant;
@@ -47,6 +48,8 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <MenuCardGridSkeleton count={count} />;
     case "menu-item-edit":
       return <MenuItemEditSkeleton />;
+    case "auth":
+      return <AuthSkeleton />;
     default:
       return null;
   }
@@ -152,30 +155,32 @@ function VendorDetailSkeleton() {
 function OrderDetailSkeleton() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="rounded-3xl bg-card border border-border p-8 space-y-4">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-4 w-48" />
+      <div className="rounded-3xl bg-card border border-border p-5 sm:p-8 space-y-4">
+        <Skeleton className="h-6 w-1/3 max-w-[160px]" />
+        <Skeleton className="h-10 w-2/3 max-w-[250px]" />
+        <Skeleton className="h-4 w-1/2 max-w-[200px]" />
       </div>
       {/* Status tracker */}
-      <div className="rounded-3xl bg-card border border-border p-8">
+      <div className="rounded-3xl bg-card border border-border p-5 sm:p-8">
         <Skeleton className="h-5 w-32 mb-6" />
-        <div className="flex items-center gap-2">
+        <div className="flex items-start">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
+            <div key={i} className="relative flex flex-1 flex-col items-center gap-2">
               <Skeleton className="h-8 w-8 rounded-full" />
-              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-2 w-10 sm:w-14 mt-1" />
             </div>
           ))}
         </div>
+        {/* Current status description box skeleton */}
+        <Skeleton className="h-[76px] w-full rounded-xl mt-5" />
       </div>
       {/* Items */}
-      <div className="rounded-3xl bg-card border border-border p-8 space-y-3">
+      <div className="rounded-3xl bg-card border border-border p-5 sm:p-8 space-y-3">
         <Skeleton className="h-5 w-24 mb-2" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex justify-between">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-20" />
+          <div key={i} className="flex justify-between gap-4">
+            <Skeleton className="h-4 w-full max-w-[200px]" />
+            <Skeleton className="h-4 w-16" />
           </div>
         ))}
         <div className="flex justify-between pt-3 border-t border-border">
@@ -211,22 +216,24 @@ function DashboardSkeleton() {
 
 function OrdersTableSkeleton({ count }: { count: number }) {
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="grid grid-cols-5 gap-4 px-2">
-        {["Order ID", "Customer", "Items", "Status", "Time"].map((h) => (
-          <Skeleton key={h} className="h-3 w-full" />
+    <div className="space-y-3 overflow-x-auto pb-4">
+      <div className="min-w-[600px]">
+        {/* Header */}
+        <div className="grid grid-cols-5 gap-4 px-2">
+          {["Order ID", "Customer", "Items", "Status", "Time"].map((h) => (
+            <Skeleton key={h} className="h-3 w-16 sm:w-20" />
+          ))}
+        </div>
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="grid grid-cols-5 gap-4 rounded-xl bg-muted/40 px-2 py-3 mt-3">
+            <Skeleton className="h-4 w-20 sm:w-full max-w-[100px]" />
+            <Skeleton className="h-4 w-24 sm:w-full max-w-[120px]" />
+            <Skeleton className="h-4 w-12 sm:w-full max-w-[60px]" />
+            <Skeleton className="h-6 w-20 sm:w-24 rounded-full" />
+            <Skeleton className="h-4 w-16 sm:w-full max-w-[80px]" />
+          </div>
         ))}
       </div>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="grid grid-cols-5 gap-4 rounded-xl bg-muted/40 px-2 py-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-6 w-24 rounded-full" />
-          <Skeleton className="h-4 w-full" />
-        </div>
-      ))}
     </div>
   );
 }
@@ -346,6 +353,22 @@ function MenuItemEditSkeleton() {
           <Skeleton className="h-10 w-24 rounded-lg" />
           <Skeleton className="h-10 w-28 rounded-lg" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6 py-12 relative overflow-hidden">
+      <div className="w-full max-w-[440px] z-10">
+        <div className="flex flex-col items-center mb-8 text-center space-y-4">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-12 w-12 rounded-2xl" />
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-[400px] w-full rounded-3xl" />
       </div>
     </div>
   );

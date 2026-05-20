@@ -35,7 +35,17 @@ export function useOrder(orderId: string | undefined) {
     staleTime: 1000 * 30, // 30 seconds (orders change frequently)
     gcTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!orderId,
-    retry: 2, // Retry more for order data (important)
-    refetchInterval: 5000, // Auto-refresh every 5 seconds for live tracking
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404) return false
+      return failureCount < 2
+    },
+    refetchInterval: (query) => {
+      if ((query.state.error as any)?.response?.status === 404) return false
+      
+      const status = (query.state.data as Order | undefined)?.status
+      if (status === "completed" || status === "cancelled") return false
+      
+      return 5000
+    },
   })
 }

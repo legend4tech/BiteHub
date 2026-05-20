@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
-import { Circle, Phone, MessageCircle, Calendar, GraduationCap, Tag } from "lucide-react";
+import { Circle, Phone, Calendar, GraduationCap, Tag } from "lucide-react";
 import { VendorMenu } from "@/components/vendors/VendorMenu";
 import { ShareButton } from "@/components/vendors/ShareButton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -172,17 +172,6 @@ export default async function VendorDetailPage({ params, searchParams }: Props) 
                     </span>
                   </div>
                 )}
-                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                    <MessageCircle className="size-4 text-green-500" />
-                    <span className="flex items-center gap-2">
-                      <strong className="text-foreground font-medium">WhatsApp:</strong>
-                      {vendor.whatsappNumber ? (
-                        <a href={`https://wa.me/${vendor.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors hover:underline">
-                          {vendor.whatsappNumber}
-                        </a>
-                      ) : "N/A"}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>

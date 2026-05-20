@@ -16,6 +16,9 @@ export const authConfig: NextAuthConfig = {
       const isLoginRoute = nextUrl.pathname === "/admin/login";
       const isOnVendor = nextUrl.pathname === "/vendor" || nextUrl.pathname.startsWith("/vendor/");
       const isVendorLoginRoute = nextUrl.pathname === "/vendor/login";
+      const isVendorAuthRoute = nextUrl.pathname === "/vendor/forgot-password";
+      const isResetPasswordRoute = nextUrl.pathname === "/vendor/reset-password";
+      const isConfirmEmailRoute = nextUrl.pathname === "/vendor/confirm-email";
 
       // Allow API routes to be handled by the route itself
       if (nextUrl.pathname.startsWith("/api")) {
@@ -50,6 +53,23 @@ export const authConfig: NextAuthConfig = {
       }
 
       if (isOnVendor) {
+        // Allow anyone (logged in or out) to access the confirm email page and reset password page
+        if (isConfirmEmailRoute || isResetPasswordRoute) {
+          return true;
+        }
+
+        // Public vendor auth pages — accessible without a session
+        if (isVendorAuthRoute) {
+          // If already logged in, no need to reset — send them home
+          if (isLoggedIn) {
+            if (role === "admin" || role === "superadmin") {
+              return Response.redirect(new URL("/admin", nextUrl));
+            }
+            return Response.redirect(new URL("/vendor/dashboard", nextUrl));
+          }
+          return true;
+        }
+
         if (isVendorLoginRoute) {
           if (isLoggedIn) {
             if (role === "admin" || role === "superadmin") {
@@ -66,7 +86,7 @@ export const authConfig: NextAuthConfig = {
 
         // Only allow vendors on vendor pages
         if (role !== "vendor") {
-           return Response.redirect(new URL("/admin", nextUrl));
+          return Response.redirect(new URL("/admin", nextUrl));
         }
 
         return true;

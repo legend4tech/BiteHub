@@ -1,30 +1,59 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button"
-import { CAMPUS_NAME } from "@/lib/constants"
-;
+import { Mail, Phone, MapPin, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CAMPUS_NAME } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { toast } from "sonner";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import axios from "axios";
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  subject: z.string().min(2, "Subject is required"),
+  message: z.string().min(3, "Message is required"),
+});
+
+type ContactValues = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-    // In a real app, you would send data to API here
+  const form = useForm<ContactValues>({
+    resolver: zodResolver(contactSchema as any),
+    defaultValues: { name: "", email: "", subject: "", message: "" },
+    mode: "onTouched",
+  });
+
+  const onSubmit = async (values: ContactValues) => {
+    setLoading(true);
+    try {
+      await axios.post("/api/contact", values);
+      setSubmitted(true);
+      toast.success("Message sent! We'll get back to you shortly.");
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Failed to send message. Please try again.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <Navbar />
       <main className="relative min-h-screen bg-background text-foreground pt-28 pb-20">
-        {/* Background decoration wrapper to prevent overflow */}
+        {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-64" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -ml-48 -mb-48" />
@@ -33,7 +62,7 @@ export default function ContactPage() {
         <div className="mx-auto max-w-7xl px-6 relative z-10">
           {/* Header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -41,7 +70,7 @@ export default function ContactPage() {
             >
               Get in <span className="text-primary">Touch</span>
             </motion.h1>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -53,7 +82,7 @@ export default function ContactPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             {/* Contact Info */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -61,7 +90,7 @@ export default function ContactPage() {
             >
               <div className="p-6 rounded-3xl border border-white/10 bg-card/40 backdrop-blur-xl space-y-6">
                 <h2 className="font-heading text-xl font-bold mb-4">Contact Information</h2>
-                
+
                 <div className="flex items-start gap-4">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0">
                     <Mail className="size-5" />
@@ -109,7 +138,7 @@ export default function ContactPage() {
             </motion.div>
 
             {/* Contact Form */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -123,38 +152,110 @@ export default function ContactPage() {
                     </div>
                     <h2 className="font-heading text-2xl font-bold">Message Sent!</h2>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      Thank you for reaching out. We have received your message and will get back to you shortly.
+                      Thank you for reaching out. We have received your message and will get back to you within 24 hours.
                     </p>
-                    <Button variant="outline" className="rounded-xl mt-4" onClick={() => setSubmitted(false)}>
+                    <Button
+                      variant="outline"
+                      className="rounded-xl mt-4"
+                      onClick={() => {
+                        setSubmitted(false);
+                        form.reset();
+                      }}
+                    >
                       Send another message
                     </Button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label htmlFor="name" className="text-sm font-medium">Name</label>
-                        <Input id="name" placeholder="John Doe" required className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12" />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium">Email</label>
-                        <Input id="email" type="email" placeholder="john@example.com" required className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12" />
-                      </div>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {/* Name */}
+                      <Controller
+                        name="name"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                            <Input
+                              {...field}
+                              id={field.name}
+                              placeholder="John Doe"
+                              aria-invalid={fieldState.invalid}
+                              className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12"
+                            />
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                          </Field>
+                        )}
+                      />
+
+                      {/* Email */}
+                      <Controller
+                        name="email"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                            <Input
+                              {...field}
+                              id={field.name}
+                              type="email"
+                              placeholder="john@example.com"
+                              aria-invalid={fieldState.invalid}
+                              className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12"
+                            />
+                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                          </Field>
+                        )}
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <label htmlFor="subject" className="text-sm font-medium">Subject</label>
-                      <Input id="subject" placeholder="How can we help?" required className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12" />
-                    </div>
+                    {/* Subject */}
+                    <Controller
+                      name="subject"
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>Subject</FieldLabel>
+                          <Input
+                            {...field}
+                            id={field.name}
+                            placeholder="How can we help?"
+                            aria-invalid={fieldState.invalid}
+                            className="bg-background/50 border-white/10 focus:border-primary rounded-xl h-12"
+                          />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                      )}
+                    />
 
-                    <div className="space-y-2">
-                      <label htmlFor="message" className="text-sm font-medium">Message</label>
-                      <Textarea id="message" placeholder="Type your message here..." required rows={10} className="bg-background/50 border-white/10 focus:border-primary rounded-xl resize-y min-h-[200px]" />
-                    </div>
+                    {/* Message */}
+                    <Controller
+                      name="message"
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>Message</FieldLabel>
+                          <Textarea
+                            {...field}
+                            id={field.name}
+                            placeholder="Type your message here..."
+                            aria-invalid={fieldState.invalid}
+                            rows={8}
+                            className="bg-background/50 border-white/10 focus:border-primary rounded-xl resize-y min-h-[160px]"
+                          />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                      )}
+                    />
 
-                    <Button type="submit" variant="hero" className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
-                      <Send className="size-4" />
-                      Send Message
+                    <Button
+                      type="submit"
+                      variant="hero"
+                      disabled={loading}
+                      className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                    >
+                      {loading
+                        ? <><Loader2 className="size-4 animate-spin" /> Sending…</>
+                        : <><Send className="size-4" /> Send Message</>}
                     </Button>
                   </form>
                 )}
