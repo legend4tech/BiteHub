@@ -101,19 +101,25 @@ function VendorListSkeleton({ count }: { count: number }) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-3xl bg-background border border-border p-6 space-y-4">
+        <div key={i} className="rounded-3xl bg-background border border-border p-6 flex flex-col">
+          {/* Logo + arrow/status row */}
           <div className="flex items-start justify-between">
             <Skeleton className="h-14 w-14 rounded-2xl" />
-            <Skeleton className="h-4 w-4 rounded" />
+            <div className="flex flex-col items-end gap-1.5">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-3 w-10" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Skeleton className="h-5 w-3/4" />
+          {/* Name */}
+          <Skeleton className="h-5 w-3/4 mt-5" />
+          {/* Tagline */}
+          <div className="space-y-1.5 mt-1.5 flex-1">
             <Skeleton className="h-3 w-full" />
             <Skeleton className="h-3 w-2/3" />
           </div>
-          <div className="flex gap-3 pt-2 border-t border-border">
-            <Skeleton className="h-3 w-10" />
-            <Skeleton className="h-3 w-14" />
+          {/* Footer: location left, item count right */}
+          <div className="flex items-center justify-between pt-4 mt-5 border-t border-border">
+            <Skeleton className="h-3 w-24" />
             <Skeleton className="h-3 w-16" />
           </div>
         </div>

@@ -11,6 +11,7 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { Suspense } from "react";
 import { getMenus } from "@/lib/services/menuService";
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID, getCampusName, getSchoolName } from "@/lib/config/campus";
+import { CampusSelector } from "@/components/shared/CampusSelector";
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function MenuListContent({
@@ -94,6 +95,7 @@ export default async function MenusPage({
                   </p>
                   <SearchInput placeholder="Search for meals, snacks..." />
                 </div>
+                <CampusSelector />
               </div>
             </div>
           </FadeIn>

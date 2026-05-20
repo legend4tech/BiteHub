@@ -11,6 +11,7 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
 import { getVendors } from "@/lib/services/vendorService";
+import { CampusSelector } from "@/components/shared/CampusSelector";
 
 export const metadata: Metadata = {
   title: "Vendors — BiteHub",
@@ -98,7 +99,8 @@ export default async function VendorsPage({
                   <span className="font-semibold text-foreground">{campusLabel}</span>
                 </p>
               </div>
-              <div className="w-full md:w-auto">
+              <div className="flex items-center gap-3 flex-wrap">
+                <CampusSelector />
                 <SearchInput placeholder="Search vendors by name, category..." />
               </div>
             </div>

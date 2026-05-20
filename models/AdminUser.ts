@@ -50,8 +50,8 @@ const AdminUserSchema = new Schema<IAdminUser>(
   }
 );
 
-// Fast lookup by email during login
-AdminUserSchema.index({ email: 1 });
+
+
 
 export default mongoose.models.AdminUser ||
   mongoose.model<IAdminUser>("AdminUser", AdminUserSchema);

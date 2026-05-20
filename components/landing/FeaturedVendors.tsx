@@ -66,7 +66,7 @@ export async function FeaturedVendors({ school = DEFAULT_SCHOOL_ID, campus = DEF
         <FadeIn delay={0.5}>
           <div className="mt-12 flex justify-center">
             <Button asChild variant="hero" size="xl" className="px-10 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform group">
-              <Link href="/vendors" className="flex items-center gap-2 font-bold tracking-tight">
+              <Link href={`/vendors?school=${school}&campus=${campus}`} className="flex items-center gap-2 font-bold tracking-tight">
                 View all vendors <ExternalLink className="size-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             </Button>

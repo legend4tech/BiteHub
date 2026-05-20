@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-// Pages that benefit from server-side campus filtering via URL params
-const CAMPUS_FILTERED_PAGES = ["/menus", "/vendors"];
 
 export function CampusSelector() {
   const { schoolId, campusId, setSchoolAndCampus, isLoaded } = useCampus();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSchoolSelectOpen, setIsSchoolSelectOpen] = useState(false);
+  const [isCampusSelectOpen, setIsCampusSelectOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -29,9 +29,11 @@ export function CampusSelector() {
     setLocalCampus(campusId);
   }, [schoolId, campusId]);
 
-  // Click outside to close
+  // Click outside to close — but NOT when a Radix Select portal is open
+  // (Select renders outside the DOM tree so mousedown on it looks like "outside")
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      if (isSchoolSelectOpen || isCampusSelectOpen) return;
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
@@ -40,7 +42,7 @@ export function CampusSelector() {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, isSchoolSelectOpen, isCampusSelectOpen]);
 
   if (!isLoaded) {
     return (
@@ -51,15 +53,13 @@ export function CampusSelector() {
   const handleApply = () => {
     setSchoolAndCampus(localSchool, localCampus);
 
-    // If we're on a page that does server-side filtering, push the params to the URL
-    // so the Server Component re-fetches with the correct filter.
-    const isFilteredPage = CAMPUS_FILTERED_PAGES.some((p) => pathname.startsWith(p));
-    if (isFilteredPage) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("school", localSchool);
-      params.set("campus", localCampus);
-      router.push(`${pathname}?${params.toString()}`);
-    }
+    // Always push school/campus into the URL so every server page
+    // re-fetches with the correct filter on navigation or refresh.
+    // Pages that don't use these params simply ignore them.
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("school", localSchool);
+    params.set("campus", localCampus);
+    router.push(`${pathname}?${params.toString()}`);
 
     setIsOpen(false);
   };
@@ -98,7 +98,7 @@ export function CampusSelector() {
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
                 School
               </label>
-              <Select value={localSchool} onValueChange={handleSchoolChange}>
+              <Select value={localSchool} onValueChange={handleSchoolChange} onOpenChange={setIsSchoolSelectOpen}>
                 <SelectTrigger className="w-full h-10 rounded-xl bg-background">
                   <SelectValue placeholder="Select school" />
                 </SelectTrigger>
@@ -116,7 +116,7 @@ export function CampusSelector() {
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
                 Campus
               </label>
-              <Select value={localCampus} onValueChange={setLocalCampus}>
+              <Select value={localCampus} onValueChange={setLocalCampus} onOpenChange={setIsCampusSelectOpen}>
                 <SelectTrigger className="w-full h-10 rounded-xl bg-background">
                   <SelectValue placeholder="Select campus" />
                 </SelectTrigger>

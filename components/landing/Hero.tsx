@@ -7,6 +7,9 @@ import { ArrowRight, MapPin, Smartphone, Timer, Zap, ExternalLink } from "lucide
 import Link from "next/link";
 import { FadeIn } from "@/components/FadeIn";
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+import { CampusSelector } from "@/components/shared/CampusSelector";
+import { useCampus } from "@/components/providers/CampusProvider";
+import { useSearchParams } from "next/navigation";
 
 
 const slides = [
@@ -39,6 +42,11 @@ const slides = [
 export function Hero() {
   const [index, setIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const { schoolId, campusId } = useCampus();
+  const searchParams = useSearchParams();
+
+  // Build campus query string so CTA links carry the active filter
+  const campusQuery = `school=${schoolId}&campus=${campusId}`;
 
   useEffect(() => {
     setMounted(true);
@@ -47,7 +55,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative" style={{ overflowX: "clip" }}>
       <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-hero)" }} />
       <div className="mx-auto max-w-7xl px-6 pt-16 pb-24 grid lg:grid-cols-12 gap-12 items-center">
         {/* Left — text content */}
@@ -74,16 +82,20 @@ export function Hero() {
           <FadeIn delay={0.4}>
             <div className="flex flex-wrap gap-3">
               <Button asChild variant="hero" size="xl">
-                <Link href="/menus">
-                  Browse menus             
-                   <ExternalLink className="ml-2 size-5" />
+                <Link href={`/menus?${campusQuery}`}>
+                  Browse menus
+                  <ExternalLink className="ml-2 size-5" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="xl">
-                <Link href="/vendors">
+                <Link href={`/vendors?${campusQuery}`}>
                   Browse vendors <ExternalLink className="ml-2 size-5" />
                 </Link>
               </Button>
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-xs text-muted-foreground">Browsing for:</span>
+              <CampusSelector />
             </div>
           </FadeIn>
 

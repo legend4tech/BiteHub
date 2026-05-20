@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
-import { CampusSelector } from "@/components/shared/CampusSelector";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -74,8 +73,6 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <CampusSelector />
-          <div className="h-10 w-[1px] bg-border/60 mx-1 hidden sm:block" />
           <ThemeToggle />
           <Button asChild variant="hero" size="lg" className="rounded-2xl px-3 sm:px-6 shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 group font-bold">
             <Link href="/menus" className="flex items-center gap-2">
