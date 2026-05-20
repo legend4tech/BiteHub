@@ -100,16 +100,7 @@ export const VENDOR_CATEGORIES = [
   { value: "drinks", label: "Drinks (e.g. Smoothies, Soft Drinks)" },
 ] as const;
 
-// ─── Schools & Campuses ───────────────────────────────────────────────────────
-
-export const SCHOOLS = [
-  { value: "COOU", label: "COOU" },
-] as const;
-
-export const CAMPUSES = [
-  { value: "Uli", label: "Uli" },
-  { value: "Igbariam", label: "Igbariam" },
-] as const;
+// ─── Schools & Campuses (Legacy - Use lib/config/campus.ts) ──────────────
 
 // ─── Category Config ──────────────────────────────────────────────────────────
 

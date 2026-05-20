@@ -12,12 +12,17 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q");
+    const school = searchParams.get("school");
+    const campus = searchParams.get("campus");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const skip = (page - 1) * limit;
 
     // Properly typed query instead of `any`
     let query: QueryFilter<IVendor> = { isActive: true };
+
+    if (school) query.school = school;
+    if (campus) query.campus = campus;
 
     if (q) {
       query.$or = [

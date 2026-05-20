@@ -18,12 +18,25 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q");
     const category = searchParams.get("category");
+    const school = searchParams.get("school");
+    const campus = searchParams.get("campus");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = 20;
     const skip = (page - 1) * limit;
 
     // Properly typed query instead of `any`
     let query: QueryFilter<IMenuItem> = { isAvailable: true };
+
+    // Filter by campus: find matching vendor IDs first
+    if (school || campus) {
+      const vendorFilter: Record<string, any> = { isActive: true };
+      if (school) vendorFilter.school = school;
+      if (campus) vendorFilter.campus = campus;
+
+      const campusVendors = await Vendor.find(vendorFilter).select("_id").lean();
+      const campusVendorIds = campusVendors.map((v) => v._id);
+      query.vendorId = { $in: campusVendorIds };
+    }
 
     if (category && category !== "all") {
       query.category = category;
@@ -49,7 +62,10 @@ export async function GET(request: Request) {
       .lean();
 
     // Fetch only active vendors — no point including inactive ones in the map
-    const vendors = await Vendor.find({ isActive: true }).select("name slug whatsappNumber").lean();
+    const vendorQueryFilter: Record<string, any> = { isActive: true };
+    if (school) vendorQueryFilter.school = school;
+    if (campus) vendorQueryFilter.campus = campus;
+    const vendors = await Vendor.find(vendorQueryFilter).select("name slug whatsappNumber").lean();
 
     const vendorMap = new Map<string, { name: string, slug: string }>();
     const vendorWhatsappNumberMap = new Map<string, string>();

@@ -14,7 +14,8 @@ import { z } from "zod";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageUpload } from "@/components/shared/ImageUpload";
-import { MENU_CATEGORIES, VENDOR_CATEGORIES, SCHOOLS, CAMPUSES, APP_LOGO_URL, APP_NAME } from "@/lib/constants";
+import { MENU_CATEGORIES, VENDOR_CATEGORIES, APP_LOGO_URL, APP_NAME } from "@/lib/constants";
+import { getSchoolOptions, getCampusOptions, DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 import apiClient from "@/lib/axios";
 import Link from "next/link";
 import { AdminSidebar, AdminMobileTrigger } from "@/components/admin/AdminSidebar";
@@ -51,12 +52,14 @@ export default function NewVendorPage() {
     defaultValues: {
       name: "", whatsappNumber: "", email: "", password: "",
       description: "", category: "meals", tags: [],
-      school: SCHOOLS[0].value, campus: CAMPUSES[0].value,
+      school: DEFAULT_SCHOOL_ID, campus: DEFAULT_CAMPUS_ID,
     },
     mode: "onChange",
   });
 
   const passwordValue = useWatch({ control: form.control, name: "password" });
+  const selectedSchool = useWatch({ control: form.control, name: "school" });
+  const campusOptions = getCampusOptions(selectedSchool);
 
   const onSubmit = async (values: AddVendorValues) => {
     setSubmitting(true);
@@ -164,7 +167,7 @@ export default function NewVendorPage() {
                           <SelectValue placeholder="Select school" />
                         </SelectTrigger>
                         <SelectContent>
-                          {SCHOOLS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                      {getSchoolOptions().map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -179,7 +182,7 @@ export default function NewVendorPage() {
                           <SelectValue placeholder="Select campus" />
                         </SelectTrigger>
                         <SelectContent>
-                          {CAMPUSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                          {campusOptions.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

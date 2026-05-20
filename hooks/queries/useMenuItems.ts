@@ -7,6 +7,8 @@ import type { MenuItem } from "@/lib/types"
 interface UseMenuItemsOptions {
   q?: string
   category?: string
+  school?: string
+  campus?: string
   limit?: number
   initialPage?: number
   enabled?: boolean
@@ -16,13 +18,15 @@ export function useMenuItems(options?: UseMenuItemsOptions) {
   const {
     q = "",
     category = "all",
+    school,
+    campus,
     limit = 10,
     initialPage = 1,
     enabled = true,
   } = options || {}
 
   return useInfiniteQuery({
-    queryKey: ["menus", q, category],
+    queryKey: ["menus", q, category, school, campus],
     queryFn: async ({ pageParam = initialPage }) => {
       const { data } = await apiClient.get("/menus", {
         params: {
@@ -30,6 +34,8 @@ export function useMenuItems(options?: UseMenuItemsOptions) {
           limit,
           q: q || undefined,
           category: category !== "all" ? category : undefined,
+          school: school || undefined,
+          campus: campus || undefined,
         },
       })
       return {

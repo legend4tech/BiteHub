@@ -6,6 +6,8 @@ import type { Vendor } from "@/lib/types"
 
 interface UseVendorsOptions {
   q?: string
+  school?: string
+  campus?: string
   limit?: number
   initialPage?: number
   enabled?: boolean
@@ -17,16 +19,18 @@ export interface VendorWithMenu extends Vendor {
 }
 
 export function useVendors(options?: UseVendorsOptions) {
-  const { q = "", limit = 12, initialPage = 1, enabled = true } = options || {}
+  const { q = "", school, campus, limit = 12, initialPage = 1, enabled = true } = options || {}
 
   return useInfiniteQuery({
-    queryKey: ["vendors", q],
+    queryKey: ["vendors", q, school, campus],
     queryFn: async ({ pageParam = initialPage }) => {
       const { data } = await apiClient.get("/vendors", {
         params: {
           page: pageParam,
           limit,
           q: q || undefined,
+          school: school || undefined,
+          campus: campus || undefined,
         },
       })
       return {

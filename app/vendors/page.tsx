@@ -7,7 +7,7 @@ import Vendor from "@/models/Vendor";
 import MenuItem from "@/models/MenuItem";
 import { FadeIn } from "@/components/FadeIn";
 import { SearchInput } from "@/components/shared/SearchInput";
-import { CAMPUS_NAME } from "@/lib/constants";
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID, getCampusName, getSchoolName } from "@/lib/config/campus";
 import { LoadMoreVendors } from "@/components/vendors/LoadMoreVendors";
 import { Suspense } from "react";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
@@ -20,11 +20,10 @@ export const metadata: Metadata = {
 };
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
-// ── Isolated async component: only this throws if DB is down ─────────────────
-async function VendorListContent({ q }: { q: string }) {
+async function VendorListContent({ q, school, campus }: { q: string; school: string; campus: string }) {
   await dbConnect();
 
-  let query: Record<string, unknown> = { isActive: true };
+  let query: Record<string, unknown> = { isActive: true, school, campus };
   if (q) {
     query.$or = [
       { name: { $regex: q, $options: "i" } },
@@ -115,7 +114,7 @@ async function VendorListContent({ q }: { q: string }) {
       {vendorDocs.length === 20 && (
         <LoadMoreVendors
           initialPage={1}
-          searchParams={{ q: q || undefined }}
+          searchParams={{ q: q || undefined, school, campus }}
         />
       )}
     </>
@@ -131,6 +130,16 @@ export default async function VendorsPage({
   const resolvedSearchParams = await searchParams;
   const q =
     typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
+  const school =
+    typeof resolvedSearchParams.school === "string"
+      ? resolvedSearchParams.school
+      : DEFAULT_SCHOOL_ID;
+  const campus =
+    typeof resolvedSearchParams.campus === "string"
+      ? resolvedSearchParams.campus
+      : DEFAULT_CAMPUS_ID;
+
+  const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`;
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col">
@@ -147,6 +156,9 @@ export default async function VendorsPage({
                 <h1 className="font-heading text-4xl md:text-5xl font-bold mt-2">
                   All Vendors
                 </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Showing for <span className="font-semibold text-foreground">{campusLabel}</span>
+                </p>
               </div>
               <div className="w-full md:w-auto">
                 <SearchInput placeholder="Search vendors by name, category..." />
@@ -160,14 +172,14 @@ export default async function VendorsPage({
             message="We couldn't reach the server. Check your connection and try again."
           >
             <Suspense
-              key={q}
+              key={`${q}-${school}-${campus}`}
               fallback={
                 <div className="py-8">
                   <PageSkeleton variant="menu-item-grid" count={8} />
                 </div>
               }
             >
-              <VendorListContent q={q} />
+              <VendorListContent q={q} school={school} campus={campus} />
             </Suspense>
           </SectionErrorBoundary>
         </div>
