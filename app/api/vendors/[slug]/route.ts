@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import VendorModel from "@/models/Vendor";
 import MenuItemModel from "@/models/MenuItem";
-import { getItemTag } from "@/app/api/menus/route";
+import { getItemTag } from "@/lib/services/menuService";
 import { serializeVendor, serializeMenuItem } from "@/lib/serializers";
 
 export async function GET(

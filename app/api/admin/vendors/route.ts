@@ -4,7 +4,7 @@ import VendorModel from "@/models/Vendor";
 import VendorUserModel from "@/models/VendorUser";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
-import { CAMPUSES, SCHOOLS } from "@/lib/constants";
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 import { z } from "zod";
 import { strongPasswordSchema } from "@/lib/schemas";
 
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     const pwCheck = strongPasswordSchema.safeParse(password);
     if (!pwCheck.success) {
       return NextResponse.json(
-        { error: pwCheck.error.errors[0].message },
+        { error: pwCheck.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -110,8 +110,8 @@ export async function POST(request: Request) {
       category: category?.trim() || "general",
       tags: Array.isArray(tags) ? tags : [],
       whatsappNumber: whatsappNumber.trim(),
-      campus: campus?.trim() || CAMPUSES[0].value,
-      school: school?.trim() || SCHOOLS[0].value,
+      campus: campus?.trim() || DEFAULT_CAMPUS_ID,
+      school: school?.trim() || DEFAULT_SCHOOL_ID,
       image: image,
       isActive: true,
     });

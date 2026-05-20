@@ -81,16 +81,21 @@ export async function getMenus(options: GetMenusOptions = {}) {
     vendorWhatsappMap.set(v._id.toString(), (v as any).whatsappNumber || "");
   });
 
-  const mappedItems = items.map((item) => {
-    const vendorData = vendorMap.get(item.vendorId.toString());
-    return {
-      ...serializeMenuItem(item),
-      vendorName: vendorData?.name || "Campus Vendor",
-      vendorSlug: vendorData?.slug || "",
-      vendorWhatsappNumber: vendorWhatsappMap.get(item.vendorId.toString()) || "",
-      tag: getItemTag(item.price),
-    };
-  });
+  const mappedItems = items
+    .map((item) => {
+      const base = serializeMenuItem(item);
+      if (!base) return null; // guard: should never happen for .lean() docs
+
+      const vendorData = vendorMap.get(item.vendorId.toString());
+      return {
+        ...base,
+        vendorName: vendorData?.name || "Campus Vendor",
+        vendorSlug: vendorData?.slug || "",
+        vendorWhatsappNumber: vendorWhatsappMap.get(item.vendorId.toString()) || "",
+        tag: getItemTag(item.price),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   return { items: mappedItems, totalItems };
 }

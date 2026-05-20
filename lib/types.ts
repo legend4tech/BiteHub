@@ -44,13 +44,15 @@ export interface MenuItem {
   id: string;
   vendorId: string;
   name: string;
-  description?: string;
+  description: string | null;
   price: number;
   category: string; // Made this string instead of MenuCategory enum to match user schema flexibility
-  image?: string | { url: string; publicId: string; };
+  image: string | { url: string; publicId: string; } | null;
   isAvailable: boolean;
-  availableFrom?: string;
-  availableTo?: string;
+  availableFrom: string | null;
+  availableTo: string | null;
+  createdAt: string;
+  updatedAt: string;
 
   // Fabricated UI properties
   vendorName?: string;
