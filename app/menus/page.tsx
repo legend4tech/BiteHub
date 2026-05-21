@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { MenuGrid } from "@/components/menus/MenuGrid";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus";
+import { FadeIn } from "@/components/FadeIn";
+import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
+import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import { Suspense } from "react";
+import { getMenus } from "@/lib/services/menuService";
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID, getCampusName, getSchoolName } from "@/lib/config/campus";
+import { CampusSelector } from "@/components/shared/CampusSelector";
 
 export const metadata: Metadata = {
   title: "All Menus",
@@ -19,19 +32,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 };
-import { ArrowLeft } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { MenuGrid } from "@/components/menus/MenuGrid";
-import { SearchInput } from "@/components/shared/SearchInput";
-import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus";
-import { FadeIn } from "@/components/FadeIn";
-import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
-import { PageSkeleton } from "@/components/shared/PageSkeleton";
-import { Suspense } from "react";
-import { getMenus } from "@/lib/services/menuService";
-import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID, getCampusName, getSchoolName } from "@/lib/config/campus";
-import { CampusSelector } from "@/components/shared/CampusSelector";
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function MenuListContent({

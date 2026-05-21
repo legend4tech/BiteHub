@@ -65,7 +65,42 @@ export default auth(async (req) => {
     }
   }
 
-  // 2. Pass request to next handler (auth checks are handled by NextAuth callbacks in auth.config.ts)
+  // 2. Auth guard — enforce role-based access at the edge to prevent flash-of-protected-content
+  const { pathname } = req.nextUrl;
+  const session = req.auth;
+  const isLoggedIn = !!session?.user;
+  const role = (session?.user as any)?.role;
+
+  const isOnAdmin = pathname.startsWith("/admin");
+  const isAdminLoginRoute = pathname === "/admin/login";
+  const isOnVendorProtected =
+    pathname.startsWith("/vendor/") &&
+    pathname !== "/vendor/login" &&
+    pathname !== "/vendor/forgot-password" &&
+    pathname !== "/vendor/reset-password" &&
+    pathname !== "/vendor/confirm-email";
+
+  // Admin section guard
+  if (isOnAdmin && !isAdminLoginRoute) {
+    if (!isLoggedIn) {
+      return Response.redirect(new URL("/admin/login", req.nextUrl));
+    }
+    if (role !== "admin" && role !== "superadmin") {
+      return Response.redirect(new URL("/vendor/dashboard", req.nextUrl));
+    }
+  }
+
+  // Vendor protected section guard
+  if (isOnVendorProtected) {
+    if (!isLoggedIn) {
+      return Response.redirect(new URL("/vendor/login", req.nextUrl));
+    }
+    if (role !== "vendor") {
+      return Response.redirect(new URL("/admin", req.nextUrl));
+    }
+  }
+
+  // 3. Pass request to next handler
   return NextResponse.next();
 });
 
