@@ -25,7 +25,7 @@ export interface GetMenusOptions {
   limit?: number;
 }
 
-// ─── List menu items (paginated, filtered) ─────────────────────────────────────
+/// ─── List menu items (paginated, filtered) ─────────────────────────────────────
 
 export async function getMenus(options: GetMenusOptions = {}) {
   const { q, category, school, campus, page = 1, limit = 20 } = options;
