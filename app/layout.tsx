@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CampusProvider } from "@/components/providers/CampusProvider";
+import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -41,10 +42,12 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider>
-            <CampusProvider>
-              {children}
-              <Toaster position="top-right" richColors closeButton expand />
-            </CampusProvider>
+            <Suspense fallback={null}>
+              <CampusProvider>
+                {children}
+                <Toaster position="top-right" richColors closeButton expand />
+              </CampusProvider>
+            </Suspense>
           </ThemeProvider>
         </QueryProvider>
       </body>

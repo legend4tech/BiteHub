@@ -91,7 +91,7 @@ export function CampusSelector() {
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border rounded-2xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2">
+        <div className="absolute top-full mt-2 left-0 sm:left-auto sm:right-0 w-64 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-2xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2">
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">Showing vendors & menus for:</p>
             <div>

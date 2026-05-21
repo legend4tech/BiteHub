@@ -8,17 +8,22 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+import { useCampus } from "@/components/providers/CampusProvider";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { schoolId, campusId } = useCampus();
+
+  // Campus query string — appended to any link that triggers a server-side filtered page
+  const cq = `school=${schoolId}&campus=${campusId}`;
 
   const navLinks = [
-    { name: "Vendors", href: "/vendors", icon: Store },
-    { name: "Menu", href: "/menus", icon: UtensilsCrossed },
-    { name: "Track Order", href: "/order", icon: Search },
-    { name: "Vendor Login", href: "/vendor/login", icon: LogIn },
-    { name: "How it works", href: "/#how", icon: Info },
-    { name: "Contact Us", href: "/contact", icon: PhoneCall },
+    { name: "Vendors", href: `/vendors?${cq}`, base: "/vendors", icon: Store },
+    { name: "Menu", href: `/menus?${cq}`, base: "/menus", icon: UtensilsCrossed },
+    { name: "Track Order", href: "/order", base: "/order", icon: Search },
+    { name: "Vendor Login", href: "/vendor/login", base: "/vendor/login", icon: LogIn },
+    { name: "How it works", href: "/#how", base: "/#how", icon: Info },
+    { name: "Contact Us", href: "/contact", base: "/contact", icon: PhoneCall },
   ];
 
   return (
@@ -29,7 +34,7 @@ export function Navbar() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="pointer-events-auto w-full max-w-7xl rounded-3xl border border-white/20 dark:border-white/10 bg-background/60 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] px-4 sm:px-6 h-20 flex items-center justify-between"
       >
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href={`/?${cq}`} className="flex items-center gap-2.5 group">
           <img 
             src={APP_LOGO_URL} 
             alt={APP_NAME} 
@@ -44,7 +49,7 @@ export function Navbar() {
 
         <nav className="hidden xl:flex items-center gap-1">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.base || pathname.startsWith(link.base + "/");
             return (
               <Link
                 key={link.name}
@@ -75,7 +80,7 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           <Button asChild variant="hero" size="lg" className="rounded-2xl px-3 sm:px-6 shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-[1.02] active:scale-95 group font-bold">
-            <Link href="/menus" className="flex items-center gap-2">
+            <Link href={`/menus?${cq}`} className="flex items-center gap-2">
               <ShoppingBag className="size-4 group-hover:rotate-12 transition-transform" /> 
               <span className="hidden sm:inline">Order now</span>
             </Link>
@@ -92,7 +97,7 @@ export function Navbar() {
               <div className="flex flex-col gap-6 mt-12">
                 <div className="flex flex-col gap-2">
                   {navLinks.map((link) => {
-                    const isActive = pathname === link.href;
+                    const isActive = pathname === link.base || pathname.startsWith(link.base + "/");
                     return (
                       <SheetClose asChild key={link.name}>
                         <Link
