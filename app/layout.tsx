@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
@@ -21,6 +22,21 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+};
+
+export const metadata: Metadata = {
+  title: "BiteHub",
+  description: "Order food from your campus vendors, fast and easy.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BiteHub",
+  },
+};
 
 export default function RootLayout({
   children,
