@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem, MenuItemPayload } from "@/lib/types"
 import { useMenuItemDetail } from "@/hooks/queries/useMenuItemDetail"
 
 export default function EditMenuItemPage() {
@@ -19,7 +19,7 @@ export default function EditMenuItemPage() {
   const { data: item, isLoading } = useMenuItemDetail(id)
 
   const handleSave = async (
-    data: Omit<MenuItem, "id" | "vendorId" | "vendorName">
+    data: MenuItemPayload
   ) => {
     try {
       await apiClient.patch(`/vendor/menu/${id}`, data)

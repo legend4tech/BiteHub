@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field";
 import { toast } from "sonner";
-import type { MenuItem } from "@/lib/types";
+import type { MenuItem, MenuItemPayload } from "@/lib/types";
 import { MENU_CATEGORIES } from "@/lib/constants";
 import { menuItemFormSchema, type MenuItemFormValues } from "@/lib/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +25,7 @@ import { formatInputNumber, parseInputNumber } from "@/lib/format";
 
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>;
-  onSave: (data: Omit<MenuItem, "id" | "vendorId" | "vendorName">) => void | Promise<void>;
+  onSave: (data: MenuItemPayload) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -76,13 +76,13 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
 
       await onSave({
         name: values.name,
-        description: values.description,
+        description: values.description ?? null,
         price: parseInputNumber(values.price),
         category: values.category,
         isAvailable: values.isAvailable,
         image: imageToSave ?? undefined,
-        availableFrom: values.availableFrom || undefined,
-        availableTo: values.availableTo || undefined,
+        availableFrom: values.availableFrom || null,
+        availableTo: values.availableTo || null,
         tag: null,
       });
     } catch (error: any) {

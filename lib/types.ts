@@ -61,6 +61,16 @@ export interface MenuItem {
   tag?: string | null;
 }
 
+/**
+ * The shape of data sent when creating or editing a menu item.
+ * Excludes server-generated fields (id, vendorId, timestamps) and
+ * the UI-only vendorName which is sourced from the DB at the API level.
+ */
+export type MenuItemPayload = Omit<
+  MenuItem,
+  "id" | "vendorId" | "vendorName" | "createdAt" | "updatedAt"
+>;
+
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
 export interface CartItem {

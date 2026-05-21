@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { MenuItemForm } from "@/components/vendor/MenuItemForm";
 import apiClient from "@/lib/axios";
 import { toast } from "sonner";
-import type { MenuItem } from "@/lib/types";
+import type { MenuItemPayload } from "@/lib/types";
 
 export default function NewMenuItemPage() {
   const router = useRouter();
 
-  const handleSave = async (data: Omit<MenuItem, "id" | "vendorId" | "vendorName">) => {
+  const handleSave = async (data: MenuItemPayload) => {
     try {
       await apiClient.post("/vendor/menu", data);
       toast.success("Menu item created");
