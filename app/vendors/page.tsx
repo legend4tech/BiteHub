@@ -14,8 +14,22 @@ import { getVendors } from "@/lib/services/vendorService";
 import { CampusSelector } from "@/components/shared/CampusSelector";
 
 export const metadata: Metadata = {
-  title: "Vendors — BiteHub",
-  description: "Browse all active food vendors on campus.",
+  title: "All Vendors",
+  description:
+    "Browse all active food vendors on campus. Find your favourite kitchen, check their menu, and order in seconds.",
+  openGraph: {
+    title: "All Vendors — BiteHub",
+    description:
+      "Browse all active food vendors on campus. Find your favourite kitchen, check their menu, and order in seconds.",
+    url: "/vendors",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BiteHub Vendors" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "All Vendors — BiteHub",
+    description: "Browse all active food vendors on campus and order in seconds.",
+    images: ["/og-image.png"],
+  },
 };
 
 // ── Isolated async component: only this throws if DB is down ─────────────────

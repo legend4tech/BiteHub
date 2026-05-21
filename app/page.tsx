@@ -14,12 +14,21 @@ import { getMenus } from "@/lib/services/menuService";
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 
 export const metadata: Metadata = {
-  title: "BiteHub — Campus food, delivered fast",
+  title: "BiteHub — Campus food, ordered fast",
   description:
     "Discover the best campus food vendors around you, browse menus and order food in seconds — all from one app.",
   openGraph: {
-    title: "BiteHub — Campus food, delivered fast",
+    title: "BiteHub — Campus food, ordered fast",
+    description:
+      "Discover the best campus food vendors around you, browse menus and order food in seconds — all from one app.",
+    url: "/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BiteHub" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BiteHub — Campus food, ordered fast",
     description: "Order from your favorite campus kitchens in seconds.",
+    images: ["/og-image.png"],
   },
 };
 

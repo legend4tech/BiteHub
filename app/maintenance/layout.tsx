@@ -1,6 +1,9 @@
-export const metadata = {
-  title: "Under Maintenance - BiteHub",
-  description: "BiteHub is currently undergoing scheduled maintenance.",
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Under Maintenance",
+  description: "BiteHub is currently undergoing scheduled maintenance. We'll be back shortly!",
+  robots: { index: false, follow: false },
 };
 
 export default function MaintenanceLayout({

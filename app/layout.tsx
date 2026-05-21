@@ -23,18 +23,48 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com";
+
 export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
-  title: "BiteHub",
-  description: "Order food from your campus vendors, fast and easy.",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "BiteHub — Order Campus Food, Fast & Easy",
+    template: "%s | BiteHub",
+  },
+  description:
+    "Discover campus food vendors near you, browse their menus, and place your order in seconds — all from one app.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "BiteHub",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "BiteHub",
+    title: "BiteHub — Order Campus Food, Fast & Easy",
+    description:
+      "Discover campus food vendors near you, browse their menus, and place your order in seconds — all from one app.",
+    url: APP_URL,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "BiteHub — Order food from your campus vendors, fast and easy.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BiteHub — Order Campus Food, Fast & Easy",
+    description:
+      "Discover campus food vendors near you, browse their menus, and place your order in seconds — all from one app.",
+    images: ["/og-image.png"],
   },
 };
 

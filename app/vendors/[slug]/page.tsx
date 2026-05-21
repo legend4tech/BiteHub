@@ -41,11 +41,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getVendorData(slug);
   
-  if (!data || !data.vendor) return { title: "Vendor Not Found — BiteHub" };
-  
+  if (!data || !data.vendor) return { title: "Vendor Not Found" };
+
+  const vendor = data.vendor;
+  const title = `${vendor.name} — BiteHub`;
+  const description =
+    vendor.description ||
+    vendor.tagline ||
+    `Order from ${vendor.name} on BiteHub. Browse their menu and place your order in seconds.`;
+  const ogImage = vendor.image?.url
+    ? { url: vendor.image.url, width: 800, height: 800, alt: vendor.name }
+    : { url: "/og-image.png", width: 1200, height: 630, alt: `${vendor.name} on BiteHub` };
+
   return {
-    title: `${data.vendor.name} — BiteHub`,
-    description: data.vendor.description || data.vendor.tagline,
+    title: vendor.name,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `/vendors/${slug}`,
+      images: [ogImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage.url],
+    },
   };
 }
 
