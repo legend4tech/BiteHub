@@ -125,7 +125,7 @@ export default function NewVendorPage() {
                   <Controller name="whatsappNumber" control={form.control} render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>WhatsApp Number *</FieldLabel>
-                      <Input {...field} id={field.name} placeholder="e.g. 2348012345678" aria-invalid={fieldState.invalid} />
+                      <Input {...field} id={field.name} placeholder="e.g. 08012345678" aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )} />

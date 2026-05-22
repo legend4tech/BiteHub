@@ -117,7 +117,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <Field>
+      <Field data-invalid={!!form.formState.errors.name}>
         <label className="text-sm font-medium" htmlFor="name">
           Vendor Name
         </label>
@@ -125,10 +125,14 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           {...form.register("name")}
           id="name"
           placeholder="e.g. Mama Put"
+          aria-invalid={!!form.formState.errors.name}
         />
+        {form.formState.errors.name?.message && (
+          <FieldError errors={[{ message: form.formState.errors.name.message }]} />
+        )}
       </Field>
 
-      <Field>
+      <Field data-invalid={!!form.formState.errors.description}>
         <label className="text-sm font-medium" htmlFor="description">
           Description
         </label>
@@ -137,10 +141,14 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           id="description"
           placeholder="Tell customers about your kitchen..."
           rows={4}
+          aria-invalid={!!form.formState.errors.description}
         />
+        {form.formState.errors.description?.message && (
+          <FieldError errors={[{ message: form.formState.errors.description.message }]} />
+        )}
       </Field>
 
-      <Field>
+      <Field data-invalid={!!form.formState.errors.whatsappNumber}>
         <label className="text-sm font-medium" htmlFor="whatsappNumber">
           WhatsApp Number
         </label>
@@ -148,7 +156,11 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           {...form.register("whatsappNumber")}
           id="whatsappNumber"
           placeholder="e.g. 08012345678"
+          aria-invalid={!!form.formState.errors.whatsappNumber}
         />
+        {form.formState.errors.whatsappNumber?.message && (
+          <FieldError errors={[{ message: form.formState.errors.whatsappNumber.message }]} />
+        )}
       </Field>
 
       <Controller name="category" control={form.control} render={({ field }) => (
