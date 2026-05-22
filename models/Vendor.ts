@@ -1,24 +1,24 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose"
 
 export interface IVendor extends Document {
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  tags: string[];
-  whatsappNumber: string;
-  school: string;
-  campus: string;
-  isActive: boolean;
+  name: string
+  slug: string
+  description: string
+  category: string
+  tags: string[]
+  whatsappNumber: string
+  school: string
+  campus: string
+  isActive: boolean
   image?: {
-    url: string;
-    publicId: string;
-  };
+    url: string
+    publicId: string
+  }
 
   // Virtuals
-  initials: string;
-  tagline: string;
-  location: string;
+  initials: string
+  tagline: string
+  location: string
 }
 
 const VendorSchema: Schema = new Schema(
@@ -42,18 +42,18 @@ const VendorSchema: Schema = new Schema(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret: Record<string, unknown>) => {
-        ret.id = String(ret._id);
-        delete ret._id;
-        delete ret.__v;
+        ret.id = String(ret._id)
+        delete ret._id
+        delete ret.__v
       },
     },
     toObject: { virtuals: true },
   }
-);
+)
 
 // Virtuals for UI (Fabricated data)
 VendorSchema.virtual("initials").get(function (this: IVendor) {
-  const name = this.name;
+  const name = this.name
   return name
     ? name
         .split(" ")
@@ -61,14 +61,18 @@ VendorSchema.virtual("initials").get(function (this: IVendor) {
         .join("")
         .substring(0, 2)
         .toUpperCase()
-    : "";
-});
+    : ""
+})
 VendorSchema.virtual("tagline").get(function (this: IVendor) {
-  return this.description || "The best food on campus";
-});
+  return this.description || "The best food on campus"
+})
 VendorSchema.virtual("location").get(function (this: IVendor) {
-  return this.campus || "Main Campus";
-});
+  return this.campus || "Main Campus"
+})
+
+// Indexes for high-performance querying
+VendorSchema.index({ school: 1, campus: 1, isActive: 1 })
+VendorSchema.index({ name: "text", category: "text" })
 
 export default mongoose.models.Vendor ||
-  mongoose.model<IVendor>("Vendor", VendorSchema);
+  mongoose.model<IVendor>("Vendor", VendorSchema)

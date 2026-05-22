@@ -102,8 +102,8 @@ export default function PrivacyPolicyPage() {
                 interacting with our services, you consent to receiving messages
                 via WhatsApp. We do not use your phone number for unsolicited
                 marketing messages without your explicit permission. All
-                WhatsApp&apos;s communications are secured by WhatsApp&apos;s
-                standard encryption.
+                WhatsApp communications are secured by WhatsApp&apos;s standard
+                encryption.
               </p>
             </section>
 
@@ -117,7 +117,9 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
                 <li>
                   <strong>Vendors:</strong> We share your name, phone number,
-                  and delivery details with the specific vendor you order from.
+                  and delivery details with the specific vendor you order from,
+                  solely to ensure accurate fulfillment and delivery of your
+                  order.
                 </li>
                 <li>
                   <strong>Service Providers:</strong> We use trusted third
@@ -137,10 +139,12 @@ export default function PrivacyPolicyPage() {
                 6. Data Security
               </h2>
               <p className="leading-relaxed text-muted-foreground">
-                We implement robust security measures to protect your personal
-                information from unauthorized access, alteration, or disclosure.
-                However, no internet transmission is entirely secure, and we
-                cannot guarantee absolute security.
+                We implement robust, industry-standard security measures to
+                protect your personal information from unauthorized access,
+                alteration, or disclosure. While we continuously monitor and
+                update our systems to ensure the highest level of protection for
+                your data, please be aware that no method of transmission over
+                the internet or electronic storage is 100% secure.
               </p>
             </section>
 

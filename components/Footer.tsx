@@ -56,6 +56,7 @@ export function Footer() {
               {/* <FooterLink href="/careers">Join the Team</FooterLink> */}
               <FooterLink href="/contact">Contact Support</FooterLink>
               <FooterLink href="/privacy">Privacy Policy</FooterLink>
+              <FooterLink href="/terms">Terms of Use</FooterLink>
               {/* <FooterLink href="/press">Media Kit</FooterLink> */}
             </ul>
           </div>
