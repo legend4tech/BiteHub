@@ -41,6 +41,10 @@ export default function VendorLoginPage() {
   });
 
   const onSubmit = async (values: VendorLoginValues) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      toast.error("You are offline. Please check your internet connection.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -50,18 +54,28 @@ export default function VendorLoginPage() {
         password: values.password,
         loginType: "vendor",
       });
+
       if (res?.error) {
         if (res.error.includes("Too Many Requests")) {
           toast.error(res.error);
+        } else if (res.error === "Configuration" || res.error === "AccessDenied") {
+          toast.error("Authentication service error. Please try again.");
         } else {
-          toast.error("Invalid email or password");
+          toast.error(res.error.replace("CredentialsSignin: ", "") || "Invalid email or password");
         }
+      } else if (res?.url && res.url.includes("/api/auth/error")) {
+        // NextAuth returned an error URL instead of an error message
+        toast.error("An unexpected authentication error occurred. Please try again.");
       } else {
         toast.success("Login successful. Welcome back!");
         router.replace("/vendor/dashboard");
       }
-    } catch {
-      toast.error("Too Many Requests, try again in 1 minute");
+    } catch (error: any) {
+      if (error?.message?.toLowerCase().includes("fetch") || !navigator.onLine) {
+        toast.error("Network error. Please check your internet connection.");
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

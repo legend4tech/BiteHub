@@ -10,6 +10,14 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit";
 
+class CustomAuthError extends CredentialsSignin {
+  code: string;
+  constructor(message: string) {
+    super(message);
+    this.code = message;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   session: { strategy: "jwt" },
@@ -26,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .safeParse(credentials);
 
           if (!parsedCredentials.success) {
-            throw new CredentialsSignin("Invalid inputs");
+            throw new CustomAuthError("Invalid inputs");
           }
 
           const { email, password, loginType } = parsedCredentials.data;
@@ -36,10 +44,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (!success) {
               const seconds = Math.ceil((reset - Date.now()) / 1000);
               if (seconds < 60) {
-                throw new CredentialsSignin(`Too Many Requests, try again in ${seconds} seconds`);
+                throw new CustomAuthError(`Too Many Requests, try again in ${seconds} seconds`);
               } else {
                 const minutes = Math.ceil(seconds / 60);
-                throw new CredentialsSignin(`Too Many Requests, try again in ${minutes} minute${minutes > 1 ? 's' : ''}`);
+                throw new CustomAuthError(`Too Many Requests, try again in ${minutes} minute${minutes > 1 ? 's' : ''}`);
               }
             }
           }
@@ -70,13 +78,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           if (!user || !user.isActive) {
-            throw new CredentialsSignin("Invalid credentials");
+            throw new CustomAuthError("Invalid credentials");
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password);
           
           if (!passwordsMatch) {
-            throw new CredentialsSignin("Invalid credentials");
+            throw new CustomAuthError("Invalid credentials");
           }
 
           // Update last login (fire and forget)
@@ -110,7 +118,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw error;
           }
           console.error("Auth error:", error);
-          throw new CredentialsSignin("An error occurred during authentication.");
+          throw new CustomAuthError("Database or network error during authentication.");
         }
       },
     }),

@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import dbConnect from "@/lib/db";
 import VendorUserModel from "@/models/VendorUser";
+import VendorModel from "@/models/Vendor";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { strongPasswordSchema } from "@/lib/schemas";
+import { Resend } from "resend";
+import React from "react";
+import PasswordChangeNotification from "@/emails/PasswordChangeNotification";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -51,6 +57,27 @@ export async function POST(req: NextRequest) {
     user.password = passwordHash;
     user.lastPasswordChangeAt = new Date();
     await user.save();
+
+    // Send security notification email
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const vendorId = (session.user as any)?.vendorId || user.vendorId;
+        const vendor = vendorId ? await VendorModel.findById(vendorId).lean() : null;
+        const vendorName = vendor?.name || "Vendor";
+        const fromEmail = process.env.EMAIL_FROM || "BiteHub <no-reply@mail.bitehubapp.com>";
+
+        await resend.emails.send({
+          from: fromEmail,
+          to: user.email,
+          subject: "Security Alert: Your password has been changed",
+          react: React.createElement(PasswordChangeNotification, {
+            vendorName,
+          }),
+        });
+      } catch (emailError) {
+        console.error("[change-password] Failed to send notification email:", emailError);
+      }
+    }
 
     return NextResponse.json({ message: "Password updated successfully" });
   } catch (error) {

@@ -12,12 +12,14 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import apiClient from "@/lib/axios";
 import type { AdminVendor } from "./types";
+import { strongPasswordSchema } from "@/lib/schemas";
+import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
 
 // ─── Add Login Modal ──────────────────────────────────────────────────────────
 
 const addLoginSchema = z.object({
   email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: strongPasswordSchema,
 });
 type AddLoginValues = z.infer<typeof addLoginSchema>;
 
@@ -70,11 +72,12 @@ export function AddLoginModal({
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
               <div className="relative">
-                <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" aria-invalid={fieldState.invalid} className="pr-10" />
+                <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" aria-invalid={fieldState.invalid} className="pr-10" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              <PasswordStrengthMeter password={field.value} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )} />
@@ -97,7 +100,7 @@ const addVendorSchema = z.object({
   name: z.string().min(1, "Name is required"),
   whatsappNumber: z.string().min(1, "WhatsApp number is required"),
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: strongPasswordSchema,
   image: z.object({ url: z.string().min(1), publicId: z.string().min(1) })
     .optional().refine(val => !!val, { message: "Image is required" }),
 });
@@ -168,11 +171,12 @@ export function AddVendorModal({
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
               <div className="relative">
-                <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" aria-invalid={fieldState.invalid} className="pr-10" />
+                <Input {...field} id={field.name} type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" aria-invalid={fieldState.invalid} className="pr-10" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              <PasswordStrengthMeter password={field.value} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )} />

@@ -40,6 +40,11 @@ export default function AdminLoginPage() {
   });
 
   const onSubmit = async (values: LoginValues) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      toast.error("You are offline. Please check your internet connection.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await signIn("credentials", {
@@ -48,19 +53,28 @@ export default function AdminLoginPage() {
         password: values.password,
         loginType: "admin",
       });
+
       if (res?.error) {
         if (res.error.includes("Too Many Requests")) {
           toast.error(res.error);
+        } else if (res.error === "Configuration" || res.error === "AccessDenied") {
+          toast.error("Authentication service error. Please try again.");
         } else {
-          toast.error("Invalid email or password");
+          toast.error(res.error.replace("CredentialsSignin: ", "") || "Invalid email or password");
         }
+      } else if (res?.url && res.url.includes("/api/auth/error")) {
+        toast.error("An unexpected authentication error occurred. Please try again.");
       } else {
         toast.success("Welcome back, Admin!");
         router.push("/admin");
         router.refresh();
       }
-    } catch {
-      toast.error("Too Many Requests, try again in 1 minute");
+    } catch (error: any) {
+      if (error?.message?.toLowerCase().includes("fetch") || !navigator.onLine) {
+        toast.error("Network error. Please check your internet connection.");
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
