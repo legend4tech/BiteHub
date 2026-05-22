@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus";
 import { z } from "zod";
-import { strongPasswordSchema } from "@/lib/schemas";
+import { strongPasswordSchema, formatToWhatsapp } from "@/lib/schemas";
 
 
 // GET — all vendors for admin (no isActive filter)
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       description: description?.trim() || "",
       category: category?.trim() || "general",
       tags: Array.isArray(tags) ? tags : [],
-      whatsappNumber: whatsappNumber.trim(),
+      whatsappNumber: formatToWhatsapp(whatsappNumber.trim()),
       campus: campus?.trim() || DEFAULT_CAMPUS_ID,
       school: school?.trim() || DEFAULT_SCHOOL_ID,
       image: image,

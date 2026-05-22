@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import dbConnect from "@/lib/db";
 import Vendor from "@/models/Vendor";
 import { auth } from "@/auth";
+import { formatToWhatsapp } from "@/lib/schemas";
 import { serializeVendor } from "@/lib/serializers";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
 
@@ -40,7 +41,7 @@ export async function PATCH(request: Request) {
     if (description !== undefined) updateData.description = description?.trim();
     if (category !== undefined) updateData.category = category?.trim();
     if (tags !== undefined) updateData.tags = tags;
-    if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber?.trim();
+    if (whatsappNumber !== undefined) updateData.whatsappNumber = formatToWhatsapp(whatsappNumber?.trim() || "");
     if (image !== undefined) updateData.image = image;
 
     const updatedVendor = await Vendor.findByIdAndUpdate(

@@ -33,6 +33,40 @@ export function normaliseNigerianPhone(raw: string): string {
   return raw;
 }
 
+/**
+ * Transforms an 11-digit local WhatsApp number (080...) to 13-digit DB format (234...)
+ */
+export function formatToWhatsapp(raw: string): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0") && digits.length === 11) {
+    return "234" + digits.slice(1);
+  }
+  // already formatted?
+  if (digits.startsWith("234") && digits.length === 13) {
+    return digits;
+  }
+  return raw;
+}
+
+/**
+ * Transforms a 13-digit DB WhatsApp number (234...) back to 11-digit local format (080...)
+ */
+export function formatFromWhatsapp(raw: string): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("234") && digits.length === 13) {
+    return "0" + digits.slice(3);
+  }
+  return raw;
+}
+
+export const whatsappInputSchema = z
+  .string()
+  .trim()
+  .min(1, "WhatsApp number is required.")
+  .regex(/^0\d{10}$/, "Must be exactly 11 digits starting with 0 (e.g. 08012345678)");
+
 // ─── Order Form Schema ────────────────────────────────────────────────────────
 
 /** Input schema — no transforms, safe for react-hook-form + zodResolver */
@@ -123,7 +157,7 @@ export type MenuItemFormValues = z.infer<typeof menuItemFormSchema>;
 export const vendorSettingsSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  whatsappNumber: z.string().optional(),
+  whatsappNumber: whatsappInputSchema.optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
   image: z.any().nullable().optional(),

@@ -12,7 +12,11 @@ import { toast } from "sonner";
 import type { Vendor } from "@/lib/types";
 import apiClient from "@/lib/axios";
 import { useRouter } from "next/navigation";
-import { vendorSettingsSchema, type VendorSettingsValues } from "@/lib/schemas";
+import {
+  vendorSettingsSchema,
+  type VendorSettingsValues,
+  formatFromWhatsapp,
+} from "@/lib/schemas";
 import { useSession } from "next-auth/react";
 import { VENDOR_CATEGORIES, MENU_CATEGORIES } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,7 +48,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
     defaultValues: {
       name: initial.name ?? "",
       description: initial.description ?? "",
-      whatsappNumber: initial.whatsappNumber ?? "",
+      whatsappNumber: formatFromWhatsapp(initial.whatsappNumber ?? ""),
       category: initial.category ?? "",
       tags: initial.tags ?? [],
       image: typeof initial.image === "string" ? undefined : initial.image,

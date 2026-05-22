@@ -19,14 +19,14 @@ import { getSchoolOptions, getCampusOptions, DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_I
 import apiClient from "@/lib/axios";
 import Link from "next/link";
 import { AdminSidebar, AdminMobileTrigger } from "@/components/admin/AdminSidebar";
-import { strongPasswordSchema } from "@/lib/schemas";
+import { strongPasswordSchema, whatsappInputSchema } from "@/lib/schemas";
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const addVendorSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
+  whatsappNumber: whatsappInputSchema,
   email: z.string().email("Invalid email"),
   password: strongPasswordSchema,
   description: z.string().min(1, "Description is required"),
@@ -64,9 +64,7 @@ export default function NewVendorPage() {
   const onSubmit = async (values: AddVendorValues) => {
     setSubmitting(true);
     try {
-      let wa = values.whatsappNumber.trim();
-      if (wa.startsWith("0")) wa = "234" + wa.slice(1);
-      await apiClient.post("/admin/vendors", { ...values, whatsappNumber: wa });
+      await apiClient.post("/admin/vendors", values);
       toast.success(`Vendor ${values.name} created successfully`);
       router.push("/admin");
     } catch (error: any) {
