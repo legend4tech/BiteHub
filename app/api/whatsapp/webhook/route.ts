@@ -55,12 +55,12 @@ export async function POST(req: Request) {
                 const autoReplyMessage =
                   "Hi there! 👋 You have reached the BiteHub automated notification system.\n\nWe do not monitor this inbox for replies. If you need help with an order, or have any questions, please contact our support team at support@bitehub.com or visit our website.\n\nThank you!"
 
-                // Fire and forget the reply
-                sendWhatsappText(message.from, autoReplyMessage).catch(
-                  (err) => {
-                    console.error("Failed to send auto-reply in webhook:", err)
-                  }
-                )
+                // Await the reply so Vercel doesn't kill the function before it sends
+                try {
+                  await sendWhatsappText(message.from, autoReplyMessage)
+                } catch (err) {
+                  console.error("Failed to send auto-reply in webhook:", err)
+                }
               }
             }
           }
