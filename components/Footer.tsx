@@ -55,6 +55,7 @@ export function Footer() {
               {/* <FooterLink href="/about">About Us</FooterLink> */}
               {/* <FooterLink href="/careers">Join the Team</FooterLink> */}
               <FooterLink href="/contact">Contact Support</FooterLink>
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
               {/* <FooterLink href="/press">Media Kit</FooterLink> */}
             </ul>
           </div>
@@ -101,12 +102,6 @@ export function Footer() {
             students everywhere.
           </p>
           <div className="flex items-center gap-8">
-            <Link
-              href="/privacy"
-              className="transition-colors hover:text-primary"
-            >
-              Privacy Policy
-            </Link>
             {/* <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> */}
             {/* <Link href="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link> */}
           </div>
