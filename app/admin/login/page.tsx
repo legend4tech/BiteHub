@@ -47,11 +47,10 @@ export default function AdminLoginPage() {
 
     setIsLoading(true);
     try {
-      const res = await signIn("credentials", {
+      const res = await signIn("admin-login", {
         redirect: false,
         email: values.email,
         password: values.password,
-        loginType: "admin",
       });
 
       if (res?.error) {

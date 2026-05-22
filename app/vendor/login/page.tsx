@@ -48,11 +48,10 @@ export default function VendorLoginPage() {
 
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
+      const res = await signIn("vendor-login", {
         redirect: false,
         email: values.email.trim(),
         password: values.password,
-        loginType: "vendor",
       });
 
       if (res?.error) {

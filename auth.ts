@@ -3,13 +3,17 @@ import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { CredentialsSignin } from "next-auth";
 import dbConnect from "@/lib/db";
-import AdminUser from "@/models/AdminUser"; 
+import AdminUser from "@/models/AdminUser";
 import VendorUserModel from "@/models/VendorUser";
 import VendorModel from "@/models/Vendor";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit";
+import type { JWT } from "next-auth/jwt";
 
+// ─── Custom error class ───────────────────────────────────────────────────────
+// NextAuth masks error messages by default, returning the class name instead.
+// Subclassing CredentialsSignin and storing the message in `code` preserves it.
 class CustomAuthError extends CredentialsSignin {
   code: string;
   constructor(message: string) {
@@ -18,142 +22,167 @@ class CustomAuthError extends CredentialsSignin {
   }
 }
 
+// ─── Shared credential schema ─────────────────────────────────────────────────
+const credentialsSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+// ─── Rate limit helper ────────────────────────────────────────────────────────
+async function checkRateLimit(email: string) {
+  if (!isRateLimitingEnabled) return;
+  const { success, reset } = await strictRateLimiter.limit(`login_email_${email.toLowerCase()}`);
+  if (!success) {
+    const seconds = Math.ceil((reset - Date.now()) / 1000);
+    const minutes = Math.ceil(seconds / 60);
+    const msg =
+      seconds < 60
+        ? `Too Many Requests, try again in ${seconds} seconds`
+        : `Too Many Requests, try again in ${minutes} minute${minutes > 1 ? "s" : ""}`;
+    throw new CustomAuthError(msg);
+  }
+}
+
+// ─── Session validation helper ────────────────────────────────────────────────
+// Runs on every JWT refresh to check if the user has been deactivated or their
+// password changed after the token was issued. Returns null to destroy the session.
+async function validateSession(token: JWT): Promise<JWT | null> {
+  if (!token.id || !token.role) return token;
+  try {
+    await dbConnect();
+
+    if (token.role === "vendor") {
+      const dbUser = await VendorUserModel.findById(token.id)
+        .select("lastPasswordChangeAt isActive")
+        .lean();
+      if (!dbUser || !dbUser.isActive) return null;
+      if (dbUser.lastPasswordChangeAt && token.iat) {
+        const changedAtSeconds = Math.floor(dbUser.lastPasswordChangeAt.getTime() / 1000);
+        if (changedAtSeconds > token.iat) return null;
+      }
+    } else if (token.role === "admin" || token.role === "superadmin") {
+      const dbUser = await AdminUser.findById(token.id)
+        .select("isActive")
+        .lean();
+      if (!dbUser || !dbUser.isActive) return null;
+    }
+  } catch (error) {
+    console.error("[validateSession] DB error:", error);
+    // On DB errors, fail open (let the session persist) to avoid locking out users
+    // during transient outages. The session will be re-validated on the next request.
+  }
+  return token;
+}
+
+// ─── NextAuth config ──────────────────────────────────────────────────────────
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   session: { strategy: "jwt" },
   providers: [
+
+    // ── Vendor Login ──────────────────────────────────────────────────────────
     CredentialsProvider({
+      id: "vendor-login",
+      name: "Vendor",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
       async authorize(credentials) {
         try {
-          const parsedCredentials = z
-            .object({ 
-              email: z.string().email(), 
-              password: z.string().min(6),
-              loginType: z.enum(["admin", "vendor"]).optional()
-            })
-            .safeParse(credentials);
+          const parsed = credentialsSchema.safeParse(credentials);
+          if (!parsed.success) throw new CustomAuthError("Invalid inputs");
 
-          if (!parsedCredentials.success) {
-            throw new CustomAuthError("Invalid inputs");
-          }
-
-          const { email, password, loginType } = parsedCredentials.data;
-          
-          if (isRateLimitingEnabled) {
-            const { success, reset } = await strictRateLimiter.limit(`login_email_${email.toLowerCase()}`);
-            if (!success) {
-              const seconds = Math.ceil((reset - Date.now()) / 1000);
-              if (seconds < 60) {
-                throw new CustomAuthError(`Too Many Requests, try again in ${seconds} seconds`);
-              } else {
-                const minutes = Math.ceil(seconds / 60);
-                throw new CustomAuthError(`Too Many Requests, try again in ${minutes} minute${minutes > 1 ? 's' : ''}`);
-              }
-            }
-          }
-
+          const { email, password } = parsed.data;
+          await checkRateLimit(email);
           await dbConnect();
-          
-          let user = null;
-          let role = "";
-          let vendorId = undefined;
 
-          // Prevent conflicts by checking explicit loginType
-          if (loginType === "vendor") {
-            user = await VendorUserModel.findOne({ email: email.toLowerCase() });
-            role = "vendor";
-            if (user) vendorId = user.vendorId.toString();
-          } else if (loginType === "admin") {
-            user = await AdminUser.findOne({ email: email.toLowerCase() });
-            role = user?.role || "admin";
-          } else {
-            // Fallback
-            user = await AdminUser.findOne({ email: email.toLowerCase() });
-            role = user?.role || "admin";
-            if (!user) {
-              user = await VendorUserModel.findOne({ email: email.toLowerCase() });
-              role = "vendor";
-              if (user) vendorId = user.vendorId.toString();
-            }
-          }
-
-          if (!user || !user.isActive) {
-            throw new CustomAuthError("Invalid credentials");
-          }
+          const user = await VendorUserModel.findOne({ email: email.toLowerCase() });
+          if (!user || !user.isActive) throw new CustomAuthError("Invalid credentials");
 
           const passwordsMatch = await bcrypt.compare(password, user.password);
-          
-          if (!passwordsMatch) {
-            throw new CustomAuthError("Invalid credentials");
-          }
+          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials");
 
-          // Update last login (fire and forget)
-          if (role === "admin" || role === "superadmin") {
-            AdminUser.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
-          } else {
-            VendorUserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
-          }
-          
-          // Fetch the store name for vendor logins
-          let displayName = user.name || user.email;
-          let image = undefined;
-          if (role === "vendor" && vendorId) {
-            const vendor = await VendorModel.findById(vendorId).select("name image").lean();
-            if (vendor) {
-              displayName = (vendor as any).name;
-              image = (vendor as any).image?.url;
-            }
-          }
+          // Update last login (fire and forget — non-blocking)
+          VendorUserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
+
+          // Fetch vendor profile for display name & image
+          const vendorId = user.vendorId.toString();
+          const vendor = await VendorModel.findById(vendorId).select("name image").lean();
 
           return {
             id: user._id.toString(),
-            name: displayName,
+            name: vendor ? (vendor as any).name : user.email,
             email: user.email,
-            role: role,
-            vendorId: vendorId,
-            image: image,
+            role: "vendor",
+            vendorId,
+            image: vendor ? (vendor as any).image?.url : undefined,
           };
         } catch (error) {
-          if (error instanceof CredentialsSignin) {
-            throw error;
-          }
-          console.error("Auth error:", error);
+          if (error instanceof CredentialsSignin) throw error;
+          console.error("[vendor-login authorize]", error);
           throw new CustomAuthError("Database or network error during authentication.");
         }
       },
     }),
+
+    // ── Admin Login ───────────────────────────────────────────────────────────
+    CredentialsProvider({
+      id: "admin-login",
+      name: "Admin",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        try {
+          const parsed = credentialsSchema.safeParse(credentials);
+          if (!parsed.success) throw new CustomAuthError("Invalid inputs");
+
+          const { email, password } = parsed.data;
+          await checkRateLimit(email);
+          await dbConnect();
+
+          const user = await AdminUser.findOne({ email: email.toLowerCase() });
+          if (!user || !user.isActive) throw new CustomAuthError("Invalid credentials");
+
+          const passwordsMatch = await bcrypt.compare(password, user.password);
+          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials");
+
+          // Update last login (fire and forget — non-blocking)
+          AdminUser.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec();
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            vendorId: undefined,
+            image: undefined,
+          };
+        } catch (error) {
+          if (error instanceof CredentialsSignin) throw error;
+          console.error("[admin-login authorize]", error);
+          throw new CustomAuthError("Database or network error during authentication.");
+        }
+      },
+    }),
+
   ],
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
-      // 1. Execute base logic from authConfig (which sets token.id, etc. on initial sign in)
+      // Execute base logic from authConfig (sets id, role, vendorId, image on initial sign in)
       let newToken = token;
       if (authConfig.callbacks?.jwt) {
         newToken = (await authConfig.callbacks.jwt({ token, user, trigger, session })) || token;
       }
 
-      // 2. Cross-check against the DB for stateless token invalidation (Node.js runtime only)
-      if (newToken.role === "vendor" && newToken.id) {
-        try {
-          await dbConnect();
-          const dbUser = await VendorUserModel.findById(newToken.id).select("lastPasswordChangeAt isActive").lean();
-
-          if (!dbUser || !dbUser.isActive) {
-            // User no longer exists or is deactivated
-            return null as any; 
-          }
-
-          if (dbUser.lastPasswordChangeAt && newToken.iat) {
-            const passwordChangedAtSeconds = Math.floor(dbUser.lastPasswordChangeAt.getTime() / 1000);
-            if (passwordChangedAtSeconds > newToken.iat) {
-              // The password was changed AFTER this token was issued. 
-              // Returning null instantly destroys the token across all devices holding an old cookie.
-              return null as any;
-            }
-          }
-        } catch (error) {
-          console.error("Session DB validation error:", error);
-        }
+      // Validate session against DB to handle deactivation and password changes.
+      // Only runs on refreshes (when user object is absent), not on initial sign in.
+      if (!user) {
+        const validated = await validateSession(newToken);
+        return validated as any;
       }
 
       return newToken;

@@ -13,87 +13,47 @@ export const authConfig: NextAuthConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = (auth?.user as any)?.role;
-      const isOnAdmin = nextUrl.pathname.startsWith("/admin");
-      const isLoginRoute = nextUrl.pathname === "/admin/login";
-      const isOnVendor = nextUrl.pathname === "/vendor" || nextUrl.pathname.startsWith("/vendor/");
-      const isVendorLoginRoute = nextUrl.pathname === "/vendor/login";
-      const isVendorAuthRoute = nextUrl.pathname === "/vendor/forgot-password";
-      const isResetPasswordRoute = nextUrl.pathname === "/vendor/reset-password";
-      const isConfirmEmailRoute = nextUrl.pathname === "/vendor/confirm-email";
+      const { pathname } = nextUrl;
 
-      // Allow API routes to be handled by the route itself
-      if (nextUrl.pathname.startsWith("/api")) {
-        return true;
+      // API routes always pass through to the route handler
+      if (pathname.startsWith("/api")) return true;
+
+      // ── Vendor section ───────────────────────────────────────────────────────
+      const isVendorLoginPage = pathname === "/vendor/login";
+      const isVendorPublicPage =
+        pathname === "/vendor/forgot-password" ||
+        pathname === "/vendor/reset-password" ||
+        pathname === "/vendor/confirm-email";
+      const isVendorProtected =
+        pathname.startsWith("/vendor/") && !isVendorLoginPage && !isVendorPublicPage;
+
+      // Redirect logged-in users away from vendor auth pages
+      if ((isVendorLoginPage || isVendorPublicPage) && isLoggedIn) {
+        return Response.redirect(new URL(
+          role === "vendor" ? "/vendor/dashboard" : "/admin",
+          nextUrl
+        ));
+      }
+      // Redirect unauthenticated users to vendor login
+      if (isVendorProtected && !isLoggedIn) {
+        return Response.redirect(new URL("/vendor/login", nextUrl));
       }
 
-      if (isOnAdmin) {
-        if (isLoginRoute) {
-          if (isLoggedIn) {
-            if (role === "vendor") {
-              return Response.redirect(new URL("/vendor/dashboard", nextUrl));
-            }
-            // Redirect to admin dashboard if already logged in
-            return Response.redirect(new URL("/admin", nextUrl));
-          }
-          // Allow unauthenticated users to see the login page
-          return true;
-        }
+      // ── Admin section ────────────────────────────────────────────────────────
+      const isAdminLoginPage = pathname === "/admin/login";
+      const isAdminProtected = pathname.startsWith("/admin") && !isAdminLoginPage;
 
-        if (!isLoggedIn) {
-          // Redirect unauthenticated users to login
-          return false;
-        }
-        
-        // Block vendors from admin pages
-        if (role !== "admin" && role !== "superadmin") {
-           return Response.redirect(new URL("/vendor/dashboard", nextUrl));
-        }
-
-        // Logged in user accessing /admin routes
-        return true;
+      // Redirect logged-in users away from admin login
+      if (isAdminLoginPage && isLoggedIn) {
+        return Response.redirect(new URL(
+          role === "vendor" ? "/vendor/dashboard" : "/admin",
+          nextUrl
+        ));
       }
+      // Unauthenticated on admin → NextAuth redirects to /admin/login
+      if (isAdminProtected && !isLoggedIn) return false;
 
-      if (isOnVendor) {
-        // Allow anyone (logged in or out) to access the confirm email page and reset password page
-        if (isConfirmEmailRoute || isResetPasswordRoute) {
-          return true;
-        }
-
-        // Public vendor auth pages — accessible without a session
-        if (isVendorAuthRoute) {
-          // If already logged in, no need to reset — send them home
-          if (isLoggedIn) {
-            if (role === "admin" || role === "superadmin") {
-              return Response.redirect(new URL("/admin", nextUrl));
-            }
-            return Response.redirect(new URL("/vendor/dashboard", nextUrl));
-          }
-          return true;
-        }
-
-        if (isVendorLoginRoute) {
-          if (isLoggedIn) {
-            if (role === "admin" || role === "superadmin") {
-              return Response.redirect(new URL("/admin", nextUrl));
-            }
-            return Response.redirect(new URL("/vendor/dashboard", nextUrl));
-          }
-          return true;
-        }
-
-        if (!isLoggedIn) {
-          return Response.redirect(new URL("/vendor/login", nextUrl));
-        }
-
-        // Only allow vendors on vendor pages
-        if (role !== "vendor") {
-          return Response.redirect(new URL("/admin", nextUrl));
-        }
-
-        return true;
-      }
-
-      // Default allow for public routes (e.g. landing page, vendor store view)
+      // Public routes and authenticated users → pass through; proxy.ts handles role redirects
       return true;
     },
     jwt({ token, user, trigger, session }) {
