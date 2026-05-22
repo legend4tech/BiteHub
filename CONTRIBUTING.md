@@ -526,7 +526,79 @@ export function MenuItemCard({ item, onDelete }: MenuItemCardProps) { ... }
 - **Never import server-only code** (`lib/db`, `lib/services/*`, Mongoose models) in a client component.
 - **Forms live in their own `*Form.tsx` file** — never inline a large form inside a page.
 
----
+### Design System & Colours
+
+> [!IMPORTANT]
+> **Never hardcode a colour value anywhere in the codebase.** This applies to Tailwind classes, inline styles, CSS, and email templates.
+
+All colours must be read from the design tokens defined in `app/globals.css`. These CSS custom properties are the single source of truth for the entire visual identity of BiteHub.
+
+```tsx
+// ❌ BAD — hardcoded colour values
+<div style={{ color: "#ff6b00" }}>...</div>
+<div className="text-[#ff6b00]">...</div>
+<div className="bg-orange-500">...</div>
+
+// ✅ GOOD — semantic design token
+<div className="text-primary">...</div>
+<div className="bg-background">...</div>
+<div className="border-border">...</div>
+```
+
+```css
+/* ❌ BAD — raw hex in a component's CSS */
+.my-element {
+  background: #1a1a2e;
+}
+
+/* ✅ GOOD — design token from globals.css */
+.my-element {
+  background: hsl(var(--background));
+}
+```
+
+#### Available Tokens
+
+Use these semantic token classes consistently:
+
+| Token | Tailwind class | Usage |
+|---|---|---|
+| Brand colour | `text-primary`, `bg-primary` | Buttons, highlights, links |
+| Brand hover | `text-primary/80`, `bg-primary/10` | Hover states, tinted backgrounds |
+| Page background | `bg-background` | Page, card, section backgrounds |
+| Text | `text-foreground` | Body text |
+| Muted text | `text-muted-foreground` | Labels, captions, secondary copy |
+| Card surface | `bg-card` | Card backgrounds |
+| Borders | `border-border` | Dividers, input borders |
+| Destructive | `text-destructive`, `bg-destructive` | Error states, delete actions |
+
+#### Introducing a New Colour
+
+> [!WARNING]
+> **Do not introduce a new colour token without team discussion.** Adding a new colour to `globals.css` affects both light and dark mode across the entire app.
+
+If a design requirement cannot be met with existing tokens:
+1. Raise it with the team first (GitHub issue or discussion).
+2. Define it as a new CSS custom property in `globals.css` — **both** the `:root` (light) and `.dark` variants.
+3. Document it in the token table above.
+4. Never use the raw hex value in components — always reference the token.
+
+```css
+/* globals.css — correct way to add a new token */
+:root {
+  --accent-gold: 45 90% 55%;
+}
+.dark {
+  --accent-gold: 45 80% 45%;
+}
+```
+
+```tsx
+/* Usage after adding to globals.css */
+<span className="text-[hsl(var(--accent-gold))]">...</span>
+```
+
+
 
 ## 15. Commenting & Documentation
 
