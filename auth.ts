@@ -15,17 +15,19 @@ import type { JWT } from "next-auth/jwt";
 // NextAuth masks error messages by default, returning the class name instead.
 // Subclassing CredentialsSignin and storing the message in `code` preserves it.
 class CustomAuthError extends CredentialsSignin {
-  code: string;
+  // Declare `code` as a class field so it overrides the parent's default
+  // "CredentialsSignin" value regardless of transpiler field-init order.
+  code = "CredentialsSignin";
   constructor(message: string) {
     super(message);
-    this.code = message;
+    this.code = message; // Always wins
   }
 }
 
 // ─── Shared credential schema ─────────────────────────────────────────────────
 const credentialsSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(1),
 });
 
 // ─── Rate limit helper ────────────────────────────────────────────────────────

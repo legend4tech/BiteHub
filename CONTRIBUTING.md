@@ -26,6 +26,7 @@
 17. [Security Rules](#17-security-rules)
 18. [Environment Variables](#18-environment-variables)
 19. [Git & Commit Rules](#19-git--commit-rules)
+20. [Authentication Architecture](#20-authentication-architecture)
 
 ---
 
@@ -658,6 +659,152 @@ docs: document webhook subscription fields
 - [ ] New environment variables are documented in `.env.example`
 - [ ] New shared types are added to `lib/types.ts`, not defined locally
 - [ ] New constants are added to `lib/constants.ts`, not hardcoded inline
+
+---
+
+*Last updated: May 2026 · Maintained by the BiteHub core team.*
+
+---
+
+## 20. Authentication Architecture
+
+BiteHub uses **NextAuth v5** with a JWT session strategy. The auth system is split across three files with a strict separation of concerns:
+
+| File | Responsibility |
+|---|---|
+| `auth.config.ts` | Session config, pages config, JWT/session token shaping, auth gating |
+| `auth.ts` | Provider definitions, credential validation, session DB invalidation |
+| `proxy.ts` | Edge middleware — rate limiting, maintenance mode, role-based routing |
+
+---
+
+### Provider Architecture — Named Providers
+
+Each user type has its own **isolated `CredentialsProvider`** with a unique `id`. There is **no shared `authorize` callback** with branching logic.
+
+```typescript
+// auth.ts
+providers: [
+  CredentialsProvider({ id: "vendor-login", name: "Vendor", ... }),
+  CredentialsProvider({ id: "admin-login",  name: "Admin",  ... }),
+  // Future: CredentialsProvider({ id: "student-login", ... })
+  // Future: GoogleProvider({ ... })  // students only
+]
+```
+
+**Login pages call the provider by ID:**
+```typescript
+// vendor login page
+signIn("vendor-login", { redirect: false, email, password })
+
+// admin login page
+signIn("admin-login", { redirect: false, email, password })
+```
+
+**Rules:**
+- **Never** use `signIn("credentials", { loginType: "..." })` — this pattern is deprecated.
+- Each provider validates credentials against its own Mongoose model only — `vendor-login` only touches `VendorUserModel`, `admin-login` only touches `AdminUser`.
+- Shared logic (schema validation, rate limiting) lives in helpers (`credentialsSchema`, `checkRateLimit()`), not duplicated inside each provider.
+
+---
+
+### Route Guard Ownership
+
+**`auth.config.ts` (`authorized` callback)** handles one thing only: *is this user allowed through at all?*
+
+- Unauthenticated user on `/vendor/*` → redirect to `/vendor/login`
+- Unauthenticated user on `/admin/*` → redirect to `/admin/login`  
+- Logged-in user on an auth page (login, forgot-password) → redirect to their dashboard
+
+**`proxy.ts` (edge middleware)** handles everything role-specific:
+- Vendor trying to access `/admin` → redirect to `/vendor/dashboard`
+- Admin trying to access `/vendor` → redirect to `/admin`
+- Rate limiting (device ID + IP fallback)
+- Maintenance mode
+
+> ⚠️ **Never add role-based cross-redirects to `auth.config.ts`.** That belongs in `proxy.ts`. The `authorized` callback must only answer the question: "does this user have *any* valid session?"
+
+---
+
+### Session Invalidation
+
+The `validateSession(token)` helper in `auth.ts` runs on every JWT refresh and destroys the session if:
+
+- The user's `isActive` flag is `false` (deactivated by admin)
+- A vendor's `lastPasswordChangeAt` timestamp is newer than the token's `iat` (password changed on another device)
+
+```typescript
+// auth.ts — adding support for a new role
+async function validateSession(token: JWT): Promise<JWT | null> {
+  if (token.role === "vendor") { /* existing */ }
+  else if (token.role === "admin" || token.role === "superadmin") { /* existing */ }
+  // Add new role here:
+  else if (token.role === "student") {
+    const dbUser = await StudentUser.findById(token.id).select("isActive").lean();
+    if (!dbUser || !dbUser.isActive) return null;
+  }
+  return token;
+}
+```
+
+> ✅ Always add a case here when introducing a new role. Omitting it means deactivated accounts of that role will keep their sessions alive indefinitely.
+
+---
+
+### Error Handling
+
+NextAuth masks all errors thrown from `authorize` — by default, `res.error` returns `"CredentialsSignin"` (the class name), not the message.
+
+The `CustomAuthError` class (defined in `auth.ts`) overrides the `.code` property to preserve messages:
+
+```typescript
+class CustomAuthError extends CredentialsSignin {
+  code = "CredentialsSignin"; // class field ensures parent default doesn't win
+  constructor(message: string) {
+    super(message);
+    this.code = message; // always overrides
+  }
+}
+```
+
+**Login pages must** defensively handle the raw `"CredentialsSignin"` string as a fallback:
+
+```typescript
+if (res.error === "CredentialsSignin" || res.error === "Invalid credentials") {
+  toast.error("Invalid email or password.");
+} else if (res.error.includes("Too Many Requests")) {
+  toast.error(res.error); // already user-friendly
+}
+```
+
+> **Never** show `res.error` raw to the user without mapping it to a friendly string first.
+
+---
+
+### Password Validation Rules
+
+| Context | Schema | Min Length | Complexity |
+|---|---|---|---|
+| Login form (vendor, admin) | local inline schema | **1** | None — `bcrypt.compare` is the validator |
+| `authorize` server-side gate | `credentialsSchema` in `auth.ts` | **1** | None |
+| New password (change/reset) | `strongPasswordSchema` in `lib/schemas.ts` | **8** | uppercase + lowercase + number + special char |
+
+> ❌ **Never** apply `strongPasswordSchema` to a login form. Login forms must never reject a valid existing password because of complexity rules added after account creation.
+
+---
+
+### Adding a New Role (e.g. Student)
+
+1. **Create the Mongoose model** (`models/StudentUser.ts`) following the `VendorUser` pattern.
+2. **Add a named provider** in `auth.ts`:
+   ```typescript
+   CredentialsProvider({ id: "student-login", name: "Student", async authorize(credentials) { ... } })
+   ```
+3. **Add session invalidation** in `validateSession()` for the new role.
+4. **Add route guards** in `proxy.ts` for `/student/*` paths.
+5. **Add auth gating** in `auth.config.ts` `authorized` for `/student/*` paths.
+6. **Create login page** at `app/student/login/page.tsx` calling `signIn("student-login", ...)`.
+7. **Never** modify the vendor or admin provider blocks when adding a new role.
 
 ---
 

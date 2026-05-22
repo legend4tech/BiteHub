@@ -18,7 +18,7 @@ import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
 
 const vendorLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 type VendorLoginValues = z.infer<typeof vendorLoginSchema>;
 
@@ -56,11 +56,15 @@ export default function VendorLoginPage() {
 
       if (res?.error) {
         if (res.error.includes("Too Many Requests")) {
+          // Rate limit message — pass through as-is (already user-friendly)
           toast.error(res.error);
         } else if (res.error === "Configuration" || res.error === "AccessDenied") {
           toast.error("Authentication service error. Please try again.");
+        } else if (res.error === "CredentialsSignin" || res.error === "Invalid credentials") {
+          // NextAuth may return the raw class name in some edge cases
+          toast.error("Invalid email or password.");
         } else {
-          toast.error(res.error.replace("CredentialsSignin: ", "") || "Invalid email or password");
+          toast.error(res.error || "Something went wrong. Please try again.");
         }
       } else if (res?.url && res.url.includes("/api/auth/error")) {
         // NextAuth returned an error URL instead of an error message

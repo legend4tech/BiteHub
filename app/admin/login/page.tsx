@@ -55,11 +55,15 @@ export default function AdminLoginPage() {
 
       if (res?.error) {
         if (res.error.includes("Too Many Requests")) {
+          // Rate limit message — pass through as-is (already user-friendly)
           toast.error(res.error);
         } else if (res.error === "Configuration" || res.error === "AccessDenied") {
           toast.error("Authentication service error. Please try again.");
+        } else if (res.error === "CredentialsSignin" || res.error === "Invalid credentials") {
+          // NextAuth may return the raw class name in some edge cases
+          toast.error("Invalid email or password.");
         } else {
-          toast.error(res.error.replace("CredentialsSignin: ", "") || "Invalid email or password");
+          toast.error(res.error || "Something went wrong. Please try again.");
         }
       } else if (res?.url && res.url.includes("/api/auth/error")) {
         toast.error("An unexpected authentication error occurred. Please try again.");
