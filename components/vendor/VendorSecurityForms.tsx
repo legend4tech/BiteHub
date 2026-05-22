@@ -182,6 +182,7 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                     id={field.name}
                     type={showCurrentPassword ? "text" : "password"}
                     placeholder="Enter current password"
+                    autoComplete="current-password"
                     aria-invalid={fieldState.invalid}
                   />
                   <Button
@@ -210,6 +211,7 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                     id={field.name}
                     type={showNewPassword ? "text" : "password"}
                     placeholder="Enter new strong password"
+                    autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
                   />
                   <Button
@@ -239,6 +241,7 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                     id={field.name}
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm new password"
+                    autoComplete="new-password"
                     aria-invalid={fieldState.invalid}
                   />
                   <Button
