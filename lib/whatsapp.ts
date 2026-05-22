@@ -7,10 +7,9 @@ import { APP_LOGO_URL } from "@/lib/constants";
 
 export async function sendVendorOrderNotification(
   vendorPhone: string,
-  vendorName: string,
   customerName: string,
   orderId: string,
-  trackingLink: string
+  totalAmount: number
 ) {
   try {
     const token = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -34,34 +33,24 @@ export async function sendVendorOrderNotification(
       to: cleanPhone,
       type: "template",
       template: {
-        name: "vendor_new_order_alert",
-        language: { code: "en_US" },
+        name: "new_order_alert",
+        language: { code: "en" },
         components: [
           {
             type: "header",
             parameters: [
               {
-                type: "image",
-                image: {
-                  link: APP_LOGO_URL,
-                },
+                type: "text",
+                text: orderId,
               },
             ],
           },
           {
             type: "body",
             parameters: [
-              { type: "text", parameter_name: "vendor_name", text: vendorName || "Vendor" },
-              { type: "text", parameter_name: "customer_name", text: customerName || "Customer" },
-              { type: "text", parameter_name: "order_id", text: orderId },
-            ],
-          },
-          {
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [
-              { type: "text", parameter_name: "order_id", text: orderId },
+              { type: "text", text: orderId },
+              { type: "text", text: customerName || "Customer" },
+              { type: "text", text: `NGN ${totalAmount.toLocaleString()}` },
             ],
           },
         ],

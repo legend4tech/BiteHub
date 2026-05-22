@@ -146,9 +146,7 @@ export async function POST(request: Request) {
     });
 
     // Send WhatsApp Notification (fire and forget to not block response)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const trackingLink = `${baseUrl}/order/${order.orderId}`;
-    sendVendorOrderNotification(finalWhatsapp, finalVendorName, customerName, order.orderId, trackingLink);
+    sendVendorOrderNotification(finalWhatsapp, customerName, order.orderId, calculatedTotal);
 
     return NextResponse.json({ orderId: order.orderId }, { status: 201 });
   } catch (error) {
