@@ -10,7 +10,7 @@ import type { Order as OrderType } from "@/lib/types";
 export default async function VendorOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; q?: string }>;
 }) {
   const session = await auth();
   if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
@@ -22,12 +22,23 @@ export default async function VendorOrdersPage({
   
   const resolvedSearchParams = await searchParams;
   const activeStatus = resolvedSearchParams.status || "all";
+  const searchQuery = resolvedSearchParams.q || "";
   const page = parseInt(resolvedSearchParams.page || "1", 10);
   const limit = 20;
 
+  const baseMatch: Record<string, any> = { vendorId };
+
+  if (searchQuery) {
+    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    baseMatch.$or = [
+      { orderId: { $regex: escapedQuery, $options: "i" } },
+      { customerName: { $regex: escapedQuery, $options: "i" } }
+    ];
+  }
+
   // Use aggregation to efficiently get counts by status
   const countsByStatus = await Order.aggregate([
-    { $match: { vendorId } },
+    { $match: baseMatch },
     { $group: { _id: "$status", count: { $sum: 1 } } },
   ]);
 
@@ -45,7 +56,11 @@ export default async function VendorOrdersPage({
   const skip = (page - 1) * limit;
 
   // Fetch only the paginated orders
-  const query = activeStatus === "all" ? { vendorId } : { vendorId, status: activeStatus };
+  const query = { ...baseMatch };
+  if (activeStatus !== "all") {
+    query.status = activeStatus;
+  }
+  
   const ordersDocs = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -61,6 +76,7 @@ export default async function VendorOrdersPage({
       activeStatus={activeStatus}
       currentPage={page}
       totalPages={totalPages}
+      searchQuery={searchQuery}
     />
   );
 }

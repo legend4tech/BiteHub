@@ -1,10 +1,14 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
 import { OrderTable } from "@/components/vendor/OrderTable"
 import type { Order, OrderStatus } from "@/lib/types"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
+import { Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { useDebounce } from "@/hooks/useDebounce"
 import { ORDER_STATUS, ORDER_STATUS_CONFIG } from "@/lib/constants"
 import {
   Pagination,
@@ -50,6 +54,7 @@ interface VendorOrdersProps {
   activeStatus: string
   currentPage: number
   totalPages: number
+  searchQuery?: string
 }
 
 export function VendorOrders({
@@ -58,9 +63,28 @@ export function VendorOrders({
   activeStatus,
   currentPage,
   totalPages,
+  searchQuery = "",
 }: VendorOrdersProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  
+  const [searchTerm, setSearchTerm] = useState(searchQuery)
+  const debouncedSearch = useDebounce(searchTerm, 500)
+
+  useEffect(() => {
+    // Update the URL only if the debounced search is different from the initial searchQuery
+    // to prevent unnecessary history pushes on initial load
+    if (debouncedSearch !== searchQuery) {
+      const params = new URLSearchParams(searchParams)
+      if (debouncedSearch) {
+        params.set("q", debouncedSearch)
+      } else {
+        params.delete("q")
+      }
+      params.delete("page") // Reset pagination when searching
+      router.push(`?${params.toString()}`, { scroll: false })
+    }
+  }, [debouncedSearch, searchQuery, searchParams, router])
 
   const handleStatusChange = async (
     orderId: string,
@@ -77,11 +101,22 @@ export function VendorOrders({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Orders</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {counts["all"] || 0} total orders
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+        <div>
+          <h1 className="font-heading text-2xl font-bold">Orders</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {counts["all"] || 0} total orders
+          </p>
+        </div>
+        <div className="relative w-full sm:w-[300px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Order ID or Name..." 
+            className="pl-9 h-10 w-full rounded-full"
+          />
+        </div>
       </div>
 
       {/* Filter tabs */}
