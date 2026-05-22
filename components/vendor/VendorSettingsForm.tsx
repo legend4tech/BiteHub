@@ -156,6 +156,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           {...form.register("whatsappNumber")}
           id="whatsappNumber"
           placeholder="e.g. 08012345678"
+          maxLength={11}
           aria-invalid={!!form.formState.errors.whatsappNumber}
         />
         {form.formState.errors.whatsappNumber?.message && (
