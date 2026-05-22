@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { APP_NAME, CAMPUS_NAME } from "@/lib/constants"
+import { APP_NAME } from "@/lib/constants"
 
 export const metadata: Metadata = {
   title: `Privacy Policy | ${APP_NAME}`,
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
                 to protecting your personal data. This Privacy Policy explains
                 how we collect, use, and safeguard your information when you
                 visit our website, use our services, or interact with our
-                vendors across {CAMPUS_NAME} and other locations.
+                vendors across our supported university campuses and locations.
               </p>
             </section>
 
