@@ -1,19 +1,19 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose"
 
 export interface IVendorUser extends Document {
-  vendorId: Types.ObjectId;
-  email: string;
-  password: string; // always a bcrypt hash
-  role: "vendor";
-  isActive: boolean;
-  lastLoginAt?: Date;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
-  pendingEmail?: string;
-  emailChangeToken?: string;
-  emailChangeExpires?: Date;
-  lastPasswordChangeAt?: Date;
-  lastEmailChangeAt?: Date;
+  vendorId: Types.ObjectId
+  email: string
+  password: string // always a bcrypt hash
+  role: "vendor"
+  isActive: boolean
+  lastLoginAt?: Date
+  resetPasswordToken?: string
+  resetPasswordExpires?: Date
+  pendingEmail?: string
+  emailChangeToken?: string
+  emailChangeExpires?: Date
+  lastPasswordChangeAt?: Date
+  lastEmailChangeAt?: Date
 }
 
 const VendorUserSchema = new Schema<IVendorUser>(
@@ -76,28 +76,27 @@ const VendorUserSchema = new Schema<IVendorUser>(
     timestamps: true,
     toJSON: {
       transform: (doc, ret) => {
-        (ret as any).id = (ret as any)._id.toString();
-        (ret as any).vendorId = (ret as any).vendorId?.toString();
-        delete (ret as any)._id;
-        delete (ret as any).__v;
-        delete (ret as any).password; // never expose the hash
-        delete (ret as any).resetPasswordToken; // never expose reset tokens in client JSON
-        delete (ret as any).resetPasswordExpires;
-        delete (ret as any).emailChangeToken; // never expose email change tokens
-        delete (ret as any).emailChangeExpires;
+        const r = ret as Record<string, unknown>
+        r.id = String(r._id)
+        if (r.vendorId) {
+          r.vendorId = String(r.vendorId)
+        }
+        delete r._id
+        delete r.__v
+        delete r.password // never expose the hash
+        delete r.resetPasswordToken // never expose reset tokens in client JSON
+        delete r.resetPasswordExpires
+        delete r.emailChangeToken // never expose email change tokens
+        delete r.emailChangeExpires
       },
     },
   }
-);
+)
 
-// Compound index: fast lookup by vendorId when loading vendor session
-VendorUserSchema.index({ vendorId: 1 });
-// Fast lookup by email during login
-VendorUserSchema.index({ email: 1 });
 // Fast lookup for password reset tokens
-VendorUserSchema.index({ resetPasswordToken: 1 });
+VendorUserSchema.index({ resetPasswordToken: 1 })
 // Fast lookup for email change tokens
-VendorUserSchema.index({ emailChangeToken: 1 });
+VendorUserSchema.index({ emailChangeToken: 1 })
 
 export default mongoose.models.VendorUser ||
-  mongoose.model<IVendorUser>("VendorUser", VendorUserSchema);
+  mongoose.model<IVendorUser>("VendorUser", VendorUserSchema)
