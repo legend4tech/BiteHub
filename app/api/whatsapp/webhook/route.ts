@@ -30,6 +30,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    console.log("Raw Webhook Payload:", JSON.stringify(body, null, 2))
 
     // Check if this is an event from a WhatsApp API
     if (body.object === "whatsapp_business_account") {
