@@ -176,8 +176,8 @@ export const vendorSettingsSchema = z.object({
   whatsappNumber: whatsappInputSchema,
   category: z.string().min(1, "Category is required"),
   tags: z.array(z.string()).optional(),
-  school: z.string().min(1, "School is required"),
-  campus: z.string().min(1, "Campus is required"),
+  school: z.string().optional(),
+  campus: z.string().optional(),
   image: z.any().nullable().optional(),
 })
 
