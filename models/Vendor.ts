@@ -25,12 +25,12 @@ const VendorSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    description: { type: String },
-    category: { type: String },
+    description: { type: String, required: true },
+    category: { type: String, required: true },
     tags: { type: [String], default: [] },
-    whatsappNumber: { type: String },
-    school: { type: String },
-    campus: { type: String },
+    whatsappNumber: { type: String, required: true },
+    school: { type: String, required: true },
+    campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     image: {
       url: { type: String },
