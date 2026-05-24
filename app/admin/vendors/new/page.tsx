@@ -58,11 +58,14 @@ const addVendorSchema = z.object({
   image: z
     .object({
       url: z.string().min(1, "Image is required"),
-      publicId: z.string().min(1),
+      publicId: z.string(),
+      file: z.instanceof(File).optional(),
     })
     .nullable()
     .optional()
-    .refine((val) => !!val, { message: "Image is required" }),
+    .refine((val) => val !== null && val !== undefined && val.url.length > 0, {
+      message: "Image is required",
+    }),
 })
 
 type AddVendorValues = z.infer<typeof addVendorSchema>
@@ -97,7 +100,34 @@ export default function NewVendorPage() {
   const onSubmit = async (values: AddVendorValues) => {
     setSubmitting(true)
     try {
-      await apiClient.post("/admin/vendors", values)
+      let imageToSave = values.image
+        ? { url: values.image.url, publicId: values.image.publicId }
+        : undefined
+
+      // If a local file was picked, upload it to Cloudinary first
+      if (values.image?.file) {
+        const formData = new FormData()
+        formData.append("file", values.image.file)
+        formData.append("type", "vendor")
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json()
+          throw new Error(err.error || "Image upload failed")
+        }
+
+        const uploadData = await uploadRes.json()
+        imageToSave = {
+          url: uploadData.imageUrl,
+          publicId: uploadData.publicId,
+        }
+      }
+
+      await apiClient.post("/admin/vendors", { ...values, image: imageToSave })
       toast.success(`Vendor ${values.name} created successfully`)
       router.push("/admin")
     } catch (error: unknown) {

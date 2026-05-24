@@ -2,6 +2,8 @@ import Link from "next/link"
 import { Mail, MapPin } from "lucide-react"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
+const VENDOR_FORM_URL = "https://forms.gle/KEwY8nthHHfjLL1n6"
+
 export function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border bg-card/40">
@@ -10,7 +12,7 @@ export function Footer() {
       <div className="pointer-events-none absolute bottom-0 left-0 -mb-48 -ml-48 h-[400px] w-[400px] rounded-full bg-primary/5 blur-[100px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 py-20">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-6 lg:gap-8">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-7 lg:gap-8">
           {/* Brand section */}
           <div className="space-y-6 lg:col-span-2">
             <Link href="/" className="group flex items-center gap-2.5">
@@ -58,6 +60,24 @@ export function Footer() {
               <FooterLink href="/privacy">Privacy Policy</FooterLink>
               <FooterLink href="/terms">Terms of Use</FooterLink>
               {/* <FooterLink href="/press">Media Kit</FooterLink> */}
+            </ul>
+          </div>
+
+          <div className="lg:col-span-1">
+            <FooterHeading>For Vendors</FooterHeading>
+            <ul className="mt-4 space-y-3">
+              <li>
+                <a
+                  href={VENDOR_FORM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Register as Vendor
+                </a>
+              </li>
+              <FooterLink href="/vendor/login">Vendor Login</FooterLink>
+              <FooterLink href="/#vendor-cta">Why join us?</FooterLink>
             </ul>
           </div>
 
