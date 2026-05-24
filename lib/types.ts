@@ -31,6 +31,7 @@ export interface Vendor {
   campus: string
   isActive: boolean
   deliveryFee: number
+  prepTime?: string
   image?: string | { url: string; publicId: string }
 
   // Computed/virtual UI properties
@@ -60,6 +61,7 @@ export interface MenuItem {
   vendorSlug?: string
   vendorWhatsappNumber?: string // Carried from vendor so the cart can send it with the order
   vendorDeliveryFee?: number
+  vendorPrepTime?: string
   tag?: string | null
 }
 

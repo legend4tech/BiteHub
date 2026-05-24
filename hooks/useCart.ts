@@ -12,8 +12,9 @@ interface CartState {
   items: CartItem[]
   vendorId: string | null
   vendorName: string | null
-  vendorWhatsappNumber: string | null // NEW
+  vendorWhatsappNumber: string | null
   vendorDeliveryFee: number
+  vendorPrepTime: string | null
 }
 
 const EMPTY_CART: CartState = {
@@ -22,6 +23,7 @@ const EMPTY_CART: CartState = {
   vendorName: null,
   vendorWhatsappNumber: null,
   vendorDeliveryFee: 0,
+  vendorPrepTime: null,
 }
 
 const CART_EVENT = "cb:cart:update"
@@ -89,6 +91,7 @@ export function useCart() {
         // from the API response in the vendor detail page.
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+        vendorPrepTime: menuItem.vendorPrepTime ?? null,
       })
     },
     [persist]
@@ -102,6 +105,7 @@ export function useCart() {
         vendorName: menuItem.vendorName ?? null,
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+        vendorPrepTime: menuItem.vendorPrepTime ?? null,
       })
     },
     [persist]
@@ -136,15 +140,18 @@ export function useCart() {
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
 
   const syncVendorDetails = useCallback(
-    (vendorId: string, deliveryFee: number) => {
+    (vendorId: string, deliveryFee: number, prepTime?: string) => {
       const current = readCart()
       if (
         current.vendorId === vendorId &&
-        current.vendorDeliveryFee !== deliveryFee
+        (current.vendorDeliveryFee !== deliveryFee ||
+          (prepTime !== undefined && current.vendorPrepTime !== prepTime))
       ) {
         persist({
           ...current,
           vendorDeliveryFee: deliveryFee,
+          vendorPrepTime:
+            prepTime !== undefined ? prepTime : current.vendorPrepTime,
         })
       }
     },

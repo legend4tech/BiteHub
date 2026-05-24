@@ -56,7 +56,11 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         .get(`/vendors/fee/${cart.vendorId}`)
         .then((res) => {
           if (res.data && typeof res.data.deliveryFee === "number") {
-            syncVendorDetails(cart.vendorId!, res.data.deliveryFee)
+            syncVendorDetails(
+              cart.vendorId!,
+              res.data.deliveryFee,
+              res.data.prepTime
+            )
           }
         })
         .catch((err) =>
@@ -206,6 +210,15 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 <span className="text-primary">{formatPrice(total)}</span>
               </div>
             </div>
+
+            {cart.vendorPrepTime && (
+              <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+                <span className="animate-pulse">⏱️</span>
+                <span className="font-medium">
+                  Estimated prep time: {cart.vendorPrepTime}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Customer info */}

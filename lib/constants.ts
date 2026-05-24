@@ -4,27 +4,11 @@ import type { MenuCategory, OrderStatus } from "./types"
 // ─── App Constants ────────────────────────────────────────────────────────────
 
 export const APP_NAME = "BiteHub"
-export const APP_LOGO_URL = "/brand_logo.png" // Temporary placeholder logo
-export const CAMPUS_NAME = "COOU Uli"
+export const APP_LOGO_URL = "/brand_logo.png"
 
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 
 export const LS_CART = "cb_cart"
-export const LS_ORDERS = "cb_orders"
-export const LS_VENDOR_SESSION = "cb_vendor_session"
-export const LS_VENDORS = "cb_vendors" // admin-created vendors
-
-// ─── Role Constants ───────────────────────────────────────────────────────────
-
-export const ROLES = {
-  ADMIN: "admin",
-  SUPERADMIN: "superadmin",
-  VENDOR: "vendor",
-} as const
-
-export type UserRole = (typeof ROLES)[keyof typeof ROLES]
-
-export const VALID_ROLES = Object.values(ROLES) as UserRole[]
 
 // ─── Order Status Constants ───────────────────────────────────────────────────
 
@@ -39,7 +23,9 @@ export const ORDER_STATUS = {
 
 export type OrderStatusType = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS]
 
-export const VALID_ORDER_STATUSES = Object.values(ORDER_STATUS) as OrderStatusType[]
+export const VALID_ORDER_STATUSES = Object.values(
+  ORDER_STATUS
+) as OrderStatusType[]
 
 // Maintain backward compatibility with existing type
 export const ORDER_STATUS_STEPS: OrderStatus[] = [
@@ -98,7 +84,7 @@ export const VENDOR_CATEGORIES = [
   { value: "meals", label: "Meals (e.g. Rice, Swallow)" },
   { value: "fast-food", label: "Fast Food (e.g. Shawarma, Pastries, cakes)" },
   { value: "drinks", label: "Drinks (e.g. Smoothies, Soft Drinks)" },
-] as const;
+] as const
 
 // ─── Schools & Campuses (Legacy - Use lib/config/campus.ts) ──────────────
 
@@ -112,20 +98,17 @@ export const MENU_CATEGORIES: {
   {
     value: "all",
     label: "All",
-    image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop",
+    image: "/rice.jpg",
   },
   {
     value: "rice",
     label: "Rice",
-    image:
-      "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&h=400&fit=crop",
+    image: "/rice.jpg",
   },
   {
     value: "soup",
     label: "Soups",
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&h=400&fit=crop",
+    image: "/soup.jpg",
   },
   {
     value: "snack",
@@ -136,26 +119,22 @@ export const MENU_CATEGORIES: {
   {
     value: "drink",
     label: "Drinks",
-    image:
-      "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=600&h=400&fit=crop",
+    image: "/smoothie.jpg",
   },
   {
     value: "protein",
     label: "Proteins",
-    image:
-      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&h=400&fit=crop",
+    image: "/chicken.png",
   },
   {
     value: "shawarma",
     label: "Shawarma",
-    image:
-      "https://images.unsplash.com/photo-1561651823-34feb02250e4?w=600&h=400&fit=crop",
+    image: "/sharwama.jpg",
   },
   {
     value: "food",
     label: "Food",
-    image:
-      "https://images.unsplash.com/photo-1493770348161-369560ae357d?w=600&h=400&fit=crop",
+    image: "/bole.jpg",
   },
 ]
 
@@ -187,7 +166,7 @@ export function buildOrderWhatsAppMessage(order: {
     .join("\n")
 
   return [
-    `Hello! I'd like to place an order on *${APP_NAME}* 🍽️`,
+    `Hello! I just placed an order from your menu via *${APP_NAME}* 🍽️`,
     ``,
     `*Order ID:* ${order.orderId}`,
     `*Name:* ${order.customerName}`,
@@ -203,4 +182,3 @@ export function buildOrderWhatsAppMessage(order: {
     .filter((l) => l !== null)
     .join("\n")
 }
-

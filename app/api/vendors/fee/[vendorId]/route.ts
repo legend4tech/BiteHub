@@ -15,14 +15,17 @@ export async function GET(
     }
 
     const vendor = await VendorModel.findById(vendorId)
-      .select("deliveryFee")
+      .select("deliveryFee prepTime")
       .lean()
 
     if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ deliveryFee: vendor.deliveryFee ?? 0 })
+    return NextResponse.json({
+      deliveryFee: vendor.deliveryFee ?? 0,
+      prepTime: vendor.prepTime ?? "",
+    })
   } catch (error) {
     console.error("[GET /api/vendors/fee/[vendorId]]", error)
     return NextResponse.json(

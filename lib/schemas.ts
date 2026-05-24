@@ -183,6 +183,7 @@ export const vendorSettingsSchema = z.object({
       return !isNaN(Number(cleanValue)) && Number(cleanValue) >= 0
     }, "Enter a valid delivery fee."),
   tags: z.array(z.string()).optional(),
+  prepTime: z.string().min(1, "Estimated prep time is required"),
   school: z.string().optional(),
   campus: z.string().optional(),
   image: z.any().nullable().optional(),

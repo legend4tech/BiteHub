@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
-import { Circle, Phone, Calendar, GraduationCap, Tag } from "lucide-react"
+import {
+  Circle,
+  Phone,
+  Calendar,
+  GraduationCap,
+  Tag,
+  Clock,
+} from "lucide-react"
 import { VendorMenu } from "@/components/vendors/VendorMenu"
 import { ShareButton } from "@/components/vendors/ShareButton"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -236,6 +243,17 @@ export default async function VendorDetailPage({
                 </div>
 
                 <div className="space-y-3">
+                  {vendor.prepTime && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <Clock className="size-4 text-primary" />
+                      <span>
+                        <strong className="font-medium text-foreground">
+                          Prep Time:
+                        </strong>{" "}
+                        {vendor.prepTime}
+                      </span>
+                    </div>
+                  )}
                   {vendor.phone && (
                     <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                       <Phone className="size-4 text-primary" />

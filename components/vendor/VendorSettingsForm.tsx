@@ -63,6 +63,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           ? formatInputNumber(initial.deliveryFee.toString())
           : "",
       category: initial.category ?? "",
+      prepTime: initial.prepTime ?? "",
       tags: initial.tags ?? [],
       image: typeof initial.image === "string" ? undefined : initial.image,
     },
@@ -220,7 +221,45 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           </Field>
         )}
       />
-
+      <Controller
+        name="prepTime"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <label className="text-sm font-medium" htmlFor="prepTime">
+              Estimated Prep Time
+            </label>
+            <Select
+              name={field.name}
+              value={field.value}
+              onValueChange={field.onChange}
+            >
+              <SelectTrigger
+                id="prepTime"
+                className="h-11 w-full rounded-xl"
+                aria-invalid={fieldState.invalid}
+              >
+                <SelectValue placeholder="Select prep time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10 - 20 mins">
+                  10 - 20 mins (Fast snacks/drinks)
+                </SelectItem>
+                <SelectItem value="20 - 40 mins">
+                  20 - 40 mins (Standard meals)
+                </SelectItem>
+                <SelectItem value="40 - 60 mins">
+                  40 - 60 mins (Large meals)
+                </SelectItem>
+                <SelectItem value="1hr+">1hr+ (Pre-orders/Catering)</SelectItem>
+              </SelectContent>
+            </Select>
+            {fieldState.invalid && (
+              <FieldError errors={[{ message: fieldState.error?.message }]} />
+            )}
+          </Field>
+        )}
+      />
       <Controller
         name="category"
         control={form.control}

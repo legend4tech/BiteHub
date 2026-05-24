@@ -11,6 +11,7 @@ export interface IVendor extends Document {
   campus: string
   isActive: boolean
   deliveryFee: number
+  prepTime: string
   image?: {
     url: string
     publicId: string
@@ -34,6 +35,7 @@ const VendorSchema: Schema = new Schema(
     campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     deliveryFee: { type: Number, default: 0 },
+    prepTime: { type: String, default: "" },
     image: {
       url: { type: String },
       publicId: { type: String },

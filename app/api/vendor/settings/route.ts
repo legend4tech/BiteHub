@@ -31,6 +31,7 @@ export async function PATCH(request: Request) {
       tags,
       whatsappNumber,
       deliveryFee,
+      prepTime,
       image,
     } = body
 
@@ -82,6 +83,7 @@ export async function PATCH(request: Request) {
       updateData.whatsappNumber = formatToWhatsapp(whatsappNumber?.trim() || "")
     if (deliveryFee !== undefined)
       updateData.deliveryFee = Number(deliveryFee) || 0
+    if (prepTime !== undefined) updateData.prepTime = prepTime
     if (image !== undefined) updateData.image = image
 
     const updatedVendor = await Vendor.findByIdAndUpdate(

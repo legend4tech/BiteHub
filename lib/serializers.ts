@@ -50,6 +50,7 @@ export function serializeVendor(doc: LeanVendor | null) {
     campus: doc.campus ?? null,
     isActive: doc.isActive,
     deliveryFee: doc.deliveryFee ?? 0,
+    prepTime: doc.prepTime ?? "",
     image: doc.image ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
