@@ -60,6 +60,7 @@ const addVendorSchema = z.object({
       url: z.string().min(1, "Image is required"),
       publicId: z.string().min(1),
     })
+    .nullable()
     .optional()
     .refine((val) => !!val, { message: "Image is required" }),
 })
