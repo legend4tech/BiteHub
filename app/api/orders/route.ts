@@ -135,6 +135,7 @@ export async function POST(request: Request) {
       vendorId,
       vendorName: finalVendorName,
       vendorWhatsappNumber: finalWhatsapp,
+      vendorPrepTime: vendor.prepTime || "",
       items,
       customerName,
       customerPhone,

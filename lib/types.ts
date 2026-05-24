@@ -104,6 +104,7 @@ export interface Order {
   vendorId: string
   vendorName: string
   vendorWhatsappNumber: string
+  vendorPrepTime?: string | null
   items: OrderItem[]
   customerName: string
   customerPhone: string

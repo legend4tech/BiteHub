@@ -12,6 +12,7 @@ export interface IOrder extends Document {
   vendorId: Types.ObjectId
   vendorName: string
   vendorWhatsappNumber: string
+  vendorPrepTime?: string
   customerName: string
   customerPhone: string
   location: string
@@ -48,6 +49,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     vendorName: { type: String, required: true },
     vendorWhatsappNumber: { type: String, default: "" },
+    vendorPrepTime: { type: String, default: "" },
     customerName: { type: String, required: true },
     customerPhone: { type: String, required: true },
     location: { type: String, required: true },

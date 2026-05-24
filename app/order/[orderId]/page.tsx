@@ -21,7 +21,17 @@ import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
-import { RefreshCw, Home, ShoppingBag, MessageCircle, ChevronRight, Receipt, Star, Copy } from "lucide-react"
+import {
+  RefreshCw,
+  Home,
+  ShoppingBag,
+  MessageCircle,
+  ChevronRight,
+  Receipt,
+  Star,
+  Copy,
+  Clock,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatTime } from "@/lib/format"
 import type { OrderStatus } from "@/lib/types"
@@ -30,17 +40,23 @@ import { APP_NAME } from "@/lib/constants"
 import { useOrder } from "@/hooks/queries/useOrder"
 import { toast } from "sonner"
 
-const FEEDBACK_SNOOZE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (easily editable)
+const FEEDBACK_SNOOZE_DURATION = 24 * 60 * 60 * 1000 // 24 hours (easily editable)
 
 interface FeedbackModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  orderId: string;
-  vendorName: string;
-  vendorId: string;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  orderId: string
+  vendorName: string
+  vendorId: string
 }
 
-function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: FeedbackModalProps) {
+function FeedbackModal({
+  open,
+  onOpenChange,
+  orderId,
+  vendorName,
+  vendorId,
+}: FeedbackModalProps) {
   const [platformRating, setPlatformRating] = useState(0)
   const [platformComments, setPlatformComments] = useState("")
   const [vendorRating, setVendorRating] = useState(0)
@@ -51,10 +67,10 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-[550px] rounded-[28px]">
+      <AlertDialogContent className="rounded-[28px] sm:max-w-[550px]">
         <AlertDialogHeader>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs font-semibold tracking-wider text-primary uppercase">
               Step {feedbackStep} of 2
             </span>
           </div>
@@ -62,36 +78,42 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
             {feedbackStep === 1 ? "Rate the Platform" : "Rate the Vendor"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-muted-foreground">
-            {feedbackStep === 1 
+            {feedbackStep === 1
               ? `How was your experience using ${APP_NAME}? We'd love to hear your thoughts!`
               : `How was your order and service from ${vendorName}?`}
           </AlertDialogDescription>
-          
+
           {/* Progress Bar */}
-          <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden mt-3">
-            <div 
-              className="bg-primary h-full transition-all duration-500 ease-in-out" 
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all duration-500 ease-in-out"
               style={{ width: feedbackStep === 1 ? "50%" : "100%" }}
             />
           </div>
         </AlertDialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div>
-            <label className="text-sm font-semibold mb-2 block">Rating</label>
+            <label className="mb-2 block text-sm font-semibold">Rating</label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   type="button"
-                  onClick={() => feedbackStep === 1 ? setPlatformRating(star) : setVendorRating(star)}
+                  onClick={() =>
+                    feedbackStep === 1
+                      ? setPlatformRating(star)
+                      : setVendorRating(star)
+                  }
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   className="p-1 transition-transform hover:scale-110"
                 >
                   <Star
                     className={`size-7 transition-colors ${
-                      (hoveredRating || (feedbackStep === 1 ? platformRating : vendorRating)) >= star
+                      (hoveredRating ||
+                        (feedbackStep === 1 ? platformRating : vendorRating)) >=
+                      star
                         ? "fill-amber-400 text-amber-400"
                         : "text-muted-foreground"
                     }`}
@@ -102,20 +124,28 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
           </div>
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">
+            <label className="mb-2 block text-sm font-semibold">
               Comments <span className="text-destructive">*</span>
             </label>
             <textarea
               value={feedbackStep === 1 ? platformComments : vendorComments}
-              onChange={(e) => feedbackStep === 1 ? setPlatformComments(e.target.value) : setVendorComments(e.target.value)}
-              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              onChange={(e) =>
+                feedbackStep === 1
+                  ? setPlatformComments(e.target.value)
+                  : setVendorComments(e.target.value)
+              }
+              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-primary/20 focus:outline-none"
               rows={4}
-              placeholder={feedbackStep === 1 ? "Tell us what you liked or what we can improve (required, min 3 chars)..." : "How was the food and service? (required, min 3 chars)..."}
+              placeholder={
+                feedbackStep === 1
+                  ? "Tell us what you liked or what we can improve (required, min 3 chars)..."
+                  : "How was the food and service? (required, min 3 chars)..."
+              }
             />
           </div>
 
           {feedbackStep === 2 && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="isAnonymous"
@@ -123,44 +153,52 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
                 onChange={(e) => setIsAnonymous(e.target.checked)}
                 className="size-4 rounded border-border"
               />
-              <label htmlFor="isAnonymous" className="text-sm text-muted-foreground select-none">
+              <label
+                htmlFor="isAnonymous"
+                className="text-sm text-muted-foreground select-none"
+              >
                 Submit review anonymously to the vendor
               </label>
             </div>
           )}
         </div>
 
-        <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-3">
+        <AlertDialogFooter className="flex-col-reverse gap-3 sm:flex-row">
           {feedbackStep === 1 ? (
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={() => {
-                localStorage.setItem(`feedback_snoozed_${orderId}`, new Date().getTime().toString());
-                onOpenChange(false);
-              }} 
+                localStorage.setItem(
+                  `feedback_snoozed_${orderId}`,
+                  new Date().getTime().toString()
+                )
+                onOpenChange(false)
+              }}
               className="w-full sm:w-auto"
             >
               Maybe later
             </AlertDialogCancel>
           ) : (
-            <Button 
-              variant="outline" 
-              onClick={() => setFeedbackStep(1)} 
+            <Button
+              variant="outline"
+              onClick={() => setFeedbackStep(1)}
               className="w-full sm:w-auto"
             >
               Back
             </Button>
           )}
-          
+
           {feedbackStep === 1 ? (
-            <Button 
-              onClick={() => setFeedbackStep(2)} 
-              disabled={platformRating === 0 || platformComments.trim().length < 3}
+            <Button
+              onClick={() => setFeedbackStep(2)}
+              disabled={
+                platformRating === 0 || platformComments.trim().length < 3
+              }
               className="w-full sm:w-auto"
             >
               Next
             </Button>
           ) : (
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={async () => {
                 try {
                   const response = await fetch("/api/feedback", {
@@ -168,25 +206,33 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       orderId,
-                      platform: { rating: platformRating, comments: platformComments },
-                      vendor: { vendorId: vendorId, rating: vendorRating, comments: vendorComments, isAnonymous },
+                      platform: {
+                        rating: platformRating,
+                        comments: platformComments,
+                      },
+                      vendor: {
+                        vendorId: vendorId,
+                        rating: vendorRating,
+                        comments: vendorComments,
+                        isAnonymous,
+                      },
                     }),
-                  });
-                  
+                  })
+
                   if (response.ok) {
-                    toast.success("Feedback submitted! Thank you.");
-                    localStorage.setItem(`feedback_handled_${orderId}`, "true");
-                    onOpenChange(false);
+                    toast.success("Feedback submitted! Thank you.")
+                    localStorage.setItem(`feedback_handled_${orderId}`, "true")
+                    onOpenChange(false)
                   } else {
-                    const data = await response.json();
-                    toast.error(data.error || "Failed to submit feedback.");
+                    const data = await response.json()
+                    toast.error(data.error || "Failed to submit feedback.")
                   }
                 } catch (error) {
-                  toast.error("An error occurred.");
+                  toast.error("An error occurred.")
                 }
               }}
               disabled={vendorRating === 0 || vendorComments.trim().length < 3}
-              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
               Submit Feedback
             </AlertDialogAction>
@@ -194,7 +240,7 @@ function FeedbackModal({ open, onOpenChange, orderId, vendorName, vendorId }: Fe
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }
 
 export default function OrderPage() {
@@ -215,12 +261,13 @@ export default function OrderPage() {
     if (order?.status === "completed") {
       const handled = localStorage.getItem(`feedback_handled_${orderId}`)
       const snoozedAt = localStorage.getItem(`feedback_snoozed_${orderId}`)
-      
+
       const now = new Date().getTime()
-      const isSnoozed = snoozedAt && (now - parseInt(snoozedAt)) < FEEDBACK_SNOOZE_DURATION
-      
+      const isSnoozed =
+        snoozedAt && now - parseInt(snoozedAt) < FEEDBACK_SNOOZE_DURATION
+
       if (!handled && !isSnoozed) {
-        setShowFeedbackModal(true)
+        setTimeout(() => setShowFeedbackModal(true), 0)
       }
     }
   }, [order?.status, orderId])
@@ -243,23 +290,24 @@ export default function OrderPage() {
   }
 
   if (isError || !order) {
-    const isNotFound = (error as any)?.response?.status === 404
+    const isNotFound =
+      (error as { response?: { status?: number } })?.response?.status === 404
 
     if (isNotFound) {
       return (
         <main className="min-h-screen bg-background text-foreground">
           <Navbar />
           <div className="relative mx-auto max-w-2xl px-4 pt-6">
-            <div className="flex justify-between items-center pb-2">
+            <div className="flex items-center justify-between pb-2">
               <Button variant="outline" size="sm" asChild>
                 <Link href="/order">
-                  <ShoppingBag className="size-4 mr-2" />
+                  <ShoppingBag className="mr-2 size-4" />
                   Back to order track
                 </Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/">
-                  <Home className="size-4 mr-2" />
+                  <Home className="mr-2 size-4" />
                   Back to home
                 </Link>
               </Button>
@@ -302,21 +350,21 @@ export default function OrderPage() {
       {/* Ambient background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-[300px] w-[400px] rounded-full bg-primary/3 blur-[100px]" />
+        <div className="absolute right-0 bottom-0 h-[300px] w-[400px] rounded-full bg-primary/3 blur-[100px]" />
       </div>
 
       <div className="relative mx-auto max-w-2xl space-y-4 px-4 py-10 sm:px-6 sm:py-14">
         {/* ── Back links ─────────────────────────────────────── */}
-        <div className="flex justify-between items-center pb-2">
+        <div className="flex items-center justify-between pb-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/order">
-              <ShoppingBag className="size-4 mr-2" />
+              <ShoppingBag className="mr-2 size-4" />
               Back to order track
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="/">
-              <Home className="size-4 mr-2" />
+              <Home className="mr-2 size-4" />
               Back to home
             </Link>
           </Button>
@@ -329,7 +377,7 @@ export default function OrderPage() {
 
           <div className="p-7 sm:p-8">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 {/* Label */}
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold tracking-widest text-primary uppercase">
@@ -339,7 +387,7 @@ export default function OrderPage() {
                 </div>
 
                 {/* Order ID */}
-                <div className="flex items-center gap-2 mt-3">
+                <div className="mt-3 flex items-center gap-2">
                   <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
                     {order.orderId}
                   </h1>
@@ -348,16 +396,17 @@ export default function OrderPage() {
                     size="icon"
                     className="size-8"
                     onClick={() => {
-                      navigator.clipboard.writeText(order.orderId);
-                      toast.success("Order ID copied!");
+                      navigator.clipboard.writeText(order.orderId)
+                      toast.success("Order ID copied!")
                     }}
                   >
-                    <Copy className="size-4 text-muted-foreground hover:text-foreground transition-colors" />
+                    <Copy className="size-4 text-muted-foreground transition-colors hover:text-foreground" />
                     <span className="sr-only">Copy Order ID</span>
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Copy this ID to track your order later on the "Track Order" page.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Copy this ID to track your order later on the &ldquo;Track
+                  Order&rdquo; page.
                 </p>
 
                 {/* Meta */}
@@ -374,12 +423,14 @@ export default function OrderPage() {
                       month: "short",
                       day: "numeric",
                     })}{" "}
-                    at{" "}
-                    {formatTime(order.createdAt)}
+                    at {formatTime(order.createdAt)}
                   </span>
                   <span className="text-border">·</span>
                   <span>
-                    Deliver to: <span className="font-semibold text-foreground">{order.location}</span>
+                    Deliver to:{" "}
+                    <span className="font-semibold text-foreground">
+                      {order.location}
+                    </span>
                   </span>
                 </p>
               </div>
@@ -391,7 +442,7 @@ export default function OrderPage() {
             </div>
 
             {/* Status badge */}
-            <div className="mt-5 pt-5 border-t border-border/60">
+            <div className="mt-5 border-t border-border/60 pt-5">
               <StatusBadge status={order.status} />
             </div>
           </div>
@@ -408,9 +459,16 @@ export default function OrderPage() {
                 Order status
               </h2>
             </div>
-
-
           </div>
+
+          {order.vendorPrepTime && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+              <Clock className="size-4 animate-pulse" />
+              <span className="font-medium">
+                Estimated prep time: {order.vendorPrepTime}
+              </span>
+            </div>
+          )}
 
           <OrderStatusTracker status={order.status} />
         </div>
@@ -433,7 +491,7 @@ export default function OrderPage() {
                   key={item.menuItemId}
                   className="flex items-center justify-between gap-4"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     {/* quantity pill */}
                     <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-muted text-[11px] font-bold text-muted-foreground">
                       {item.quantity}
@@ -461,7 +519,7 @@ export default function OrderPage() {
             {order.notes && (
               <div className="mt-4 flex gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3.5">
                 <span className="mt-0.5 shrink-0 text-base">📝</span>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   <span className="font-semibold text-foreground">Note: </span>
                   {order.notes}
                 </p>
@@ -483,7 +541,8 @@ export default function OrderPage() {
 
           <div className="px-7 py-5 sm:px-8">
             <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-              Message the vendor on WhatsApp for any updates or questions about your order.
+              Message the vendor on WhatsApp for any updates or questions about
+              your order.
             </p>
             <WhatsAppButton
               vendorPhone={order.vendorWhatsappNumber}
@@ -509,8 +568,6 @@ export default function OrderPage() {
             vendorId={order.vendorId}
           />
         )}
-
-
       </div>
     </main>
   )

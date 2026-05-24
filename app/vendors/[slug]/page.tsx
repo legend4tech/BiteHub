@@ -127,6 +127,7 @@ export default async function VendorDetailPage({
     vendorSlug: vendor.slug,
     vendorWhatsappNumber: vendor.whatsappNumber ?? "",
     vendorDeliveryFee: vendor.deliveryFee ?? 0,
+    vendorPrepTime: vendor.prepTime ?? "",
     name: item.name,
     description: item.description ?? "",
     price: item.price,

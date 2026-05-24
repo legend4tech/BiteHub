@@ -109,6 +109,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           typeof values.deliveryFee === "string"
             ? parseInputNumber(values.deliveryFee)
             : values.deliveryFee,
+        prepTime: values.prepTime,
         category: values.category,
         tags: values.tags,
         image: imageToSave,

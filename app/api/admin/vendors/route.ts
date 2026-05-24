@@ -90,6 +90,8 @@ export async function POST(request: Request) {
       description,
       category,
       tags,
+      deliveryFee,
+      prepTime,
       email,
       password,
       image,
@@ -139,6 +141,8 @@ export async function POST(request: Request) {
       whatsappNumber: formatToWhatsapp(whatsappNumber.trim()),
       campus: campus?.trim() || DEFAULT_CAMPUS_ID,
       school: school?.trim() || DEFAULT_SCHOOL_ID,
+      deliveryFee: Number(deliveryFee) || 0,
+      prepTime: prepTime?.trim() || "",
       image: image,
       isActive: true,
     })

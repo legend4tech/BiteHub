@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ShoppingBag, X, Minus, Plus, Loader2 } from "lucide-react"
+import { ShoppingBag, X, Minus, Plus, Loader2, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -213,7 +213,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
 
             {cart.vendorPrepTime && (
               <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
-                <span className="animate-pulse">⏱️</span>
+                <Clock className="size-4 animate-pulse" />
                 <span className="font-medium">
                   Estimated prep time: {cart.vendorPrepTime}
                 </span>

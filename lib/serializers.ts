@@ -94,6 +94,7 @@ export function serializeOrder(doc: LeanOrder | null) {
     vendorId: doc.vendorId.toString(),
     vendorName: doc.vendorName,
     vendorWhatsappNumber: doc.vendorWhatsappNumber,
+    vendorPrepTime: doc.vendorPrepTime ?? "",
     customerName: doc.customerName,
     customerPhone: doc.customerPhone,
     location: doc.location,
