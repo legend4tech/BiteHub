@@ -22,7 +22,6 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import {
-  RefreshCw,
   Home,
   ShoppingBag,
   MessageCircle,
@@ -34,7 +33,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatTime } from "@/lib/format"
-import type { OrderStatus } from "@/lib/types"
 import { APP_NAME } from "@/lib/constants"
 
 import { useOrder } from "@/hooks/queries/useOrder"
@@ -225,10 +223,13 @@ function FeedbackModal({
                     onOpenChange(false)
                   } else {
                     const data = await response.json()
-                    toast.error(data.error || "Failed to submit feedback.")
+                    toast.error(
+                      data.error ||
+                        "Couldn't submit your feedback. Please try again."
+                    )
                   }
-                } catch (error) {
-                  toast.error("An error occurred.")
+                } catch {
+                  toast.error("Something went wrong. Please try again.")
                 }
               }}
               disabled={vendorRating === 0 || vendorComments.trim().length < 3}
@@ -245,17 +246,9 @@ function FeedbackModal({
 
 export default function OrderPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
 
-  const {
-    data: order,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isRefetching,
-  } = useOrder(orderId)
+  const { data: order, isLoading, isError, error, refetch } = useOrder(orderId)
 
   useEffect(() => {
     if (order?.status === "completed") {
@@ -274,7 +267,6 @@ export default function OrderPage() {
 
   const handleRefresh = async () => {
     await refetch()
-    setLastRefreshed(new Date())
   }
 
   if (isLoading) {
@@ -486,7 +478,7 @@ export default function OrderPage() {
 
           <div className="px-7 py-5 sm:px-8">
             <div className="space-y-3.5">
-              {order.items.map((item, i) => (
+              {order.items.map((item) => (
                 <div
                   key={item.menuItemId}
                   className="flex items-center justify-between gap-4"

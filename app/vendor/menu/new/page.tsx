@@ -1,24 +1,24 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { MenuItemForm } from "@/components/vendor/MenuItemForm";
-import apiClient from "@/lib/axios";
-import { toast } from "sonner";
-import type { MenuItemPayload } from "@/lib/types";
+import { useRouter } from "next/navigation"
+import { MenuItemForm } from "@/components/vendor/MenuItemForm"
+import apiClient from "@/lib/axios"
+import { toast } from "sonner"
+import type { MenuItemPayload } from "@/lib/types"
 
 export default function NewMenuItemPage() {
-  const router = useRouter();
+  const router = useRouter()
 
   const handleSave = async (data: MenuItemPayload) => {
     try {
-      await apiClient.post("/vendor/menu", data);
-      toast.success("Menu item created");
-      router.push("/vendor/menu");
-      router.refresh();
-    } catch (error) {
-      toast.error("Failed to save menu item");
+      await apiClient.post("/vendor/menu", data)
+      toast.success("Menu item created")
+      router.push("/vendor/menu")
+      router.refresh()
+    } catch {
+      toast.error("Couldn't add this menu item. Please try again.")
     }
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -26,9 +26,12 @@ export default function NewMenuItemPage() {
         <h1 className="font-heading text-2xl font-bold">Add new item</h1>
       </div>
 
-      <div className="rounded-3xl bg-card border border-border p-6 max-w-2xl">
-        <MenuItemForm onSave={handleSave} onCancel={() => router.push("/vendor/menu")} />
+      <div className="max-w-2xl rounded-3xl border border-border bg-card p-6">
+        <MenuItemForm
+          onSave={handleSave}
+          onCancel={() => router.push("/vendor/menu")}
+        />
       </div>
     </div>
-  );
+  )
 }

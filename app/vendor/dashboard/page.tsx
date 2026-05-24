@@ -84,7 +84,7 @@ export default function VendorDashboardPage() {
       await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
       await queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
     } catch {
-      toast.error("Failed to update order status")
+      toast.error("Couldn't update order status. Please check your connection.")
     }
   }
 
@@ -302,10 +302,12 @@ export default function VendorDashboardPage() {
                     setPlatformRating(0)
                     setPlatformComments("")
                   } else {
-                    toast.error("Failed to submit feedback.")
+                    toast.error(
+                      "Couldn't submit your feedback. Please try again."
+                    )
                   }
                 } catch {
-                  toast.error("An error occurred.")
+                  toast.error("Something went wrong. Please try again.")
                 }
               }}
               disabled={

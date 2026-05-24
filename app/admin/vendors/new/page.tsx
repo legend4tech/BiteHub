@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,7 @@ import {
 } from "@/lib/config/campus"
 import apiClient from "@/lib/axios"
 import Link from "next/link"
+import Image from "next/image"
 import {
   AdminSidebar,
   AdminMobileTrigger,
@@ -71,9 +72,9 @@ const addVendorSchema = z.object({
 type AddVendorValues = z.infer<typeof addVendorSchema>
 
 export default function NewVendorPage() {
-  const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
   const form = useForm<AddVendorValues>({
     resolver: zodResolver(addVendorSchema as never),
@@ -128,8 +129,8 @@ export default function NewVendorPage() {
       }
 
       await apiClient.post("/admin/vendors", { ...values, image: imageToSave })
-      toast.success(`Vendor ${values.name} created successfully`)
-      router.push("/admin")
+      toast.success(`✅ Vendor "${values.name}" created successfully!`)
+      form.reset()
     } catch (error: unknown) {
       const errMsg =
         error instanceof Error
@@ -160,9 +161,11 @@ export default function NewVendorPage() {
             onSectionChange={() => router.push("/admin")}
           />
           <Link href="/" className="flex items-center gap-2">
-            <img
+            <Image
               src={APP_LOGO_URL}
               alt={APP_NAME}
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-lg object-contain"
             />
             <span className="font-heading text-lg leading-none font-black tracking-tight">

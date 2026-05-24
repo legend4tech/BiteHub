@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import type { MenuItem, MenuItemPayload } from "@/lib/types"
+import type { MenuItemPayload } from "@/lib/types"
 import { useMenuItemDetail } from "@/hooks/queries/useMenuItemDetail"
 
 export default function EditMenuItemPage() {
@@ -18,16 +18,14 @@ export default function EditMenuItemPage() {
   // Fetch menu item using React Query
   const { data: item, isLoading } = useMenuItemDetail(id)
 
-  const handleSave = async (
-    data: MenuItemPayload
-  ) => {
+  const handleSave = async (data: MenuItemPayload) => {
     try {
       await apiClient.patch(`/vendor/menu/${id}`, data)
       toast.success("Menu item updated")
       router.push("/vendor/menu")
       router.refresh()
     } catch {
-      toast.error("Failed to update menu item")
+      toast.error("Couldn't update this menu item. Please try again.")
     }
   }
 

@@ -91,7 +91,10 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
 
         if (!uploadResponse.ok) {
           const errData = await uploadResponse.json()
-          throw new Error(errData.error || "Failed to upload image")
+          throw new Error(
+            errData.error ||
+              "Image upload failed. Please check your connection and try again."
+          )
         }
 
         const uploadData = await uploadResponse.json()
@@ -135,7 +138,9 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
     } catch (error: unknown) {
       console.error("Save settings error:", error)
       const err = error as Error
-      toast.error(err.message || "Failed to update settings")
+      toast.error(
+        err.message || "Couldn't save your settings. Please try again."
+      )
     } finally {
       setSaving(false)
     }

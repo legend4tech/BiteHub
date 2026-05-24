@@ -1,18 +1,23 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { MenuGrid } from "@/components/menus/MenuGrid";
-import { SearchInput } from "@/components/shared/SearchInput";
-import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus";
-import { FadeIn } from "@/components/FadeIn";
-import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary";
-import { PageSkeleton } from "@/components/shared/PageSkeleton";
-import { Suspense } from "react";
-import { getMenus } from "@/lib/services/menuService";
-import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID, getCampusName, getSchoolName } from "@/lib/config/campus";
-import { CampusSelector } from "@/components/shared/CampusSelector";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+import { Navbar } from "@/components/Navbar"
+import { Footer } from "@/components/Footer"
+import { MenuGrid } from "@/components/menus/MenuGrid"
+import { SearchInput } from "@/components/shared/SearchInput"
+import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus"
+import { FadeIn } from "@/components/FadeIn"
+import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { Suspense } from "react"
+import { getMenus } from "@/lib/services/menuService"
+import {
+  DEFAULT_SCHOOL_ID,
+  DEFAULT_CAMPUS_ID,
+  getCampusName,
+  getSchoolName,
+} from "@/lib/config/campus"
+import { CampusSelector } from "@/components/shared/CampusSelector"
 
 export const metadata: Metadata = {
   title: "All Menus",
@@ -23,7 +28,9 @@ export const metadata: Metadata = {
     description:
       "Browse every dish available on campus. Search by name, filter by category, and order your next meal in seconds.",
     url: "/menus",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BiteHub Menu" }],
+    images: [
+      { url: "/og-image.png", width: 1200, height: 630, alt: "BiteHub Menu" },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -31,7 +38,7 @@ export const metadata: Metadata = {
     description: "Browse every dish available on campus and order in seconds.",
     images: ["/og-image.png"],
   },
-};
+}
 
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function MenuListContent({
@@ -40,16 +47,24 @@ async function MenuListContent({
   school,
   campus,
 }: {
-  q: string;
-  category: string;
-  school: string;
-  campus: string;
+  q: string
+  category: string
+  school: string
+  campus: string
 }) {
-  const { items, totalItems } = await getMenus({ q, category, school, campus, limit: 20 });
+  const { items, totalItems } = await getMenus({
+    q,
+    category,
+    school,
+    campus,
+    limit: 20,
+  })
 
   return (
     <>
-      <p className="text-sm text-muted-foreground mb-6">{totalItems} items available</p>
+      <p className="mb-6 text-sm text-muted-foreground">
+        {totalItems} items available
+      </p>
       <MenuGrid initialItems={items} activeCategory={category} />
       {items.length === 20 && (
         <LoadMoreMenus
@@ -63,35 +78,35 @@ async function MenuListContent({
         />
       )}
     </>
-  );
+  )
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default async function MenusPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const resolvedSearchParams = await searchParams;
+  const resolvedSearchParams = await searchParams
   const q =
-    typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : "";
+    typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : ""
   const category =
     typeof resolvedSearchParams.category === "string"
       ? resolvedSearchParams.category
-      : "all";
+      : "all"
   const school =
     typeof resolvedSearchParams.school === "string"
       ? resolvedSearchParams.school
-      : DEFAULT_SCHOOL_ID;
+      : DEFAULT_SCHOOL_ID
   const campus =
     typeof resolvedSearchParams.campus === "string"
       ? resolvedSearchParams.campus
-      : DEFAULT_CAMPUS_ID;
+      : DEFAULT_CAMPUS_ID
 
-  const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`;
+  const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
+    <main className="flex min-h-screen flex-col bg-background">
       <Navbar />
 
       <div className="flex-1 py-12">
@@ -100,22 +115,29 @@ export default async function MenusPage({
             <div className="mb-8">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+                className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="size-4" /> Back to home
               </Link>
-              <div className="flex items-end justify-between flex-wrap gap-4">
+              <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <h1 className="font-heading text-3xl md:text-5xl font-bold">
+                  <h1 className="font-heading text-3xl font-bold md:text-5xl">
                     All Menus
                   </h1>
-                  <p className="text-muted-foreground mt-2 mb-4">
+                  <p className="mt-2 mb-4 text-muted-foreground">
                     Showing menus for{" "}
-                    <span className="font-semibold text-foreground">{campusLabel}</span>
+                    <span className="font-semibold text-foreground">
+                      {campusLabel}
+                    </span>
                   </p>
                   <SearchInput placeholder="Search for meals, snacks..." />
                 </div>
-                <CampusSelector />
+                <div className="flex flex-col items-start gap-1">
+                  <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+                    Not your campus? Change it →
+                  </p>
+                  <CampusSelector />
+                </div>
               </div>
             </div>
           </FadeIn>
@@ -132,7 +154,12 @@ export default async function MenusPage({
                 </div>
               }
             >
-              <MenuListContent q={q} category={category} school={school} campus={campus} />
+              <MenuListContent
+                q={q}
+                category={category}
+                school={school}
+                campus={campus}
+              />
             </Suspense>
           </SectionErrorBoundary>
         </div>
@@ -140,5 +167,5 @@ export default async function MenusPage({
 
       <Footer />
     </main>
-  );
+  )
 }

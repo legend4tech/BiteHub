@@ -67,7 +67,7 @@ export function VendorOrders({
 }: VendorOrdersProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
-  
+
   const [searchTerm, setSearchTerm] = useState(searchQuery)
   const debouncedSearch = useDebounce(searchTerm, 500)
 
@@ -94,14 +94,14 @@ export function VendorOrders({
       await apiClient.patch(`/vendor/orders/${orderId}`, { status: newStatus })
       toast.success("Order status updated")
       router.refresh() // Refresh the server component data
-    } catch (error) {
-      toast.error("Failed to update order status")
+    } catch {
+      toast.error("Couldn't update order status. Please try again.")
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="font-heading text-2xl font-bold">Orders</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -109,12 +109,12 @@ export function VendorOrders({
           </p>
         </div>
         <div className="relative w-full sm:w-[300px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input 
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search Order ID or Name..." 
-            className="pl-9 h-10 w-full rounded-full"
+            placeholder="Search Order ID or Name..."
+            className="h-10 w-full rounded-full pl-9"
           />
         </div>
       </div>
@@ -151,59 +151,81 @@ export function VendorOrders({
 
       <div className="rounded-2xl border border-border bg-card p-6">
         <OrderTable orders={orders} onStatusChange={handleStatusChange} />
-        
+
         {/* Pagination UI */}
         <div className="mt-6 border-t border-border pt-4">
           <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    href={currentPage > 1 ? `?status=${activeStatus}&page=${currentPage - 1}` : "#"} 
-                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {/* Generate explicit page numbers if we have a small amount of pages, or ellipsize */}
-                {Array.from({ length: totalPages }).map((_, idx) => {
-                  const page = idx + 1;
-                  // Simple display logic: show first, last, current, and adjacent
-                  if (
-                    page === 1 || 
-                    page === totalPages || 
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          href={`?status=${activeStatus}&page=${page}`}
-                          isActive={page === currentPage}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href={
+                    currentPage > 1
+                      ? `?status=${activeStatus}&page=${currentPage - 1}`
+                      : "#"
                   }
-                  
-                  // Show ellipsis only once per gap
-                  if (page === 2 && currentPage > 3) {
-                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
+                  className={
+                    currentPage <= 1 ? "pointer-events-none opacity-50" : ""
                   }
-                  if (page === totalPages - 1 && currentPage < totalPages - 2) {
-                    return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>;
-                  }
-                  
-                  return null;
-                })}
+                />
+              </PaginationItem>
 
-                <PaginationItem>
-                  <PaginationNext 
-                    href={currentPage < totalPages ? `?status=${activeStatus}&page=${currentPage + 1}` : "#"} 
-                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+              {/* Generate explicit page numbers if we have a small amount of pages, or ellipsize */}
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1
+                // Simple display logic: show first, last, current, and adjacent
+                if (
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href={`?status=${activeStatus}&page=${page}`}
+                        isActive={page === currentPage}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                }
+
+                // Show ellipsis only once per gap
+                if (page === 2 && currentPage > 3) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )
+                }
+                if (page === totalPages - 1 && currentPage < totalPages - 2) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )
+                }
+
+                return null
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  href={
+                    currentPage < totalPages
+                      ? `?status=${activeStatus}&page=${currentPage + 1}`
+                      : "#"
+                  }
+                  className={
+                    currentPage >= totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
     </div>
   )
