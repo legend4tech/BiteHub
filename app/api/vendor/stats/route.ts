@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { Types } from "mongoose";
-import dbConnect from "@/lib/db";
-import Order from "@/models/Order";
-import { auth } from "@/auth";
-import { ORDER_STATUS } from "@/lib/constants";
+import { NextResponse } from "next/server"
+import { Types } from "mongoose"
+import dbConnect from "@/lib/db"
+import Order from "@/models/Order"
+import { auth } from "@/auth"
+import { ORDER_STATUS } from "@/lib/constants"
 
 /**
  * GET /api/vendor/stats
@@ -21,18 +21,26 @@ import { ORDER_STATUS } from "@/lib/constants";
  */
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session || session.user?.role !== "vendor" || !(session.user as any)?.vendorId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth()
+    if (
+      !session ||
+      session.user?.role !== "vendor" ||
+      !session.user?.vendorId
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await dbConnect();
-    const vendorId = new Types.ObjectId((session.user as any).vendorId);
+    await dbConnect()
+    const vendorId = new Types.ObjectId(session.user.vendorId)
 
     // UTC boundaries for "today"
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const now = new Date()
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    )
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
 
     // Single aggregation pipeline — MongoDB does all the work
     const [result] = await Order.aggregate([
@@ -45,7 +53,12 @@ export async function GET() {
           todayOrders: {
             $sum: {
               $cond: [
-                { $and: [{ $gte: ["$createdAt", todayStart] }, { $lt: ["$createdAt", todayEnd] }] },
+                {
+                  $and: [
+                    { $gte: ["$createdAt", todayStart] },
+                    { $lt: ["$createdAt", todayEnd] },
+                  ],
+                },
                 1,
                 0,
               ],
@@ -61,7 +74,11 @@ export async function GET() {
                 {
                   $in: [
                     "$status",
-                    [ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY],
+                    [
+                      ORDER_STATUS.CONFIRMED,
+                      ORDER_STATUS.PREPARING,
+                      ORDER_STATUS.READY,
+                    ],
                   ],
                 },
                 1,
@@ -71,7 +88,9 @@ export async function GET() {
           },
           // All-time totals
           totalCompleted: {
-            $sum: { $cond: [{ $eq: ["$status", ORDER_STATUS.COMPLETED] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$status", ORDER_STATUS.COMPLETED] }, 1, 0],
+            },
           },
           totalRevenue: {
             $sum: {
@@ -84,7 +103,7 @@ export async function GET() {
           },
         },
       },
-    ]);
+    ])
 
     // If the vendor has no orders yet, result will be undefined
     return NextResponse.json(
@@ -96,9 +115,12 @@ export async function GET() {
         totalCompleted: 0,
         totalRevenue: 0,
       }
-    );
+    )
   } catch (error) {
-    console.error("[vendor/stats GET]", error);
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
+    console.error("[vendor/stats GET]", error)
+    return NextResponse.json(
+      { error: "Failed to fetch stats" },
+      { status: 500 }
+    )
   }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { DashboardStats } from "@/components/vendor/DashboardStats"
 import { OrderTable } from "@/components/vendor/OrderTable"
 import type { OrderStatus } from "@/lib/types"
@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import {  ArrowRight, Star, Banknote } from "lucide-react"
+import { ArrowRight, Star, Banknote } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { APP_NAME } from "@/lib/constants"
@@ -34,49 +34,40 @@ export default function VendorDashboardPage() {
   const queryClient = useQueryClient()
   const isReady = !!session?.user
 
-  const [showPlatformFeedbackModal, setShowPlatformFeedbackModal] = useState(false)
+  const [showPlatformFeedbackModal, setShowPlatformFeedbackModal] =
+    useState(false)
   const [platformRating, setPlatformRating] = useState(0)
   const [platformComments, setPlatformComments] = useState("")
   const [hoveredRating, setHoveredRating] = useState(0)
 
   useEffect(() => {
     if (isReady) {
-      const submitted = localStorage.getItem("vendor_feedback_submitted");
-      const snoozed = localStorage.getItem("vendor_feedback_snoozed");
-      
+      const submitted = localStorage.getItem("vendor_feedback_submitted")
+      const snoozed = localStorage.getItem("vendor_feedback_snoozed")
+
       if (!submitted) {
         if (!snoozed) {
-          setShowPlatformFeedbackModal(true);
+          setTimeout(() => setShowPlatformFeedbackModal(true), 0)
         } else {
-          const snoozeTime = parseInt(snoozed, 10);
+          const snoozeTime = parseInt(snoozed, 10)
           if (new Date().getTime() > snoozeTime) {
-            setShowPlatformFeedbackModal(true);
+            setTimeout(() => setShowPlatformFeedbackModal(true), 0)
           }
         }
       }
     }
-  }, [isReady]);
+  }, [isReady])
   // ── Stats: server-side aggregation, just a handful of numbers ─────────────
   // No matter how many orders exist, MongoDB counts them — not the browser.
-  const {
-    data: stats,
-    isLoading: loadingStats,
-    isRefetching: refreshingStats,
-    refetch: refetchStats,
-  } = useVendorStats({ enabled: isReady })
+  const { data: stats, isLoading: loadingStats } = useVendorStats({
+    enabled: isReady,
+  })
 
   // ── Recent orders: only the 10 most recent for the table ──────────────────
   // We never load all orders on the dashboard — that belongs to /vendor/orders.
-  const {
-    data: recentOrders = [],
-    isLoading: loadingOrders,
-    isRefetching: refreshingOrders,
-    refetch: refetchOrders,
-  } = useVendorOrders({ limit: 10, enabled: isReady })
-
-
-
-
+  const { data: recentOrders = [], isLoading: loadingOrders } = useVendorOrders(
+    { limit: 10, enabled: isReady }
+  )
 
   if (status === "loading") {
     return <PageSkeleton variant="dashboard" />
@@ -125,9 +116,9 @@ export default function VendorDashboardPage() {
               })}
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-1.5"
             onClick={() => setShowPlatformFeedbackModal(true)}
           >
@@ -147,7 +138,8 @@ export default function VendorDashboardPage() {
                 {formatPrice(stats!.totalRevenue)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                from {stats!.totalCompleted} completed order{stats!.totalCompleted !== 1 ? "s" : ""}
+                from {stats!.totalCompleted} completed order
+                {stats!.totalCompleted !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10">
@@ -185,7 +177,8 @@ export default function VendorDashboardPage() {
                 Recent Orders
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {stats?.todayOrders ?? 0} today · {stats?.totalOrders ?? 0} all-time
+                {stats?.todayOrders ?? 0} today · {stats?.totalOrders ?? 0}{" "}
+                all-time
               </p>
             </div>
             <Link
@@ -213,23 +206,29 @@ export default function VendorDashboardPage() {
             )}
           </div>
         </div>
-
-
       </div>
 
       {/* ── Platform Feedback Modal for Vendors ────────────────── */}
-      <AlertDialog open={showPlatformFeedbackModal} onOpenChange={setShowPlatformFeedbackModal}>
+      <AlertDialog
+        open={showPlatformFeedbackModal}
+        onOpenChange={setShowPlatformFeedbackModal}
+      >
         <AlertDialogContent className="sm:max-w-[425px]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-heading text-xl font-bold">Rate the Platform</AlertDialogTitle>
+            <AlertDialogTitle className="font-heading text-xl font-bold">
+              Rate the Platform
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              How was your experience using {APP_NAME} as a vendor? We'd love to hear your thoughts!
+              How was your experience using {APP_NAME} as a vendor? We&apos;d
+              love to hear your thoughts!
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-semibold mb-1.5 block">Rating</label>
+              <label className="mb-1.5 block text-sm font-semibold">
+                Rating
+              </label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -253,57 +252,66 @@ export default function VendorDashboardPage() {
             </div>
 
             <div>
-              <label className="text-sm font-semibold mb-1.5 block">
+              <label className="mb-1.5 block text-sm font-semibold">
                 Comments <span className="text-destructive">*</span>
               </label>
               <textarea
                 value={platformComments}
                 onChange={(e) => setPlatformComments(e.target.value)}
-                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 rows={4}
                 placeholder="Tell us what you liked or what we can improve (required, min 3 chars)..."
               />
             </div>
           </div>
 
-          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-            <AlertDialogCancel 
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">
+            <AlertDialogCancel
               onClick={() => {
-                const snoozeTime = new Date().getTime() + 5 * 24 * 60 * 60 * 1000; // 5 days
-                localStorage.setItem("vendor_feedback_snoozed", snoozeTime.toString());
-                setShowPlatformFeedbackModal(false);
-              }} 
+                const snoozeTime =
+                  new Date().getTime() + 5 * 24 * 60 * 60 * 1000 // 5 days
+                localStorage.setItem(
+                  "vendor_feedback_snoozed",
+                  snoozeTime.toString()
+                )
+                setShowPlatformFeedbackModal(false)
+              }}
               className="w-full sm:w-auto"
             >
               Maybe later
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={async () => {
                 try {
                   const response = await fetch("/api/feedback", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      vendorId: (session?.user as any)?.vendorId,
-                      platform: { rating: platformRating, comments: platformComments },
+                      vendorId: session?.user?.vendorId,
+                      platform: {
+                        rating: platformRating,
+                        comments: platformComments,
+                      },
                     }),
-                  });
-                  
+                  })
+
                   if (response.ok) {
-                    toast.success("Feedback submitted! Thank you.");
-                    localStorage.setItem("vendor_feedback_submitted", "true");
-                    setShowPlatformFeedbackModal(false);
-                    setPlatformRating(0);
-                    setPlatformComments("");
+                    toast.success("Feedback submitted! Thank you.")
+                    localStorage.setItem("vendor_feedback_submitted", "true")
+                    setShowPlatformFeedbackModal(false)
+                    setPlatformRating(0)
+                    setPlatformComments("")
                   } else {
-                    toast.error("Failed to submit feedback.");
+                    toast.error("Failed to submit feedback.")
                   }
-                } catch (error) {
-                  toast.error("An error occurred.");
+                } catch {
+                  toast.error("An error occurred.")
                 }
               }}
-              disabled={platformRating === 0 || platformComments.trim().length < 3}
-              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={
+                platformRating === 0 || platformComments.trim().length < 3
+              }
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
               Submit
             </AlertDialogAction>

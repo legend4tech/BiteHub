@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { Types } from "mongoose";
-import dbConnect from "@/lib/db";
-import Order from "@/models/Order";
-import { auth } from "@/auth";
-import { serializeOrder } from "@/lib/serializers";
+import { NextResponse } from "next/server"
+import { Types } from "mongoose"
+import dbConnect from "@/lib/db"
+import Order from "@/models/Order"
+import { auth } from "@/auth"
+import { serializeOrder } from "@/lib/serializers"
 
 /**
  * GET /api/vendor/orders
@@ -15,33 +15,40 @@ import { serializeOrder } from "@/lib/serializers";
  */
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-    if (!session || session.user?.role !== "vendor" || !(session.user as any)?.vendorId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth()
+    if (
+      !session ||
+      session.user?.role !== "vendor" ||
+      !session.user?.vendorId
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await dbConnect();
-    const vendorId = new Types.ObjectId((session.user as any).vendorId);
+    await dbConnect()
+    const vendorId = new Types.ObjectId(session.user.vendorId)
 
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const limit = parseInt(searchParams.get("limit") || "0", 10);
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get("status")
+    const limit = parseInt(searchParams.get("limit") || "0", 10)
 
-    const query: Record<string, any> = { vendorId };
+    const query: Record<string, unknown> = { vendorId }
     if (status && status !== "all") {
-      query.status = status;
+      query.status = status
     }
 
-    let q = Order.find(query).sort({ createdAt: -1 });
+    let q = Order.find(query).sort({ createdAt: -1 })
     if (limit > 0) {
-      q = q.limit(limit);
+      q = q.limit(limit)
     }
 
-    const orders = await q.lean();
-    return NextResponse.json(orders.map(serializeOrder));
+    const orders = await q.lean()
+    return NextResponse.json(orders.map(serializeOrder))
   } catch (error) {
-    console.error("[vendor/orders GET]", error);
-    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+    console.error("[vendor/orders GET]", error)
+    return NextResponse.json(
+      { error: "Failed to fetch orders" },
+      { status: 500 }
+    )
   }
 }
 

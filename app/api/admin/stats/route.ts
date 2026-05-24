@@ -1,22 +1,28 @@
-import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import VendorModel from "@/models/Vendor";
-import VendorUserModel from "@/models/VendorUser";
-import OrderModel from "@/models/Order";
-import { auth } from "@/auth";
-import { ORDER_STATUS } from "@/lib/constants";
+import { NextResponse } from "next/server"
+import dbConnect from "@/lib/db"
+import VendorModel from "@/models/Vendor"
+import OrderModel from "@/models/Order"
+import { auth } from "@/auth"
+import { ORDER_STATUS } from "@/lib/constants"
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session || !["admin", "superadmin"].includes((session.user as any)?.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth()
+    if (
+      !session ||
+      !["admin", "superadmin"].includes(session.user?.role || "")
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await dbConnect();
+    await dbConnect()
 
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const now = new Date()
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    )
 
     const [
       totalVendors,
@@ -32,20 +38,20 @@ export async function GET() {
       OrderModel.aggregate([
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
-    ]);
+    ])
 
     // Build a status → count map
-    const byStatus: Record<string, number> = {};
+    const byStatus: Record<string, number> = {}
     for (const entry of statusCounts) {
-      byStatus[entry._id] = entry.count;
+      byStatus[entry._id] = entry.count
     }
 
     // Revenue: sum totalAmount for completed orders
     const revenueAgg = await OrderModel.aggregate([
       { $match: { status: ORDER_STATUS.COMPLETED } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-    ]);
-    const totalRevenue = revenueAgg[0]?.total ?? 0;
+    ])
+    const totalRevenue = revenueAgg[0]?.total ?? 0
 
     return NextResponse.json({
       totalVendors,
@@ -58,9 +64,9 @@ export async function GET() {
       completedOrders: byStatus[ORDER_STATUS.COMPLETED] ?? 0,
       cancelledOrders: byStatus[ORDER_STATUS.CANCELLED] ?? 0,
       totalRevenue,
-    });
+    })
   } catch (error) {
-    console.error("[admin/stats]", error);
-    return NextResponse.json({ error: "Failed to load stats" }, { status: 500 });
+    console.error("[admin/stats]", error)
+    return NextResponse.json({ error: "Failed to load stats" }, { status: 500 })
   }
 }

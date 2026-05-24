@@ -24,19 +24,22 @@ export async function PATCH(
     if (
       !session ||
       session.user?.role !== "vendor" ||
-      !(session.user as any)?.vendorId
+      !session.user?.vendorId
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await dbConnect()
-    const vendorId = new Types.ObjectId((session.user as any).vendorId)
+    const vendorId = new Types.ObjectId(session.user.vendorId)
     const body = await request.json()
-    
+
     const parsedBody = statusUpdateSchema.safeParse(body)
-    
+
     if (!parsedBody.success) {
-      return NextResponse.json({ error: "Invalid status", details: parsedBody.error.format() }, { status: 400 })
+      return NextResponse.json(
+        { error: "Invalid status", details: parsedBody.error.format() },
+        { status: 400 }
+      )
     }
 
     const { status } = parsedBody.data
