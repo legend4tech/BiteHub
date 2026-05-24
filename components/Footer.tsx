@@ -52,7 +52,7 @@ export function Footer() {
           <div className="lg:col-span-1">
             <FooterHeading>Company</FooterHeading>
             <ul className="mt-4 space-y-3">
-              {/* <FooterLink href="/about">About Us</FooterLink> */}
+              <FooterLink href="/about">About Us</FooterLink>
               {/* <FooterLink href="/careers">Join the Team</FooterLink> */}
               <FooterLink href="/contact">Contact Support</FooterLink>
               <FooterLink href="/privacy">Privacy Policy</FooterLink>

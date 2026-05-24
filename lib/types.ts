@@ -6,7 +6,7 @@ export type OrderStatus =
   | "preparing"
   | "ready"
   | "completed"
-  | "cancelled";
+  | "cancelled"
 
 export type MenuCategory =
   | "rice"
@@ -15,50 +15,52 @@ export type MenuCategory =
   | "drink"
   | "protein"
   | "shawarma"
-  | "food";
+  | "food"
 
 // ─── Vendor ──────────────────────────────────────────────────────────────────
 
 export interface Vendor {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  category: string;
-  tags: string[];
-  whatsappNumber: string;
-  school: string;
-  campus: string;
-  isActive: boolean;
-  image?: string | { url: string; publicId: string; };
+  id: string
+  name: string
+  slug: string
+  description: string
+  category: string
+  tags: string[]
+  whatsappNumber: string
+  school: string
+  campus: string
+  isActive: boolean
+  deliveryFee: number
+  image?: string | { url: string; publicId: string }
 
   // Computed/virtual UI properties
-  initials?: string;
-  location?: string;
-  tagline?: string;
+  initials?: string
+  location?: string
+  tagline?: string
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────
 
 export interface MenuItem {
-  id: string;
-  vendorId: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: string; // Made this string instead of MenuCategory enum to match user schema flexibility
-  image: string | { url: string; publicId: string; } | null;
-  isAvailable: boolean;
-  availableFrom: string | null;
-  availableTo: string | null;
-  createdAt: string;
-  updatedAt: string;
+  id: string
+  vendorId: string
+  name: string
+  description: string | null
+  price: number
+  category: string // Made this string instead of MenuCategory enum to match user schema flexibility
+  image: string | { url: string; publicId: string } | null
+  isAvailable: boolean
+  availableFrom: string | null
+  availableTo: string | null
+  createdAt: string
+  updatedAt: string
 
   // Fabricated UI properties
-  vendorName?: string;
-  vendorSlug?: string;
-  vendorWhatsappNumber?: string; // Carried from vendor so the cart can send it with the order
-  tag?: string | null;
+  vendorName?: string
+  vendorSlug?: string
+  vendorWhatsappNumber?: string // Carried from vendor so the cart can send it with the order
+  vendorDeliveryFee?: number
+  tag?: string | null
 }
 
 /**
@@ -69,52 +71,53 @@ export interface MenuItem {
 export type MenuItemPayload = Omit<
   MenuItem,
   "id" | "vendorId" | "vendorName" | "createdAt" | "updatedAt"
->;
+>
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
 export interface CartItem {
-  menuItem: MenuItem;
-  quantity: number;
+  menuItem: MenuItem
+  quantity: number
 }
 
 export interface CartState {
-  items: CartItem[];
-  vendorId: string | null;
-  vendorName: string | null;
-  vendorWhatsappNumber: string | null;
+  items: CartItem[]
+  vendorId: string | null
+  vendorName: string | null
+  vendorWhatsappNumber: string | null
 }
 
 // ─── Order ───────────────────────────────────────────────────────────────────
 
 export interface OrderItem {
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
+  menuItemId: string
+  name: string
+  price: number
+  quantity: number
 }
 
 export interface Order {
-  id: string;
-  orderId: string;
-  vendorId: string;
-  vendorName: string;
-  vendorWhatsappNumber: string;
-  items: OrderItem[];
-  customerName: string;
-  customerPhone: string;
-  location: string;
-  notes?: string | null;
-  status: OrderStatus;
-  totalAmount: number;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
+  id: string
+  orderId: string
+  vendorId: string
+  vendorName: string
+  vendorWhatsappNumber: string
+  items: OrderItem[]
+  customerName: string
+  customerPhone: string
+  location: string
+  notes?: string | null
+  deliveryFee: number
+  status: OrderStatus
+  totalAmount: number
+  createdAt: string // ISO string
+  updatedAt: string // ISO string
 }
 
 // ─── Vendor Auth Session ──────────────────────────────────────────────────────
 
 export interface VendorSession {
-  vendorId: string;
-  vendorName: string;
-  vendorPhone: string;
+  vendorId: string
+  vendorName: string
+  vendorPhone: string
 }

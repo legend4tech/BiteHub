@@ -1,19 +1,19 @@
-import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import Vendor from "@/models/Vendor";
-import Order from "@/models/Order";
-import MenuItem from "@/models/MenuItem";
-import { serializeOrder } from "@/lib/serializers";
-import { sendVendorOrderNotification } from "@/lib/whatsapp";
-import { ORDER_STATUS, generateOrderId } from "@/lib/constants";
-import { z } from "zod";
+import { NextResponse } from "next/server"
+import dbConnect from "@/lib/db"
+import Vendor from "@/models/Vendor"
+import Order from "@/models/Order"
+import MenuItem from "@/models/MenuItem"
+import { serializeOrder } from "@/lib/serializers"
+import { sendVendorOrderNotification } from "@/lib/whatsapp"
+import { ORDER_STATUS, generateOrderId } from "@/lib/constants"
+import { z } from "zod"
 
 const orderItemSchema = z.object({
   menuItemId: z.string().min(1, "Menu item ID is required"),
   name: z.string().min(1, "Name is required"),
   price: z.number().min(0, "Price must be non-negative"),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
-});
+})
 
 const createOrderSchema = z.object({
   vendorId: z.string().min(1, "Vendor ID is required"),
@@ -26,110 +26,109 @@ const createOrderSchema = z.object({
   location: z.string().min(1, "Location is required"),
   notes: z.string().optional(),
   total: z.number().optional(), // We accept it but ignore it for calculation
-});
+})
 
 export async function GET(request: Request) {
   try {
-    await dbConnect();
+    await dbConnect()
 
-    const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get("orderId");
+    const { searchParams } = new URL(request.url)
+    const orderId = searchParams.get("orderId")
 
     if (!orderId) {
       return NextResponse.json(
         { error: "orderId is required" },
         { status: 400 }
-      );
+      )
     }
 
-    const order = await Order.findOne({ orderId }).lean();
+    const order = await Order.findOne({ orderId }).lean()
 
     if (!order) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    return NextResponse.json(serializeOrder(order));
+    return NextResponse.json(serializeOrder(order))
   } catch (error) {
-    console.error("Error fetching order:", error);
+    console.error("Error fetching order:", error)
     return NextResponse.json(
       { error: "Failed to fetch order" },
       { status: 500 }
-    );
+    )
   }
 }
 
-// ── POST /api/orders 
+// ── POST /api/orders
 
 export async function POST(request: Request) {
   try {
-    await dbConnect();
+    await dbConnect()
 
-    const body = await request.json();
-    
+    const body = await request.json()
+
     // Validate request body using Zod
-    const parsedBody = createOrderSchema.safeParse(body);
+    const parsedBody = createOrderSchema.safeParse(body)
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: parsedBody.error.format() },
         { status: 400 }
-      );
+      )
     }
 
-    const {
-      vendorId,
-      items,
-      customerName,
-      customerPhone,
-      location,
-      notes,
-    } = parsedBody.data;
+    const { vendorId, items, customerName, customerPhone, location, notes } =
+      parsedBody.data
 
     // Verify vendor exists and is active before accepting the order
-    const vendor = await Vendor.findById(vendorId).lean();
+    const vendor = await Vendor.findById(vendorId).lean()
     if (!vendor || !vendor.isActive) {
       return NextResponse.json(
         { error: "Vendor not found or inactive" },
         { status: 404 }
-      );
+      )
     }
 
     // Securely source the vendor's WhatsApp number directly from the database (Source of Truth)
-    const finalWhatsapp = vendor.whatsappNumber;
+    const finalWhatsapp = vendor.whatsappNumber
     if (!finalWhatsapp) {
       return NextResponse.json(
         { error: "Vendor does not have a configured WhatsApp number" },
         { status: 400 }
-      );
+      )
     }
 
-    const finalVendorName = vendor.name;
+    const finalVendorName = vendor.name
 
     // Server-side Price Calculation (Fixes Client-Side Pricing Trust Vulnerability)
-    let calculatedTotal = 0;
-    const itemIds = items.map(item => item.menuItemId);
-    const dbMenuItems = await MenuItem.find({ _id: { $in: itemIds }, vendorId }).lean();
-    
-    const dbMenuItemsMap = new Map(dbMenuItems.map((item: any) => [item._id.toString(), item]));
+    const deliveryFee = vendor.deliveryFee || 0
+    let calculatedTotal = deliveryFee
+    const itemIds = items.map((item) => item.menuItemId)
+    const dbMenuItems = await MenuItem.find({
+      _id: { $in: itemIds },
+      vendorId,
+    }).lean()
+    const dbMenuItemsMap = new Map(
+      dbMenuItems.map((item: { _id: string; price: number }) => [
+        item._id.toString(),
+        item,
+      ])
+    )
 
     for (const item of items) {
-      const dbItem: any = dbMenuItemsMap.get(item.menuItemId);
+      const dbItem = dbMenuItemsMap.get(item.menuItemId)
       if (!dbItem) {
         return NextResponse.json(
           { error: `Menu item not found: ${item.name}` },
           { status: 404 }
-        );
+        )
       }
-      calculatedTotal += dbItem.price * item.quantity;
-      
+      calculatedTotal += dbItem.price * item.quantity
+
       // Update item price to the actual DB price just to be safe
-      item.price = dbItem.price;
+      item.price = dbItem.price
     }
 
     // Generate a collision-resistant order ID
-    const orderId = generateOrderId();
+    const orderId = generateOrderId()
 
     const order = await Order.create({
       orderId,
@@ -141,19 +140,25 @@ export async function POST(request: Request) {
       customerPhone,
       location,
       notes: notes || "",
+      deliveryFee,
       totalAmount: calculatedTotal,
       status: ORDER_STATUS.PENDING,
-    });
+    })
 
     // Send WhatsApp Notification (fire and forget to not block response)
-    sendVendorOrderNotification(finalWhatsapp, customerName, order.orderId, calculatedTotal);
+    sendVendorOrderNotification(
+      finalWhatsapp,
+      customerName,
+      order.orderId,
+      calculatedTotal
+    )
 
-    return NextResponse.json({ orderId: order.orderId }, { status: 201 });
+    return NextResponse.json({ orderId: order.orderId }, { status: 201 })
   } catch (error) {
-    console.error("[POST /api/orders] Error creating order:", error);
+    console.error("[POST /api/orders] Error creating order:", error)
     return NextResponse.json(
       { error: "Failed to create order" },
       { status: 500 }
-    );
+    )
   }
 }

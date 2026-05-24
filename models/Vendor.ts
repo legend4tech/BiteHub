@@ -10,6 +10,7 @@ export interface IVendor extends Document {
   school: string
   campus: string
   isActive: boolean
+  deliveryFee: number
   image?: {
     url: string
     publicId: string
@@ -32,6 +33,7 @@ const VendorSchema: Schema = new Schema(
     school: { type: String, required: true },
     campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    deliveryFee: { type: Number, default: 0 },
     image: {
       url: { type: String },
       publicId: { type: String },

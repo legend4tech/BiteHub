@@ -1,18 +1,19 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback } from "react";
-import type { CartItem, MenuItem } from "@/lib/types";
-import { LS_CART } from "@/lib/constants";
+import { useState, useEffect, useCallback } from "react"
+import type { CartItem, MenuItem } from "@/lib/types"
+import { LS_CART } from "@/lib/constants"
 
 // Added vendorWhatsappNumber to CartState so OrderForm can pass it to the API
 // without needing to look up the vendor separately.
 // Previously OrderForm called getVendorById() from static mock data —
 // that broke for real DB vendors since they aren't in the local data file.
 interface CartState {
-  items: CartItem[];
-  vendorId: string | null;
-  vendorName: string | null;
-  vendorWhatsappNumber: string | null; // NEW
+  items: CartItem[]
+  vendorId: string | null
+  vendorName: string | null
+  vendorWhatsappNumber: string | null // NEW
+  vendorDeliveryFee: number
 }
 
 const EMPTY_CART: CartState = {
@@ -20,59 +21,65 @@ const EMPTY_CART: CartState = {
   vendorId: null,
   vendorName: null,
   vendorWhatsappNumber: null,
-};
+  vendorDeliveryFee: 0,
+}
 
-const CART_EVENT = "cb:cart:update";
+const CART_EVENT = "cb:cart:update"
 
 function readCart(): CartState {
-  if (typeof window === "undefined") return EMPTY_CART;
+  if (typeof window === "undefined") return EMPTY_CART
   try {
-    const raw = localStorage.getItem(LS_CART);
-    return raw ? JSON.parse(raw) : EMPTY_CART;
+    const raw = localStorage.getItem(LS_CART)
+    return raw ? JSON.parse(raw) : EMPTY_CART
   } catch {
-    return EMPTY_CART;
+    return EMPTY_CART
   }
 }
 
 function writeCart(state: CartState) {
-  localStorage.setItem(LS_CART, JSON.stringify(state));
-  window.dispatchEvent(new Event(CART_EVENT));
+  localStorage.setItem(LS_CART, JSON.stringify(state))
+  window.dispatchEvent(new Event(CART_EVENT))
 }
 
 export function useCart() {
-  const [cart, setCart] = useState<CartState>(EMPTY_CART);
+  const [cart, setCart] = useState<CartState>(EMPTY_CART)
 
   useEffect(() => {
-    setCart(readCart());
-    const handler = () => setCart(readCart());
-    window.addEventListener(CART_EVENT, handler);
-    return () => window.removeEventListener(CART_EVENT, handler);
-  }, []);
+    const timer = setTimeout(() => setCart(readCart()), 0)
+    const handler = () => setCart(readCart())
+    window.addEventListener(CART_EVENT, handler)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener(CART_EVENT, handler)
+    }
+  }, [])
 
   const persist = useCallback((next: CartState) => {
-    writeCart(next);
-    setCart(next);
-  }, []);
+    writeCart(next)
+    setCart(next)
+  }, [])
 
   const isDifferentVendor = useCallback(
     (menuItem: MenuItem) =>
       cart.vendorId !== null && cart.vendorId !== menuItem.vendorId,
     [cart.vendorId]
-  );
+  )
 
   const addItem = useCallback(
     (menuItem: MenuItem, quantity = 1) => {
-      const current = readCart();
-      if (current.vendorId && current.vendorId !== menuItem.vendorId) return;
+      const current = readCart()
+      if (current.vendorId && current.vendorId !== menuItem.vendorId) return
 
-      const existing = current.items.find((ci) => ci.menuItem.id === menuItem.id);
+      const existing = current.items.find(
+        (ci) => ci.menuItem.id === menuItem.id
+      )
       const items: CartItem[] = existing
         ? current.items.map((ci) =>
             ci.menuItem.id === menuItem.id
               ? { ...ci, quantity: ci.quantity + quantity }
               : ci
           )
-        : [...current.items, { menuItem, quantity }];
+        : [...current.items, { menuItem, quantity }]
       persist({
         items,
         vendorId: menuItem.vendorId,
@@ -81,10 +88,11 @@ export function useCart() {
         // pass the full item object which includes vendorWhatsappNumber when mapped
         // from the API response in the vendor detail page.
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
-      });
+        vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+      })
     },
     [persist]
-  );
+  )
 
   const clearAndAdd = useCallback(
     (menuItem: MenuItem, quantity = 1) => {
@@ -93,44 +101,61 @@ export function useCart() {
         vendorId: menuItem.vendorId,
         vendorName: menuItem.vendorName ?? null,
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
-      });
+        vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+      })
     },
     [persist]
-  );
+  )
 
   const removeItem = useCallback(
     (menuItemId: string) => {
-      const current = readCart();
-      const items = current.items.filter((ci) => ci.menuItem.id !== menuItemId);
-      persist(items.length === 0 ? EMPTY_CART : { ...current, items });
+      const current = readCart()
+      const items = current.items.filter((ci) => ci.menuItem.id !== menuItemId)
+      persist(items.length === 0 ? EMPTY_CART : { ...current, items })
     },
     [persist]
-  );
+  )
 
   const updateQuantity = useCallback(
     (menuItemId: string, quantity: number) => {
       if (quantity <= 0) {
-        removeItem(menuItemId);
-        return;
+        removeItem(menuItemId)
+        return
       }
-      const current = readCart();
+      const current = readCart()
       persist({
         ...current,
         items: current.items.map((ci) =>
           ci.menuItem.id === menuItemId ? { ...ci, quantity } : ci
         ),
-      });
+      })
     },
     [persist, removeItem]
-  );
+  )
 
-  const clearCart = useCallback(() => persist(EMPTY_CART), [persist]);
+  const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
+
+  const syncVendorDetails = useCallback(
+    (vendorId: string, deliveryFee: number) => {
+      const current = readCart()
+      if (
+        current.vendorId === vendorId &&
+        current.vendorDeliveryFee !== deliveryFee
+      ) {
+        persist({
+          ...current,
+          vendorDeliveryFee: deliveryFee,
+        })
+      }
+    },
+    [persist]
+  )
 
   const total = cart.items.reduce(
     (sum, ci) => sum + ci.menuItem.price * ci.quantity,
-    0
-  );
-  const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0);
+    cart.vendorDeliveryFee
+  )
+  const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0)
 
   return {
     cart,
@@ -139,9 +164,10 @@ export function useCart() {
     removeItem,
     updateQuantity,
     clearCart,
+    syncVendorDetails,
     isDifferentVendor,
     total,
     count,
     isEmpty: cart.items.length === 0,
-  };
+  }
 }

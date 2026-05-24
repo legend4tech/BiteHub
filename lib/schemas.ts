@@ -175,6 +175,13 @@ export const vendorSettingsSchema = z.object({
   description: z.string().trim().min(1, "Description is required"),
   whatsappNumber: whatsappInputSchema,
   category: z.string().min(1, "Category is required"),
+  deliveryFee: z
+    .string()
+    .min(1, "Delivery fee is required.")
+    .refine((v) => {
+      const cleanValue = v.replace(/,/g, "")
+      return !isNaN(Number(cleanValue)) && Number(cleanValue) >= 0
+    }, "Enter a valid delivery fee."),
   tags: z.array(z.string()).optional(),
   school: z.string().optional(),
   campus: z.string().optional(),

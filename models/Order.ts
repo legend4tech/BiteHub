@@ -1,24 +1,31 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose"
 
 export interface IOrderItem {
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
+  menuItemId: string
+  name: string
+  price: number
+  quantity: number
 }
 
 export interface IOrder extends Document {
-  orderId: string;
-  vendorId: Types.ObjectId;
-  vendorName: string;
-  vendorWhatsappNumber: string;
-  customerName: string;
-  customerPhone: string;
-  location: string;
-  items: IOrderItem[];
-  notes?: string;
-  totalAmount: number;
-  status: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+  orderId: string
+  vendorId: Types.ObjectId
+  vendorName: string
+  vendorWhatsappNumber: string
+  customerName: string
+  customerPhone: string
+  location: string
+  items: IOrderItem[]
+  notes?: string
+  deliveryFee: number
+  totalAmount: number
+  status:
+    | "pending"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "completed"
+    | "cancelled"
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -29,7 +36,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
     quantity: { type: Number, required: true },
   },
   { _id: false } // No separate _id for subdocuments
-);
+)
 
 const OrderSchema = new Schema<IOrder>(
   {
@@ -46,10 +53,18 @@ const OrderSchema = new Schema<IOrder>(
     location: { type: String, required: true },
     items: { type: [OrderItemSchema], required: true },
     notes: { type: String, default: "" },
+    deliveryFee: { type: Number, required: true },
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"],
+      enum: [
+        "pending",
+        "confirmed",
+        "preparing",
+        "ready",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
   },
@@ -58,14 +73,14 @@ const OrderSchema = new Schema<IOrder>(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret: Record<string, unknown>) => {
-        ret.id = String(ret._id);
-        ret.vendorId = String(ret.vendorId);
-        delete ret._id;
-        delete ret.__v;
+        ret.id = String(ret._id)
+        ret.vendorId = String(ret.vendorId)
+        delete ret._id
+        delete ret.__v
       },
     },
   }
-);
+)
 
 // orderId is already indexed via unique:true above.
 //
@@ -76,7 +91,7 @@ const OrderSchema = new Schema<IOrder>(
 //   - Filtered list:      $match vendorId + status → $sort by createdAt
 // MongoDB uses the leftmost prefix, so { vendorId } and { vendorId, status }
 // queries are also covered without a separate index.
-OrderSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
+OrderSchema.index({ vendorId: 1, status: 1, createdAt: -1 })
 
 export default mongoose.models.Order ||
-  mongoose.model<IOrder>("Order", OrderSchema);
+  mongoose.model<IOrder>("Order", OrderSchema)

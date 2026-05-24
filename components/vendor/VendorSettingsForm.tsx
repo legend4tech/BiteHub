@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { formatInputNumber, parseInputNumber } from "@/lib/format"
 
 interface VendorSettingsFormProps {
   initial: Vendor
@@ -57,6 +58,10 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
       name: initial.name ?? "",
       description: initial.description ?? "",
       whatsappNumber: formatFromWhatsapp(initial.whatsappNumber ?? ""),
+      deliveryFee:
+        initial.deliveryFee !== undefined && initial.deliveryFee !== null
+          ? formatInputNumber(initial.deliveryFee.toString())
+          : "",
       category: initial.category ?? "",
       tags: initial.tags ?? [],
       image: typeof initial.image === "string" ? undefined : initial.image,
@@ -99,6 +104,10 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         name: values.name,
         description: values.description,
         whatsappNumber: values.whatsappNumber,
+        deliveryFee:
+          typeof values.deliveryFee === "string"
+            ? parseInputNumber(values.deliveryFee)
+            : values.deliveryFee,
         category: values.category,
         tags: values.tags,
         image: imageToSave,
@@ -184,6 +193,33 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           />
         )}
       </Field>
+
+      <Controller
+        name="deliveryFee"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <label className="text-sm font-medium" htmlFor={field.name}>
+              Standard Delivery Fee (₦)
+            </label>
+            <Input
+              {...field}
+              id={field.name}
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 500"
+              aria-invalid={fieldState.invalid}
+              onChange={(e) => {
+                const formatted = formatInputNumber(e.target.value)
+                field.onChange(formatted)
+              }}
+            />
+            {fieldState.invalid && (
+              <FieldError errors={[{ message: fieldState.error?.message }]} />
+            )}
+          </Field>
+        )}
+      />
 
       <Controller
         name="category"
