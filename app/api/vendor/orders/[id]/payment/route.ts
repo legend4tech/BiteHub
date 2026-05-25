@@ -3,6 +3,7 @@ import { Types } from "mongoose"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
+import { orderPaymentStatusSchema } from "@/lib/schemas"
 
 /**
  * PATCH /api/vendor/orders/[id]/payment
@@ -27,7 +28,15 @@ export async function PATCH(
     const vendorId = new Types.ObjectId(session.user.vendorId)
     const body = await request.json()
 
-    if (body.paymentStatus !== "confirmed") {
+    const parsedBody = orderPaymentStatusSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
+    if (parsedBody.data.paymentStatus !== "confirmed") {
       return NextResponse.json(
         { error: "Invalid payment status. Only 'confirmed' is allowed." },
         { status: 400 }

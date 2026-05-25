@@ -3,7 +3,7 @@ import { Types } from "mongoose"
 import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import { auth } from "@/auth"
-import { formatToWhatsapp } from "@/lib/schemas"
+import { formatToWhatsapp, vendorUpdateSchema } from "@/lib/schemas"
 import { serializeVendor } from "@/lib/serializers"
 import { deleteFromCloudinary } from "@/lib/cloudinary"
 
@@ -24,6 +24,14 @@ export async function PATCH(request: Request) {
     )
     const body = await request.json()
 
+    const parsedBody = vendorUpdateSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
     const {
       name,
       description,
@@ -34,7 +42,7 @@ export async function PATCH(request: Request) {
       prepTime,
       image,
       paymentDetails,
-    } = body
+    } = parsedBody.data
 
     // Fetch existing vendor to check for image changes
     const existingVendor = await Vendor.findById(vendorId)

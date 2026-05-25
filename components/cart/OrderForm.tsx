@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ShoppingBag, X, Minus, Plus, Loader2, Clock } from "lucide-react"
+import { ShoppingBag, X, Loader2, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,13 +10,13 @@ import { useCart } from "@/hooks/useCart"
 import { orderFormInputSchema, type OrderFormInputValues } from "@/lib/schemas"
 import { normaliseNigerianPhone } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller, type Resolver } from "react-hook-form"
+import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
 import { Field, FieldError } from "@/components/ui/field"
-import { Copy } from "lucide-react"
 import { toast } from "sonner"
 import { formatPrice } from "@/lib/format"
 import apiClient from "@/lib/axios"
 import { AxiosError } from "axios"
+import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
 
 interface OrderFormProps {
   open: boolean
@@ -24,14 +24,7 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ open, onClose }: OrderFormProps) {
-  const {
-    cart,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    syncVendorDetails,
-    total,
-  } = useCart()
+  const { cart, clearCart, syncVendorDetails, total } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -49,8 +42,11 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     },
   })
 
-  const paymentMethod = form.watch("paymentMethod")
-  const hasPaid = form.watch("hasPaid")
+  const paymentMethod = useWatch({
+    control: form.control,
+    name: "paymentMethod",
+  })
+  const hasPaid = useWatch({ control: form.control, name: "hasPaid" })
 
   // Ensure we have the absolute latest delivery fee from the DB right before checkout
   // This solves the edge case where a vendor changes their fee while a student has
@@ -149,85 +145,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
-          {/* Cart items */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">Your items</p>
-            {cart.items.map((ci) => (
-              <div
-                key={ci.menuItem.id}
-                className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3"
-              >
-                <p className="flex-1 text-sm leading-snug font-medium">
-                  {ci.menuItem.name}
-                </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      updateQuantity(ci.menuItem.id, ci.quantity - 1)
-                    }
-                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-50"
-                  >
-                    <Minus className="size-3" />
-                  </button>
-                  <span className="w-5 text-center text-sm font-bold">
-                    {ci.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() =>
-                      updateQuantity(ci.menuItem.id, ci.quantity + 1)
-                    }
-                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-50"
-                  >
-                    <Plus className="size-3" />
-                  </button>
-                </div>
-                <p className="w-20 text-right text-sm font-bold">
-                  {formatPrice(ci.menuItem.price * ci.quantity)}
-                </p>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => removeItem(ci.menuItem.id)}
-                  className="text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </div>
-            ))}
-            <div className="space-y-2 border-t border-border pt-4">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Subtotal</span>
-                <span>
-                  {formatPrice(total - (cart.vendorDeliveryFee || 0))}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Delivery Fee</span>
-                <span>
-                  {(cart.vendorDeliveryFee || 0) > 0
-                    ? formatPrice(cart.vendorDeliveryFee || 0)
-                    : "Free"}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
-                <span>Total</span>
-                <span className="text-primary">{formatPrice(total)}</span>
-              </div>
-            </div>
-
-            {cart.vendorPrepTime && (
-              <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
-                <Clock className="size-4 animate-pulse" />
-                <span className="font-medium">
-                  Estimated prep time: {cart.vendorPrepTime}
-                </span>
-              </div>
-            )}
-          </div>
+          <OrderFormCartItems loading={loading} />
 
           {/* Customer info */}
           <div className="space-y-4">

@@ -214,6 +214,10 @@ export type VendorPaymentSettingsValues = z.infer<
   typeof vendorPaymentSettingsSchema
 >
 
+export const vendorUpdateSchema = vendorSettingsSchema
+  .merge(vendorPaymentSettingsSchema)
+  .partial()
+
 // ─── Vendor Login Schema ──────────────────────────────────────────────────────
 
 export const vendorLoginSchema = z.object({
@@ -222,3 +226,13 @@ export const vendorLoginSchema = z.object({
 })
 
 export type VendorLoginValues = z.infer<typeof vendorLoginSchema>
+
+// ─── Order Payment Status Schema ──────────────────────────────────────────────
+
+export const orderPaymentStatusSchema = z.object({
+  paymentStatus: z.enum(["pending", "transferred", "confirmed", "failed"], {
+    message: "Invalid payment status",
+  }),
+})
+
+export type OrderPaymentStatusValues = z.infer<typeof orderPaymentStatusSchema>

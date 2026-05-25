@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
+import { orderPaymentStatusSchema } from "@/lib/schemas"
 
 export async function PATCH(
   request: Request,
@@ -18,9 +19,17 @@ export async function PATCH(
       )
     }
 
-    if (body.paymentStatus !== "transferred") {
+    const parsedBody = orderPaymentStatusSchema.safeParse(body)
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: "Invalid payment status" },
+        { error: "Invalid request data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
+    if (parsedBody.data.paymentStatus !== "transferred") {
+      return NextResponse.json(
+        { error: "Invalid payment status. Only 'transferred' is allowed." },
         { status: 400 }
       )
     }

@@ -58,6 +58,7 @@ export function serializeVendor(doc: LeanVendor | null) {
     initials,
     tagline: doc.description ?? "The best food on campus",
     location: doc.campus ?? "Main Campus",
+    paymentDetails: doc.paymentDetails ?? null,
   }
 }
 
