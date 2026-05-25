@@ -11,7 +11,7 @@ import { AlertBanner } from "@/components/shared/AlertBanner"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import { ArrowRight, Star, Banknote, AlertCircle } from "lucide-react"
+import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { APP_NAME } from "@/lib/constants"
@@ -102,6 +102,24 @@ export default function VendorDashboardPage() {
     }
   }
 
+  const handleShareProfile = async () => {
+    if (!stats?.slug) return
+    const url = `${window.location.origin}/vendors/${stats.slug}`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Order from my restaurant on BiteHub!",
+          url: url,
+        })
+      } catch {
+        // user cancelled or failed sharing
+      }
+    } else {
+      await navigator.clipboard.writeText(url)
+      toast.success("Profile link copied to clipboard!")
+    }
+  }
+
   const now = new Date()
   const greeting =
     now.getHours() < 12
@@ -130,15 +148,27 @@ export default function VendorDashboardPage() {
               })}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowPlatformFeedbackModal(true)}
-          >
-            <Star className="size-4" />
-            Rate Platform
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handleShareProfile}
+              disabled={loadingStats || !stats?.slug}
+            >
+              <Share2 className="size-4" />
+              Share Profile
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowPlatformFeedbackModal(true)}
+            >
+              <Star className="size-4" />
+              Rate Platform
+            </Button>
+          </div>
         </div>
 
         {/* Warning banner for missing payment details */}

@@ -11,6 +11,7 @@ export interface VendorStats {
   totalCompleted: number
   totalRevenue: number
   hasPaymentDetails?: boolean
+  slug?: string
 }
 
 export function useVendorStats(options?: { enabled?: boolean }) {

@@ -525,6 +525,7 @@ export function MenuItemCard({ item, onDelete }: MenuItemCardProps) { ... }
 - **`"use client"`** must be the very first line of client components.
 - **Never import server-only code** (`lib/db`, `lib/services/*`, Mongoose models) in a client component.
 - **Forms live in their own `*Form.tsx` file** — never inline a large form inside a page.
+- **Never use emojis as icons.** Always use Lucide React icons (`import { IconName } from "lucide-react"`) for consistent styling and accessibility.
 
 ### Design System & Colours
 
@@ -721,6 +722,9 @@ docs: document webhook subscription fields
 ```
 
 ### Pre-PR checklist
+
+> [!WARNING]
+> **NEVER use `--no-verify` to bypass git hooks.** If a hook is failing (like ESLint or TypeScript), you must fix the underlying issue. Bypassing hooks introduces broken code into the repository.
 
 - [ ] `pnpm run build` passes with **zero** TypeScript errors
 - [ ] No `console.log` left in production paths (use `console.error` for genuine errors only)

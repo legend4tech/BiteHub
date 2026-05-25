@@ -45,7 +45,7 @@ export async function GET() {
 
     // Check if the vendor has payment details set up
     const vendor = await Vendor.findById(vendorId)
-      .select("paymentDetails")
+      .select("paymentDetails slug")
       .lean()
     const hasPaymentDetails = !!(
       vendor?.paymentDetails?.bankName &&
@@ -129,6 +129,7 @@ export async function GET() {
     return NextResponse.json({
       ...finalStats,
       hasPaymentDetails,
+      slug: vendor?.slug,
     })
   } catch (error) {
     console.error("[vendor/stats GET]", error)
