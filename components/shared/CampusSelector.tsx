@@ -94,33 +94,34 @@ export function CampusSelector() {
   return (
     <div className="relative" ref={dropdownRef}>
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-9 gap-2 rounded-xl border border-primary/30 bg-primary/5 text-primary transition-colors hover:bg-primary/10"
+        className="h-9 gap-2 rounded-xl"
       >
-        <MapPin className="size-4 text-primary" />
+        <MapPin className="size-4" />
         <span className="hidden text-sm font-medium sm:inline">
-          <span className="mr-1 text-xs font-normal text-primary/60">
+          <span className="mr-1 text-xs font-normal text-muted-foreground">
             Showing:
           </span>
           {getSchoolName(schoolId)}{" "}
-          <span className="font-normal text-primary/70">
+          <span className="font-normal text-muted-foreground">
             ({getCampusName(schoolId, campusId)})
           </span>
         </span>
         <span className="text-sm font-medium sm:hidden">
           {getCampusName(schoolId, campusId)}
         </span>
-        <ChevronDown className="size-3 text-primary/70" />
+        <ChevronDown className="size-3 text-muted-foreground" />
       </Button>
 
       {isOpen && (
         <div className="absolute top-full left-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] animate-in rounded-2xl border border-border bg-card p-4 shadow-xl fade-in slide-in-from-top-2 sm:right-0 sm:left-auto">
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-semibold text-primary">
-                📍 Filter by your campus
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <MapPin className="size-3.5" />
+                Filter by your campus
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Only vendors and menus near you will show up.
