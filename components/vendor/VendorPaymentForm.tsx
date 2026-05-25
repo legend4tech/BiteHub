@@ -155,9 +155,9 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                       <CommandList>
                         <CommandEmpty>No bank found.</CommandEmpty>
                         <CommandGroup>
-                          {banks.map((bank) => (
+                          {banks.map((bank, index) => (
                             <CommandItem
-                              key={bank.code}
+                              key={`${bank.code}-${index}`}
                               value={bank.name}
                               onSelect={() => {
                                 field.onChange(bank.name)

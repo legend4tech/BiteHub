@@ -196,18 +196,71 @@ export const vendorSettingsSchema = z.object({
 export type VendorSettingsValues = z.infer<typeof vendorSettingsSchema>
 
 export const vendorPaymentSettingsSchema = z.object({
-  paymentDetails: z.object({
-    bankName: z.string().optional(),
-    accountNumber: z
-      .string()
-      .optional()
-      .refine(
-        (v) => !v || /^\d{10}$/.test(v),
-        "Account number must be exactly 10 digits."
-      ),
-    accountName: z.string().optional(),
-    acceptsCashOnDelivery: z.boolean().default(false).optional(),
-  }),
+  paymentDetails: z
+    .object({
+      bankName: z.string().optional(),
+      accountNumber: z.string().optional(),
+      accountName: z.string().optional(),
+      acceptsCashOnDelivery: z.boolean().default(false).optional(),
+    })
+    .superRefine((val, ctx) => {
+      const { bankName, accountNumber, accountName, acceptsCashOnDelivery } =
+        val
+
+      // Treat empty strings as falsy
+      const bName = bankName?.trim()
+      const aNumber = accountNumber?.trim()
+      const aName = accountName?.trim()
+
+      const hasAnyBankDetail = Boolean(bName || aNumber || aName)
+      const hasAllBankDetails = Boolean(bName && aNumber && aName)
+
+      if (hasAnyBankDetail && !hasAllBankDetails) {
+        if (!bName)
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Bank name is required",
+            path: ["bankName"],
+          })
+        if (!aNumber)
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Account number is required",
+            path: ["accountNumber"],
+          })
+        if (!aName)
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Account name is required",
+            path: ["accountName"],
+          })
+      } else if (!hasAnyBankDetail && !acceptsCashOnDelivery) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Bank name is required if not accepting Cash on Delivery",
+          path: ["bankName"],
+        })
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Account number is required if not accepting Cash on Delivery",
+          path: ["accountNumber"],
+        })
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Account name is required if not accepting Cash on Delivery",
+          path: ["accountName"],
+        })
+      }
+
+      if (aNumber && !/^\d{10}$/.test(aNumber)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Account number must be exactly 10 digits.",
+          path: ["accountNumber"],
+        })
+      }
+    }),
 })
 
 export type VendorPaymentSettingsValues = z.infer<
