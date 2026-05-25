@@ -157,12 +157,21 @@ export function buildOrderWhatsAppMessage(order: {
   total?: number // legacy support
   totalAmount?: number // from serializer
   notes?: string
+  paymentMethod?: "transfer" | "cash"
+  paymentStatus?: string
 }): string {
   const itemList = order.items
     .map(
       (i) => `• ${i.name} ×${i.quantity} — ${formatPrice(i.price * i.quantity)}`
     )
     .join("\n")
+
+  const paymentText =
+    order.paymentMethod === "transfer"
+      ? `*Payment:* Transferred (Please see my receipt)`
+      : order.paymentMethod === "cash"
+      ? `*Payment:* Cash on delivery`
+      : null
 
   return [
     `Hello! I just placed an order from your menu via *${APP_NAME}* 🍽️`,
@@ -174,6 +183,7 @@ export function buildOrderWhatsAppMessage(order: {
     itemList,
     ``,
     `*Total:* ${formatPrice(order.totalAmount ?? order.total ?? 0)}`,
+    paymentText,
     order.notes ? `*Notes:* ${order.notes}` : null,
     ``,
     `Please confirm when you receive this. Thank you! 🙏`,

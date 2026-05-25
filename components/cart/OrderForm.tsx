@@ -12,6 +12,7 @@ import { normaliseNigerianPhone } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
 import { Field, FieldError } from "@/components/ui/field"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { toast } from "sonner"
 import { formatPrice } from "@/lib/format"
 import apiClient from "@/lib/axios"
@@ -47,12 +48,14 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     name: "paymentMethod",
   })
   const hasPaid = useWatch({ control: form.control, name: "hasPaid" })
+  const [isSyncing, setIsSyncing] = useState(true)
 
   // Ensure we have the absolute latest delivery fee from the DB right before checkout
   // This solves the edge case where a vendor changes their fee while a student has
   // a dormant cart saved in their browser's local storage.
   useEffect(() => {
     if (open && cart.vendorId) {
+      setTimeout(() => setIsSyncing(true), 0)
       apiClient
         .get(`/vendors/fee/${cart.vendorId}`)
         .then((res) => {
@@ -69,6 +72,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         .catch((err) =>
           console.error("Failed to sync latest delivery fee", err)
         )
+        .finally(() => setIsSyncing(false))
+    } else if (open) {
+      setTimeout(() => setIsSyncing(false), 0)
     }
   }, [open, cart.vendorId, syncVendorDetails])
 
@@ -309,7 +315,11 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                 )}
               />
 
-              {paymentMethod === "transfer" &&
+              {paymentMethod === "transfer" && isSyncing && (
+                <PageSkeleton variant="payment-details" />
+              )}
+
+              {paymentMethod === "transfer" && !isSyncing &&
                 cart.vendorPaymentDetails?.bankName && (
                   <div className="mt-4 space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
                     <div>
@@ -393,7 +403,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                   </div>
                 )}
 
-              {paymentMethod === "transfer" &&
+              {paymentMethod === "transfer" && !isSyncing &&
                 !cart.vendorPaymentDetails?.bankName && (
                   <div className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
                     This vendor has not provided their bank details. Please

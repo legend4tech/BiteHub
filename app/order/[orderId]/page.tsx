@@ -351,6 +351,8 @@ export default function OrderPage() {
                 items: order.items,
                 total: order.totalAmount,
                 notes: order.notes,
+                paymentMethod: order.paymentMethod,
+                paymentStatus: order.paymentStatus,
               }}
             />
           </div>

@@ -13,6 +13,8 @@ interface WhatsAppButtonProps {
     items: { name: string; quantity: number; price: number }[];
     total: number;
     notes?: string;
+    paymentMethod?: "transfer" | "cash";
+    paymentStatus?: string;
   };
   status?: OrderStatus;
   className?: string;
@@ -30,7 +32,11 @@ export function WhatsAppButton({
     let message = "";
     
     if (status === "pending") {
-      message = `Hello! My order *${order.orderId}* is still pending. Could you please check on it?`;
+      if (order.paymentMethod === "transfer") {
+        message = `Hello! I have transferred the payment for my order *${order.orderId}*. Here is my receipt. Could you please check and confirm it?`;
+      } else {
+        message = `Hello! My order *${order.orderId}* is still pending. Could you please check on it?`;
+      }
     } else if (status === "confirmed") {
       message = `Hello! I see my order *${order.orderId}* is confirmed. Could you give me a rough estimate of when it will be ready?`;
     } else if (status === "preparing") {

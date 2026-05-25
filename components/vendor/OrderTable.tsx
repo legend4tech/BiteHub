@@ -9,6 +9,7 @@ import type { OrderStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { formatPrice, formatTime } from "@/lib/format"
 import {
   Loader2,
@@ -58,8 +59,6 @@ function CopyableText({
 }
 
 function OrderItemsDisplay({ items }: { items: Order["items"] }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-
   if (items.length <= 2) {
     return (
       <div className="flex min-w-[150px] flex-col gap-1.5">
@@ -75,11 +74,12 @@ function OrderItemsDisplay({ items }: { items: Order["items"] }) {
     )
   }
 
-  const displayedItems = isExpanded ? items : items.slice(0, 1)
+  const firstItems = items.slice(0, 2)
+  const remainingItems = items.slice(2)
 
   return (
     <div className="flex min-w-[150px] flex-col gap-1.5">
-      {displayedItems.map((i, idx) => (
+      {firstItems.map((i, idx) => (
         <div key={idx} className="text-sm leading-tight">
           <span className="font-medium">{i.name}</span>
           <span className="ml-1.5 text-xs text-muted-foreground">
@@ -87,15 +87,32 @@ function OrderItemsDisplay({ items }: { items: Order["items"] }) {
           </span>
         </div>
       ))}
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          setIsExpanded(!isExpanded)
-        }}
-        className="mt-0.5 w-fit text-left text-xs font-medium text-primary underline underline-offset-2 transition-transform hover:opacity-80 active:scale-95"
-      >
-        {isExpanded ? "Show less" : `+ ${items.length - 1} more items`}
-      </button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="mt-0.5 w-fit text-left text-xs font-medium text-primary underline underline-offset-2 transition-transform hover:opacity-80 active:scale-95"
+          >
+            + {remainingItems.length} more item{remainingItems.length > 1 ? "s" : ""}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-64 max-h-64 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
+        >
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase mb-1 border-b border-border/50 pb-2">All Order Items</p>
+            {items.map((i, idx) => (
+              <div key={idx} className="text-sm leading-tight">
+                <span className="font-medium">{i.name}</span>
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  ×{i.quantity}
+                </span>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }
@@ -249,7 +266,7 @@ export function OrderTable({
                         <button
                           onClick={() => handlePaymentClick(order.orderId)}
                           disabled={confirmingPaymentId === order.orderId}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-status-pending px-3 py-2 text-sm font-bold text-status-pending-foreground shadow-sm transition-colors hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
+                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
                         >
                           {confirmingPaymentId === order.orderId ? (
                             <>

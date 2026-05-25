@@ -21,7 +21,8 @@ type SkeletonVariant =
   | "menu-management"
   | "menu-card-grid"
   | "menu-item-edit"
-  | "auth";
+  | "auth"
+  | "payment-details";
 
 interface PageSkeletonProps {
   variant: SkeletonVariant;
@@ -50,6 +51,8 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <MenuItemEditSkeleton />;
     case "auth":
       return <AuthSkeleton />;
+    case "payment-details":
+      return <PaymentDetailsSkeleton />;
     default:
       return null;
   }
@@ -99,7 +102,7 @@ function MenuItemGridSkeleton({ count }: { count: number }) {
 
 function VendorListSkeleton({ count }: { count: number }) {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-3xl bg-background border border-border p-6 flex flex-col">
           {/* Logo + arrow/status row */}
@@ -107,11 +110,11 @@ function VendorListSkeleton({ count }: { count: number }) {
             <Skeleton className="h-14 w-14 rounded-2xl" />
             <div className="flex flex-col items-end gap-1.5">
               <Skeleton className="h-4 w-4 rounded" />
-              <Skeleton className="h-3 w-10" />
+              <Skeleton className="h-3 w-12 rounded" />
             </div>
           </div>
           {/* Name */}
-          <Skeleton className="h-5 w-3/4 mt-5" />
+          <Skeleton className="h-6 w-3/4 mt-5" />
           {/* Tagline */}
           <div className="space-y-1.5 mt-1.5 flex-1">
             <Skeleton className="h-3 w-full" />
@@ -119,7 +122,10 @@ function VendorListSkeleton({ count }: { count: number }) {
           </div>
           {/* Footer: location left, item count right */}
           <div className="flex items-center justify-between pt-4 mt-5 border-t border-border">
-            <Skeleton className="h-3 w-24" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-3.5 rounded-full" />
+              <Skeleton className="h-3 w-20" />
+            </div>
             <Skeleton className="h-3 w-16" />
           </div>
         </div>
@@ -202,19 +208,23 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-8">
       {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-card border border-border p-5 space-y-3">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-16" />
-            <Skeleton className="h-3 w-20" />
-          </div>
+          <div key={i} className="h-28 rounded-2xl border border-border bg-card p-5" />
         ))}
       </div>
       {/* Recent orders */}
-      <div className="rounded-2xl bg-card border border-border p-6 space-y-4">
-        <Skeleton className="h-5 w-36" />
-        <OrdersTableSkeleton count={4} />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="space-y-1">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <div className="p-5">
+          <OrdersTableSkeleton count={3} />
+        </div>
       </div>
     </div>
   );
@@ -222,24 +232,55 @@ function DashboardSkeleton() {
 
 function OrdersTableSkeleton({ count }: { count: number }) {
   return (
-    <div className="space-y-3 overflow-x-auto pb-4">
-      <div className="min-w-[600px]">
-        {/* Header */}
-        <div className="grid grid-cols-5 gap-4 px-2">
-          {["Order ID", "Customer", "Items", "Status", "Time"].map((h) => (
-            <Skeleton key={h} className="h-3 w-16 sm:w-20" />
-          ))}
-        </div>
-        {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="grid grid-cols-5 gap-4 rounded-xl bg-muted/40 px-2 py-3 mt-3">
-            <Skeleton className="h-4 w-20 sm:w-full max-w-[100px]" />
-            <Skeleton className="h-4 w-24 sm:w-full max-w-[120px]" />
-            <Skeleton className="h-4 w-12 sm:w-full max-w-[60px]" />
-            <Skeleton className="h-6 w-20 sm:w-24 rounded-full" />
-            <Skeleton className="h-4 w-16 sm:w-full max-w-[80px]" />
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex flex-col rounded-2xl border border-border bg-card p-4 sm:p-5">
+          {/* Header */}
+          <div className="mb-4 flex items-start justify-between gap-4 border-b border-border/50 pb-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <div className="flex flex-col items-end space-y-2">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
           </div>
-        ))}
-      </div>
+          {/* Customer Info */}
+          <div className="mb-4 space-y-3 rounded-xl bg-muted/30 p-3">
+            <div className="flex items-start gap-2.5">
+              <Skeleton className="size-4 rounded-full shrink-0" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 pt-1">
+              <Skeleton className="size-4 rounded-full shrink-0" />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </div>
+          </div>
+          {/* Items */}
+          <div className="mb-4 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="rounded-xl border border-border/60 bg-card p-3 space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          </div>
+          {/* Footer Actions */}
+          <div className="mt-auto space-y-3 border-t border-border/50 pt-4">
+            <Skeleton className="h-9 w-full rounded-xl" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -375,6 +416,18 @@ function AuthSkeleton() {
           <Skeleton className="h-4 w-64" />
         </div>
         <Skeleton className="h-[400px] w-full rounded-3xl" />
+      </div>
+    </div>
+  );
+}
+
+function PaymentDetailsSkeleton() {
+  return (
+    <div className="mt-4 space-y-4 rounded-2xl border border-border bg-muted/10 p-5">
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
       </div>
     </div>
   );
