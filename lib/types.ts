@@ -33,6 +33,12 @@ export interface Vendor {
   deliveryFee: number
   prepTime?: string
   image?: string | { url: string; publicId: string }
+  paymentDetails?: {
+    bankName?: string
+    accountNumber?: string
+    accountName?: string
+    acceptsCashOnDelivery?: boolean
+  }
 
   // Computed/virtual UI properties
   initials?: string
@@ -115,6 +121,14 @@ export interface Order {
   totalAmount: number
   createdAt: string // ISO string
   updatedAt: string // ISO string
+  paymentMethod?: "transfer" | "cash"
+  paymentStatus?: "pending" | "transferred" | "confirmed"
+  vendorPaymentDetails?: {
+    bankName?: string
+    accountNumber?: string
+    accountName?: string
+    acceptsCashOnDelivery?: boolean
+  }
 }
 
 // ─── Vendor Auth Session ──────────────────────────────────────────────────────

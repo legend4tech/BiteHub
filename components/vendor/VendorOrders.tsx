@@ -99,6 +99,18 @@ export function VendorOrders({
     }
   }
 
+  const handlePaymentConfirm = async (orderId: string) => {
+    try {
+      await apiClient.patch(`/vendor/orders/${orderId}/payment`, {
+        paymentStatus: "confirmed",
+      })
+      toast.success("Payment confirmed successfully!")
+      router.refresh()
+    } catch {
+      toast.error("Couldn't confirm payment. Please try again.")
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -150,7 +162,11 @@ export function VendorOrders({
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <OrderTable orders={orders} onStatusChange={handleStatusChange} />
+        <OrderTable
+          orders={orders}
+          onStatusChange={handleStatusChange}
+          onPaymentConfirm={handlePaymentConfirm}
+        />
 
         {/* Pagination UI */}
         <div className="mt-6 border-t border-border pt-4">

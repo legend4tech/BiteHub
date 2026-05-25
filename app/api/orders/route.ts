@@ -25,6 +25,7 @@ const createOrderSchema = z.object({
   customerPhone: z.string().min(1, "Customer phone is required"),
   location: z.string().min(1, "Location is required"),
   notes: z.string().optional(),
+  paymentMethod: z.enum(["transfer", "cash"]).optional().default("transfer"),
   total: z.number().optional(), // We accept it but ignore it for calculation
 })
 
@@ -48,7 +49,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    return NextResponse.json(serializeOrder(order))
+    // Fetch vendor to attach payment details
+    const vendor = await Vendor.findById(order.vendorId)
+      .select("paymentDetails")
+      .lean()
+
+    const serializedOrder = serializeOrder(order)
+    return NextResponse.json({
+      ...serializedOrder,
+      vendorPaymentDetails: vendor?.paymentDetails || null,
+    })
   } catch (error) {
     console.error("Error fetching order:", error)
     return NextResponse.json(
@@ -75,8 +85,15 @@ export async function POST(request: Request) {
       )
     }
 
-    const { vendorId, items, customerName, customerPhone, location, notes } =
-      parsedBody.data
+    const {
+      vendorId,
+      items,
+      customerName,
+      customerPhone,
+      location,
+      notes,
+      paymentMethod,
+    } = parsedBody.data
 
     // Verify vendor exists and is active before accepting the order
     const vendor = await Vendor.findById(vendorId).lean()
@@ -144,6 +161,8 @@ export async function POST(request: Request) {
       deliveryFee,
       totalAmount: calculatedTotal,
       status: ORDER_STATUS.PENDING,
+      paymentMethod,
+      paymentStatus: paymentMethod === "transfer" ? "transferred" : "pending",
     })
 
     // Send WhatsApp Notification (fire and forget to not block response)

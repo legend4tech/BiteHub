@@ -44,37 +44,36 @@ export const ORDER_STATUS_CONFIG: Record<
 > = {
   [ORDER_STATUS.PENDING]: {
     label: "Pending",
-    className:
-      "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800",
+    className: "border-primary/20 bg-primary/10 text-primary",
     description: "Waiting for vendor to confirm",
   },
   [ORDER_STATUS.CONFIRMED]: {
     label: "Confirmed",
     className:
-      "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+      "border-status-confirmed/20 bg-status-confirmed/10 text-status-confirmed",
     description: "Vendor confirmed your order",
   },
   [ORDER_STATUS.PREPARING]: {
     label: "Preparing",
     className:
-      "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800",
+      "border-status-preparing/20 bg-status-preparing/10 text-status-preparing",
     description: "Your food is being prepared",
   },
   [ORDER_STATUS.READY]: {
     label: "Ready for pickup",
-    className:
-      "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+    className: "border-status-ready/20 bg-status-ready/10 text-status-ready",
     description: "Your order is ready!",
   },
   [ORDER_STATUS.COMPLETED]: {
     label: "Completed",
-    className: "bg-muted text-muted-foreground border-border",
+    className:
+      "border-status-completed/20 bg-status-completed/10 text-status-completed",
     description: "Order completed successfully",
   },
   [ORDER_STATUS.CANCELLED]: {
     label: "Cancelled",
     className:
-      "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+      "border-status-cancelled/20 bg-status-cancelled/10 text-status-cancelled",
     description: "Order was cancelled",
   },
 }

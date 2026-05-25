@@ -15,6 +15,12 @@ interface CartState {
   vendorWhatsappNumber: string | null
   vendorDeliveryFee: number
   vendorPrepTime: string | null
+  vendorAcceptsCashOnDelivery: boolean
+  vendorPaymentDetails: {
+    bankName: string
+    accountNumber: string
+    accountName: string
+  } | null
 }
 
 const EMPTY_CART: CartState = {
@@ -24,6 +30,8 @@ const EMPTY_CART: CartState = {
   vendorWhatsappNumber: null,
   vendorDeliveryFee: 0,
   vendorPrepTime: null,
+  vendorAcceptsCashOnDelivery: false,
+  vendorPaymentDetails: null,
 }
 
 const CART_EVENT = "cb:cart:update"
@@ -92,6 +100,8 @@ export function useCart() {
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
+        vendorAcceptsCashOnDelivery: current.vendorAcceptsCashOnDelivery, // Keep existing if adding to same vendor
+        vendorPaymentDetails: current.vendorPaymentDetails,
       })
     },
     [persist]
@@ -106,6 +116,8 @@ export function useCart() {
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
+        vendorAcceptsCashOnDelivery: false, // Will be synced by checkout effect
+        vendorPaymentDetails: null, // Will be synced by checkout effect
       })
     },
     [persist]
@@ -140,18 +152,41 @@ export function useCart() {
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
 
   const syncVendorDetails = useCallback(
-    (vendorId: string, deliveryFee: number, prepTime?: string) => {
+    (
+      vendorId: string,
+      deliveryFee: number,
+      prepTime?: string,
+      acceptsCash?: boolean,
+      paymentDetails?: {
+        bankName: string
+        accountNumber: string
+        accountName: string
+      } | null
+    ) => {
       const current = readCart()
       if (
         current.vendorId === vendorId &&
         (current.vendorDeliveryFee !== deliveryFee ||
-          (prepTime !== undefined && current.vendorPrepTime !== prepTime))
+          (prepTime !== undefined && current.vendorPrepTime !== prepTime) ||
+          (acceptsCash !== undefined &&
+            current.vendorAcceptsCashOnDelivery !== acceptsCash) ||
+          (paymentDetails !== undefined &&
+            JSON.stringify(current.vendorPaymentDetails) !==
+              JSON.stringify(paymentDetails)))
       ) {
         persist({
           ...current,
           vendorDeliveryFee: deliveryFee,
           vendorPrepTime:
             prepTime !== undefined ? prepTime : current.vendorPrepTime,
+          vendorAcceptsCashOnDelivery:
+            acceptsCash !== undefined
+              ? acceptsCash
+              : current.vendorAcceptsCashOnDelivery,
+          vendorPaymentDetails:
+            paymentDetails !== undefined
+              ? paymentDetails
+              : current.vendorPaymentDetails,
         })
       }
     },

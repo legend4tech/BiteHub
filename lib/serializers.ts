@@ -105,8 +105,11 @@ export function serializeOrder(doc: LeanOrder | null) {
       quantity: item.quantity,
     })),
     notes: doc.notes ?? null,
+    deliveryFee: doc.deliveryFee ?? 0,
     totalAmount: doc.totalAmount,
     status: doc.status,
+    paymentMethod: doc.paymentMethod ?? "transfer",
+    paymentStatus: doc.paymentStatus ?? "pending",
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   }

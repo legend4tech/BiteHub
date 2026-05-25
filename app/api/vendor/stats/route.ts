@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { Types } from "mongoose"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
+import Vendor from "@/models/Vendor"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 
@@ -41,6 +42,16 @@ export async function GET() {
       now.getDate()
     )
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+
+    // Check if the vendor has payment details set up
+    const vendor = await Vendor.findById(vendorId)
+      .select("paymentDetails")
+      .lean()
+    const hasPaymentDetails = !!(
+      vendor?.paymentDetails?.bankName &&
+      vendor?.paymentDetails?.accountNumber &&
+      vendor?.paymentDetails?.accountName
+    )
 
     // Single aggregation pipeline — MongoDB does all the work
     const [result] = await Order.aggregate([
@@ -106,16 +117,19 @@ export async function GET() {
     ])
 
     // If the vendor has no orders yet, result will be undefined
-    return NextResponse.json(
-      result ?? {
-        totalOrders: 0,
-        todayOrders: 0,
-        pending: 0,
-        inProgress: 0,
-        totalCompleted: 0,
-        totalRevenue: 0,
-      }
-    )
+    const finalStats = result ?? {
+      totalOrders: 0,
+      todayOrders: 0,
+      pending: 0,
+      inProgress: 0,
+      totalCompleted: 0,
+      totalRevenue: 0,
+    }
+
+    return NextResponse.json({
+      ...finalStats,
+      hasPaymentDetails,
+    })
   } catch (error) {
     console.error("[vendor/stats GET]", error)
     return NextResponse.json(

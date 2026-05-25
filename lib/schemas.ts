@@ -91,6 +91,8 @@ export const orderFormInputSchema = z.object({
     .min(1, "Please enter your delivery location.")
     .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
+  paymentMethod: z.enum(["transfer", "cash"]).optional(),
+  hasPaid: z.boolean().optional(),
 })
 
 export type OrderFormInputValues = z.infer<typeof orderFormInputSchema>
@@ -117,6 +119,8 @@ export const orderFormSchema = z.object({
     .min(1, "Please enter your delivery location.")
     .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
+  paymentMethod: z.enum(["transfer", "cash"]).optional(),
+  hasPaid: z.boolean().optional(),
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -190,6 +194,25 @@ export const vendorSettingsSchema = z.object({
 })
 
 export type VendorSettingsValues = z.infer<typeof vendorSettingsSchema>
+
+export const vendorPaymentSettingsSchema = z.object({
+  paymentDetails: z.object({
+    bankName: z.string().optional(),
+    accountNumber: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || /^\d{10}$/.test(v),
+        "Account number must be exactly 10 digits."
+      ),
+    accountName: z.string().optional(),
+    acceptsCashOnDelivery: z.boolean().default(false).optional(),
+  }),
+})
+
+export type VendorPaymentSettingsValues = z.infer<
+  typeof vendorPaymentSettingsSchema
+>
 
 // ─── Vendor Login Schema ──────────────────────────────────────────────────────
 

@@ -20,7 +20,15 @@ interface Order {
   }>
   notes?: string
   totalAmount: number
+  deliveryFee: number
   status: OrderStatus
+  paymentMethod: "transfer" | "cash"
+  paymentStatus: "pending" | "transferred" | "confirmed" | "failed"
+  vendorPaymentDetails?: {
+    bankName: string
+    accountNumber: string
+    accountName: string
+  } | null
   createdAt: string
   vendorPrepTime?: string | null
 }

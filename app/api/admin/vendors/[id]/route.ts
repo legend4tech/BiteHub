@@ -31,6 +31,24 @@ export async function PATCH(
 
     // Toggle vendor storefront
     if (typeof isActive === "boolean") {
+      if (isActive) {
+        // Enforce payment details requirement before activating
+        const vendor = await VendorModel.findById(id).lean()
+        const hasPaymentDetails = !!(
+          vendor?.paymentDetails?.bankName &&
+          vendor?.paymentDetails?.accountNumber &&
+          vendor?.paymentDetails?.accountName
+        )
+        if (!hasPaymentDetails) {
+          return NextResponse.json(
+            {
+              error:
+                "Vendor must set up their bank details before they can be active.",
+            },
+            { status: 400 }
+          )
+        }
+      }
       await VendorModel.findByIdAndUpdate(id, { isActive })
     }
 

@@ -30,6 +30,10 @@ import {
   Star,
   Copy,
   Clock,
+  Landmark,
+  CheckCircle2,
+  Info,
+  StickyNote,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatTime } from "@/lib/format"
@@ -465,6 +469,133 @@ export default function OrderPage() {
           <OrderStatusTracker status={order.status} />
         </div>
 
+        {/* ── Payment Details ────────────────────────────────────── */}
+        {order.paymentMethod === "transfer" && (
+          <div className="rounded-[28px] border border-border bg-card shadow-sm">
+            <div className="flex items-center gap-2.5 border-b border-border/60 px-7 py-5 sm:px-8">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
+                <Landmark className="size-4 text-primary" />
+              </div>
+              <h2 className="font-heading text-base font-bold sm:text-lg">
+                Payment Details
+              </h2>
+            </div>
+            <div className="px-7 py-5 sm:px-8">
+              {order.vendorPaymentDetails ? (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-border bg-muted/30 p-5">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between border-b border-border/50 pb-2">
+                        <span className="text-muted-foreground">Bank Name</span>
+                        <span className="font-semibold">
+                          {order.vendorPaymentDetails.bankName || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-b border-border/50 py-2">
+                        <span className="text-muted-foreground">
+                          Account Number
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            {order.vendorPaymentDetails.accountNumber || "N/A"}
+                          </span>
+                          {order.vendorPaymentDetails.accountNumber && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-5 hover:bg-transparent"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  order.vendorPaymentDetails!.accountNumber
+                                )
+                                toast.success("Account number copied!")
+                              }}
+                            >
+                              <Copy className="size-3 text-muted-foreground" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex justify-between pt-2">
+                        <span className="text-muted-foreground">
+                          Account Name
+                        </span>
+                        <span className="font-semibold">
+                          {order.vendorPaymentDetails.accountName || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`mt-5 flex flex-col items-center justify-center rounded-xl border p-4 text-center ${
+                      order.paymentStatus === "confirmed"
+                        ? "border-status-completed/20 bg-status-completed/10 text-status-completed"
+                        : "border-primary/20 bg-primary/5 text-primary"
+                    }`}
+                  >
+                    {order.paymentStatus === "confirmed" ? (
+                      <>
+                        <CheckCircle2 className="mb-2 size-8 text-status-completed" />
+                        <span className="font-heading text-base font-bold">
+                          Payment Confirmed!
+                        </span>
+                        <span className="mt-1 text-sm">
+                          The vendor has received your payment.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative mb-3 flex size-8 items-center justify-center">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-40"></span>
+                          <span className="relative inline-flex size-6 rounded-full bg-primary"></span>
+                        </div>
+                        <span className="font-heading text-base font-bold">
+                          Payment Sent
+                        </span>
+                        <span className="mt-1 text-sm text-foreground">
+                          Waiting for the vendor to confirm receipt of your
+                          transfer.
+                        </span>
+                        <div className="mt-3 flex items-start gap-2 rounded-xl bg-primary/10 px-3 py-2 text-left">
+                          <Info className="mt-0.5 size-4 shrink-0 text-primary" />
+                          <span className="text-xs font-medium text-foreground">
+                            Please tap &quot;Contact vendor&quot; below to send
+                            your payment receipt on WhatsApp.
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+                  This vendor has not set up their bank details yet. Please
+                  contact them via WhatsApp to request payment details.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {order.paymentMethod === "cash" && (
+          <div className="rounded-[28px] border border-border bg-card shadow-sm">
+            <div className="flex items-center gap-2.5 px-7 py-5 sm:px-8">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
+                <Landmark className="size-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-heading text-base font-bold sm:text-lg">
+                  Cash on Delivery
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Please prepare exact change if possible.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Items breakdown ────────────────────────────────────── */}
         <div className="rounded-[28px] border border-border bg-card shadow-sm">
           <div className="flex items-center gap-2.5 border-b border-border/60 px-7 py-5 sm:px-8">
@@ -499,18 +630,34 @@ export default function OrderPage() {
               ))}
             </div>
 
-            {/* Total row */}
-            <div className="mt-5 flex items-center justify-between rounded-2xl bg-primary/8 px-4 py-3.5">
-              <span className="text-sm font-bold">Total</span>
-              <span className="text-lg font-extrabold text-primary tabular-nums">
-                {formatPrice(order.totalAmount)}
-              </span>
+            {/* Total breakdown */}
+            <div className="mt-5 space-y-2 border-t border-border/60 pt-4">
+              <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
+                <span>Subtotal</span>
+                <span className="tabular-nums">
+                  {formatPrice(order.totalAmount - (order.deliveryFee || 0))}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
+                <span>Delivery Fee</span>
+                <span className="tabular-nums">
+                  {(order.deliveryFee || 0) > 0
+                    ? formatPrice(order.deliveryFee)
+                    : "Free"}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between rounded-2xl bg-primary/8 px-4 py-3.5">
+                <span className="text-sm font-bold">Total</span>
+                <span className="text-lg font-extrabold text-primary tabular-nums">
+                  {formatPrice(order.totalAmount)}
+                </span>
+              </div>
             </div>
 
             {/* Notes */}
             {order.notes && (
               <div className="mt-4 flex gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3.5">
-                <span className="mt-0.5 shrink-0 text-base">📝</span>
+                <StickyNote className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   <span className="font-semibold text-foreground">Note: </span>
                   {order.notes}

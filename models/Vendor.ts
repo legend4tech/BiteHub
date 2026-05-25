@@ -16,6 +16,12 @@ export interface IVendor extends Document {
     url: string
     publicId: string
   }
+  paymentDetails?: {
+    bankName: string
+    accountNumber: string
+    accountName: string
+    acceptsCashOnDelivery: boolean
+  }
 
   // Virtuals
   initials: string
@@ -39,6 +45,12 @@ const VendorSchema: Schema = new Schema(
     image: {
       url: { type: String },
       publicId: { type: String },
+    },
+    paymentDetails: {
+      bankName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      accountName: { type: String, default: "" },
+      acceptsCashOnDelivery: { type: Boolean, default: false },
     },
   },
   {

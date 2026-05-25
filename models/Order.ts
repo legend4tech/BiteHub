@@ -27,6 +27,8 @@ export interface IOrder extends Document {
     | "ready"
     | "completed"
     | "cancelled"
+  paymentMethod: "transfer" | "cash"
+  paymentStatus: "pending" | "transferred" | "confirmed" | "failed"
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -67,6 +69,16 @@ const OrderSchema = new Schema<IOrder>(
         "completed",
         "cancelled",
       ],
+      default: "pending",
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["transfer", "cash"],
+      default: "transfer",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "transferred", "confirmed", "failed"],
       default: "pending",
     },
   },

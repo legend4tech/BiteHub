@@ -7,10 +7,11 @@ import { OrderTable } from "@/components/vendor/OrderTable"
 import type { OrderStatus } from "@/lib/types"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { AlertBanner } from "@/components/shared/AlertBanner"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
-import { ArrowRight, Star, Banknote } from "lucide-react"
+import { ArrowRight, Star, Banknote, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { APP_NAME } from "@/lib/constants"
@@ -88,6 +89,19 @@ export default function VendorDashboardPage() {
     }
   }
 
+  const handlePaymentConfirm = async (orderId: string) => {
+    try {
+      await apiClient.patch(`/vendor/orders/${orderId}/payment`, {
+        paymentStatus: "confirmed",
+      })
+      toast.success("Payment confirmed successfully!")
+      await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+      await queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+    } catch {
+      toast.error("Couldn't confirm payment. Please check your connection.")
+    }
+  }
+
   const now = new Date()
   const greeting =
     now.getHours() < 12
@@ -126,6 +140,20 @@ export default function VendorDashboardPage() {
             Rate Platform
           </Button>
         </div>
+
+        {/* Warning banner for missing payment details */}
+        {!loadingStats && stats?.hasPaymentDetails === false && (
+          <AlertBanner
+            title="Complete your profile to be visible!"
+            description="One more step! Please add your bank details or enable Cash on Delivery so customers can pay you. Your vendor profile will NOT be visible publicly until you do this."
+            icon={AlertCircle}
+            variant="destructive"
+            action={{
+              label: "Add Details",
+              href: "/vendor/settings?tab=payment",
+            }}
+          />
+        )}
 
         {/* Total Revenue banner */}
         {!loadingStats && (stats?.totalRevenue ?? 0) > 0 && (
@@ -202,6 +230,7 @@ export default function VendorDashboardPage() {
               <OrderTable
                 orders={recentOrders}
                 onStatusChange={handleStatusChange}
+                onPaymentConfirm={handlePaymentConfirm}
               />
             )}
           </div>

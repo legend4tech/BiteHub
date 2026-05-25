@@ -33,6 +33,7 @@ export async function PATCH(request: Request) {
       deliveryFee,
       prepTime,
       image,
+      paymentDetails,
     } = body
 
     // Fetch existing vendor to check for image changes
@@ -85,6 +86,14 @@ export async function PATCH(request: Request) {
       updateData.deliveryFee = Number(deliveryFee) || 0
     if (prepTime !== undefined) updateData.prepTime = prepTime
     if (image !== undefined) updateData.image = image
+    if (paymentDetails !== undefined) {
+      updateData.paymentDetails = {
+        bankName: paymentDetails.bankName || "",
+        accountNumber: paymentDetails.accountNumber || "",
+        accountName: paymentDetails.accountName || "",
+        acceptsCashOnDelivery: !!paymentDetails.acceptsCashOnDelivery,
+      }
+    }
 
     const updatedVendor = await Vendor.findByIdAndUpdate(
       vendorId,
