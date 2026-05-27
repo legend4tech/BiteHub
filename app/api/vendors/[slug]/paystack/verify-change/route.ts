@@ -46,9 +46,12 @@ export async function POST(
       )
     }
 
-    // Verify OTP
-    if (!vendor.bankUpdateOtp || vendor.bankUpdateOtp !== otp) {
-      return NextResponse.json({ error: "Invalid OTP" }, { status: 400 })
+    // Check if OTP verification is locked due to too many failed attempts
+    if (vendor.bankUpdateOtpAttempts && vendor.bankUpdateOtpAttempts >= 5) {
+      return NextResponse.json(
+        { error: "Too many failed OTP attempts. Please request a new OTP." },
+        { status: 429 }
+      )
     }
 
     if (
@@ -56,6 +59,17 @@ export async function POST(
       new Date() > vendor.bankUpdateOtpExpiry
     ) {
       return NextResponse.json({ error: "OTP has expired" }, { status: 400 })
+    }
+
+    // Verify OTP
+    if (!vendor.bankUpdateOtp || vendor.bankUpdateOtp !== otp) {
+      vendor.bankUpdateOtpAttempts = (vendor.bankUpdateOtpAttempts || 0) + 1
+      await vendor.save()
+      const remainingAttempts = 5 - vendor.bankUpdateOtpAttempts
+      return NextResponse.json(
+        { error: `Invalid OTP. ${remainingAttempts} attempts remaining.` },
+        { status: 400 }
+      )
     }
 
     // Call Paystack to UPDATE subaccount
@@ -92,6 +106,7 @@ export async function POST(
     // Clear OTP fields
     vendor.bankUpdateOtp = undefined
     vendor.bankUpdateOtpExpiry = undefined
+    vendor.bankUpdateOtpAttempts = 0
     await vendor.save()
 
     // Send Confirmation Email

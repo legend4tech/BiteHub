@@ -22,6 +22,7 @@ export interface IVendor extends Document {
   lastBankUpdateAt?: Date
   bankUpdateOtp?: string
   bankUpdateOtpExpiry?: Date
+  bankUpdateOtpAttempts?: number
 
   // Virtuals
   initials: string
@@ -56,6 +57,7 @@ const VendorSchema: Schema = new Schema(
     lastBankUpdateAt: { type: Date },
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
+    bankUpdateOtpAttempts: { type: Number, default: 0 },
   },
   {
     timestamps: true,

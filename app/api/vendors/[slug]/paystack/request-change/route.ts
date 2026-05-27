@@ -64,6 +64,7 @@ export async function POST(
 
     vendor.bankUpdateOtp = otp
     vendor.bankUpdateOtpExpiry = expiry
+    vendor.bankUpdateOtpAttempts = 0
     await vendor.save()
 
     // Send email

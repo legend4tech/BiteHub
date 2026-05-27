@@ -28,15 +28,21 @@ export async function POST(req: Request) {
       await dbConnect()
       const reference = event.data.reference
 
-      // Find order by Paystack reference
-      const order = await Order.findOne({ paystackReference: reference })
+      // Atomically update state only if it hasn't been set to paid yet
+      // This guarantees that exactly one webhook or client verification call processes the success state and dispatches notifications
+      const order = await Order.findOneAndUpdate(
+        { paystackReference: reference, paymentStatus: { $ne: "paid" } },
+        {
+          $set: {
+            paymentStatus: "paid",
+            status: "confirmed",
+          },
+        },
+        { new: true }
+      )
 
       if (order) {
-        const wasPending = order.paymentStatus !== "paid"
-        order.paymentStatus = "paid"
-        if (order.status === "pending") {
-          order.status = "confirmed"
-        }
+        const wasPending = true // Since we flipped it from non-paid to paid, it was pending
 
         // ── Overwrite estimates with Paystack's actual ground-truth figures ──────────
         // event.data.fees        = exact Paystack processing fee, in kobo
