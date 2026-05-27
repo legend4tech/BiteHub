@@ -2,14 +2,16 @@ import { Metadata } from "next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { APP_NAME } from "@/lib/constants"
+import { getPlatformFeePercentage } from "@/lib/fees"
 
 export const metadata: Metadata = {
   title: `Terms of Use | ${APP_NAME}`,
   description: `Terms of Use for ${APP_NAME}`,
 }
 
-export default function TermsOfUsePage() {
+export default async function TermsOfUsePage() {
   const lastUpdated = "May 2026"
+  const platformFeePercentage = await getPlatformFeePercentage()
 
   return (
     <>
@@ -109,7 +111,47 @@ export default function TermsOfUsePage() {
 
             <section>
               <h2 className="mb-4 font-heading text-2xl font-bold text-foreground">
-                5. Communications & WhatsApp
+                5. Payments, Fees, & Split Settlements
+              </h2>
+              <p className="mb-4 leading-relaxed text-muted-foreground">
+                All financial transactions on {APP_NAME} are conducted securely
+                through our payment gateway partner, Paystack.
+              </p>
+              <ul className="list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
+                <li>
+                  <strong>Customer Service Fee:</strong> Orders are subject to a
+                  processing service charge calculated at checkout. This fee
+                  covers payment gateway costs and platform processing overhead.
+                </li>
+                <li>
+                  <strong>Platform Commissions:</strong> A platform fee
+                  percentage (currently {platformFeePercentage}%, unless
+                  otherwise configured via administration settings) is charged
+                  on the subtotal of every order. This commission is
+                  transparently calculated and deducted prior to vendor
+                  disbursement.
+                </li>
+                <li>
+                  <strong>Automated Split Payouts:</strong> Vendor payouts are
+                  executed automatically via Paystack Split Settlements.
+                  Earnings (subtotal minus platform commission) are routed
+                  directly to the vendor&apos;s registered bank account on a
+                  standard T+1 business day cycle (Transaction day + 1 business
+                  day, meaning earnings from a transaction are settled into the
+                  bank account on the next business day).
+                </li>
+                <li>
+                  <strong>Idempotency and Payment Safety:</strong> Transactions
+                  are audited and locked using secure cryptographically verified
+                  verification handlers to prevent double-charging or duplicate
+                  fulfillment dispatches.
+                </li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="mb-4 font-heading text-2xl font-bold text-foreground">
+                6. Communications & WhatsApp
               </h2>
               <p className="leading-relaxed text-muted-foreground">
                 By providing your phone number and placing an order, you consent
@@ -121,7 +163,7 @@ export default function TermsOfUsePage() {
 
             <section>
               <h2 className="mb-4 font-heading text-2xl font-bold text-foreground">
-                6. Modifications to the Service
+                7. Modifications to the Service
               </h2>
               <p className="leading-relaxed text-muted-foreground">
                 We reserve the right to modify or discontinue, temporarily or
@@ -133,7 +175,7 @@ export default function TermsOfUsePage() {
 
             <section>
               <h2 className="mb-4 font-heading text-2xl font-bold text-foreground">
-                7. Contact Information
+                8. Contact Information
               </h2>
               <p className="leading-relaxed text-muted-foreground">
                 If you have any questions about these Terms of Use, please

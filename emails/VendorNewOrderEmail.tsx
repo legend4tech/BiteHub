@@ -28,6 +28,7 @@ interface VendorNewOrderEmailProps {
   items: OrderItem[]
   deliveryFee: number
   serviceFee: number
+  platformCommission: number
   totalAmount: number
   vendorRevenue: number
   notes?: string
@@ -55,6 +56,7 @@ export const VendorNewOrderEmail = ({
   items = [],
   deliveryFee = 0,
   serviceFee = 0,
+  platformCommission = 0,
   totalAmount,
   vendorRevenue,
   notes,
@@ -147,6 +149,12 @@ export const VendorNewOrderEmail = ({
                 <div style={summaryRow}>
                   <Text style={summaryLabel}>Processing Fee (Paystack)</Text>
                   <Text style={summaryValue}>{fmt(serviceFee)}</Text>
+                </div>
+              )}
+              {platformCommission > 0 && (
+                <div style={summaryRow}>
+                  <Text style={summaryLabel}>Platform Commission</Text>
+                  <Text style={summaryValue}>{fmt(platformCommission)}</Text>
                 </div>
               )}
               <div style={summaryRow}>

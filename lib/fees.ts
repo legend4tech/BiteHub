@@ -42,3 +42,13 @@ export function computePaystackServiceFee(base: number): number {
   // so Paystack receives an exact integer in kobo — no truncation, no 1-kobo drift.
   return Math.round(capped * 100) / 100
 }
+
+export async function getPlatformFeePercentage(): Promise<number> {
+  const { default: dbConnect } = await import("@/lib/db")
+  const { default: GlobalSettings } = await import("@/models/GlobalSettings")
+  await dbConnect()
+  const settings = (await GlobalSettings.findOne().lean()) as {
+    platformFeePercentage?: number
+  } | null
+  return settings?.platformFeePercentage ?? 5
+}

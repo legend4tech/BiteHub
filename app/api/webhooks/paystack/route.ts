@@ -116,6 +116,7 @@ export async function POST(req: Request) {
             order.serviceFee || 0,
             order.totalAmount,
             order.vendorRevenue,
+            order.platformCommission || 0,
             order.notes || undefined
           ).catch((e) =>
             console.error("Failed to send vendor order email from webhook:", e)

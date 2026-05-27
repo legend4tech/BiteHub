@@ -136,6 +136,7 @@ export async function POST(
           updatedOrder.serviceFee || 0,
           updatedOrder.totalAmount,
           updatedOrder.vendorRevenue,
+          updatedOrder.platformCommission || 0,
           updatedOrder.notes || undefined
         ).catch((e) =>
           console.error("Failed to send vendor order email from verify:", e)

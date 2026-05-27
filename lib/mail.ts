@@ -300,6 +300,7 @@ export async function sendVendorNewOrderEmail(
   serviceFee: number,
   totalAmount: number,
   vendorRevenue: number,
+  platformCommission: number,
   notes?: string
 ) {
   if (!process.env.RESEND_API_KEY) {
@@ -345,6 +346,7 @@ export async function sendVendorNewOrderEmail(
         items,
         deliveryFee,
         serviceFee,
+        platformCommission,
         totalAmount,
         vendorRevenue,
         notes,
