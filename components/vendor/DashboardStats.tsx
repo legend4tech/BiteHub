@@ -1,13 +1,13 @@
-import { ShoppingBag, Clock, CheckCircle2, Zap, TrendingUp } from "lucide-react";
-import { formatPrice } from "@/lib/format";
+import { ShoppingBag, Clock, CheckCircle2, Zap, TrendingUp } from "lucide-react"
+import { formatPrice } from "@/lib/format"
 
 interface DashboardStatsProps {
-  totalOrders: number;
-  todayOrders: number;
-  pending: number;
-  inProgress: number;
-  totalCompleted: number;
-  totalRevenue: number;
+  totalOrders: number
+  todayOrders: number
+  pending: number
+  inProgress: number
+  totalCompleted: number
+  totalRevenue: number
 }
 
 export function DashboardStats(props: DashboardStatsProps) {
@@ -46,41 +46,57 @@ export function DashboardStats(props: DashboardStatsProps) {
       color: "text-green-600 dark:text-green-400",
       bg: "bg-green-50 dark:bg-green-900/20",
     },
-  ];
+    {
+      label: "Total Earnings",
+      value: formatPrice(props.totalRevenue),
+      sub: "all-time revenue",
+      icon: TrendingUp,
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-900/20",
+    },
+  ]
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-5">
       {statCards.map((s) => (
         <div
           key={s.label}
-          className={`rounded-2xl border p-4 md:p-5 flex flex-col gap-3 transition-all hover:shadow-sm ${
+          className={`flex flex-col gap-3 rounded-2xl border p-4 transition-all hover:shadow-sm md:p-5 ${
             s.accent
-              ? "bg-primary/5 border-primary/20"
+              ? "border-primary/20 bg-primary/5"
               : s.alert
-                ? "bg-amber-50/50 dark:bg-amber-900/10 border-amber-300 dark:border-amber-700/40"
-                : "bg-card border-border"
+                ? "border-amber-300 bg-amber-50/50 dark:border-amber-700/40 dark:bg-amber-900/10"
+                : "border-border bg-card"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className={`h-9 w-9 rounded-xl ${s.bg} grid place-items-center shrink-0`}>
+            <div
+              className={`h-9 w-9 rounded-xl ${s.bg} grid shrink-0 place-items-center`}
+            >
               <s.icon className={`size-4 ${s.color}`} />
             </div>
             {s.accent && (
               <TrendingUp className="size-3.5 text-primary opacity-60" />
             )}
             {s.alert && (
-              <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="size-2 animate-pulse rounded-full bg-amber-500" />
             )}
           </div>
           <div>
-            <p className={`text-2xl md:text-3xl font-heading font-bold ${s.accent ? "text-primary" : s.alert ? "text-amber-700 dark:text-amber-400" : ""}`}>
+            <p
+              className={`font-heading text-2xl font-bold md:text-3xl ${s.accent ? "text-primary" : s.alert ? "text-amber-700 dark:text-amber-400" : ""}`}
+            >
               {s.value}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 font-medium">{s.label}</p>
-            <p className="text-[10px] text-muted-foreground/70 mt-0.5 hidden sm:block">{s.sub}</p>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+              {s.label}
+            </p>
+            <p className="mt-0.5 hidden text-[10px] text-muted-foreground/70 sm:block">
+              {s.sub}
+            </p>
           </div>
         </div>
       ))}
     </div>
-  );
+  )
 }

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { MapPin, ArrowUpRight, Circle, Clock } from "lucide-react"
 import type { Vendor } from "@/lib/types"
 
@@ -16,15 +17,19 @@ export function VendorCard({ vendor, itemCount }: VendorCardProps) {
       <div className="flex items-start justify-between">
         <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-primary text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
           {typeof vendor.image === "string" ? (
-            <img
+            <Image
               src={vendor.image}
               alt={vendor.name}
+              width={56}
+              height={56}
               className="h-full w-full object-cover"
             />
           ) : vendor.image?.url ? (
-            <img
+            <Image
               src={vendor.image.url}
               alt={vendor.name}
+              width={56}
+              height={56}
               className="h-full w-full object-cover"
             />
           ) : (

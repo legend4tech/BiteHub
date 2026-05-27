@@ -8,23 +8,33 @@ import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import apiClient from "@/lib/axios"
 import { Star } from "lucide-react"
 
+interface Feedback {
+  _id: string
+  rating: number
+  comments?: string
+  orderId?: string
+  createdAt: string
+}
+
 export default function VendorFeedbackPage() {
   const { data: session, status } = useSession()
   const isReady = !!session?.user
 
-  const { data: feedbacks = [], isLoading: loadingFeedback } = useQuery<any[]>({
+  const { data: feedbacks = [], isLoading: loadingFeedback } = useQuery<
+    Feedback[]
+  >({
     queryKey: ["vendor-feedback"],
     queryFn: async () => {
       try {
-        const res = await apiClient.get("/vendor/feedback");
-        return Array.isArray(res.data) ? res.data : [];
+        const res = await apiClient.get("/vendor/feedback")
+        return Array.isArray(res.data) ? res.data : []
       } catch (error) {
-        console.error("Error fetching feedback:", error);
-        return [];
+        console.error("Error fetching feedback:", error)
+        return []
       }
     },
     enabled: isReady,
-  });
+  })
 
   if (status === "loading") {
     return <PageSkeleton variant="dashboard" />
@@ -62,7 +72,10 @@ export default function VendorFeedbackPage() {
             {loadingFeedback ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-16 animate-pulse rounded-xl bg-muted/50"
+                  />
                 ))}
               </div>
             ) : feedbacks.length === 0 ? (
@@ -73,8 +86,11 @@ export default function VendorFeedbackPage() {
               />
             ) : (
               <div className="space-y-4">
-                {feedbacks.map((feedback: any) => (
-                  <div key={feedback._id} className="p-4 rounded-xl border border-border bg-muted/30 flex flex-col gap-1">
+                {feedbacks.map((feedback: Feedback) => (
+                  <div
+                    key={feedback._id}
+                    className="flex flex-col gap-1 rounded-xl border border-border bg-muted/30 p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -89,7 +105,9 @@ export default function VendorFeedbackPage() {
                       </span>
                     </div>
                     {feedback.comments && (
-                      <p className="text-sm text-foreground leading-relaxed">{feedback.comments}</p>
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {feedback.comments}
+                      </p>
                     )}
                     {feedback.orderId === "Anonymous" ? (
                       <div className="mt-1">
@@ -98,7 +116,9 @@ export default function VendorFeedbackPage() {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground font-mono">Order: {feedback.orderId}</p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        Order: {feedback.orderId}
+                      </p>
                     )}
                   </div>
                 ))}

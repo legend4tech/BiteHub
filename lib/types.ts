@@ -33,12 +33,13 @@ export interface Vendor {
   deliveryFee: number
   prepTime?: string
   image?: string | { url: string; publicId: string }
-  paymentDetails?: {
-    bankName?: string
-    accountNumber?: string
-    accountName?: string
-    acceptsCashOnDelivery?: boolean
-  }
+
+  // Paystack integration fields
+  paystackSubaccountCode?: string
+  paystackBankCode?: string
+  accountNumber?: string
+  paystackIntegrationStatus?: "pending" | "active"
+  lastBankUpdateAt?: string // ISO string
 
   // Computed/virtual UI properties
   initials?: string
@@ -118,11 +119,15 @@ export interface Order {
   notes?: string | null
   deliveryFee: number
   status: OrderStatus
+  serviceFee: number
+  platformCommission: number
+  vendorRevenue: number
   totalAmount: number
   createdAt: string // ISO string
   updatedAt: string // ISO string
-  paymentMethod?: "transfer" | "cash"
-  paymentStatus?: "pending" | "transferred" | "confirmed"
+  paymentMethod?: "paystack"
+  paymentStatus?: "pending" | "paid" | "failed"
+  paystackReference?: string
   vendorPaymentDetails?: {
     bankName?: string
     accountNumber?: string

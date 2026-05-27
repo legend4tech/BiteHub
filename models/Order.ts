@@ -14,11 +14,15 @@ export interface IOrder extends Document {
   vendorWhatsappNumber: string
   vendorPrepTime?: string
   customerName: string
+  customerEmail?: string
   customerPhone: string
   location: string
   items: IOrderItem[]
   notes?: string
   deliveryFee: number
+  serviceFee: number
+  platformCommission: number
+  vendorRevenue: number
   totalAmount: number
   status:
     | "pending"
@@ -27,8 +31,9 @@ export interface IOrder extends Document {
     | "ready"
     | "completed"
     | "cancelled"
-  paymentMethod: "transfer" | "cash"
-  paymentStatus: "pending" | "transferred" | "confirmed" | "failed"
+  paymentMethod: "paystack"
+  paymentStatus: "pending" | "paid" | "failed"
+  paystackReference?: string
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -53,11 +58,15 @@ const OrderSchema = new Schema<IOrder>(
     vendorWhatsappNumber: { type: String, default: "" },
     vendorPrepTime: { type: String, default: "" },
     customerName: { type: String, required: true },
+    customerEmail: { type: String },
     customerPhone: { type: String, required: true },
     location: { type: String, required: true },
     items: { type: [OrderItemSchema], required: true },
     notes: { type: String, default: "" },
-    deliveryFee: { type: Number, required: true },
+    deliveryFee: { type: Number, required: true, default: 0 },
+    serviceFee: { type: Number, required: true, default: 0 },
+    platformCommission: { type: Number, required: true, default: 0 },
+    vendorRevenue: { type: Number, required: true, default: 0 },
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
@@ -73,14 +82,15 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ["transfer", "cash"],
-      default: "transfer",
+      enum: ["paystack"],
+      default: "paystack",
     },
     paymentStatus: {
       type: String,
-      enum: ["pending", "transferred", "confirmed", "failed"],
+      enum: ["pending", "paid", "failed"],
       default: "pending",
     },
+    paystackReference: { type: String },
   },
   {
     timestamps: true,

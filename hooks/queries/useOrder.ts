@@ -2,36 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { OrderStatus } from "@/lib/types"
-
-export interface Order {
-  orderId: string
-  vendorId: string
-  vendorName: string
-  vendorWhatsappNumber: string
-  customerName: string
-  customerPhone: string
-  location: string
-  items: Array<{
-    menuItemId: string
-    name: string
-    price: number
-    quantity: number
-  }>
-  notes?: string
-  totalAmount: number
-  deliveryFee: number
-  status: OrderStatus
-  paymentMethod: "transfer" | "cash"
-  paymentStatus: "pending" | "transferred" | "confirmed" | "failed"
-  vendorPaymentDetails?: {
-    bankName: string
-    accountNumber: string
-    accountName: string
-  } | null
-  createdAt: string
-  vendorPrepTime?: string | null
-}
+import type { Order } from "@/lib/types"
 
 export function useOrder(orderId: string | undefined) {
   return useQuery({

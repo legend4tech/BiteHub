@@ -77,6 +77,11 @@ export const whatsappInputSchema = z
 /** Input schema — no transforms, safe for react-hook-form + zodResolver */
 export const orderFormInputSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters."),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email.")
+    .email("Please enter a valid email address."),
   phone: z
     .string()
     .trim()
@@ -91,8 +96,7 @@ export const orderFormInputSchema = z.object({
     .min(1, "Please enter your delivery location.")
     .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
-  paymentMethod: z.enum(["transfer", "cash"]).optional(),
-  hasPaid: z.boolean().optional(),
+  paymentMethod: z.enum(["paystack"]).default("paystack"),
 })
 
 export type OrderFormInputValues = z.infer<typeof orderFormInputSchema>
@@ -104,6 +108,11 @@ export const orderFormSchema = z.object({
     .trim()
     .min(1, "Please enter your name.")
     .min(2, "Name must be at least 2 characters."),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email.")
+    .email("Please enter a valid email address."),
   phone: z
     .string()
     .trim()
@@ -119,8 +128,7 @@ export const orderFormSchema = z.object({
     .min(1, "Please enter your delivery location.")
     .min(2, "Location must be at least 2 characters."),
   notes: z.string().trim().optional(),
-  paymentMethod: z.enum(["transfer", "cash"]).optional(),
-  hasPaid: z.boolean().optional(),
+  paymentMethod: z.enum(["paystack"]).default("paystack"),
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -196,71 +204,11 @@ export const vendorSettingsSchema = z.object({
 export type VendorSettingsValues = z.infer<typeof vendorSettingsSchema>
 
 export const vendorPaymentSettingsSchema = z.object({
-  paymentDetails: z
-    .object({
-      bankName: z.string().optional(),
-      accountNumber: z.string().optional(),
-      accountName: z.string().optional(),
-      acceptsCashOnDelivery: z.boolean().default(false).optional(),
-    })
-    .superRefine((val, ctx) => {
-      const { bankName, accountNumber, accountName, acceptsCashOnDelivery } =
-        val
-
-      // Treat empty strings as falsy
-      const bName = bankName?.trim()
-      const aNumber = accountNumber?.trim()
-      const aName = accountName?.trim()
-
-      const hasAnyBankDetail = Boolean(bName || aNumber || aName)
-      const hasAllBankDetails = Boolean(bName && aNumber && aName)
-
-      if (hasAnyBankDetail && !hasAllBankDetails) {
-        if (!bName)
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Bank name is required",
-            path: ["bankName"],
-          })
-        if (!aNumber)
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Account number is required",
-            path: ["accountNumber"],
-          })
-        if (!aName)
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Account name is required",
-            path: ["accountName"],
-          })
-      } else if (!hasAnyBankDetail && !acceptsCashOnDelivery) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Bank name is required if not accepting Cash on Delivery",
-          path: ["bankName"],
-        })
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message:
-            "Account number is required if not accepting Cash on Delivery",
-          path: ["accountNumber"],
-        })
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Account name is required if not accepting Cash on Delivery",
-          path: ["accountName"],
-        })
-      }
-
-      if (aNumber && !/^\d{10}$/.test(aNumber)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Account number must be exactly 10 digits.",
-          path: ["accountNumber"],
-        })
-      }
-    }),
+  accountNumber: z
+    .string()
+    .length(10, "Account number must be 10 digits")
+    .optional(),
+  bankCode: z.string().min(1, "Bank is required").optional(),
 })
 
 export type VendorPaymentSettingsValues = z.infer<
@@ -283,9 +231,33 @@ export type VendorLoginValues = z.infer<typeof vendorLoginSchema>
 // ─── Order Payment Status Schema ──────────────────────────────────────────────
 
 export const orderPaymentStatusSchema = z.object({
-  paymentStatus: z.enum(["pending", "transferred", "confirmed", "failed"], {
+  paymentStatus: z.enum(["pending", "paid", "failed"], {
     message: "Invalid payment status",
   }),
 })
 
 export type OrderPaymentStatusValues = z.infer<typeof orderPaymentStatusSchema>
+
+// ─── Admin Password Schema ────────────────────────────────────────────────────
+
+/**
+ * Base schema (no cross-field refine) — used for zodResolver so the input type
+ * matches FieldValues. Cross-field password match validation is done via setError
+ * in the submit handler, per the react-hook-form + Zod v4 recommended pattern.
+ */
+export const adminPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "Must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+})
+
+export type AdminPasswordValues = z.infer<typeof adminPasswordSchema>
+
+// ─── Global Settings Schema ───────────────────────────────────────────────────
+
+export const globalSettingsSchema = z.object({
+  platformFeePercentage: z.number().min(0).max(100),
+  maintenanceMode: z.boolean(),
+})
+
+export type GlobalSettingsValues = z.infer<typeof globalSettingsSchema>

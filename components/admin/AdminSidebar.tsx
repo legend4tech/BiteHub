@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { signOut } from "next-auth/react";
+import Link from "next/link"
+import { signOut } from "next-auth/react"
 import {
   LayoutDashboard,
   Store,
@@ -12,43 +12,49 @@ import {
   Menu,
   ShieldCheck,
   Home,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { toast } from "sonner";
-import { useState } from "react";
+  Settings,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { toast } from "sonner"
+import { useState } from "react"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/tooltip"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { APP_NAME, APP_LOGO_URL } from "@/lib/constants";
+} from "@/components/ui/sheet"
+import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type AdminSection = "overview" | "vendors" | "feedback";
+export type AdminSection = "overview" | "vendors" | "feedback" | "settings"
 
 interface AdminSidebarProps {
-  activeSection: AdminSection;
-  onSectionChange: (section: AdminSection) => void;
+  activeSection: AdminSection
+  onSectionChange: (section: AdminSection) => void
 }
 
 // ─── Nav Items ────────────────────────────────────────────────────────────────
 
-const navItems: { section: AdminSection; label: string; icon: React.ElementType }[] = [
-  { section: "overview",  label: "Overview",  icon: LayoutDashboard },
-  { section: "vendors",   label: "Vendors",   icon: Store           },
-  { section: "feedback",  label: "Feedback",  icon: Star            },
-];
+const navItems: {
+  section: AdminSection
+  label: string
+  icon: React.ElementType
+}[] = [
+  { section: "overview", label: "Overview", icon: LayoutDashboard },
+  { section: "vendors", label: "Vendors", icon: Store },
+  { section: "feedback", label: "Feedback", icon: Star },
+  { section: "settings", label: "Settings", icon: Settings },
+]
 
 // ─── Nav Links ────────────────────────────────────────────────────────────────
 
@@ -58,26 +64,26 @@ function NavLinks({
   onSectionChange,
   onNavigate,
 }: {
-  activeSection: AdminSection;
-  collapsed?: boolean;
-  onSectionChange: (s: AdminSection) => void;
-  onNavigate?: () => void;
+  activeSection: AdminSection
+  collapsed?: boolean
+  onSectionChange: (s: AdminSection) => void
+  onNavigate?: () => void
 }) {
   return (
     <TooltipProvider delayDuration={0}>
-      <nav className="flex-1 px-3 py-6 space-y-1.5">
+      <nav className="flex-1 space-y-1.5 px-3 py-6">
         {navItems.map((item) => {
-          const active = activeSection === item.section;
+          const active = activeSection === item.section
           return (
             <Tooltip key={item.section}>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => {
-                    onSectionChange(item.section);
-                    onNavigate?.();
+                    onSectionChange(item.section)
+                    onNavigate?.()
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 group relative",
+                    "group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-4",
                     active
                       ? "bg-primary text-white shadow-[0_4px_12px_-2px_rgba(255,107,0,0.3)]"
@@ -87,12 +93,14 @@ function NavLinks({
                   <item.icon
                     className={cn(
                       "size-5 shrink-0 transition-transform group-hover:scale-110",
-                      active ? "text-white" : "text-muted-foreground group-hover:text-primary"
+                      active
+                        ? "text-white"
+                        : "text-muted-foreground group-hover:text-primary"
                     )}
                   />
                   {!collapsed && <span>{item.label}</span>}
                   {active && !collapsed && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                    <span className="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -102,11 +110,11 @@ function NavLinks({
                 </TooltipContent>
               )}
             </Tooltip>
-          );
+          )
         })}
       </nav>
     </TooltipProvider>
-  );
+  )
 }
 
 // ─── Sidebar Content ──────────────────────────────────────────────────────────
@@ -118,29 +126,28 @@ function SidebarContent({
   onSectionChange,
   onNavigate,
 }: {
-  activeSection: AdminSection;
-  collapsed: boolean;
-  setCollapsed?: (v: boolean) => void;
-  onSectionChange: (s: AdminSection) => void;
-  onNavigate?: () => void;
+  activeSection: AdminSection
+  collapsed: boolean
+  setCollapsed?: (v: boolean) => void
+  onSectionChange: (s: AdminSection) => void
+  onNavigate?: () => void
 }) {
   return (
-    <div className="flex flex-col h-full">
-
+    <div className="flex h-full flex-col">
       {/* ── Brand + Collapse toggle ── */}
-      <div className="relative px-4 py-5 border-b border-border/50 flex items-center justify-center min-h-[76px]">
+      <div className="relative flex min-h-[76px] items-center justify-center border-b border-border/50 px-4 py-5">
         {!collapsed && (
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="group flex items-center gap-2.5">
             <img
               src={APP_LOGO_URL}
               alt={APP_NAME}
-              className="h-10 w-10 object-contain rounded-lg transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2 shrink-0"
+              className="h-10 w-10 shrink-0 rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
             />
             <div className="flex flex-col -space-y-0.5">
-              <span className="font-heading font-black text-xl tracking-tight leading-none text-foreground transition-colors group-hover:text-primary">
+              <span className="font-heading text-xl leading-none font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
                 Bite<span className="text-primary">Hub</span>
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
                 Admin
               </span>
             </div>
@@ -148,11 +155,11 @@ function SidebarContent({
         )}
 
         {collapsed && (
-          <Link href="/" className="flex items-center justify-center group">
+          <Link href="/" className="group flex items-center justify-center">
             <img
               src={APP_LOGO_URL}
               alt={APP_NAME}
-              className="h-9 w-9 object-contain rounded-lg transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
+              className="h-9 w-9 rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
             />
           </Link>
         )}
@@ -161,7 +168,7 @@ function SidebarContent({
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "h-7 w-7 rounded-lg border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors shrink-0 z-10",
+              "z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-accent",
               collapsed ? "ml-1.5" : "absolute right-3"
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -177,13 +184,17 @@ function SidebarContent({
 
       {/* ── Admin role badge ── */}
       {!collapsed && (
-        <div className="mx-3 mt-4 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15 flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-primary/10 grid place-items-center shrink-0">
+        <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
+          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10">
             <ShieldCheck className="size-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">Super Admin</p>
-            <p className="text-[10px] text-muted-foreground">Full platform access</p>
+            <p className="truncate text-xs font-bold text-foreground">
+              Super Admin
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Full platform access
+            </p>
           </div>
         </div>
       )}
@@ -197,16 +208,20 @@ function SidebarContent({
       />
 
       {/* ── Bottom bar ── */}
-      <div className={cn("border-t border-border/50 pt-4 pb-5 space-y-2", collapsed ? "px-2" : "px-3")}>
+      <div
+        className={cn(
+          "space-y-2 border-t border-border/50 pt-4 pb-5",
+          collapsed ? "px-2" : "px-3"
+        )}
+      >
         <TooltipProvider delayDuration={0}>
-
           {/* Back to site */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href="/"
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group",
+                  "group flex w-full items-center gap-3 rounded-xl text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground",
                   collapsed ? "justify-center p-3" : "px-4 py-3"
                 )}
               >
@@ -215,13 +230,24 @@ function SidebarContent({
               </Link>
             </TooltipTrigger>
             {collapsed && (
-              <TooltipContent side="right" className="font-medium">Back to site</TooltipContent>
+              <TooltipContent side="right" className="font-medium">
+                Back to site
+              </TooltipContent>
             )}
           </Tooltip>
 
           {/* Theme toggle row */}
-          <div className={cn("flex items-center rounded-xl bg-accent/30", collapsed ? "justify-center p-2" : "justify-between px-4 py-2.5")}>
-            {!collapsed && <span className="text-xs font-medium text-muted-foreground">Theme</span>}
+          <div
+            className={cn(
+              "flex items-center rounded-xl bg-accent/30",
+              collapsed ? "justify-center p-2" : "justify-between px-4 py-2.5"
+            )}
+          >
+            {!collapsed && (
+              <span className="text-xs font-medium text-muted-foreground">
+                Theme
+              </span>
+            )}
             <ThemeToggle />
           </div>
 
@@ -233,7 +259,7 @@ function SidebarContent({
                   trigger={
                     <button
                       className={cn(
-                        "flex items-center gap-3 w-full rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200 group",
+                        "group flex w-full items-center gap-3 rounded-xl text-sm font-medium text-destructive transition-all duration-200 hover:bg-destructive/10",
                         collapsed ? "justify-center p-3" : "px-4 py-3"
                       )}
                     >
@@ -246,32 +272,36 @@ function SidebarContent({
                   confirmText="Yes, log out"
                   isDestructive
                   onConfirm={() => {
-                    toast.success("Successfully logged out");
-                    signOut({ callbackUrl: "/admin/login" });
+                    toast.success("Successfully logged out")
+                    signOut({ callbackUrl: "/admin/login" })
                   }}
                 />
               </span>
             </TooltipTrigger>
             {collapsed && (
-              <TooltipContent side="right" className="font-medium">Log out</TooltipContent>
+              <TooltipContent side="right" className="font-medium">
+                Log out
+              </TooltipContent>
             )}
           </Tooltip>
-
         </TooltipProvider>
       </div>
     </div>
-  );
+  )
 }
 
 // ─── Desktop Sidebar ──────────────────────────────────────────────────────────
 
-export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function AdminSidebar({
+  activeSection,
+  onSectionChange,
+}: AdminSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col shrink-0 border-r border-border bg-card/60 backdrop-blur-md h-full overflow-hidden transition-all duration-300",
+        "hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-card/60 backdrop-blur-md transition-all duration-300 md:flex",
         collapsed ? "w-[68px]" : "w-64"
       )}
     >
@@ -282,7 +312,7 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
         onSectionChange={onSectionChange}
       />
     </aside>
-  );
+  )
 }
 
 // ─── Mobile Trigger ────────────────────────────────────────────────────────────
@@ -291,16 +321,19 @@ export function AdminMobileTrigger({
   activeSection,
   onSectionChange,
 }: AdminSidebarProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button className="md:hidden flex items-center justify-center h-9 w-9 rounded-xl border border-border bg-card hover:bg-accent transition-colors">
+        <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card transition-colors hover:bg-accent md:hidden">
           <Menu className="size-4" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-72 bg-card border-r border-border">
+      <SheetContent
+        side="left"
+        className="w-72 border-r border-border bg-card p-0"
+      >
         <SheetHeader className="sr-only">
           <SheetTitle>Admin Navigation</SheetTitle>
         </SheetHeader>
@@ -312,5 +345,5 @@ export function AdminMobileTrigger({
         />
       </SheetContent>
     </Sheet>
-  );
+  )
 }

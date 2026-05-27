@@ -31,7 +31,10 @@ export async function GET(request: Request) {
     const status = searchParams.get("status")
     const limit = parseInt(searchParams.get("limit") || "0", 10)
 
-    const query: Record<string, unknown> = { vendorId }
+    const query: Record<string, unknown> = {
+      vendorId,
+      paymentStatus: { $ne: "pending" },
+    }
     if (status && status !== "all") {
       query.status = status
     }

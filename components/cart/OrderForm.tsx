@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ShoppingBag, X, Loader2, Copy } from "lucide-react"
+import { ShoppingBag, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,14 +10,20 @@ import { useCart } from "@/hooks/useCart"
 import { orderFormInputSchema, type OrderFormInputValues } from "@/lib/schemas"
 import { normaliseNigerianPhone } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
+import { useForm, Controller, type Resolver } from "react-hook-form"
 import { Field, FieldError } from "@/components/ui/field"
-import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { toast } from "sonner"
-import { formatPrice } from "@/lib/format"
+import { formatPrice, formatPriceExact } from "@/lib/format"
+import { computePaystackServiceFee } from "@/lib/fees"
 import apiClient from "@/lib/axios"
 import { AxiosError } from "axios"
 import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
+import dynamic from "next/dynamic"
+
+const PaystackHandler = dynamic(
+  () => import("@/components/cart/PaystackHandler"),
+  { ssr: false }
+)
 
 interface OrderFormProps {
   open: boolean
@@ -28,7 +34,9 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
   const { cart, clearCart, syncVendorDetails, total } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [platformFeePercent, setPlatformFeePercent] = useState<number>(5)
 
   const form = useForm<OrderFormInputValues>({
     resolver: zodResolver(
@@ -36,26 +44,29 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     ) as unknown as Resolver<OrderFormInputValues>,
     defaultValues: {
       name: "",
+      email: "",
       phone: "",
       location: "",
       notes: "",
-      paymentMethod: "transfer", // default
+      paymentMethod: "paystack",
     },
   })
 
-  const paymentMethod = useWatch({
-    control: form.control,
-    name: "paymentMethod",
-  })
-  const hasPaid = useWatch({ control: form.control, name: "hasPaid" })
-  const [isSyncing, setIsSyncing] = useState(true)
+  // Load saved email from local storage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedEmail = localStorage.getItem("bitehub_customer_email")
+      if (savedEmail) {
+        form.setValue("email", savedEmail)
+      }
+    }
+  }, [form])
 
-  // Ensure we have the absolute latest delivery fee from the DB right before checkout
-  // This solves the edge case where a vendor changes their fee while a student has
-  // a dormant cart saved in their browser's local storage.
   useEffect(() => {
     if (open && cart.vendorId) {
-      setTimeout(() => setIsSyncing(true), 0)
+      setTimeout(() => {
+        setIsSyncing(true)
+      }, 0)
       apiClient
         .get(`/vendors/fee/${cart.vendorId}`)
         .then((res) => {
@@ -64,19 +75,50 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               cart.vendorId!,
               res.data.deliveryFee,
               res.data.prepTime,
-              res.data.acceptsCashOnDelivery,
-              res.data.paymentDetails
+              res.data.paystackSubaccountCode
             )
           }
         })
         .catch((err) =>
           console.error("Failed to sync latest delivery fee", err)
         )
-        .finally(() => setIsSyncing(false))
-    } else if (open) {
-      setTimeout(() => setIsSyncing(false), 0)
+        .finally(() => {
+          setIsSyncing(false)
+        })
+
+      apiClient
+        .get("/admin/settings/global")
+        .then((res) => {
+          if (res.data && typeof res.data.platformFeePercentage === "number") {
+            setPlatformFeePercent(res.data.platformFeePercentage)
+          }
+        })
+        .catch((err) => console.error("Failed to sync global settings", err))
     }
   }, [open, cart.vendorId, syncVendorDetails])
+
+  // Gross-up formula: collect exactly enough from the customer so Paystack's 1.5% cut
+  // of the total equals serviceFee. Vendor absorbs zero processing cost.
+  // See lib/fees.ts for the full derivation.
+  const serviceFee = computePaystackServiceFee(total)
+  const finalTotal = total + serviceFee
+
+  // Platform commission on the base subtotal (food + delivery) only — exact decimal.
+  // Must match the backend calculation in /api/orders/route.ts
+  const platformCommission = total * (platformFeePercent / 100)
+  // Paystack requires kobo as an integer; Math.round() only at this final conversion step.
+  const transactionChargeKobo = Math.round(platformCommission * 100)
+
+  const [paystackConfig, setPaystackConfig] = useState<{
+    reference: string
+    email: string
+    amount: number
+    publicKey: string
+    subaccount?: string
+    bearer?: string
+    transaction_charge?: number
+    metadata?: Record<string, unknown>
+  } | null>(null)
 
   if (!open) return null
 
@@ -85,10 +127,23 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
 
     if (cart.items.length === 0 || !cart.vendorId) return
 
+    if (!cart.vendorPaystackSubaccountCode) {
+      setServerError(
+        "This vendor is not connected to Paystack. Cannot process payment."
+      )
+      return
+    }
+
     const customerPhone = normaliseNigerianPhone(values.phone)
+    const reference = new Date().getTime().toString()
 
     setLoading(true)
     try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("bitehub_customer_email", values.email)
+      }
+
+      // 1. Create the pending order first so the webhook can find it
       const response = await apiClient.post("/orders", {
         vendorId: cart.vendorId,
         vendorName: cart.vendorName,
@@ -100,22 +155,42 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           quantity: ci.quantity,
         })),
         customerName: values.name,
+        customerEmail: values.email,
         customerPhone,
         location: values.location,
         notes: values.notes,
-        paymentMethod: values.paymentMethod || "transfer",
-        total,
+        paymentMethod: "paystack",
+        paystackReference: reference,
+        total: finalTotal,
       })
 
       const { orderId } = response.data
-      toast.success("Order placed successfully!")
 
-      // 1. Close modal first — user stops seeing the form immediately
-      onClose()
-      // 2. Navigate — React will unmount the form before the cart clears
-      router.push(`/order/${orderId}`)
-      // 3. Clear cart last — doesn't matter, form is already gone
-      clearCart()
+      // 2. Configure and trigger Paystack popup
+      setPaystackConfig({
+        reference,
+        email: values.email,
+        amount: Math.round(finalTotal * 100), // kobo — must be integer; round avoids fractional kobo drift
+        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+        subaccount: cart.vendorPaystackSubaccountCode,
+        bearer: "subaccount", // Platform takes its cut, vendor bears the fee difference since we already added serviceFee to finalTotal
+        transaction_charge: transactionChargeKobo, // Dynamically overrides the subaccount's fixed percentage!
+        metadata: {
+          orderId,
+          custom_fields: [
+            {
+              display_name: "Customer Name",
+              variable_name: "customer_name",
+              value: values.name,
+            },
+            {
+              display_name: "Phone Number",
+              variable_name: "phone_number",
+              value: values.phone,
+            },
+          ],
+        },
+      })
     } catch (error) {
       const apiError =
         error instanceof AxiosError
@@ -125,6 +200,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       setLoading(false)
     }
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       {/* Backdrop */}
@@ -153,6 +229,22 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
           <OrderFormCartItems loading={loading} />
 
+          {/* Fees Breakdown */}
+          <div className="space-y-2 rounded-2xl bg-muted/30 p-4 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal & Delivery</span>
+              <span>{formatPrice(total)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Service Fee</span>
+              <span>{formatPriceExact(serviceFee)}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-2 font-bold">
+              <span>Total to Pay</span>
+              <span>{formatPriceExact(finalTotal)}</span>
+            </div>
+          </div>
+
           {/* Customer info */}
           <div className="space-y-4">
             <p className="text-sm font-semibold">Your details</p>
@@ -166,6 +258,25 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                     {...field}
                     id={field.name}
                     placeholder="Your name *"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="email"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    type="email"
+                    placeholder="Your email address * (for receipt)"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (
@@ -232,185 +343,18 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               )}
             />
 
-            {/* Payment Method Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-semibold">Payment Method</label>
-              <Controller
-                name="paymentMethod"
-                control={form.control}
-                render={({ field }) => (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <label
-                      className={`relative flex cursor-pointer flex-col items-start gap-1 rounded-2xl border p-4 transition-colors ${
-                        field.value === "transfer"
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <span className="text-sm font-semibold">
-                          Bank Transfer
-                        </span>
-                        <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                            field.value === "transfer"
-                              ? "border-primary bg-primary"
-                              : "border-muted-foreground/30"
-                          }`}
-                        >
-                          {field.value === "transfer" && (
-                            <div className="h-2 w-2 rounded-full bg-white" />
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Pay via direct transfer and send receipt to verify.
-                      </p>
-                      <input
-                        type="radio"
-                        className="sr-only"
-                        {...field}
-                        value="transfer"
-                        checked={field.value === "transfer"}
-                      />
-                    </label>
-
-                    {cart.vendorAcceptsCashOnDelivery && (
-                      <label
-                        className={`relative flex cursor-pointer flex-col items-start gap-1 rounded-2xl border p-4 transition-colors ${
-                          field.value === "cash"
-                            ? "border-primary bg-primary/5 shadow-sm"
-                            : "border-border hover:bg-muted/50"
-                        }`}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="text-sm font-semibold">
-                            Cash on Delivery
-                          </span>
-                          <div
-                            className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                              field.value === "cash"
-                                ? "border-primary bg-primary"
-                                : "border-muted-foreground/30"
-                            }`}
-                          >
-                            {field.value === "cash" && (
-                              <div className="h-2 w-2 rounded-full bg-white" />
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Pay with cash when your food arrives.
-                        </p>
-                        <input
-                          type="radio"
-                          className="sr-only"
-                          {...field}
-                          value="cash"
-                          checked={field.value === "cash"}
-                        />
-                      </label>
-                    )}
-                  </div>
-                )}
-              />
-
-              {paymentMethod === "transfer" && isSyncing && (
-                <PageSkeleton variant="payment-details" />
-              )}
-
-              {paymentMethod === "transfer" && !isSyncing &&
-                cart.vendorPaymentDetails?.bankName && (
-                  <div className="mt-4 space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-                    <div>
-                      <h4 className="text-sm font-semibold">
-                        Please transfer {formatPrice(total)} to:
-                      </h4>
-                      <div className="mt-3 space-y-2 text-sm">
-                        <div className="flex justify-between border-b border-primary/10 pb-2">
-                          <span className="text-muted-foreground">
-                            Bank Name
-                          </span>
-                          <span className="font-semibold">
-                            {cart.vendorPaymentDetails.bankName}
-                          </span>
-                        </div>
-                        <div className="flex justify-between border-b border-primary/10 py-2">
-                          <span className="text-muted-foreground">
-                            Account Number
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">
-                              {cart.vendorPaymentDetails.accountNumber}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-6 hover:bg-primary/10"
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  cart.vendorPaymentDetails!.accountNumber
-                                )
-                                toast.success("Account number copied!")
-                              }}
-                            >
-                              <Copy className="size-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex justify-between pt-2">
-                          <span className="text-muted-foreground">
-                            Account Name
-                          </span>
-                          <span className="font-semibold">
-                            {cart.vendorPaymentDetails.accountName}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Controller
-                      name="hasPaid"
-                      control={form.control}
-                      render={({ field }) => (
-                        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/50">
-                          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-primary">
-                            <input
-                              type="checkbox"
-                              className="peer sr-only"
-                              {...field}
-                              checked={field.value}
-                              value="true"
-                            />
-                            {field.value && (
-                              <div className="h-3 w-3 rounded-sm bg-primary" />
-                            )}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold">
-                              I have transferred the money
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Don&apos;t check this if you haven&apos;t paid
-                              yet. You will need to send the receipt to the
-                              vendor on WhatsApp after placing the order.
-                            </span>
-                          </div>
-                        </label>
-                      )}
-                    />
-                  </div>
-                )}
-
-              {paymentMethod === "transfer" && !isSyncing &&
-                !cart.vendorPaymentDetails?.bankName && (
-                  <div className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-                    This vendor has not provided their bank details. Please
-                    select Cash on Delivery if available, or remove this
-                    vendor&apos;s items.
-                  </div>
-                )}
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold">Pay with Paystack</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Secure, automated payments
+                  </p>
+                </div>
+                <div className="flex h-8 items-center rounded bg-white px-2 shadow-sm">
+                  <span className="font-bold text-[#0BA4DB]">paystack</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -426,20 +370,40 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             variant="hero"
             size="xl"
             className="w-full"
-            disabled={
-              loading ||
-              cart.items.length === 0 ||
-              (paymentMethod === "transfer" && !hasPaid)
-            }
+            disabled={loading || isSyncing || cart.items.length === 0}
           >
-            {loading ? (
+            {loading || isSyncing ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <ShoppingBag className="size-4" />
             )}
-            {loading ? "Placing order…" : `Place order · ${formatPrice(total)}`}
+            {loading ? "Processing…" : `Pay ${formatPriceExact(finalTotal)}`}
           </Button>
         </form>
+
+        {paystackConfig && (
+          <PaystackHandler
+            config={paystackConfig}
+            onSuccess={async (_reference: string) => {
+              const orderId = paystackConfig?.metadata?.orderId as string
+              try {
+                // Manually verify payment in case webhook is delayed or blocked in dev
+                await apiClient.post(`/orders/${orderId}/verify`)
+              } catch (e) {
+                console.error("Manual verification failed", e)
+              }
+              toast.success("Payment successful! Order confirmed.")
+              onClose()
+              router.push(`/order/${orderId}`)
+              clearCart()
+            }}
+            onClose={() => {
+              toast.error("Payment cancelled. You can try again.")
+              setLoading(false)
+              setPaystackConfig(null) // reset config so it can be re-triggered
+            }}
+          />
+        )}
       </div>
     </div>
   )

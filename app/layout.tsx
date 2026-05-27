@@ -1,14 +1,15 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next"
 import { Bricolage_Grotesque, Inter, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 
 import { Toaster } from "@/components/ui/sonner"
-import { cn } from "@/lib/utils";
-import { QueryProvider } from "@/components/providers/QueryProvider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { CampusProvider } from "@/components/providers/CampusProvider";
-import { Suspense } from "react";
+import { cn } from "@/lib/utils"
+import { QueryProvider } from "@/components/providers/QueryProvider"
+import { ThemeProvider } from "@/components/theme-provider"
+import { CampusProvider } from "@/components/providers/CampusProvider"
+import { Suspense } from "react"
+import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -23,11 +24,11 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
-};
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
       "Discover campus food vendors near you, browse their menus, and place your order in seconds — all from one app.",
     images: ["/og-image.png"],
   },
-};
+}
 
 export default function RootLayout({
   children,
@@ -82,7 +83,7 @@ export default function RootLayout({
         inter.variable,
         bricolage.variable,
         fontMono.variable,
-        "font-sans",
+        "font-sans"
       )}
     >
       <body suppressHydrationWarning>
@@ -90,8 +91,10 @@ export default function RootLayout({
           <ThemeProvider>
             <Suspense fallback={null}>
               <CampusProvider>
-                {children}
-                <Toaster position="top-right" richColors closeButton expand />
+                <MaintenanceGuard>
+                  {children}
+                  <Toaster position="top-right" richColors closeButton expand />
+                </MaintenanceGuard>
               </CampusProvider>
             </Suspense>
           </ThemeProvider>

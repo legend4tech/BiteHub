@@ -21,9 +21,8 @@ import {
   Clock,
   StickyNote,
 } from "lucide-react"
-import { OrderPaymentDetails } from "@/components/cart/OrderPaymentDetails"
 import { Button } from "@/components/ui/button"
-import { formatPrice, formatTime } from "@/lib/format"
+import { formatPrice, formatPriceExact, formatTime } from "@/lib/format"
 import { useOrder } from "@/hooks/queries/useOrder"
 import { toast } from "sonner"
 import {
@@ -252,9 +251,6 @@ export default function OrderPage() {
           <OrderStatusTracker status={order.status} />
         </div>
 
-        {/* ── Payment Details ────────────────────────────────────── */}
-        <OrderPaymentDetails order={order} />
-
         {/* ── Items breakdown ────────────────────────────────────── */}
         <div className="rounded-[28px] border border-border bg-card shadow-sm">
           <div className="flex items-center gap-2.5 border-b border-border/60 px-7 py-5 sm:px-8">
@@ -291,24 +287,49 @@ export default function OrderPage() {
 
             {/* Total breakdown */}
             <div className="mt-5 space-y-2 border-t border-border/60 pt-4">
+              {/* Items subtotal — sum from actual items, not derived from totalAmount */}
               <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
-                <span>Subtotal</span>
+                <span>Items subtotal</span>
                 <span className="tabular-nums">
-                  {formatPrice(order.totalAmount - (order.deliveryFee || 0))}
+                  {formatPriceExact(
+                    order.items.reduce(
+                      (sum, i) => sum + i.price * i.quantity,
+                      0
+                    )
+                  )}
                 </span>
               </div>
+
+              {/* Delivery fee */}
               <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
                 <span>Delivery Fee</span>
                 <span className="tabular-nums">
                   {(order.deliveryFee || 0) > 0
-                    ? formatPrice(order.deliveryFee)
+                    ? formatPriceExact(order.deliveryFee)
                     : "Free"}
                 </span>
               </div>
+
+              {/* Service / processing fee — shown separately so nothing is hidden */}
+              {(order.serviceFee || 0) > 0 && (
+                <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    Processing Fee
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
+                      Paystack
+                    </span>
+                  </span>
+                  <span className="tabular-nums">
+                    {formatPriceExact(order.serviceFee)}
+                  </span>
+                </div>
+              )}
+
+              {/* Grand total */}
               <div className="mt-2 flex items-center justify-between rounded-2xl bg-primary/8 px-4 py-3.5">
-                <span className="text-sm font-bold">Total</span>
+                <span className="text-sm font-bold">Total Charged</span>
                 <span className="text-lg font-extrabold text-primary tabular-nums">
-                  {formatPrice(order.totalAmount)}
+                  {formatPriceExact(order.totalAmount)}
                 </span>
               </div>
             </div>
@@ -350,7 +371,7 @@ export default function OrderPage() {
                 customerName: order.customerName,
                 items: order.items,
                 total: order.totalAmount,
-                notes: order.notes,
+                notes: order.notes ?? undefined,
                 paymentMethod: order.paymentMethod,
                 paymentStatus: order.paymentStatus,
               }}

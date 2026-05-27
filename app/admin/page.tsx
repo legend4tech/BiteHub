@@ -1,78 +1,106 @@
-"use client";
+"use client"
 
-import { useState, useTransition, useOptimistic } from "react";
-import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import apiClient from "@/lib/axios";
-import { APP_LOGO_URL, APP_NAME } from "@/lib/constants";
-import { AdminSidebar, AdminMobileTrigger, type AdminSection } from "@/components/admin/AdminSidebar";
-import { AdminOverview } from "@/components/admin/AdminOverview";
-import { AdminVendors } from "@/components/admin/AdminVendors";
-import { AdminFeedback } from "@/components/admin/AdminFeedback";
-import { AddLoginModal, AddVendorModal } from "@/components/admin/AdminModals";
-import type { AdminStats, AdminVendor } from "@/components/admin/types";
+import { useState, useTransition, useOptimistic } from "react"
+import Link from "next/link"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import apiClient from "@/lib/axios"
+import Image from "next/image"
+import { APP_LOGO_URL, APP_NAME } from "@/lib/constants"
+import {
+  AdminSidebar,
+  AdminMobileTrigger,
+  type AdminSection,
+} from "@/components/admin/AdminSidebar"
+import { AdminOverview } from "@/components/admin/AdminOverview"
+import { AdminVendors } from "@/components/admin/AdminVendors"
+import { AdminFeedback, type Feedback } from "@/components/admin/AdminFeedback"
+import { AdminSettings } from "@/components/admin/AdminSettings"
+import { AddLoginModal, AddVendorModal } from "@/components/admin/AdminModals"
+import type { AdminStats, AdminVendor } from "@/components/admin/types"
 
 export default function AdminPage() {
-  const [activeSection, setActiveSection] = useState<AdminSection>("overview");
-  const [togglingId, setTogglingId]       = useState<string | null>(null);
-  const [addLoginFor, setAddLoginFor]     = useState<AdminVendor | null>(null);
-  const [showAddVendor, setShowAddVendor] = useState(false);
-  const queryClient = useQueryClient();
+  const [activeSection, setActiveSection] = useState<AdminSection>("overview")
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null)
+  const [showAddVendor, setShowAddVendor] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data: stats, isLoading: loadingStats } = useQuery<AdminStats>({
     queryKey: ["admin-stats"],
     queryFn: async () => (await apiClient.get("/admin/stats")).data,
-  });
+  })
 
-  const { data: vendorsData, isLoading: loadingVendors, refetch: fetchVendors } = useQuery<AdminVendor[]>({
+  const {
+    data: vendorsData,
+    isLoading: loadingVendors,
+    refetch: fetchVendors,
+  } = useQuery<AdminVendor[]>({
     queryKey: ["admin-vendors"],
     queryFn: async () => (await apiClient.get("/admin/vendors")).data,
-  });
+  })
 
-  const { data: feedbacks, isLoading: loadingFeedback } = useQuery<any[]>({
+  const { data: feedbacks, isLoading: loadingFeedback } = useQuery<Feedback[]>({
     queryKey: ["admin-feedback"],
     queryFn: async () => (await apiClient.get("/admin/feedback")).data,
-  });
+  })
 
-  const vendors = vendorsData ?? [];
+  const vendors = vendorsData ?? []
 
-  const [, startTransition] = useTransition();
+  const [, startTransition] = useTransition()
   const [optimisticVendors, addOptimisticVendor] = useOptimistic(
     vendors,
-    (state, updated: AdminVendor) => state.map((v) => (v.id === updated.id ? updated : v))
-  );
+    (state, updated: AdminVendor) =>
+      state.map((v) => (v.id === updated.id ? updated : v))
+  )
 
-  const noAccountVendors = optimisticVendors.filter((v) => !v.account);
+  const noAccountVendors = optimisticVendors.filter((v) => !v.account)
 
   const toggleVendorActive = (vendor: AdminVendor) => {
-    setTogglingId(vendor.id);
-    addOptimisticVendor({ ...vendor, isActive: !vendor.isActive });
+    setTogglingId(vendor.id)
+    addOptimisticVendor({ ...vendor, isActive: !vendor.isActive })
     startTransition(async () => {
       try {
-        await apiClient.patch(`/admin/vendors/${vendor.id}`, { isActive: !vendor.isActive });
-        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-        toast.success(`Vendor ${!vendor.isActive ? "activated" : "deactivated"}`);
-      } catch (error: any) {
-        toast.error(error.response?.data?.error || "An error occurred");
+        await apiClient.patch(`/admin/vendors/${vendor.id}`, {
+          isActive: !vendor.isActive,
+        })
+        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+        toast.success(
+          `Vendor ${!vendor.isActive ? "activated" : "deactivated"}`
+        )
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { error?: string } } }
+        toast.error(err.response?.data?.error || "An error occurred")
       } finally {
-        setTogglingId(null);
+        setTogglingId(null)
       }
-    });
-  };
+    })
+  }
 
   return (
     <div className="fixed inset-0 flex bg-background text-foreground">
       {/* Desktop sidebar */}
-      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <AdminSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
 
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile top-bar */}
-        <header className="md:hidden sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md px-4 h-14 flex items-center justify-between shrink-0">
-          <AdminMobileTrigger activeSection={activeSection} onSectionChange={setActiveSection} />
+        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-md md:hidden">
+          <AdminMobileTrigger
+            activeSection={activeSection}
+            onSectionChange={setActiveSection}
+          />
           <Link href="/" className="flex items-center gap-2">
-            <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-8 object-contain rounded-lg" />
-            <span className="font-heading font-black text-lg tracking-tight leading-none">
+            <Image
+              src={APP_LOGO_URL}
+              alt={APP_NAME}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-lg object-contain"
+            />
+            <span className="font-heading text-lg leading-none font-black tracking-tight">
               Bite<span className="text-primary">Hub</span>
             </span>
           </Link>
@@ -81,7 +109,7 @@ export default function AdminPage() {
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="mx-auto max-w-6xl px-6 py-8">
             {activeSection === "overview" && (
               <AdminOverview
                 stats={stats}
@@ -102,18 +130,29 @@ export default function AdminPage() {
               />
             )}
             {activeSection === "feedback" && (
-              <AdminFeedback feedbacks={feedbacks} loadingFeedback={loadingFeedback} />
+              <AdminFeedback
+                feedbacks={feedbacks}
+                loadingFeedback={loadingFeedback}
+              />
             )}
+            {activeSection === "settings" && <AdminSettings />}
           </div>
         </main>
       </div>
 
       {addLoginFor && (
-        <AddLoginModal vendor={addLoginFor} onClose={() => setAddLoginFor(null)} onSuccess={fetchVendors} />
+        <AddLoginModal
+          vendor={addLoginFor}
+          onClose={() => setAddLoginFor(null)}
+          onSuccess={fetchVendors}
+        />
       )}
       {showAddVendor && (
-        <AddVendorModal onClose={() => setShowAddVendor(false)} onSuccess={fetchVendors} />
+        <AddVendorModal
+          onClose={() => setShowAddVendor(false)}
+          onSuccess={fetchVendors}
+        />
       )}
     </div>
-  );
+  )
 }

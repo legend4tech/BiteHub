@@ -36,13 +36,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
 
   const query: Record<string, unknown> = {
     isActive: true,
-    $or: [
-      {
-        "paymentDetails.bankName": { $exists: true, $ne: "" },
-        "paymentDetails.accountNumber": { $exists: true, $ne: "" },
-      },
-      { "paymentDetails.acceptsCashOnDelivery": true },
-    ],
+    paystackIntegrationStatus: "active",
   }
 
   if (school) query.school = school
@@ -108,13 +102,7 @@ export async function getFeaturedVendors(
 
   const query: Record<string, unknown> = {
     isActive: true,
-    $or: [
-      {
-        "paymentDetails.bankName": { $exists: true, $ne: "" },
-        "paymentDetails.accountNumber": { $exists: true, $ne: "" },
-      },
-      { "paymentDetails.acceptsCashOnDelivery": true },
-    ],
+    paystackIntegrationStatus: "active",
   }
   if (school) query.school = school
   if (campus) query.campus = campus

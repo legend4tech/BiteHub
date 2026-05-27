@@ -58,7 +58,11 @@ export function serializeVendor(doc: LeanVendor | null) {
     initials,
     tagline: doc.description ?? "The best food on campus",
     location: doc.campus ?? "Main Campus",
-    paymentDetails: doc.paymentDetails ?? null,
+    // Paystack integration fields
+    paystackSubaccountCode: doc.paystackSubaccountCode ?? null,
+    paystackBankCode: doc.paystackBankCode ?? null,
+    paystackIntegrationStatus: doc.paystackIntegrationStatus ?? "pending",
+    lastBankUpdateAt: doc.lastBankUpdateAt?.toISOString() ?? null,
   }
 }
 
@@ -105,12 +109,16 @@ export function serializeOrder(doc: LeanOrder | null) {
       price: item.price,
       quantity: item.quantity,
     })),
-    notes: doc.notes ?? null,
+    notes: doc.notes ?? "",
     deliveryFee: doc.deliveryFee ?? 0,
-    totalAmount: doc.totalAmount,
+    serviceFee: doc.serviceFee ?? 0,
+    platformCommission: doc.platformCommission ?? 0,
+    vendorRevenue: doc.vendorRevenue ?? 0,
+    totalAmount: doc.totalAmount ?? 0,
     status: doc.status,
-    paymentMethod: doc.paymentMethod ?? "transfer",
+    paymentMethod: doc.paymentMethod ?? "paystack",
     paymentStatus: doc.paymentStatus ?? "pending",
+    paystackReference: doc.paystackReference ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   }

@@ -107,7 +107,35 @@ export async function GET() {
             $sum: {
               $cond: [
                 { $eq: ["$status", ORDER_STATUS.COMPLETED] },
-                "$totalAmount",
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $ne: ["$vendorRevenue", null] },
+                        { $gt: ["$vendorRevenue", 0] },
+                      ],
+                    },
+                    "$vendorRevenue",
+                    {
+                      $subtract: [
+                        { $ifNull: ["$totalAmount", 0] },
+                        {
+                          $add: [
+                            { $ifNull: ["$serviceFee", 0] },
+                            {
+                              $ceil: {
+                                $multiply: [
+                                  { $ifNull: ["$totalAmount", 0] },
+                                  0.05,
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
                 0,
               ],
             },

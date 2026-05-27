@@ -11,13 +11,13 @@ import {
   Heading,
   Img,
   Link,
-} from "@react-email/components";
-import * as React from "react";
+} from "@react-email/components"
+import * as React from "react"
 
 interface ContactAutoReplyProps {
-  senderName: string;
-  subject: string;
-  message: string;
+  senderName: string
+  subject: string
+  message: string
 }
 
 export const ContactAutoReply = ({
@@ -50,7 +50,9 @@ export const ContactAutoReply = ({
 
           {/* Content */}
           <Section style={contentSection}>
-            <Heading style={heading}>We've received your message 👋</Heading>
+            <Heading style={heading}>
+              {"We've received your message 👋"}
+            </Heading>
             <Text style={text}>Hi {senderName},</Text>
             <Text style={text}>
               Thank you for reaching out to BiteHub. This is a confirmation that
@@ -109,10 +111,10 @@ export const ContactAutoReply = ({
         </Container>
       </Body>
     </Html>
-  );
-};
+  )
+}
 
-export default ContactAutoReply;
+export default ContactAutoReply
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -120,7 +122,7 @@ const main = {
   backgroundColor: "#f9fafb",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-};
+}
 
 const container = {
   margin: "0 auto",
@@ -131,18 +133,18 @@ const container = {
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
-};
+}
 
 const headerSection = {
   padding: "32px 40px 10px 40px",
   textAlign: "center" as const,
-};
+}
 
 const logoImg = {
   borderRadius: "12px",
   margin: "0 auto 12px auto",
   display: "block",
-};
+}
 
 const logoText = {
   margin: "0",
@@ -150,11 +152,11 @@ const logoText = {
   fontWeight: "900",
   letterSpacing: "-0.05em",
   color: "#111827",
-};
+}
 
 const logoHighlight = {
   color: "#ff6b00",
-};
+}
 
 const subHeader = {
   margin: "4px 0 0 0",
@@ -163,30 +165,30 @@ const subHeader = {
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
   color: "#6b7280",
-};
+}
 
 const divider = {
   borderColor: "#e5e7eb",
   margin: "20px 0",
-};
+}
 
 const contentSection = {
   padding: "0 40px",
-};
+}
 
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
   color: "#111827",
   marginBottom: "16px",
-};
+}
 
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
   color: "#374151",
   margin: "0 0 16px 0",
-};
+}
 
 const sectionLabel = {
   fontSize: "13px",
@@ -195,7 +197,7 @@ const sectionLabel = {
   textTransform: "uppercase" as const,
   letterSpacing: "0.05em",
   margin: "0 0 8px 0",
-};
+}
 
 const summaryBox = {
   backgroundColor: "#f9fafb",
@@ -203,23 +205,23 @@ const summaryBox = {
   borderRadius: "8px",
   padding: "16px",
   marginBottom: "20px",
-};
+}
 
 const summaryRow = {
   fontSize: "14px",
   color: "#374151",
   margin: "0 0 8px 0",
-};
+}
 
 const summaryLabel = {
   fontWeight: "700",
   color: "#111827",
-};
+}
 
 const summaryDivider = {
   borderColor: "#e5e7eb",
   margin: "8px 0",
-};
+}
 
 const summaryMessage = {
   fontSize: "14px",
@@ -227,12 +229,12 @@ const summaryMessage = {
   color: "#6b7280",
   margin: "0",
   whiteSpace: "pre-wrap" as const,
-};
+}
 
 const buttonRow = {
   textAlign: "center" as const,
   margin: "24px 0",
-};
+}
 
 const primaryButton = {
   backgroundColor: "#ff6b00",
@@ -244,7 +246,7 @@ const primaryButton = {
   textAlign: "center" as const,
   display: "inline-block",
   padding: "12px 28px",
-};
+}
 
 const warningText = {
   fontSize: "13px",
@@ -254,32 +256,32 @@ const warningText = {
   padding: "12px 16px",
   borderRadius: "8px",
   margin: "0 0 20px 0",
-};
+}
 
 const footerSection = {
   padding: "0 40px",
   textAlign: "center" as const,
-};
+}
 
 const footerBrand = {
   fontSize: "16px",
   fontWeight: "900",
   color: "#111827",
   margin: "0 0 8px 0",
-};
+}
 
 const footerOrange = {
   color: "#ff6b00",
-};
+}
 
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
   color: "#9ca3af",
   margin: "0 0 6px 0",
-};
+}
 
 const footerLink = {
   color: "#9ca3af",
   textDecoration: "underline",
-};
+}

@@ -5,12 +5,12 @@ import { useForm, Controller, type Resolver } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, CheckCircle, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vendor } from "@/lib/types"
 import apiClient from "@/lib/axios"
+import axios from "axios"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -30,6 +30,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface Bank {
   name: string
@@ -47,16 +55,40 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
   const [openBankList, setOpenBankList] = useState(false)
   const router = useRouter()
 
+  // State for modals
+  const [showSetupModal, setShowSetupModal] = useState(false)
+  const [setupConfirmText, setSetupConfirmText] = useState("")
+
+  const [showOtpRequestModal, setShowOtpRequestModal] = useState(false)
+  const [requestingOtp, setRequestingOtp] = useState(false)
+
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [otpValue, setOtpValue] = useState("")
+  const [changeConfirmText, setChangeConfirmText] = useState("")
+
+  // Calculate Lock status
+  const lockDays = Number(process.env.NEXT_PUBLIC_BANK_UPDATE_LOCK_DAYS || 14)
+  const lastUpdate = initial.lastBankUpdateAt
+    ? new Date(initial.lastBankUpdateAt)
+    : null
+  const lockExpiry = lastUpdate
+    ? new Date(lastUpdate.getTime() + lockDays * 24 * 60 * 60 * 1000)
+    : null
+  const isLocked = lockExpiry ? new Date() < lockExpiry : false
+  const daysLeft = lockExpiry
+    ? Math.ceil(
+        (lockExpiry.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      )
+    : 0
+
   useEffect(() => {
     async function fetchBanks() {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           "https://api.paystack.co/bank?country=nigeria"
         )
-        const json = await response.json()
-        if (json.status && json.data) {
-          // Add custom "Other" at the end if needed, but Paystack has almost all
-          setBanks(json.data)
+        if (response.data?.status && response.data?.data) {
+          setBanks(response.data.data)
         }
       } catch (error) {
         console.error("Failed to fetch banks", error)
@@ -71,31 +103,96 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
     resolver: zodResolver(
       vendorPaymentSettingsSchema as never
     ) as unknown as Resolver<VendorPaymentSettingsValues>,
+    mode: "onChange",
     defaultValues: {
-      paymentDetails: {
-        bankName: initial.paymentDetails?.bankName ?? "",
-        accountNumber: initial.paymentDetails?.accountNumber ?? "",
-        accountName: initial.paymentDetails?.accountName ?? "",
-        acceptsCashOnDelivery:
-          initial.paymentDetails?.acceptsCashOnDelivery ?? false,
-      },
+      bankCode: initial.paystackBankCode ?? "",
+      accountNumber: initial.accountNumber ?? "",
     },
   })
 
-  const onSubmit = async (values: VendorPaymentSettingsValues) => {
+  // Start the flow — values are not used here; they're read via form.getValues() in the confirm handlers
+  const onSubmit = async (_values: VendorPaymentSettingsValues) => {
+    if (initial.paystackIntegrationStatus === "active") {
+      setShowOtpRequestModal(true)
+    } else {
+      setShowSetupModal(true)
+    }
+  }
+
+  // Final Setup Confirm
+  const handleSetupConfirm = async () => {
+    if (setupConfirmText.toLowerCase() !== "add account") return
+
     setSaving(true)
     try {
-      await apiClient.patch("/vendor/settings", {
-        paymentDetails: values.paymentDetails,
+      const values = form.getValues()
+      const bankName = banks.find((b) => b.code === values.bankCode)?.name
+      await apiClient.post(`/vendors/${initial.id}/paystack`, {
+        bankCode: values.bankCode,
+        accountNumber: values.accountNumber,
+        bankName,
       })
 
-      toast.success("Payment settings updated successfully")
+      toast.success(
+        "Paystack connected successfully! Check your email for confirmation."
+      )
+      setShowSetupModal(false)
+      setSetupConfirmText("")
       router.refresh()
     } catch (error: unknown) {
-      console.error("Save settings error:", error)
-      const err = error as Error
+      const err = error as { response?: { data?: { error?: string } } }
+      console.error("Save settings error:", err)
       toast.error(
-        err.message || "Couldn't save your settings. Please try again."
+        err.response?.data?.error ||
+          "Couldn't connect to Paystack. Please try again."
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Step 1: Request OTP
+  const handleRequestOtp = async () => {
+    setRequestingOtp(true)
+    try {
+      await apiClient.post(`/vendors/${initial.id}/paystack/request-change`)
+      toast.success("OTP sent to your registered email!")
+      setShowOtpRequestModal(false)
+      setShowVerifyModal(true)
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } }
+      toast.error(err.response?.data?.error || "Failed to request OTP.")
+    } finally {
+      setRequestingOtp(false)
+    }
+  }
+
+  // Step 2: Verify OTP
+  const handleVerifyConfirm = async () => {
+    if (changeConfirmText.toLowerCase() !== "change account" || !otpValue)
+      return
+
+    setSaving(true)
+    try {
+      const values = form.getValues()
+      const bankName = banks.find((b) => b.code === values.bankCode)?.name
+      await apiClient.post(`/vendors/${initial.id}/paystack/verify-change`, {
+        bankCode: values.bankCode,
+        bankName,
+        accountNumber: values.accountNumber,
+        otp: otpValue,
+      })
+
+      toast.success("Bank details updated successfully!")
+      setShowVerifyModal(false)
+      setOtpValue("")
+      setChangeConfirmText("")
+      router.refresh()
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } }
+      console.error("Verify OTP error:", err)
+      toast.error(
+        err.response?.data?.error || "Failed to update details. Invalid OTP."
       )
     } finally {
       setSaving(false)
@@ -103,173 +200,266 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <h3 className="font-heading text-lg font-bold">Bank Details</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Provide your bank details so customers can transfer money directly
-            to you.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+        <h3 className="font-heading text-lg font-bold">Paystack Integration</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {initial.paystackIntegrationStatus === "active"
+            ? "Your account is successfully connected to Paystack! Customers can pay you securely."
+            : "Connect your bank account to start receiving automated payments."}
+        </p>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Field
-            data-invalid={!!form.formState.errors.paymentDetails?.bankName}
-          >
-            <label
-              className="text-sm font-medium"
-              htmlFor="paymentDetails.bankName"
-            >
-              Bank Name
-            </label>
-            <Controller
-              name="paymentDetails.bankName"
-              control={form.control}
-              render={({ field }) => (
-                <Popover open={openBankList} onOpenChange={setOpenBankList}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      disabled={loadingBanks}
-                      className={cn(
-                        "w-full justify-between font-normal",
-                        !field.value && "text-muted-foreground",
-                        !!form.formState.errors.paymentDetails?.bankName &&
-                          "border-destructive ring-3 ring-destructive/20"
-                      )}
-                    >
-                      {field.value
-                        ? banks.find((bank) => bank.name === field.value)
-                            ?.name || field.value
-                        : loadingBanks
-                          ? "Loading banks..."
-                          : "Select a bank"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full min-w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search bank..." />
-                      <CommandList>
-                        <CommandEmpty>No bank found.</CommandEmpty>
-                        <CommandGroup>
-                          {banks.map((bank, index) => (
-                            <CommandItem
-                              key={`${bank.code}-${index}`}
-                              value={bank.name}
-                              onSelect={() => {
-                                field.onChange(bank.name)
-                                setOpenBankList(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  field.value === bank.name
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              {bank.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              )}
-            />
-          </Field>
+        {initial.paystackIntegrationStatus === "active" && (
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <CheckCircle className="size-3.5" /> Active Subaccount:{" "}
+              {initial.paystackSubaccountCode}
+            </span>
+          </div>
+        )}
 
-          <Field
-            data-invalid={!!form.formState.errors.paymentDetails?.accountNumber}
-          >
-            <label
-              className="text-sm font-medium"
-              htmlFor="paymentDetails.accountNumber"
-            >
-              Account Number
-            </label>
-            <Input
-              {...form.register("paymentDetails.accountNumber")}
-              id="paymentDetails.accountNumber"
-              placeholder="e.g. 1234567890"
-              maxLength={10}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              aria-invalid={
-                !!form.formState.errors.paymentDetails?.accountNumber
-              }
-            />
-          </Field>
-        </div>
+        {isLocked && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+            <Lock className="mt-0.5 size-4 shrink-0 text-primary" />
+            <p>
+              For your security, your payout details are protected and cannot be
+              changed for{" "}
+              <strong>
+                {daysLeft} more day{daysLeft !== 1 ? "s" : ""}
+              </strong>
+              . You can safely update them once this period ends.
+            </p>
+          </div>
+        )}
+      </div>
 
-        <Field
-          data-invalid={!!form.formState.errors.paymentDetails?.accountName}
-        >
-          <label
-            className="text-sm font-medium"
-            htmlFor="paymentDetails.accountName"
-          >
-            Account Name
-          </label>
-          <Input
-            {...form.register("paymentDetails.accountName")}
-            id="paymentDetails.accountName"
-            placeholder="e.g. John Doe"
-            aria-invalid={!!form.formState.errors.paymentDetails?.accountName}
-          />
-        </Field>
-
-        <hr className="my-6 border-border" />
-
-        <div>
-          <h3 className="font-heading text-lg font-bold">Cash on Delivery</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose whether customers can pay with cash upon receiving their
-            order.
-          </p>
-        </div>
-
-        <Controller
-          name="paymentDetails.acceptsCashOnDelivery"
-          control={form.control}
-          render={({ field }) => (
-            <div className="flex flex-row items-start space-y-0 space-x-3 rounded-md border bg-muted/20 p-4 shadow-sm">
-              <Checkbox
-                id="paymentDetails.acceptsCashOnDelivery"
-                checked={field.value}
-                onCheckedChange={field.onChange}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field data-invalid={!!form.formState.errors.bankCode}>
+              <label className="text-sm font-medium" htmlFor="bankCode">
+                Bank
+              </label>
+              <Controller
+                name="bankCode"
+                control={form.control}
+                render={({ field }) => (
+                  <Popover open={openBankList} onOpenChange={setOpenBankList}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        disabled={loadingBanks || isLocked}
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          !field.value && "text-muted-foreground",
+                          !!form.formState.errors.bankCode &&
+                            "border-destructive ring-3 ring-destructive/20"
+                        )}
+                      >
+                        {field.value
+                          ? banks.find((bank) => bank.code === field.value)
+                              ?.name || "Select a bank"
+                          : loadingBanks
+                            ? "Loading banks..."
+                            : "Select a bank"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full min-w-[300px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search bank..." />
+                        <CommandList>
+                          <CommandEmpty>No bank found.</CommandEmpty>
+                          <CommandGroup>
+                            {banks.map((bank, index) => (
+                              <CommandItem
+                                key={`${bank.code}-${index}`}
+                                value={bank.name}
+                                onSelect={() => {
+                                  field.onChange(bank.code)
+                                  setOpenBankList(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    field.value === bank.code
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {bank.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
               />
-              <div className="space-y-1 leading-none">
-                <label
-                  htmlFor="paymentDetails.acceptsCashOnDelivery"
-                  className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Accept Cash on Delivery
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Allow customers to order without upfront transfer and pay in
-                  cash when the food arrives.
-                </p>
-              </div>
-            </div>
-          )}
-        />
-      </div>
+            </Field>
 
-      <div className="flex justify-end pt-4">
-        <Button
-          type="submit"
-          variant="hero"
-          disabled={saving || !form.formState.isDirty}
-        >
-          {saving ? "Saving..." : "Save Settings"}
-        </Button>
-      </div>
-    </form>
+            <Field data-invalid={!!form.formState.errors.accountNumber}>
+              <label className="text-sm font-medium" htmlFor="accountNumber">
+                Account Number
+              </label>
+              <Input
+                {...form.register("accountNumber")}
+                id="accountNumber"
+                placeholder="e.g. 1234567890"
+                maxLength={10}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                disabled={isLocked}
+                aria-invalid={!!form.formState.errors.accountNumber}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end gap-3 pt-4">
+          <Button
+            type="submit"
+            variant="hero"
+            disabled={
+              !form.formState.isDirty || !form.formState.isValid || isLocked
+            }
+          >
+            {isLocked
+              ? "Locked"
+              : initial.paystackIntegrationStatus === "active"
+                ? "Update Details"
+                : "Connect Bank"}
+          </Button>
+        </div>
+      </form>
+
+      {/* 1. Initial Setup Modal */}
+      <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Bank Details</DialogTitle>
+            <DialogDescription>
+              To protect your funds, your bank details will be protected for{" "}
+              <strong>{Math.ceil(lockDays)} days</strong> after setup. You
+              won&apos;t be able to change them during this period.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please type <strong>add account</strong> below to confirm you
+              understand.
+            </p>
+            <Input
+              value={setupConfirmText}
+              onChange={(e) => setSetupConfirmText(e.target.value)}
+              placeholder="add account"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSetupModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="hero"
+              onClick={handleSetupConfirm}
+              disabled={
+                saving || setupConfirmText.toLowerCase() !== "add account"
+              }
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Connecting..." : "Confirm & Connect"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2. Request OTP Modal (For Updates) */}
+      <Dialog open={showOtpRequestModal} onOpenChange={setShowOtpRequestModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Security Verification Required</DialogTitle>
+            <DialogDescription>
+              Because you are changing your payout details, we need to verify
+              your identity. We will send a 6-digit One-Time Password (OTP) to
+              your registered email address.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setShowOtpRequestModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="hero"
+              onClick={handleRequestOtp}
+              disabled={requestingOtp}
+            >
+              {requestingOtp && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {requestingOtp ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 3. Verify OTP Modal (For Updates) */}
+      <Dialog open={showVerifyModal} onOpenChange={setShowVerifyModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Bank Update</DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit OTP sent to your email to authorize this change.
+              For your security, you will not be able to update these details
+              again for {Math.ceil(lockDays)} days.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">OTP Code</label>
+              <Input
+                value={otpValue}
+                onChange={(e) => setOtpValue(e.target.value)}
+                placeholder="123456"
+                maxLength={6}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Confirmation</label>
+              <p className="text-xs text-muted-foreground">
+                Please type <strong>change account</strong> below to confirm.
+              </p>
+              <Input
+                value={changeConfirmText}
+                onChange={(e) => setChangeConfirmText(e.target.value)}
+                placeholder="change account"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowVerifyModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="hero"
+              onClick={handleVerifyConfirm}
+              disabled={
+                saving ||
+                !otpValue ||
+                changeConfirmText.toLowerCase() !== "change account"
+              }
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Updating..." : "Verify & Update"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

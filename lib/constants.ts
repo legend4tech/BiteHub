@@ -157,7 +157,7 @@ export function buildOrderWhatsAppMessage(order: {
   total?: number // legacy support
   totalAmount?: number // from serializer
   notes?: string
-  paymentMethod?: "transfer" | "cash"
+  paymentMethod?: "paystack"
   paymentStatus?: string
 }): string {
   const itemList = order.items
@@ -166,12 +166,9 @@ export function buildOrderWhatsAppMessage(order: {
     )
     .join("\n")
 
+  // Paystack is the only payment method — show confirmation when paid
   const paymentText =
-    order.paymentMethod === "transfer"
-      ? `*Payment:* Transferred (Please see my receipt)`
-      : order.paymentMethod === "cash"
-      ? `*Payment:* Cash on delivery`
-      : null
+    order.paymentMethod === "paystack" ? `*Payment:* Paid via Paystack` : null
 
   return [
     `Hello! I just placed an order from your menu via *${APP_NAME}* 🍽️`,

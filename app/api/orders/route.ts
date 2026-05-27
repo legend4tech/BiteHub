@@ -3,9 +3,10 @@ import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import MenuItem from "@/models/MenuItem"
+import GlobalSettings from "@/models/GlobalSettings"
 import { serializeOrder } from "@/lib/serializers"
-import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { ORDER_STATUS, generateOrderId } from "@/lib/constants"
+import { computePaystackServiceFee } from "@/lib/fees"
 import { z } from "zod"
 
 const orderItemSchema = z.object({
@@ -22,10 +23,12 @@ const createOrderSchema = z.object({
   vendorPhone: z.string().optional(),
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
   customerName: z.string().min(1, "Customer name is required"),
+  customerEmail: z.string().email("Valid email is required"),
   customerPhone: z.string().min(1, "Customer phone is required"),
   location: z.string().min(1, "Location is required"),
   notes: z.string().optional(),
-  paymentMethod: z.enum(["transfer", "cash"]).optional().default("transfer"),
+  paymentMethod: z.enum(["paystack"]).default("paystack"),
+  paystackReference: z.string().optional(),
   total: z.number().optional(), // We accept it but ignore it for calculation
 })
 
@@ -49,16 +52,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    // Fetch vendor to attach payment details
-    const vendor = await Vendor.findById(order.vendorId)
-      .select("paymentDetails")
-      .lean()
-
     const serializedOrder = serializeOrder(order)
-    return NextResponse.json({
-      ...serializedOrder,
-      vendorPaymentDetails: vendor?.paymentDetails || null,
-    })
+    return NextResponse.json(serializedOrder)
   } catch (error) {
     console.error("Error fetching order:", error)
     return NextResponse.json(
@@ -89,10 +84,11 @@ export async function POST(request: Request) {
       vendorId,
       items,
       customerName,
+      customerEmail,
       customerPhone,
       location,
       notes,
-      paymentMethod,
+      paystackReference,
     } = parsedBody.data
 
     // Verify vendor exists and is active before accepting the order
@@ -144,6 +140,24 @@ export async function POST(request: Request) {
       item.price = dbItem.price
     }
 
+    // Gross-up formula: collect exactly enough from the customer so that after Paystack
+    // takes their 1.5% cut of the total, the vendor absorbs zero processing fee.
+    // See lib/fees.ts for the full derivation.
+    const serviceFee = computePaystackServiceFee(calculatedTotal)
+    const finalTotal = calculatedTotal + serviceFee
+
+    // Calculate exact revenue split
+    const settings = await GlobalSettings.findOne()
+    const platformFeePercentage = settings
+      ? settings.platformFeePercentage
+      : Number(process.env.NEXT_PUBLIC_PLATFORM_FEE_PERCENTAGE || 5)
+
+    // Commission on the base subtotal only (food + delivery) — exact decimal, no rounding.
+    // vendorRevenue is a best-estimate here; it gets overwritten with the exact Paystack
+    // subaccount deposit amount when the payment webhook / verify fires.
+    const platformCommission = calculatedTotal * (platformFeePercentage / 100)
+    const vendorRevenue = calculatedTotal - platformCommission
+
     // Generate a collision-resistant order ID
     const orderId = generateOrderId()
 
@@ -155,23 +169,20 @@ export async function POST(request: Request) {
       vendorPrepTime: vendor.prepTime || "",
       items,
       customerName,
+      customerEmail,
       customerPhone,
       location,
       notes: notes || "",
       deliveryFee,
-      totalAmount: calculatedTotal,
+      serviceFee,
+      platformCommission,
+      vendorRevenue,
+      totalAmount: finalTotal,
       status: ORDER_STATUS.PENDING,
-      paymentMethod,
-      paymentStatus: paymentMethod === "transfer" ? "transferred" : "pending",
+      paymentMethod: "paystack",
+      paymentStatus: "pending",
+      paystackReference: paystackReference || "",
     })
-
-    // Send WhatsApp Notification (fire and forget to not block response)
-    sendVendorOrderNotification(
-      finalWhatsapp,
-      customerName,
-      order.orderId,
-      calculatedTotal
-    )
 
     return NextResponse.json({ orderId: order.orderId }, { status: 201 })
   } catch (error) {

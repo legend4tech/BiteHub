@@ -16,12 +16,12 @@ export interface IVendor extends Document {
     url: string
     publicId: string
   }
-  paymentDetails?: {
-    bankName: string
-    accountNumber: string
-    accountName: string
-    acceptsCashOnDelivery: boolean
-  }
+  paystackSubaccountCode?: string
+  paystackBankCode?: string
+  paystackIntegrationStatus?: "pending" | "active"
+  lastBankUpdateAt?: Date
+  bankUpdateOtp?: string
+  bankUpdateOtpExpiry?: Date
 
   // Virtuals
   initials: string
@@ -46,12 +46,16 @@ const VendorSchema: Schema = new Schema(
       url: { type: String },
       publicId: { type: String },
     },
-    paymentDetails: {
-      bankName: { type: String, default: "" },
-      accountNumber: { type: String, default: "" },
-      accountName: { type: String, default: "" },
-      acceptsCashOnDelivery: { type: Boolean, default: false },
+    paystackSubaccountCode: { type: String, default: "" },
+    paystackBankCode: { type: String, default: "" },
+    paystackIntegrationStatus: {
+      type: String,
+      enum: ["pending", "active"],
+      default: "pending",
     },
+    lastBankUpdateAt: { type: Date },
+    bankUpdateOtp: { type: String },
+    bankUpdateOtpExpiry: { type: Date },
   },
   {
     timestamps: true,

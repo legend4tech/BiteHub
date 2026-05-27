@@ -175,7 +175,7 @@ export default function VendorDashboardPage() {
         {!loadingStats && stats?.hasPaymentDetails === false && (
           <AlertBanner
             title="Complete your profile to be visible!"
-            description="One more step! Please add your bank details or enable Cash on Delivery so customers can pay you. Your vendor profile will NOT be visible publicly until you do this."
+            description="One more step! Please connect your bank account so customers can pay you securely. Your vendor profile will NOT be visible publicly until you do this."
             icon={AlertCircle}
             variant="destructive"
             action={{
@@ -183,27 +183,6 @@ export default function VendorDashboardPage() {
               href: "/vendor/settings?tab=payment",
             }}
           />
-        )}
-
-        {/* Total Revenue banner */}
-        {!loadingStats && (stats?.totalRevenue ?? 0) > 0 && (
-          <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-orange-500/5 px-5 py-4">
-            <div>
-              <p className="text-xs font-semibold tracking-wider text-primary uppercase">
-                Total Revenue
-              </p>
-              <p className="mt-1 font-heading text-3xl font-bold text-primary">
-                {formatPrice(stats!.totalRevenue)}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                from {stats!.totalCompleted} completed order
-                {stats!.totalCompleted !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10">
-              <Banknote className="size-6 text-primary" />
-            </div>
-          </div>
         )}
 
         {/* Stats — sourced from server-side aggregation, not client filtering */}

@@ -38,13 +38,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
   // ALWAYS filter to vendors that are active AND have payment details configured
   const vendorFilter: Record<string, unknown> = {
     isActive: true,
-    $or: [
-      {
-        "paymentDetails.bankName": { $exists: true, $ne: "" },
-        "paymentDetails.accountNumber": { $exists: true, $ne: "" },
-      },
-      { "paymentDetails.acceptsCashOnDelivery": true },
-    ],
+    paystackIntegrationStatus: "active",
   }
 
   if (school) vendorFilter.school = school

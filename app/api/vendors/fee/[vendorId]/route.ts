@@ -15,7 +15,7 @@ export async function GET(
     }
 
     const vendor = await VendorModel.findById(vendorId)
-      .select("deliveryFee prepTime paymentDetails")
+      .select("deliveryFee prepTime paystackSubaccountCode")
       .lean()
 
     if (!vendor) {
@@ -25,14 +25,7 @@ export async function GET(
     return NextResponse.json({
       deliveryFee: vendor.deliveryFee ?? 0,
       prepTime: vendor.prepTime ?? "",
-      acceptsCashOnDelivery: !!vendor.paymentDetails?.acceptsCashOnDelivery,
-      paymentDetails: vendor.paymentDetails
-        ? {
-            bankName: vendor.paymentDetails.bankName || "",
-            accountNumber: vendor.paymentDetails.accountNumber || "",
-            accountName: vendor.paymentDetails.accountName || "",
-          }
-        : null,
+      paystackSubaccountCode: vendor.paystackSubaccountCode ?? "",
     })
   } catch (error) {
     console.error("[GET /api/vendors/fee/[vendorId]]", error)

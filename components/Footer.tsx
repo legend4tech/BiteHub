@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Mail, MapPin } from "lucide-react"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
@@ -16,10 +17,11 @@ export function Footer() {
           {/* Brand section */}
           <div className="space-y-6 lg:col-span-2">
             <Link href="/" className="group flex items-center gap-2.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={APP_LOGO_URL}
                 alt={APP_NAME}
+                width={44}
+                height={44}
                 className="h-11 w-auto rounded-xl object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
               />
               <div className="flex flex-col -space-y-1">
@@ -175,8 +177,13 @@ function SocialLink({
     >
       {src ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={alt} className="size-5 object-contain" />
+          <Image
+            src={src}
+            alt={alt}
+            width={20}
+            height={20}
+            className="size-5 object-contain"
+          />
         </>
       ) : (
         <div className="size-4 rounded-sm bg-muted-foreground/30" title={alt} />

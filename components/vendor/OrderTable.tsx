@@ -9,17 +9,20 @@ import type { OrderStatus } from "@/lib/types"
 import { StatusBadge } from "@/components/vendor/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { formatPrice, formatTime } from "@/lib/format"
 import {
-  Loader2,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { formatPriceExact, formatTime } from "@/lib/format"
+import {
   Copy,
   Check,
-  Banknote,
   Clock,
   MapPin,
   Receipt,
   User,
+  AlertCircle,
 } from "lucide-react"
 
 function CopyableText({
@@ -93,15 +96,18 @@ function OrderItemsDisplay({ items }: { items: Order["items"] }) {
             onClick={(e) => e.stopPropagation()}
             className="mt-0.5 w-fit text-left text-xs font-medium text-primary underline underline-offset-2 transition-transform hover:opacity-80 active:scale-95"
           >
-            + {remainingItems.length} more item{remainingItems.length > 1 ? "s" : ""}
+            + {remainingItems.length} more item
+            {remainingItems.length > 1 ? "s" : ""}
           </button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-64 max-h-64 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
+          className="max-h-64 w-64 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase mb-1 border-b border-border/50 pb-2">All Order Items</p>
+            <p className="mb-1 border-b border-border/50 pb-2 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+              All Order Items
+            </p>
             {items.map((i, idx) => (
               <div key={idx} className="text-sm leading-tight">
                 <span className="font-medium">{i.name}</span>
@@ -139,25 +145,20 @@ export function OrderTable({
   onStatusChange,
   onPaymentConfirm,
 }: OrderTableProps) {
+  // Helper to fallback to manual calculation for orders created before schema update.
+  // Uses exact decimals — no rounding — to match Paystack's actual deductions.
+  const getEarnings = (order: Order) => {
+    if (order.vendorRevenue && order.vendorRevenue > 0)
+      return order.vendorRevenue
+    // Legacy fallback: estimate from stored totals (no rounding on platform fee)
+    const platformFee = order.totalAmount * 0.05
+    return order.totalAmount - (order.serviceFee || 0) - platformFee
+  }
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean
     orderId: string | null
     newStatus: OrderStatus | null
   }>({ isOpen: false, orderId: null, newStatus: null })
-
-  const [confirmingPaymentId, setConfirmingPaymentId] = useState<string | null>(
-    null
-  )
-
-  const handlePaymentClick = async (orderId: string) => {
-    if (!onPaymentConfirm) return
-    setConfirmingPaymentId(orderId)
-    try {
-      await onPaymentConfirm(orderId)
-    } finally {
-      setConfirmingPaymentId(null)
-    }
-  }
 
   if (orders.length === 0) {
     return (
@@ -197,8 +198,11 @@ export function OrderTable({
               </div>
               <div className="shrink-0 text-right">
                 <span className="text-lg font-extrabold tracking-tight text-foreground">
-                  {formatPrice(order.totalAmount)}
+                  {formatPriceExact(getEarnings(order))}
                 </span>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  Earnings
+                </p>
                 {!onStatusChange && (
                   <div className="mt-1">
                     <StatusBadge status={order.status} />
@@ -250,55 +254,24 @@ export function OrderTable({
 
             {/* Footer Actions */}
             <div className="mt-auto space-y-3 border-t border-border/50 pt-4">
-              {/* Payment Status Block */}
-              {order.paymentMethod === "transfer" && (
-                <div>
-                  {order.paymentStatus === "transferred" ? (
-                    <div className="flex flex-col gap-2 rounded-xl border border-status-pending/30 bg-status-pending/10 p-3">
-                      <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-status-pending-foreground">
-                        <span className="relative flex h-2.5 w-2.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-pending opacity-75"></span>
-                          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-status-pending"></span>
-                        </span>
-                        Payment Sent via Transfer
-                      </p>
-                      {onPaymentConfirm ? (
-                        <button
-                          onClick={() => handlePaymentClick(order.orderId)}
-                          disabled={confirmingPaymentId === order.orderId}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
-                        >
-                          {confirmingPaymentId === order.orderId ? (
-                            <>
-                              <Loader2 className="size-4 animate-spin" />
-                              Confirming...
-                            </>
-                          ) : (
-                            "Confirm Receipt"
-                          )}
-                        </button>
-                      ) : (
-                        <span className="text-center text-xs font-medium text-status-pending-foreground/80">
-                          Awaiting your verification
-                        </span>
-                      )}
-                    </div>
-                  ) : order.paymentStatus === "confirmed" ? (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-status-completed/10 py-2 text-sm font-semibold text-status-completed">
-                      <Check className="size-4" /> Paid via Transfer
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-muted py-2 text-sm text-muted-foreground">
-                      Pending Transfer
+              {order.paymentMethod === "paystack" && (
+                <>
+                  {order.paymentStatus === "paid" && (
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-[#09A5DB]/10 py-2 text-sm font-semibold text-[#09A5DB]">
+                      <Check className="size-4" /> Paid securely via Paystack
                     </div>
                   )}
-                </div>
-              )}
-
-              {order.paymentMethod === "cash" && (
-                <div className="flex items-center justify-center gap-1.5 rounded-xl bg-muted py-2 text-sm font-semibold text-muted-foreground">
-                  <Banknote className="size-4" /> Cash on Delivery
-                </div>
+                  {order.paymentStatus === "pending" && (
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 py-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                      <Clock className="size-4" /> Payment Pending
+                    </div>
+                  )}
+                  {order.paymentStatus === "failed" && (
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-destructive/10 py-2 text-sm font-semibold text-destructive">
+                      <AlertCircle className="size-4" /> Payment Failed
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Order Status Select */}

@@ -1,19 +1,19 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
-import { toast } from "sonner";
-import axios from "axios";
-import { signOut } from "next-auth/react";
-import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useState } from "react"
+import { useForm, Controller, type Resolver } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Field, FieldLabel, FieldError } from "@/components/ui/field"
+import { toast } from "sonner"
+import axios from "axios"
+import { signOut } from "next-auth/react"
+import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 
-import { strongPasswordSchema } from "@/lib/schemas";
+import { strongPasswordSchema } from "@/lib/schemas"
 
 // --- Schemas ---
 
@@ -26,99 +26,133 @@ const changePasswordSchema = z
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  });
+  })
 
-type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
+type ChangePasswordValues = z.infer<typeof changePasswordSchema>
 
 const changeEmailSchema = z.object({
-  newEmail: z.string().email("Please enter a valid email address").toLowerCase(),
-});
+  newEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
+})
 
-type ChangeEmailValues = z.infer<typeof changeEmailSchema>;
+type ChangeEmailValues = z.infer<typeof changeEmailSchema>
 
-export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) {
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+export function VendorSecurityForms({
+  currentEmail,
+}: {
+  currentEmail: string
+}) {
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
 
   // --- Password Form ---
   const passwordForm = useForm<ChangePasswordValues>({
-    resolver: zodResolver(changePasswordSchema as any),
+    // Zod v4.4.x vs @hookform/resolvers version mismatch — same pattern as VendorPaymentForm.tsx
+    resolver: zodResolver(
+      changePasswordSchema as never
+    ) as unknown as Resolver<ChangePasswordValues>,
     defaultValues: {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
     mode: "onTouched",
-  });
+  })
 
   const onPasswordSubmit = async (values: ChangePasswordValues) => {
-    setPasswordLoading(true);
+    setPasswordLoading(true)
     try {
-      await axios.post("/api/vendor/account/change-password", values);
-      toast.success("Password changed. Please log in again.");
+      await axios.post("/api/vendor/account/change-password", values)
+      toast.success("Password changed. Please log in again.")
       setTimeout(() => {
-        signOut({ callbackUrl: "/vendor/login" });
-      }, 2000);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to change password");
+        signOut({ callbackUrl: "/vendor/login" })
+      }, 2000)
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || "Failed to change password")
     } finally {
-      setPasswordLoading(false);
+      setPasswordLoading(false)
     }
-  };
+  }
 
   const handleForgotPassword = async () => {
-    setForgotPasswordLoading(true);
+    setForgotPasswordLoading(true)
     try {
-      await axios.post("/api/vendor/forgot-password", { email: currentEmail });
-      toast.success("A password reset link has been sent to your email.");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to send reset link");
+      await axios.post("/api/vendor/forgot-password", { email: currentEmail })
+      toast.success("A password reset link has been sent to your email.")
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || "Failed to send reset link")
     } finally {
-      setForgotPasswordLoading(false);
+      setForgotPasswordLoading(false)
     }
-  };
+  }
 
-  // --- Email Form ---
   const emailForm = useForm<ChangeEmailValues>({
-    resolver: zodResolver(changeEmailSchema as any),
+    // Zod v4.4.x vs @hookform/resolvers version mismatch — same pattern as VendorPaymentForm.tsx
+    resolver: zodResolver(
+      changeEmailSchema as never
+    ) as unknown as Resolver<ChangeEmailValues>,
     defaultValues: {
       newEmail: "",
     },
     mode: "onTouched",
-  });
+  })
 
   const onEmailSubmit = async (values: ChangeEmailValues) => {
-    setEmailLoading(true);
+    setEmailLoading(true)
     try {
-      const response = await axios.post("/api/vendor/account/change-email", values);
-      toast.success(response.data.message || "Confirmation link sent to your new email.");
-      emailForm.reset();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to initiate email change");
+      const response = await axios.post(
+        "/api/vendor/account/change-email",
+        values
+      )
+      toast.success(
+        response.data.message || "Confirmation link sent to your new email."
+      )
+      emailForm.reset()
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(
+        err.response?.data?.message || "Failed to initiate email change"
+      )
     } finally {
-      setEmailLoading(false);
+      setEmailLoading(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-12">
       {/* Change Email Section */}
       <section className="space-y-6">
         <div>
-          <h2 className="font-heading text-lg font-bold">Change Email Address</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            We will send a confirmation link to your new email. Your current email remains active until confirmed.
+          <h2 className="font-heading text-lg font-bold">
+            Change Email Address
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We will send a confirmation link to your new email. Your current
+            email remains active until confirmed.
           </p>
         </div>
 
-        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-5">
+        <form
+          onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+          className="space-y-5"
+        >
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Current Email</label>
-            <Input value={currentEmail} disabled className="bg-muted text-muted-foreground" />
+            <label className="text-sm font-medium text-muted-foreground">
+              Current Email
+            </label>
+            <Input
+              value={currentEmail}
+              disabled
+              className="bg-muted text-muted-foreground"
+            />
           </div>
 
           <Controller
@@ -134,7 +168,9 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                   placeholder="newemail@example.com"
                   aria-invalid={fieldState.invalid}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -152,12 +188,16 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
       <section className="space-y-6">
         <div>
           <h2 className="font-heading text-lg font-bold">Change Password</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Update your account password. You will be signed out after a successful change.
+          <p className="mt-1 text-sm text-muted-foreground">
+            Update your account password. You will be signed out after a
+            successful change.
           </p>
         </div>
 
-        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-5">
+        <form
+          onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+          className="space-y-5"
+        >
           <Controller
             name="currentPassword"
             control={passwordForm.control}
@@ -165,14 +205,16 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
               <Field data-invalid={fieldState.invalid}>
                 <div className="flex items-center justify-between">
                   <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
-                  <Button 
-                    type="button" 
-                    variant="link" 
-                    className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
                     onClick={handleForgotPassword}
                     disabled={forgotPasswordLoading}
                   >
-                    {forgotPasswordLoading ? <Loader2 className="mr-1 size-3 animate-spin inline-block" /> : null}
+                    {forgotPasswordLoading ? (
+                      <Loader2 className="mr-1 inline-block size-3 animate-spin" />
+                    ) : null}
                     Forgot password?
                   </Button>
                 </div>
@@ -188,13 +230,19 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                   <Button
                     type="button"
                     variant="ghost"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                    className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
-                    {showCurrentPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showCurrentPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </Button>
                 </div>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -217,14 +265,20 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                   <Button
                     type="button"
                     variant="ghost"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                    className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
-                    {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showNewPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </Button>
                 </div>
                 <PasswordStrengthMeter password={field.value} />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -234,7 +288,9 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
             control={passwordForm.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Confirm New Password</FieldLabel>
+                <FieldLabel htmlFor={field.name}>
+                  Confirm New Password
+                </FieldLabel>
                 <div className="relative">
                   <Input
                     {...field}
@@ -247,23 +303,31 @@ export function VendorSecurityForms({ currentEmail }: { currentEmail: string }) 
                   <Button
                     type="button"
                     variant="ghost"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                    className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </Button>
                 </div>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
 
           <Button type="submit" variant="hero" disabled={passwordLoading}>
-            {passwordLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {passwordLoading && (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            )}
             Update Password
           </Button>
         </form>
       </section>
     </div>
-  );
+  )
 }

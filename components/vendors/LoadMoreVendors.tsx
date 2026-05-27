@@ -8,25 +8,6 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { FadeIn } from "@/components/FadeIn"
 
-interface Vendor {
-  id: string
-  name: string
-  initials: string
-  tagline: string
-  location: string
-  isActive: boolean
-  slug: string
-  description: string
-  category: string
-  tags: string[]
-  phone: string
-  whatsappNumber: string
-  school: string
-  campus: string
-  itemCount: number
-  image?: { url: string; publicId: string } | null
-}
-
 interface LoadMoreVendorsProps {
   initialPage: number
   searchParams: { [key: string]: string | undefined }
