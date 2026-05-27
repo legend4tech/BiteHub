@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { APP_NAME } from "@/lib/constants"
-import { getPlatformFeePercentage } from "@/lib/fees"
+import { getPlatformFeePercentage } from "@/lib/services/settingService"
 
 export const metadata: Metadata = {
   title: `Terms of Use | ${APP_NAME}`,
