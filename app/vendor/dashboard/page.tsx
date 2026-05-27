@@ -43,6 +43,7 @@ export default function VendorDashboardPage() {
 
   const [acceptingTerms, setAcceptingTerms] = useState(false)
   const [acceptedCheckbox, setAcceptedCheckbox] = useState(false)
+  const [hasAcceptedLocally, setHasAcceptedLocally] = useState(false)
 
   useEffect(() => {
     if (isReady) {
@@ -70,13 +71,15 @@ export default function VendorDashboardPage() {
     isReady &&
     !loadingStats &&
     stats &&
-    stats.acceptedTermsVersion !== CURRENT_TERMS_VERSION
+    stats.acceptedTermsVersion !== CURRENT_TERMS_VERSION &&
+    !hasAcceptedLocally
 
   const handleAcceptTerms = async () => {
     setAcceptingTerms(true)
     try {
       await apiClient.post("/vendor/accept-terms")
       toast.success("Thank you! You have accepted the updated terms.")
+      setHasAcceptedLocally(true)
       await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
     } catch {
       toast.error("Couldn't record terms acceptance. Please try again.")
@@ -386,41 +389,28 @@ export default function VendorDashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 font-heading text-xl font-bold">
               <AlertCircle className="size-5 text-primary" />
-              {stats?.acceptedTermsVersion
-                ? "Terms of Use Updated"
-                : "Accept Terms & Conditions"}
+              {!stats?.isNewcomer ? "Terms Updated" : "Welcome to BiteHub"}
             </AlertDialogTitle>
             <div className="space-y-4 pt-2">
-              {stats?.acceptedTermsVersion ? (
+              {!stats?.isNewcomer ? (
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-                  <p className="flex items-center gap-1 font-bold text-primary">
-                    Legal Notice: Agreement Amended
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                    We recently updated our standard **Terms of Use** and
-                    **Privacy Policy** to reflect automated **Paystack Split
-                    Settlements**, dynamic **Platform Commissions**, and
-                    **Processing Service Charges**. Please review and accept the
-                    changes to proceed.
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    We updated our terms and privacy policy regarding our
+                    service charges and payouts. Please review and accept them
+                    to continue.
                   </p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-foreground">
-                  <p className="flex items-center gap-1 font-bold text-foreground">
-                    Welcome to {APP_NAME}!
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                    To access your vendor portal and list your restaurant on the
-                    campus marketplace, you must review and accept the dynamic
-                    platform service terms and settlement arrangements.
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Please accept our terms of use and privacy policy to access
+                    your vendor dashboard.
                   </p>
                 </div>
               )}
 
               <span className="block text-sm leading-relaxed text-muted-foreground">
-                By clicking &quot;I Agree &amp; Accept&quot;, you declare that
-                you have read, understood, and agreed to be legally bound by our
-                dynamic{" "}
+                By checking the box, you agree to our{" "}
                 <Link
                   href="/terms"
                   target="_blank"
@@ -436,8 +426,7 @@ export default function VendorDashboardPage() {
                 >
                   Privacy Policy
                 </Link>
-                , including all applicable commissions and automated split
-                payouts.
+                .
               </span>
 
               <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-border bg-muted/20 p-3">
@@ -452,8 +441,7 @@ export default function VendorDashboardPage() {
                   htmlFor="accept-terms-checkbox"
                   className="cursor-pointer text-xs leading-normal text-muted-foreground select-none"
                 >
-                  I explicitly confirm that I have reviewed, understood, and
-                  accept the Terms of Use and Privacy Policy in their entirety.
+                  I accept the Terms of Use and Privacy Policy.
                 </label>
               </div>
             </div>
@@ -465,7 +453,7 @@ export default function VendorDashboardPage() {
               disabled={!acceptedCheckbox || acceptingTerms}
               className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
             >
-              {acceptingTerms ? "Processing Agreement..." : "I Agree & Accept"}
+              {acceptingTerms ? "Processing..." : "I Agree & Accept"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -6,6 +6,8 @@ import Vendor from "@/models/Vendor"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 
+export const dynamic = "force-dynamic"
+
 /**
  * GET /api/vendor/stats
  *
@@ -55,7 +57,8 @@ export async function GET() {
 
     // Fetch the vendor user compliance records
     const { default: VendorUser } = await import("@/models/VendorUser")
-    const vendorUser = await VendorUser.findOne({ email: session.user.email })
+    const email = session.user.email?.toLowerCase() || ""
+    const vendorUser = await VendorUser.findOne({ email })
       .select("acceptedTermsVersion")
       .lean()
     const acceptedTermsVersion = vendorUser?.acceptedTermsVersion || ""
@@ -161,12 +164,19 @@ export async function GET() {
       totalRevenue: 0,
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ...finalStats,
       hasPaymentDetails,
       slug: vendor?.slug,
       acceptedTermsVersion,
     })
+
+    response.headers.set(
+      "Cache-Control",
+      "no-store, max-age=0, must-revalidate"
+    )
+
+    return response
   } catch (error) {
     console.error("[vendor/stats GET]", error)
     return NextResponse.json(

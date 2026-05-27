@@ -13,6 +13,7 @@ export interface VendorStats {
   hasPaymentDetails?: boolean
   slug?: string
   acceptedTermsVersion?: string
+  isNewcomer?: boolean
 }
 
 export function useVendorStats(options?: { enabled?: boolean }) {
