@@ -14,6 +14,8 @@ export interface IVendorUser extends Document {
   emailChangeExpires?: Date
   lastPasswordChangeAt?: Date
   lastEmailChangeAt?: Date
+  acceptedTermsVersion?: string
+  acceptedTermsAt?: Date
 }
 
 const VendorUserSchema = new Schema<IVendorUser>(
@@ -69,6 +71,13 @@ const VendorUserSchema = new Schema<IVendorUser>(
       type: Date,
     },
     lastEmailChangeAt: {
+      type: Date,
+    },
+    acceptedTermsVersion: {
+      type: String,
+      default: "",
+    },
+    acceptedTermsAt: {
       type: Date,
     },
   },

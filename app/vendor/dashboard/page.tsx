@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
-import { APP_NAME } from "@/lib/constants"
+import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
 import { useVendorStats } from "@/hooks/queries/useVendorStats"
 import { useState, useEffect } from "react"
@@ -41,6 +41,9 @@ export default function VendorDashboardPage() {
   const [platformComments, setPlatformComments] = useState("")
   const [hoveredRating, setHoveredRating] = useState(0)
 
+  const [acceptingTerms, setAcceptingTerms] = useState(false)
+  const [acceptedCheckbox, setAcceptedCheckbox] = useState(false)
+
   useEffect(() => {
     if (isReady) {
       const submitted = localStorage.getItem("vendor_feedback_submitted")
@@ -58,11 +61,29 @@ export default function VendorDashboardPage() {
       }
     }
   }, [isReady])
-  // ── Stats: server-side aggregation, just a handful of numbers ─────────────
-  // No matter how many orders exist, MongoDB counts them — not the browser.
   const { data: stats, isLoading: loadingStats } = useVendorStats({
     enabled: isReady,
   })
+
+  // ── Terms Acceptance Check ─────────────────────────────────────────────────
+  const needsTermsAcceptance =
+    isReady &&
+    !loadingStats &&
+    stats &&
+    stats.acceptedTermsVersion !== CURRENT_TERMS_VERSION
+
+  const handleAcceptTerms = async () => {
+    setAcceptingTerms(true)
+    try {
+      await apiClient.post("/vendor/accept-terms")
+      toast.success("Thank you! You have accepted the updated terms.")
+      await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+    } catch {
+      toast.error("Couldn't record terms acceptance. Please try again.")
+    } finally {
+      setAcceptingTerms(false)
+    }
+  }
 
   // ── Recent orders: only the 10 most recent for the table ──────────────────
   // We never load all orders on the dashboard — that belongs to /vendor/orders.
@@ -355,6 +376,97 @@ export default function VendorDashboardPage() {
             >
               Submit
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Terms & Privacy Acceptance Compliance Modal ────────────────── */}
+      <AlertDialog open={!!needsTermsAcceptance}>
+        <AlertDialogContent className="sm:max-w-[480px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 font-heading text-xl font-bold">
+              <AlertCircle className="size-5 text-primary" />
+              {stats?.acceptedTermsVersion
+                ? "Terms of Use Updated"
+                : "Accept Terms & Conditions"}
+            </AlertDialogTitle>
+            <div className="space-y-4 pt-2">
+              {stats?.acceptedTermsVersion ? (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
+                  <p className="flex items-center gap-1 font-bold text-primary">
+                    Legal Notice: Agreement Amended
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    We recently updated our standard **Terms of Use** and
+                    **Privacy Policy** to reflect automated **Paystack Split
+                    Settlements**, dynamic **Platform Commissions**, and
+                    **Processing Service Charges**. Please review and accept the
+                    changes to proceed.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-foreground">
+                  <p className="flex items-center gap-1 font-bold text-foreground">
+                    Welcome to {APP_NAME}!
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    To access your vendor portal and list your restaurant on the
+                    campus marketplace, you must review and accept the dynamic
+                    platform service terms and settlement arrangements.
+                  </p>
+                </div>
+              )}
+
+              <span className="block text-sm leading-relaxed text-muted-foreground">
+                By clicking &quot;I Agree &amp; Accept&quot;, you declare that
+                you have read, understood, and agreed to be legally bound by our
+                dynamic{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  className="font-semibold text-primary underline transition-colors hover:text-primary/80"
+                >
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="font-semibold text-primary underline transition-colors hover:text-primary/80"
+                >
+                  Privacy Policy
+                </Link>
+                , including all applicable commissions and automated split
+                payouts.
+              </span>
+
+              <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-border bg-muted/20 p-3">
+                <input
+                  id="accept-terms-checkbox"
+                  type="checkbox"
+                  checked={acceptedCheckbox}
+                  onChange={(e) => setAcceptedCheckbox(e.target.checked)}
+                  className="mt-1 size-4 cursor-pointer rounded border-border text-primary accent-primary focus:ring-primary focus:ring-offset-background"
+                />
+                <label
+                  htmlFor="accept-terms-checkbox"
+                  className="cursor-pointer text-xs leading-normal text-muted-foreground select-none"
+                >
+                  I explicitly confirm that I have reviewed, understood, and
+                  accept the Terms of Use and Privacy Policy in their entirety.
+                </label>
+              </div>
+            </div>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="mt-4">
+            <Button
+              onClick={handleAcceptTerms}
+              disabled={!acceptedCheckbox || acceptingTerms}
+              className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              {acceptingTerms ? "Processing Agreement..." : "I Agree & Accept"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

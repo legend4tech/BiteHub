@@ -5,6 +5,7 @@ import type { MenuCategory, OrderStatus } from "./types"
 
 export const APP_NAME = "BiteHub"
 export const APP_LOGO_URL = "/brand_logo.png"
+export const CURRENT_TERMS_VERSION = "2026-05-27"
 
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 

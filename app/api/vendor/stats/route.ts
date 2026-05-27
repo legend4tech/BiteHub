@@ -53,6 +53,13 @@ export async function GET() {
       vendor?.paymentDetails?.accountName
     )
 
+    // Fetch the vendor user compliance records
+    const { default: VendorUser } = await import("@/models/VendorUser")
+    const vendorUser = await VendorUser.findOne({ email: session.user.email })
+      .select("acceptedTermsVersion")
+      .lean()
+    const acceptedTermsVersion = vendorUser?.acceptedTermsVersion || ""
+
     // Single aggregation pipeline — MongoDB does all the work
     const [result] = await Order.aggregate([
       { $match: { vendorId } },
@@ -158,6 +165,7 @@ export async function GET() {
       ...finalStats,
       hasPaymentDetails,
       slug: vendor?.slug,
+      acceptedTermsVersion,
     })
   } catch (error) {
     console.error("[vendor/stats GET]", error)
