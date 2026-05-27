@@ -17,6 +17,7 @@ import { formatPrice } from "@/lib/format"
 import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
 import { useVendorStats } from "@/hooks/queries/useVendorStats"
+import { TermsAcceptanceModal } from "@/components/vendor/TermsAcceptanceModal"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -42,7 +43,6 @@ export default function VendorDashboardPage() {
   const [hoveredRating, setHoveredRating] = useState(0)
 
   const [acceptingTerms, setAcceptingTerms] = useState(false)
-  const [acceptedCheckbox, setAcceptedCheckbox] = useState(false)
   const [hasAcceptedLocally, setHasAcceptedLocally] = useState(false)
 
   useEffect(() => {
@@ -384,80 +384,12 @@ export default function VendorDashboardPage() {
       </AlertDialog>
 
       {/* ── Terms & Privacy Acceptance Compliance Modal ────────────────── */}
-      <AlertDialog open={!!needsTermsAcceptance}>
-        <AlertDialogContent className="sm:max-w-[480px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 font-heading text-xl font-bold">
-              <AlertCircle className="size-5 text-primary" />
-              {!stats?.isNewcomer ? "Terms Updated" : "Welcome to BiteHub"}
-            </AlertDialogTitle>
-            <div className="space-y-4 pt-2">
-              {!stats?.isNewcomer ? (
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    We updated our terms and privacy policy regarding our
-                    service charges and payouts. Please review and accept them
-                    to continue.
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-foreground">
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    Please accept our terms of use and privacy policy to access
-                    your vendor dashboard.
-                  </p>
-                </div>
-              )}
-
-              <span className="block text-sm leading-relaxed text-muted-foreground">
-                By checking the box, you agree to our{" "}
-                <Link
-                  href="/terms"
-                  target="_blank"
-                  className="font-semibold text-primary underline transition-colors hover:text-primary/80"
-                >
-                  Terms of Use
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="/privacy"
-                  target="_blank"
-                  className="font-semibold text-primary underline transition-colors hover:text-primary/80"
-                >
-                  Privacy Policy
-                </Link>
-                .
-              </span>
-
-              <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-border bg-muted/20 p-3">
-                <input
-                  id="accept-terms-checkbox"
-                  type="checkbox"
-                  checked={acceptedCheckbox}
-                  onChange={(e) => setAcceptedCheckbox(e.target.checked)}
-                  className="mt-1 size-4 cursor-pointer rounded border-border text-primary accent-primary focus:ring-primary focus:ring-offset-background"
-                />
-                <label
-                  htmlFor="accept-terms-checkbox"
-                  className="cursor-pointer text-xs leading-normal text-muted-foreground select-none"
-                >
-                  I accept the Terms of Use and Privacy Policy.
-                </label>
-              </div>
-            </div>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter className="mt-4">
-            <Button
-              onClick={handleAcceptTerms}
-              disabled={!acceptedCheckbox || acceptingTerms}
-              className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              {acceptingTerms ? "Processing..." : "I Agree & Accept"}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <TermsAcceptanceModal
+        open={!!needsTermsAcceptance}
+        isNewcomer={!!stats?.isNewcomer}
+        acceptingTerms={acceptingTerms}
+        onAccept={handleAcceptTerms}
+      />
     </SectionErrorBoundary>
   )
 }
