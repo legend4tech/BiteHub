@@ -133,7 +133,7 @@ export function Hero() {
                   ))}
                 </div>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Loved by early students on campus
+                  Food right when you need it
                 </p>
               </div>
             </div>

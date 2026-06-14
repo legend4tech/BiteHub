@@ -42,7 +42,6 @@ const addVendorSchema = z.object({
   description: z.string().min(1, "Description is required"),
   category: z.string().min(1, "Category is required"),
   tags: z.array(z.string()).min(1, "At least one tag is required"),
-  deliveryFee: z.number().min(0, "Delivery fee must be 0 or more").default(0),
   prepTime: z.string().optional(),
   school: z.string().min(1, "School is required"),
   campus: z.string().min(1, "Campus is required"),
@@ -75,7 +74,6 @@ export function VendorCreationForm() {
       description: "",
       category: "meals",
       tags: [],
-      deliveryFee: 0,
       prepTime: "",
       school: DEFAULT_SCHOOL_ID,
       campus: DEFAULT_CAMPUS_ID,
@@ -225,30 +223,7 @@ export function VendorCreationForm() {
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Controller
-            name="deliveryFee"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Delivery Fee (₦)</FieldLabel>
-                <Input
-                  {...field}
-                  id={field.name}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  placeholder="e.g. 500"
-                  aria-invalid={fieldState.invalid}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
+        <div className="grid grid-cols-1 gap-4">
           <Controller
             name="prepTime"
             control={form.control}

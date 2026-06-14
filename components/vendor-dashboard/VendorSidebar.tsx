@@ -41,7 +41,7 @@ const navItems = [
   { href: "/vendor/menu", label: "Menu", icon: UtensilsCrossed },
   { href: "/vendor/orders", label: "Orders", icon: ClipboardList },
   { href: "/vendor/feedback", label: "Feedback", icon: Star },
-  { href: "/vendor/delivery-settings", label: "Delivery", icon: MapPin },
+  { href: "/vendor/delivery-settings", label: "Delivery Fees", icon: MapPin },
   { href: "/vendor/settings", label: "Settings", icon: Settings },
 ]
 
