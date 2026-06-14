@@ -31,9 +31,9 @@ export interface IOrder extends Document {
     | "ready"
     | "completed"
     | "cancelled"
-  paymentMethod: "paystack"
+  paymentMethod: "monnify"
   paymentStatus: "pending" | "paid" | "failed"
-  paystackReference?: string
+  monnifyReference?: string
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -82,15 +82,15 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ["paystack"],
-      default: "paystack",
+      enum: ["monnify"],
+      default: "monnify",
     },
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
-    paystackReference: { type: String },
+    monnifyReference: { type: String },
   },
   {
     timestamps: true,

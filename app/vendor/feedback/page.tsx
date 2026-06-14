@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
+import { FetchError } from "@/components/shared/FetchError"
 import apiClient from "@/lib/axios"
 import { Star } from "lucide-react"
 
@@ -20,18 +21,16 @@ export default function VendorFeedbackPage() {
   const { data: session, status } = useSession()
   const isReady = !!session?.user
 
-  const { data: feedbacks = [], isLoading: loadingFeedback } = useQuery<
-    Feedback[]
-  >({
+  const {
+    data: feedbacks = [],
+    isPending: loadingFeedback,
+    isError,
+    refetch,
+  } = useQuery<Feedback[]>({
     queryKey: ["vendor-feedback"],
     queryFn: async () => {
-      try {
-        const res = await apiClient.get("/vendor/feedback")
-        return Array.isArray(res.data) ? res.data : []
-      } catch (error) {
-        console.error("Error fetching feedback:", error)
-        return []
-      }
+      const res = await apiClient.get("/vendor/feedback")
+      return Array.isArray(res.data) ? res.data : []
     },
     enabled: isReady,
   })
@@ -58,7 +57,7 @@ export default function VendorFeedbackPage() {
               {greeting},
             </p>
             <h1 className="mt-0.5 font-heading text-2xl font-bold md:text-3xl">
-              Customer Feedback 👋
+              Customer Feedback
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
               What customers are saying about your order and service
@@ -77,6 +76,14 @@ export default function VendorFeedbackPage() {
                     className="h-16 animate-pulse rounded-xl bg-muted/50"
                   />
                 ))}
+              </div>
+            ) : isError ? (
+              <div className="py-6">
+                <FetchError
+                  title="Couldn't load feedback"
+                  onRetry={() => refetch()}
+                  size="sm"
+                />
               </div>
             ) : feedbacks.length === 0 ? (
               <EmptyState

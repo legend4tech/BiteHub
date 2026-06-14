@@ -3,7 +3,7 @@ import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/FadeIn"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { VendorCard } from "@/components/vendors/VendorCard"
+import { VendorCard } from "@/components/public-vendors/VendorCard"
 import { getFeaturedVendors } from "@/lib/services/vendorService"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
 

@@ -8,8 +8,8 @@ import {
   Tag,
   Clock,
 } from "lucide-react"
-import { VendorMenu } from "@/components/vendors/VendorMenu"
-import { ShareButton } from "@/components/vendors/ShareButton"
+import { VendorMenu } from "@/components/public-vendors/VendorMenu"
+import { ShareButton } from "@/components/public-vendors/ShareButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import type { Metadata } from "next"
@@ -162,7 +162,11 @@ export default async function VendorDetailPage({
 
           {/* Share button — always top-right on every screen */}
           <div className="absolute top-5 right-5 z-20">
-            <ShareButton slug={vendor.slug} />
+            <ShareButton
+              urlPath={`/vendors/${vendor.slug}`}
+              title={`Order from ${vendor.name} on BiteHub!`}
+              buttonText="Share profile"
+            />
           </div>
 
           <div className="relative z-10 flex flex-col gap-8 md:flex-row">
@@ -274,7 +278,6 @@ export default async function VendorDetailPage({
 
         {/* VendorMenu owns: category tabs, grid, cart, conflict dialog */}
         <Suspense
-          key={category + q}
           fallback={
             <div className="py-12">
               <PageSkeleton variant="vendor-detail" />

@@ -16,6 +16,7 @@ import { AdminOverview } from "@/components/admin/AdminOverview"
 import { AdminVendors } from "@/components/admin/AdminVendors"
 import { AdminFeedback, type Feedback } from "@/components/admin/AdminFeedback"
 import { AdminSettings } from "@/components/admin/AdminSettings"
+import { AdminDeliveryZones } from "@/components/admin/AdminDeliveryZones"
 import { AddLoginModal, AddVendorModal } from "@/components/admin/AdminModals"
 import type { AdminStats, AdminVendor } from "@/components/admin/types"
 
@@ -135,6 +136,7 @@ export default function AdminPage() {
                 loadingFeedback={loadingFeedback}
               />
             )}
+            {activeSection === "delivery-zones" && <AdminDeliveryZones />}
             {activeSection === "settings" && <AdminSettings />}
           </div>
         </main>

@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { CampusProvider } from "@/components/providers/CampusProvider"
 import { Suspense } from "react"
 import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
+import { CookieBanner } from "@/components/CookieBanner"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -93,6 +94,7 @@ export default function RootLayout({
               <CampusProvider>
                 <MaintenanceGuard>
                   {children}
+                  <CookieBanner />
                   <Toaster position="top-right" richColors closeButton expand />
                 </MaintenanceGuard>
               </CampusProvider>

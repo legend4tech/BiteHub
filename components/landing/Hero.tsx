@@ -61,6 +61,8 @@ export function Hero() {
         className="absolute inset-0 -z-10"
         style={{ background: "var(--gradient-hero)" }}
       />
+      {/* Ambient glow orb for depth */}
+      <div className="absolute top-1/4 right-0 -z-10 hidden h-[600px] w-[600px] rounded-full bg-primary/20 blur-[120px] lg:block" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 pt-16 pb-24 lg:grid-cols-12">
         {/* Left — text content */}
         <div className="animate-fade-in-up space-y-8 lg:col-span-6">
@@ -100,7 +102,43 @@ export function Hero() {
                 </Link>
               </Button>
             </div>
-            <div className="mt-4 flex items-center gap-2">
+            {/* Social Proof Avatar Group */}
+            <div className="mt-6 flex items-center gap-4">
+              <div className="flex -space-x-3">
+                {["A", "C", "S", "K"].map((initial, i) => (
+                  <div
+                    key={i}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-primary/90 text-sm font-bold text-white shadow-sm"
+                  >
+                    {initial}
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1 text-amber-500">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="size-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Loved by early students on campus
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
                 Browsing for:
               </span>
@@ -147,8 +185,10 @@ export function Hero() {
                   alt={slide.alt}
                   fill
                   priority={i === 0}
-                  className={`object-cover transition-opacity duration-700 ${
-                    i === index ? "opacity-100" : "opacity-0"
+                  className={`object-cover transition-all duration-1000 ease-out ${
+                    i === index
+                      ? "scale-100 opacity-100"
+                      : "scale-105 opacity-0"
                   }`}
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
@@ -170,7 +210,7 @@ export function Hero() {
           </div>
 
           {/* Feature chip — replaces fake order number */}
-          <div className="animate-slide-up absolute -bottom-6 -left-6 hidden w-56 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] md:block">
+          <div className="absolute -bottom-6 -left-6 hidden w-56 animate-float rounded-2xl border border-white/20 bg-card/70 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl md:block dark:border-white/10 dark:bg-black/50">
             <div className="flex items-center gap-3">
               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl">
                 <Image
@@ -195,7 +235,10 @@ export function Hero() {
 
           {/* Value prop chip — replaces fake "ordered today" count */}
           <FadeIn delay={0.7}>
-            <div className="animate-slide-down absolute -top-4 -right-4 hidden items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--shadow-soft)] md:flex">
+            <div
+              className="absolute -top-4 -right-4 hidden animate-float items-center gap-2 rounded-2xl border border-white/20 bg-card/70 px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl md:flex dark:border-white/10 dark:bg-black/50"
+              style={{ animationDelay: "2s" }}
+            >
               <Zap className="size-4 fill-primary text-primary" />
               <span className="text-sm font-semibold">
                 Order in under 60 seconds

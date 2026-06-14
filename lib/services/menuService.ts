@@ -10,6 +10,7 @@ import dbConnect from "@/lib/db"
 import MenuItem from "@/models/MenuItem"
 import Vendor from "@/models/Vendor"
 import { serializeMenuItem } from "@/lib/serializers"
+import type mongoose from "mongoose"
 
 // Tag logic — single definition for the entire codebase
 export function getItemTag(price: number): string | null {
@@ -38,7 +39,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
   // ALWAYS filter to vendors that are active AND have payment details configured
   const vendorFilter: Record<string, unknown> = {
     isActive: true,
-    paystackIntegrationStatus: "active",
+    monnifyIntegrationStatus: "active",
   }
 
   if (school) vendorFilter.school = school
@@ -102,4 +103,95 @@ export async function getMenus(options: GetMenusOptions = {}) {
     .filter((item): item is NonNullable<typeof item> => item !== null)
 
   return { items: mappedItems, totalItems }
+}
+
+/// ─── Vendor Dashboard: Manage menu items ─────────────────────────────────────
+
+export async function getVendorMenuItems(
+  vendorId: mongoose.Types.ObjectId | string,
+  search?: string,
+  category?: string
+) {
+  await dbConnect()
+
+  // Fetch all items for stats and full category list
+  const allItemsDocs = await MenuItem.find({ vendorId })
+    .sort({ createdAt: -1 })
+    .lean()
+
+  const allItems = allItemsDocs
+    .map(serializeMenuItem)
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
+  // Fetch filtered items for rendering
+  const filter: Record<string, unknown> = { vendorId }
+  if (search) filter.name = { $regex: search, $options: "i" }
+  if (category && category !== "all") filter.category = category
+
+  const filteredDocs = await MenuItem.find(filter)
+    .sort({ createdAt: -1 })
+    .lean()
+
+  const filteredItems = filteredDocs
+    .map(serializeMenuItem)
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
+  return { allItems, filteredItems }
+}
+
+/// ─── Public: Single Menu Item ──────────────────────────────────────────────────
+
+export async function getMenuItemById(id: string) {
+  await dbConnect()
+
+  // 1. Fetch the requested item
+  const itemDoc = await MenuItem.findOne({ _id: id, isAvailable: true }).lean()
+  if (!itemDoc) return null
+
+  // 2. Fetch the vendor to ensure they are active & Monnify integrated
+  const vendor = await Vendor.findOne({
+    _id: itemDoc.vendorId,
+    isActive: true,
+    monnifyIntegrationStatus: "active",
+  }).lean()
+
+  if (!vendor) return null
+
+  // 3. Serialize the main item
+  const baseItem = serializeMenuItem(itemDoc)
+  if (!baseItem) return null
+
+  const mainItem = {
+    ...baseItem,
+    vendorName: vendor.name,
+    vendorSlug: vendor.slug,
+    vendorWhatsappNumber: vendor.whatsappNumber || "",
+    tag: getItemTag(itemDoc.price),
+  }
+
+  // 4. Fetch related items (same vendor, available, not this item, limit 4)
+  const relatedDocs = await MenuItem.find({
+    vendorId: vendor._id,
+    isAvailable: true,
+    _id: { $ne: itemDoc._id },
+  })
+    .sort({ createdAt: -1 })
+    .limit(4)
+    .lean()
+
+  const relatedItems = relatedDocs
+    .map((doc) => {
+      const base = serializeMenuItem(doc)
+      if (!base) return null
+      return {
+        ...base,
+        vendorName: vendor.name,
+        vendorSlug: vendor.slug,
+        vendorWhatsappNumber: vendor.whatsappNumber || "",
+        tag: getItemTag(doc.price),
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
+  return { mainItem, relatedItems, vendor }
 }

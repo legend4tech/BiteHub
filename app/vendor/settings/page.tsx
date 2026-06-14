@@ -1,8 +1,6 @@
 import { auth } from "@/auth"
-import dbConnect from "@/lib/db"
-import VendorModel from "@/models/Vendor"
-import { serializeVendor } from "@/lib/serializers"
-import { VendorSettingsTabs } from "@/components/vendor/VendorSettingsTabs"
+import { getVendorProfile } from "@/lib/services/vendorService"
+import { VendorSettingsTabs } from "@/components/vendor-dashboard/VendorSettingsTabs"
 import { redirect, notFound } from "next/navigation"
 import type { Vendor } from "@/lib/types"
 
@@ -12,19 +10,17 @@ export default async function VendorSettingsPage() {
     redirect("/vendor/login")
   }
 
-  await dbConnect()
-  const vendor = await VendorModel.findById(session.user.vendorId).lean()
+  const vendor = await getVendorProfile(session.user.vendorId)
 
   if (!vendor) {
     notFound()
   }
 
-  const serializedVendor = serializeVendor(vendor)
   const currentEmail = session.user.email || ""
 
   return (
     <VendorSettingsTabs
-      serializedVendor={serializedVendor as Vendor}
+      serializedVendor={vendor as Vendor}
       currentEmail={currentEmail}
     />
   )

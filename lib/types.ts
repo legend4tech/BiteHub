@@ -34,11 +34,11 @@ export interface Vendor {
   prepTime?: string
   image?: string | { url: string; publicId: string }
 
-  // Paystack integration fields
-  paystackSubaccountCode?: string
-  paystackBankCode?: string
+  // Monnify integration fields
+  monnifySubAccountCode?: string
+  monnifyBankCode?: string
   accountNumber?: string
-  paystackIntegrationStatus?: "pending" | "active"
+  monnifyIntegrationStatus?: "pending" | "active"
   lastBankUpdateAt?: string // ISO string
 
   // Computed/virtual UI properties
@@ -125,9 +125,9 @@ export interface Order {
   totalAmount: number
   createdAt: string // ISO string
   updatedAt: string // ISO string
-  paymentMethod?: "paystack"
+  paymentMethod?: "monnify"
   paymentStatus?: "pending" | "paid" | "failed"
-  paystackReference?: string
+  monnifyReference?: string
   vendorPaymentDetails?: {
     bankName?: string
     accountNumber?: string

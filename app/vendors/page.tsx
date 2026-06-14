@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { VendorCard } from "@/components/vendors/VendorCard"
+import { VendorCard } from "@/components/public-vendors/VendorCard"
 import type { Metadata } from "next"
 import { FadeIn } from "@/components/FadeIn"
 import { SearchInput } from "@/components/shared/SearchInput"
@@ -10,7 +10,7 @@ import {
   getCampusName,
   getSchoolName,
 } from "@/lib/config/campus"
-import { LoadMoreVendors } from "@/components/vendors/LoadMoreVendors"
+import { LoadMoreVendors } from "@/components/public-vendors/LoadMoreVendors"
 import { Suspense } from "react"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"

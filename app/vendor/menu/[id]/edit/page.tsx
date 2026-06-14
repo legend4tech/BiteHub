@@ -1,14 +1,16 @@
 "use client"
 
 import { useRouter, useParams } from "next/navigation"
-import { MenuItemForm } from "@/components/vendor/MenuItemForm"
+import { MenuItemForm } from "@/components/vendor-dashboard/MenuItemForm"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { FetchError } from "@/components/shared/FetchError"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
 import type { MenuItemPayload } from "@/lib/types"
 import { useMenuItemDetail } from "@/hooks/queries/useMenuItemDetail"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function EditMenuItemPage() {
   const router = useRouter()
@@ -16,12 +18,14 @@ export default function EditMenuItemPage() {
   const id = params.id as string
 
   // Fetch menu item using React Query
-  const { data: item, isLoading } = useMenuItemDetail(id)
+  const { data: item, isPending, isError, refetch } = useMenuItemDetail(id)
+  const queryClient = useQueryClient()
 
   const handleSave = async (data: MenuItemPayload) => {
     try {
       await apiClient.patch(`/vendor/menu/${id}`, data)
       toast.success("Menu item updated")
+      queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
       router.push("/vendor/menu")
       router.refresh()
     } catch {
@@ -29,8 +33,20 @@ export default function EditMenuItemPage() {
     }
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <PageSkeleton variant="menu-item-edit" />
+  }
+
+  if (isError) {
+    return (
+      <div className="py-20">
+        <FetchError
+          title="Couldn't load menu item"
+          onRetry={() => refetch()}
+          size="md"
+        />
+      </div>
+    )
   }
 
   if (!item) {

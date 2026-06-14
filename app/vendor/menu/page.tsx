@@ -1,9 +1,6 @@
 import { auth } from "@/auth"
-import dbConnect from "@/lib/db"
-import MenuItemModel from "@/models/MenuItem"
-import { serializeMenuItem } from "@/lib/serializers"
-import { VendorMenuManagement } from "@/components/vendor/VendorMenuManagement"
-import { Types } from "mongoose"
+import { getVendorMenuItems } from "@/lib/services/menuService"
+import { VendorMenuManagement } from "@/components/vendor-dashboard/VendorMenuManagement"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -28,31 +25,13 @@ export default async function VendorMenuPage({ searchParams }: Props) {
   const search =
     typeof resolvedParams.search === "string" ? resolvedParams.search : ""
 
-  await dbConnect()
-  const vendorId = new Types.ObjectId(session.user.vendorId)
+  const vendorId = session.user.vendorId
 
-  // Fetch all items for stats and full category list
-  const allItemsDocs = await MenuItemModel.find({ vendorId })
-    .sort({ createdAt: -1 })
-    .lean()
-
-  const allItems = allItemsDocs
-    .map(serializeMenuItem)
-    .filter(Boolean) as MenuItem[]
-
-  // Fetch filtered items for rendering
-  const filter: Record<string, unknown> = { vendorId }
-  if (search) filter.name = { $regex: search, $options: "i" }
-  if (activeCategory && activeCategory !== "all")
-    filter.category = activeCategory
-
-  const filteredDocs = await MenuItemModel.find(filter)
-    .sort({ createdAt: -1 })
-    .lean()
-
-  const filteredItems = filteredDocs
-    .map(serializeMenuItem)
-    .filter(Boolean) as MenuItem[]
+  const { allItems, filteredItems } = await getVendorMenuItems(
+    vendorId,
+    search,
+    activeCategory
+  )
 
   return (
     <div className="space-y-6">

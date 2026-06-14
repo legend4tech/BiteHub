@@ -5,7 +5,7 @@ import type { MenuCategory, OrderStatus } from "./types"
 
 export const APP_NAME = "BiteHub"
 export const APP_LOGO_URL = "/brand_logo.png"
-export const CURRENT_TERMS_VERSION = "2026-05-28"
+export const CURRENT_TERMS_VERSION = "2026-05-27"
 
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 
@@ -158,7 +158,7 @@ export function buildOrderWhatsAppMessage(order: {
   total?: number // legacy support
   totalAmount?: number // from serializer
   notes?: string
-  paymentMethod?: "paystack"
+  paymentMethod?: "monnify"
   paymentStatus?: string
 }): string {
   const itemList = order.items
@@ -167,9 +167,9 @@ export function buildOrderWhatsAppMessage(order: {
     )
     .join("\n")
 
-  // Paystack is the only payment method — show confirmation when paid
+  // Monnify is the only payment method — show confirmation when paid
   const paymentText =
-    order.paymentMethod === "paystack" ? `*Payment:* Paid via Paystack` : null
+    order.paymentMethod === "monnify" ? `*Payment:* Paid via Monnify` : null
 
   return [
     `Hello! I just placed an order from your menu via *${APP_NAME}* 🍽️`,

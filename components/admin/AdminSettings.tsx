@@ -207,7 +207,7 @@ export function AdminSettings() {
           {/* Manual Order Verification */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-confirmed/10 text-status-confirmed-foreground">
                 <Search className="size-5" />
               </div>
               <div>
@@ -215,7 +215,7 @@ export function AdminSettings() {
                   Order Recovery
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Manually sync a stuck order with Paystack
+                  Manually sync a stuck order with Monnify
                 </p>
               </div>
             </div>
@@ -244,7 +244,7 @@ export function AdminSettings() {
                 <p className="text-xs text-muted-foreground">
                   If a vendor reports a successful payment is showing as
                   pending, paste the Order ID here to forcefully sync the status
-                  from Paystack.
+                  from Monnify.
                 </p>
               </div>
             </div>
@@ -256,7 +256,7 @@ export function AdminSettings() {
           {/* Global Settings */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-pending/10 text-status-pending-foreground">
                 <Settings className="size-5" />
               </div>
               <div>

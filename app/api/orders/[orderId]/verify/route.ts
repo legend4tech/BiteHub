@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import axios from "axios"
+import { verifyMonnifyTransaction } from "@/lib/monnify"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { sendOrderReceiptEmail } from "@/lib/mail"
@@ -23,26 +23,17 @@ export async function POST(
       return NextResponse.json({ success: true, alreadyPaid: true })
     }
 
-    if (!order.paystackReference) {
+    if (!order.monnifyReference) {
       return NextResponse.json(
-        { error: "No Paystack reference on this order" },
+        { error: "No Monnify reference on this order" },
         { status: 400 }
       )
     }
 
-    // Verify with Paystack using axios
-    const paystackRes = await axios.get(
-      `https://api.paystack.co/transaction/verify/${order.paystackReference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      }
-    )
+    // Verify with Monnify
+    const monnifyData = await verifyMonnifyTransaction(order.monnifyReference)
 
-    const paystackData = paystackRes.data
-
-    if (paystackData.status && paystackData.data.status === "success") {
+    if (monnifyData.paymentStatus === "PAID") {
       // Atomically acquire lock and update state
       const updatedOrder = await Order.findOneAndUpdate(
         { orderId, paymentStatus: { $ne: "paid" } },
@@ -64,17 +55,21 @@ export async function POST(
 
       const wasPending = true // Since we atomically transitioned the state, wasPending is true
 
-      // ── Overwrite estimates with Paystack's actual ground-truth figures ──────────
-      // paystackData.data.fees           = exact Paystack processing fee, in kobo
-      // paystackData.data.subaccount.amount = exact amount deposited to vendor, in kobo
-      if (typeof paystackData.data.fees === "number") {
-        updatedOrder.serviceFee = paystackData.data.fees / 100
+      // ── Overwrite estimates with Monnify's actual ground-truth figures ──────────
+      if (typeof monnifyData.fee === "number") {
+        updatedOrder.serviceFee = monnifyData.fee
       }
+
       if (
-        paystackData.data.subaccount &&
-        typeof paystackData.data.subaccount.amount === "number"
+        monnifyData.incomeSplitConfig &&
+        monnifyData.incomeSplitConfig.length > 0
       ) {
-        updatedOrder.vendorRevenue = paystackData.data.subaccount.amount / 100
+        // If there's a split setup, find the vendor's subaccount amount (if possible) or just use the first split.
+        // Usually, splitAmount is present in the config sent.
+        const vendorSplit = monnifyData.incomeSplitConfig[0]
+        if (typeof vendorSplit.splitAmount === "number") {
+          updatedOrder.vendorRevenue = vendorSplit.splitAmount
+        }
       }
 
       await updatedOrder.save()
@@ -152,6 +147,7 @@ export async function POST(
     return NextResponse.json({
       success: false,
       message: "Payment not successful yet",
+      paymentStatus: monnifyData.paymentStatus, // Pass actual status back to client
     })
   } catch (error) {
     console.error("[orders/[orderId]/verify POST]", error)

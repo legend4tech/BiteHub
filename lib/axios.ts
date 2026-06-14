@@ -5,11 +5,13 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 15000, // 15 seconds timeout for poor campus networks
 })
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // 1. Session expiration handling
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
         const { toast } = await import("sonner")
@@ -29,6 +31,28 @@ apiClient.interceptors.response.use(
         return new Promise(() => {})
       }
     }
+
+    // 2. Global Network / 5xx Server Error handling
+    if (
+      error.code === "ECONNABORTED" ||
+      !error.response ||
+      error.response?.status >= 500
+    ) {
+      if (typeof window !== "undefined") {
+        const { toast } = await import("sonner")
+
+        const message =
+          error.code === "ECONNABORTED"
+            ? "Request timed out. Please check your connection."
+            : "Network unstable. Please check your connection and try again."
+
+        // Use a static ID to prevent spamming toasts if multiple parallel requests fail
+        toast.error(message, {
+          id: "network-error",
+        })
+      }
+    }
+
     return Promise.reject(error)
   }
 )

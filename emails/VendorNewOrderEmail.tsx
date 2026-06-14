@@ -147,7 +147,7 @@ export const VendorNewOrderEmail = ({
               )}
               {serviceFee > 0 && (
                 <div style={summaryRow}>
-                  <Text style={summaryLabel}>Processing Fee (Paystack)</Text>
+                  <Text style={summaryLabel}>Processing Fee (Monnify)</Text>
                   <Text style={summaryValue}>{fmt(serviceFee)}</Text>
                 </div>
               )}

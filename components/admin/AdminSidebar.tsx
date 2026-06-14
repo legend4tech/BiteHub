@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Home,
   Settings,
+  MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -36,7 +37,12 @@ import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type AdminSection = "overview" | "vendors" | "feedback" | "settings"
+export type AdminSection =
+  | "overview"
+  | "vendors"
+  | "feedback"
+  | "delivery-zones"
+  | "settings"
 
 interface AdminSidebarProps {
   activeSection: AdminSection
@@ -53,6 +59,7 @@ const navItems: {
   { section: "overview", label: "Overview", icon: LayoutDashboard },
   { section: "vendors", label: "Vendors", icon: Store },
   { section: "feedback", label: "Feedback", icon: Star },
+  { section: "delivery-zones", label: "Delivery Zones", icon: MapPin },
   { section: "settings", label: "Settings", icon: Settings },
 ]
 

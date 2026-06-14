@@ -47,12 +47,14 @@ export async function GET() {
 
     // Check if the vendor has payment details set up
     const vendor = await Vendor.findById(vendorId)
-      .select("paymentDetails slug")
+      .select(
+        "paymentDetails slug monnifySubAccountCode monnifyTotalDisbursed monnifyAccountNumber"
+      )
       .lean()
     const hasPaymentDetails = !!(
-      vendor?.paymentDetails?.bankName &&
-      vendor?.paymentDetails?.accountNumber &&
-      vendor?.paymentDetails?.accountName
+      vendor?.monnifySubAccountCode ||
+      (vendor?.paymentDetails?.bankName &&
+        vendor?.paymentDetails?.accountNumber)
     )
 
     // Fetch the vendor user compliance records
@@ -164,8 +166,20 @@ export async function GET() {
       totalRevenue: 0,
     }
 
+    const monnifyDisbursed = vendor?.monnifyTotalDisbursed || 0
+    const monnifyPending = Math.max(
+      0,
+      finalStats.totalRevenue - monnifyDisbursed
+    )
+
+    // Check if the vendor has Monnify connected
+    const monnifySubAccountCode = vendor?.monnifySubAccountCode || null
+
     const response = NextResponse.json({
       ...finalStats,
+      monnifyDisbursed,
+      monnifyPending,
+      monnifySubAccountCode,
       hasPaymentDetails,
       slug: vendor?.slug,
       acceptedTermsVersion,

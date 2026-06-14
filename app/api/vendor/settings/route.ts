@@ -38,7 +38,6 @@ export async function PATCH(request: Request) {
       category,
       tags,
       whatsappNumber,
-      deliveryFee,
       prepTime,
       image,
     } = parsedBody.data
@@ -89,8 +88,6 @@ export async function PATCH(request: Request) {
     if (tags !== undefined) updateData.tags = tags
     if (whatsappNumber !== undefined)
       updateData.whatsappNumber = formatToWhatsapp(whatsappNumber?.trim() || "")
-    if (deliveryFee !== undefined)
-      updateData.deliveryFee = Number(deliveryFee) || 0
     if (prepTime !== undefined) updateData.prepTime = prepTime
     if (image !== undefined) updateData.image = image
 

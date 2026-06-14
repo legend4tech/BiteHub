@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { OrderStatusTracker } from "@/components/cart/OrderStatusTracker"
 import { WhatsAppButton } from "@/components/cart/WhatsAppButton"
-import { StatusBadge } from "@/components/vendor/StatusBadge"
+import { StatusBadge } from "@/components/vendor-dashboard/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -20,10 +20,13 @@ import {
   Copy,
   Clock,
   StickyNote,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPrice, formatPriceExact, formatTime } from "@/lib/format"
 import { useOrder } from "@/hooks/queries/useOrder"
+import apiClient from "@/lib/axios"
 import { toast } from "sonner"
 import {
   FeedbackModal,
@@ -35,6 +38,60 @@ export default function OrderPage() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
 
   const { data: order, isLoading, isError, error, refetch } = useOrder(orderId)
+  const [isRetryingPayment, setIsRetryingPayment] = useState(false)
+  const [isVerifyingDirectly, setIsVerifyingDirectly] = useState(true)
+  const [isStalePayment, setIsStalePayment] = useState(false)
+  const hasVerified = useRef(false)
+
+  // Immediately verify the source of truth with Monnify on page load
+  useEffect(() => {
+    if (order?.paymentStatus === "pending" && !hasVerified.current) {
+      hasVerified.current = true
+      // Verification is already in progress (isVerifyingDirectly initialized to true)
+      apiClient
+        .post(`/orders/${orderId}/verify`)
+        .then((res) => {
+          if (res.data.success) {
+            // It was actually paid! Update the UI immediately.
+            refetch()
+          } else {
+            // It's genuinely pending/cancelled/failed at Monnify.
+            // Since they are on this tracking page, it means they dropped off.
+            setIsStalePayment(true)
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to verify transaction status directly:", err)
+          // Fallback if API fails: show the retry button anyway so they aren't stuck
+          setIsStalePayment(true)
+        })
+        .finally(() => {
+          setIsVerifyingDirectly(false)
+        })
+    }
+  }, [order?.paymentStatus, orderId, refetch])
+
+  const handlePaymentRetry = async () => {
+    if (!order) return
+    setIsRetryingPayment(true)
+    try {
+      const response = await apiClient.post(`/orders/${order.orderId}/pay`)
+      if (response.data.checkoutUrl) {
+        toast.success("Redirecting to secure payment...")
+        window.location.href = response.data.checkoutUrl
+      } else {
+        throw new Error("Missing checkout URL")
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : "Failed to initiate payment retry. Please contact support."
+      toast.error(errMsg)
+      setIsRetryingPayment(false)
+    }
+  }
 
   useEffect(() => {
     if (order?.status === "completed") {
@@ -226,6 +283,57 @@ export default function OrderPage() {
           </div>
         </div>
 
+        {/* ── Payment verification banner ─────────────────────────── */}
+        {order.paymentStatus === "pending" &&
+          (!isStalePayment || isVerifyingDirectly) && (
+            <div className="flex items-center gap-3 rounded-[20px] border border-amber-500/20 bg-amber-500/10 px-5 py-4">
+              <Loader2 className="size-4 shrink-0 animate-spin text-amber-600" />
+              <div>
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                  Verifying your payment…
+                </p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-500/80">
+                  Contacting Monnify securely to confirm your transaction
+                  status.
+                </p>
+              </div>
+            </div>
+          )}
+
+        {/* ── Payment recovery banner ─────────────────────────────── */}
+        {order.paymentStatus === "pending" &&
+          isStalePayment &&
+          !isVerifyingDirectly && (
+            <div className="flex flex-col items-start justify-between gap-4 rounded-[20px] border border-destructive/20 bg-destructive/5 px-5 py-4 sm:flex-row sm:items-center">
+              <div className="flex items-start gap-3 sm:items-center">
+                <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive sm:mt-0" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">
+                    Payment Incomplete
+                  </p>
+                  <p className="mt-0.5 text-xs text-destructive/80">
+                    It looks like your payment wasn&apos;t completed. Please try
+                    again to confirm your order.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handlePaymentRetry}
+                disabled={isRetryingPayment}
+                className="w-full shrink-0 bg-destructive text-white hover:bg-destructive/90 sm:w-auto"
+              >
+                {isRetryingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Please wait...
+                  </>
+                ) : (
+                  "Complete Payment"
+                )}
+              </Button>
+            </div>
+          )}
+
         {/* ── Order status tracker ───────────────────────────────── */}
         <div className="rounded-[28px] border border-border bg-card p-7 shadow-sm sm:p-8">
           <div className="mb-6 flex items-center justify-between">
@@ -316,7 +424,7 @@ export default function OrderPage() {
                   <span className="flex items-center gap-1">
                     Processing Fee
                     <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
-                      Paystack
+                      Monnify
                     </span>
                   </span>
                   <span className="tabular-nums">

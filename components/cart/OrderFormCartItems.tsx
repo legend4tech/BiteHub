@@ -25,7 +25,7 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || ci.quantity <= 1}
               onClick={() => updateQuantity(ci.menuItem.id, ci.quantity - 1)}
               className="flex h-6 w-6 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-50"
             >
@@ -56,24 +56,6 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
           </button>
         </div>
       ))}
-      <div className="space-y-2 border-t border-border pt-4">
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Subtotal</span>
-          <span>{formatPrice(total - (cart.vendorDeliveryFee || 0))}</span>
-        </div>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Delivery Fee</span>
-          <span>
-            {(cart.vendorDeliveryFee || 0) > 0
-              ? formatPrice(cart.vendorDeliveryFee || 0)
-              : "Free"}
-          </span>
-        </div>
-        <div className="flex justify-between border-t border-border pt-2 text-base font-bold">
-          <span>Total</span>
-          <span className="text-primary">{formatPrice(total)}</span>
-        </div>
-      </div>
 
       {cart.vendorPrepTime && (
         <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">

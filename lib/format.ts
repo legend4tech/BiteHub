@@ -16,7 +16,7 @@ export function formatPrice(amount: number): string {
 
 /**
  * Exact price formatter — shows kobo (up to 2 decimal places) when present.
- * Use this for fees, earnings, and any value that must match Paystack's figures.
+ * Use this for fees, earnings, and any value that must match Monnify's figures.
  * e.g. 30.45 → "₦30.45", 2000 → "₦2,000"
  *
  * IMPORTANT: We deliberately avoid style:"currency" + currency:"NGN" here because

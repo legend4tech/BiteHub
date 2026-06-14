@@ -58,10 +58,10 @@ export function serializeVendor(doc: LeanVendor | null) {
     initials,
     tagline: doc.description ?? "The best food on campus",
     location: doc.campus ?? "Main Campus",
-    // Paystack integration fields
-    paystackSubaccountCode: doc.paystackSubaccountCode ?? null,
-    paystackBankCode: doc.paystackBankCode ?? null,
-    paystackIntegrationStatus: doc.paystackIntegrationStatus ?? "pending",
+    // Monnify integration fields
+    monnifySubAccountCode: doc.monnifySubAccountCode ?? null,
+    monnifyBankCode: doc.monnifyBankCode ?? null,
+    monnifyIntegrationStatus: doc.monnifyIntegrationStatus ?? "pending",
     lastBankUpdateAt: doc.lastBankUpdateAt?.toISOString() ?? null,
   }
 }
@@ -116,9 +116,9 @@ export function serializeOrder(doc: LeanOrder | null) {
     vendorRevenue: doc.vendorRevenue ?? 0,
     totalAmount: doc.totalAmount ?? 0,
     status: doc.status,
-    paymentMethod: doc.paymentMethod ?? "paystack",
+    paymentMethod: doc.paymentMethod ?? "monnify",
     paymentStatus: doc.paymentStatus ?? "pending",
-    paystackReference: doc.paystackReference ?? null,
+    monnifyReference: doc.monnifyReference ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   }

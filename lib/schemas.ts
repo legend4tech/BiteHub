@@ -90,13 +90,13 @@ export const orderFormInputSchema = z.object({
       (v) => /^\+234[789]\d{9}$/.test(normaliseNigerianPhone(v)),
       "Enter a valid Nigerian phone number (e.g. 08012345678)."
     ),
-  location: z
+  location: z.string().trim().min(1, "Please select the nearest landmark."),
+  exactLocation: z
     .string()
     .trim()
-    .min(1, "Please enter your delivery location.")
-    .min(2, "Location must be at least 2 characters."),
+    .min(1, "Please enter your exact location or lodge name."),
   notes: z.string().trim().optional(),
-  paymentMethod: z.enum(["paystack"]).default("paystack"),
+  paymentMethod: z.enum(["monnify"]).default("monnify"),
 })
 
 export type OrderFormInputValues = z.infer<typeof orderFormInputSchema>
@@ -122,13 +122,13 @@ export const orderFormSchema = z.object({
       (v) => /^\+234[789]\d{9}$/.test(v),
       "Enter a valid Nigerian phone number (e.g. 08012345678)."
     ),
-  location: z
+  location: z.string().trim().min(1, "Please select the nearest landmark."),
+  exactLocation: z
     .string()
     .trim()
-    .min(1, "Please enter your delivery location.")
-    .min(2, "Location must be at least 2 characters."),
+    .min(1, "Please enter your exact location or lodge name."),
   notes: z.string().trim().optional(),
-  paymentMethod: z.enum(["paystack"]).default("paystack"),
+  paymentMethod: z.enum(["monnify"]).default("monnify"),
 })
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>
@@ -187,13 +187,6 @@ export const vendorSettingsSchema = z.object({
   description: z.string().trim().min(1, "Description is required"),
   whatsappNumber: whatsappInputSchema,
   category: z.string().min(1, "Category is required"),
-  deliveryFee: z
-    .string()
-    .min(1, "Delivery fee is required.")
-    .refine((v) => {
-      const cleanValue = v.replace(/,/g, "")
-      return !isNaN(Number(cleanValue)) && Number(cleanValue) >= 0
-    }, "Enter a valid delivery fee."),
   tags: z.array(z.string()).optional(),
   prepTime: z.string().min(1, "Estimated prep time is required"),
   school: z.string().optional(),

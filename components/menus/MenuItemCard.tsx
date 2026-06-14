@@ -1,45 +1,44 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import Link from "next/link";
-import { Plus, Minus, ExternalLink } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
-import type { MenuItem } from "@/lib/types";
-import { useState } from "react";
-import { formatPrice, formatTime } from "@/lib/format";
+import Image from "next/image"
+import Link from "next/link"
+import { Plus, Minus, ExternalLink, UtensilsCrossed } from "lucide-react"
+import { useCart } from "@/hooks/useCart"
+import type { MenuItem } from "@/lib/types"
+import { useState } from "react"
+import { formatPrice, formatTime } from "@/lib/format"
 
 interface MenuItemCardProps {
-  item: MenuItem;
-  onDifferentVendor?: (item: MenuItem) => void;
+  item: MenuItem
+  onDifferentVendor?: (item: MenuItem) => void
 }
 
 export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
-  const { cart, addItem, updateQuantity, isDifferentVendor } = useCart();
-  const [imgError, setImgError] = useState(false);
+  const { cart, addItem, updateQuantity, isDifferentVendor } = useCart()
+  const [imgError, setImgError] = useState(false)
 
-  const cartEntry = cart.items.find((ci) => ci.menuItem.id === item.id);
-  const qty = cartEntry?.quantity ?? 0;
-  const imageUrl =
-    typeof item.image === "string" ? item.image : item.image?.url;
+  const cartEntry = cart.items.find((ci) => ci.menuItem.id === item.id)
+  const qty = cartEntry?.quantity ?? 0
+  const imageUrl = typeof item.image === "string" ? item.image : item.image?.url
 
-  const now = new Date();
+  const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
     now.getMinutes()
-  ).padStart(2, "0")}`;
-  const isScheduled = item.availableFrom && item.availableTo;
+  ).padStart(2, "0")}`
+  const isScheduled = item.availableFrom && item.availableTo
   const isOffSchedule =
     isScheduled &&
-    (currentTime < item.availableFrom! || currentTime > item.availableTo!);
-  const isCurrentlyAvailable = item.isAvailable && !isOffSchedule;
+    (currentTime < item.availableFrom! || currentTime > item.availableTo!)
+  const isCurrentlyAvailable = item.isAvailable && !isOffSchedule
 
   const handleAdd = () => {
-    if (!isCurrentlyAvailable) return;
+    if (!isCurrentlyAvailable) return
     if (isDifferentVendor(item)) {
-      onDifferentVendor?.(item);
-      return;
+      onDifferentVendor?.(item)
+      return
     }
-    addItem(item);
-  };
+    addItem(item)
+  }
 
   return (
     /**
@@ -51,11 +50,13 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
      * Within the card, flex-col + flex-1 on the name + mt-auto on the
      * bottom row ensures price & buttons always sit flush at the bottom.
      */
-    <article className="group rounded-2xl bg-card border border-border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_-6px_rgba(255,107,0,0.22)] flex flex-col">
-
+    <article className="group flex flex-col rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_-6px_rgba(255,107,0,0.22)]">
       {/* ── Image ─────────────────────────────────────────── */}
       {/* overflow-hidden is ONLY here, not on the article root */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-muted shrink-0">
+      <Link
+        href={`/menu/${item.id}`}
+        className="relative block aspect-[4/3] shrink-0 overflow-hidden rounded-t-2xl bg-muted"
+      >
         {imageUrl && !imgError ? (
           <Image
             src={imageUrl}
@@ -66,55 +67,59 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl">
-            🍽️
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+            <UtensilsCrossed className="size-8" />
           </div>
         )}
 
         {item.tag && (
-          <span className="absolute top-2.5 left-2.5 bg-background/95 backdrop-blur text-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-border">
+          <span className="absolute top-2.5 left-2.5 rounded-full border border-border bg-background/95 px-2.5 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
             {item.tag}
           </span>
         )}
 
         {!isCurrentlyAvailable && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-1.5">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/60 backdrop-blur-[2px]">
+            <span className="text-xs font-bold tracking-wider text-white uppercase">
               {!item.isAvailable ? "Out of Stock" : "Closed"}
             </span>
             {isOffSchedule && (
-              <span className="text-[10px] font-medium text-white/90 bg-white/10 px-2 py-0.5 rounded-full border border-white/20">
+              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/90">
                 Opens {formatTime(item.availableFrom!)}
               </span>
             )}
           </div>
         )}
-      </div>
+      </Link>
 
       {/* ── Content ───────────────────────────────────────── */}
       {/* flex-col + flex-1 fills card height; price row pins to bottom */}
-      <div className="flex flex-col flex-1 p-3 gap-1.5">
-
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
         {/* Vendor name */}
         {item.vendorSlug ? (
           <Link
             href={`/vendors/${item.vendorSlug}`}
-            className="group/vendor inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-muted-foreground hover:text-primary transition-colors w-fit max-w-full"
+            className="group/vendor inline-flex w-fit max-w-full items-center gap-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase transition-colors hover:text-primary"
             title={`Go to ${item.vendorName}`}
           >
             <span className="truncate">{item.vendorName}</span>
             <ExternalLink className="size-2.5 shrink-0 text-primary/60 group-hover/vendor:text-primary" />
           </Link>
         ) : (
-          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground truncate">
+          <p className="truncate text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
             {item.vendorName}
           </p>
         )}
 
         {/* Item name — wraps freely, no truncation, pushes bottom row down */}
-        <h3 className="font-heading font-semibold text-sm leading-snug flex-1">
-          {item.name}
-        </h3>
+        <Link
+          href={`/menu/${item.id}`}
+          className="flex-1 transition-colors group-hover:text-primary"
+        >
+          <h3 className="font-heading text-sm leading-snug font-semibold">
+            {item.name}
+          </h3>
+        </Link>
 
         {/* ── Price + Cart controls ──────────────────────── */}
         {/*
@@ -123,8 +128,8 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
          * never overflow regardless of the card width.
          * No overflow-hidden above means they're always fully visible.
          */}
-        <div className="flex items-center justify-between gap-1 mt-auto pt-2 border-t border-border/60">
-          <p className="font-bold text-sm text-primary leading-none tabular-nums">
+        <div className="mt-auto flex items-center justify-between gap-1 border-t border-border/60 pt-2">
+          <p className="text-sm leading-none font-bold text-primary tabular-nums">
             {formatPrice(item.price)}
           </p>
 
@@ -133,16 +138,16 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
               onClick={handleAdd}
               disabled={!isCurrentlyAvailable}
               aria-label={`Add ${item.name} to cart`}
-              className="flex items-center justify-center h-8 w-8 rounded-xl bg-primary text-white shadow-sm shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-primary/25 transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="size-3.5" />
             </button>
           ) : (
-            <div className="flex items-center gap-0.5 shrink-0">
+            <div className="flex shrink-0 items-center gap-0.5">
               <button
                 onClick={() => updateQuantity(item.id, qty - 1)}
                 aria-label="Decrease quantity"
-                className="flex items-center justify-center h-7 w-7 rounded-lg border border-border bg-background hover:bg-muted active:scale-95 transition-all duration-150"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-background transition-all duration-150 hover:bg-muted active:scale-95"
               >
                 <Minus className="size-3" />
               </button>
@@ -153,7 +158,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
                 onClick={() => addItem(item)}
                 aria-label="Increase quantity"
                 disabled={!isCurrentlyAvailable}
-                className="flex items-center justify-center h-7 w-7 rounded-xl bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary text-white transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="size-3" />
               </button>
@@ -162,5 +167,5 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         </div>
       </div>
     </article>
-  );
+  )
 }

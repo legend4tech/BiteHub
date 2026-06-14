@@ -81,7 +81,7 @@ export const OrderReceiptEmail = ({
             <Text style={text}>
               Thank you for ordering on BiteHub. Your payment for order{" "}
               <strong>{orderId}</strong> from <strong>{vendorName}</strong> has
-              been confirmed securely via Paystack.
+              been confirmed securely via Monnify.
             </Text>
 
             <Section style={detailsSection}>

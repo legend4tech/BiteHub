@@ -15,7 +15,7 @@ export async function GET(
     }
 
     const vendor = await VendorModel.findById(vendorId)
-      .select("deliveryFee prepTime paystackSubaccountCode")
+      .select("deliveryFee prepTime monnifySubAccountCode")
       .lean()
 
     if (!vendor) {
@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({
       deliveryFee: vendor.deliveryFee ?? 0,
       prepTime: vendor.prepTime ?? "",
-      paystackSubaccountCode: vendor.paystackSubaccountCode ?? "",
+      monnifySubaccountCode: vendor.monnifySubAccountCode ?? "",
     })
   } catch (error) {
     console.error("[GET /api/vendors/fee/[vendorId]]", error)

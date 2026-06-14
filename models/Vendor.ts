@@ -16,13 +16,24 @@ export interface IVendor extends Document {
     url: string
     publicId: string
   }
-  paystackSubaccountCode?: string
-  paystackBankCode?: string
-  paystackIntegrationStatus?: "pending" | "active"
+  monnifySubAccountCode?: string
+  monnifyBankCode?: string
+  monnifyAccountNumber?: string
+  monnifyIntegrationStatus?: "pending" | "active"
+  monnifyTotalDisbursed?: number
   lastBankUpdateAt?: Date
   bankUpdateOtp?: string
   bankUpdateOtpExpiry?: Date
   bankUpdateOtpAttempts?: number
+
+  landmarkOverrides?: {
+    landmarkId: mongoose.Types.ObjectId
+    fee: number
+  }[]
+  subLandmarkOverrides?: {
+    subLandmarkId: mongoose.Types.ObjectId
+    fee: number
+  }[]
 
   // Virtuals
   initials: string
@@ -47,17 +58,41 @@ const VendorSchema: Schema = new Schema(
       url: { type: String },
       publicId: { type: String },
     },
-    paystackSubaccountCode: { type: String, default: "" },
-    paystackBankCode: { type: String, default: "" },
-    paystackIntegrationStatus: {
+    monnifySubAccountCode: { type: String, default: "" },
+    monnifyBankCode: { type: String, default: "" },
+    monnifyAccountNumber: { type: String, default: "" },
+    monnifyIntegrationStatus: {
       type: String,
       enum: ["pending", "active"],
       default: "pending",
     },
+    monnifyTotalDisbursed: { type: Number, default: 0 },
     lastBankUpdateAt: { type: Date },
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
     bankUpdateOtpAttempts: { type: Number, default: 0 },
+    landmarkOverrides: [
+      {
+        landmarkId: {
+          type: Schema.Types.ObjectId,
+          ref: "Landmark",
+          required: true,
+        },
+        fee: { type: Number, required: true },
+        _id: false,
+      },
+    ],
+    subLandmarkOverrides: [
+      {
+        subLandmarkId: {
+          type: Schema.Types.ObjectId,
+          ref: "SubLandmark",
+          required: true,
+        },
+        fee: { type: Number, required: true },
+        _id: false,
+      },
+    ],
   },
   {
     timestamps: true,

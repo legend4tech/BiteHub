@@ -81,7 +81,6 @@ export default async function Page({
           padded
         >
           <Suspense
-            key={`${category}-${school}-${campus}`}
             fallback={
               <section className="py-20">
                 <div className="mx-auto max-w-7xl px-6">

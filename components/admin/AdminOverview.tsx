@@ -144,11 +144,11 @@ export function AdminOverview({
           </div>
 
           {noAccountVendors.length > 0 && (
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-5 py-4">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-status-pending/30 bg-status-pending/5 px-5 py-4">
               <div className="flex items-center gap-3">
-                <KeyRound className="size-5 shrink-0 text-amber-500" />
+                <KeyRound className="size-5 shrink-0 text-status-pending" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                  <p className="text-sm font-semibold text-status-pending-foreground">
                     {noAccountVendors.length} vendor
                     {noAccountVendors.length > 1 ? "s" : ""} without a login
                     account
@@ -163,7 +163,7 @@ export function AdminOverview({
                 variant="outline"
                 size="sm"
                 onClick={onGoToVendors}
-                className="shrink-0 border-amber-500/30 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+                className="shrink-0 border-status-pending/30 text-status-pending-foreground hover:bg-status-pending/10"
               >
                 Fix now
               </Button>

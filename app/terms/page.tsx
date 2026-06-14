@@ -102,9 +102,15 @@ export default async function TermsOfUsePage() {
                   delivering the orders in a timely manner.
                 </li>
                 <li>
-                  <strong>Disputes:</strong> Any disputes regarding food
-                  quality, missing items, or refunds must be resolved directly
-                  between the customer and the vendor.
+                  <strong>Disputes and Refunds:</strong> {APP_NAME} acts solely
+                  as a technology platform connecting customers with independent
+                  vendors. Any disputes regarding food quality, fulfillment,
+                  missing items, or refunds are the sole responsibility of the
+                  vendor and must be resolved directly between the customer and
+                  the vendor. However, {APP_NAME} reserves the right to
+                  investigate complaints and may suspend or terminate vendors
+                  who consistently fail to resolve disputes or maintain adequate
+                  service standards.
                 </li>
               </ul>
             </section>
@@ -115,7 +121,7 @@ export default async function TermsOfUsePage() {
               </h2>
               <p className="mb-4 leading-relaxed text-muted-foreground">
                 All financial transactions on {APP_NAME} are conducted securely
-                through our payment gateway partner, Paystack.
+                through our payment gateway partner, Monnify.
               </p>
               <ul className="list-disc space-y-2 pl-6 leading-relaxed text-muted-foreground">
                 <li>
@@ -133,12 +139,12 @@ export default async function TermsOfUsePage() {
                 </li>
                 <li>
                   <strong>Automated Split Payouts:</strong> Vendor payouts are
-                  executed automatically via Paystack Split Settlements.
-                  Earnings (subtotal minus platform commission) are routed
-                  directly to the vendor&apos;s registered bank account on a
-                  standard T+1 business day cycle (Transaction day + 1 business
-                  day, meaning earnings from a transaction are settled into the
-                  bank account on the next business day).
+                  executed automatically via Monnify Income Split. Earnings
+                  (subtotal minus platform commission) are routed directly to
+                  the vendor&apos;s registered bank account on a standard T+1
+                  business day cycle (Transaction day + 1 business day, meaning
+                  earnings from a transaction are settled into the bank account
+                  on the next business day).
                 </li>
                 <li>
                   <strong>Idempotency and Payment Safety:</strong> Transactions

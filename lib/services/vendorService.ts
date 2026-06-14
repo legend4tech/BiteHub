@@ -36,7 +36,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
 
   const query: Record<string, unknown> = {
     isActive: true,
-    paystackIntegrationStatus: "active",
+    monnifyIntegrationStatus: "active",
   }
 
   if (school) query.school = school
@@ -102,7 +102,7 @@ export async function getFeaturedVendors(
 
   const query: Record<string, unknown> = {
     isActive: true,
-    paystackIntegrationStatus: "active",
+    monnifyIntegrationStatus: "active",
   }
   if (school) query.school = school
   if (campus) query.campus = campus
@@ -116,4 +116,15 @@ export async function getFeaturedVendors(
     .lean()
 
   return vendorDocs.map((v) => serializeVendor(v as LeanVendor))
+}
+
+// ─── Vendor Profile (Dashboard) ────────────────────────────────────────────────
+
+export async function getVendorProfile(
+  vendorId: string | mongoose.Types.ObjectId
+) {
+  await dbConnect()
+  const vendor = await VendorModel.findById(vendorId).lean()
+  if (!vendor) return null
+  return serializeVendor(vendor as LeanVendor)
 }

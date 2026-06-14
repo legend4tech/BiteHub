@@ -7,8 +7,8 @@
 
 ## Context
 
-Currently BiteHub uses Paystack split payments. When a customer pays, the vendor's
-share is deposited into their Paystack subaccount immediately at transaction time.
+Currently BiteHub uses Monnify income splits. When a customer pays, the vendor's
+share is deposited into their Monnify subaccount immediately at transaction time.
 BiteHub has no control over disbursement timing after the split fires.
 
 A T+1 or escrow model was proposed to create a dispute window.
@@ -32,10 +32,10 @@ A T+1 or escrow model was proposed to create a dispute window.
 If chargebacks or disputes become a real problem, migrate to this model:
 
 ### Architecture
-1. Remove `subaccount` from Paystack charge config → all funds land in BiteHub account
+1. Remove `subAccountCode` from Monnify charge config → all funds land in BiteHub account
 2. Add `pendingBalance: number` field to Vendor model
 3. Credit `pendingBalance` when payment is confirmed (webhook/verify)
-4. When order status → `completed`: call Paystack Transfer API to disburse to vendor bank
+4. When order status → `completed`: call Monnify Transfer API to disburse to vendor bank
 5. On transfer failure: retry queue + admin alert
 
 ### Settlement Options
@@ -44,7 +44,7 @@ If chargebacks or disputes become a real problem, migrate to this model:
 | **T+0 on completion** | Order marked "completed" | Same day — recommended |
 | **T+1** | Midnight batch after payment | Next day — hurts vendors |
 
-### Paystack APIs needed
+### Monnify APIs needed
 - `POST /transfer` — initiate bank transfer
 - `GET /transfer/:id` — check transfer status
 - Webhook: `transfer.success` / `transfer.failed` events

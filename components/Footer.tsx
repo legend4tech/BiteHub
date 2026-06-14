@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Mail, MapPin } from "lucide-react"
+import { Mail, MapPin, Heart } from "lucide-react"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
 const VENDOR_FORM_URL = "https://forms.gle/KEwY8nthHHfjLL1n6"
@@ -121,8 +121,9 @@ export function Footer() {
 
         <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-xs font-medium text-muted-foreground md:flex-row">
           <p>
-            © {new Date().getFullYear()} {APP_NAME}. Crafted with ❤️ for
-            students everywhere.
+            © {new Date().getFullYear()} {APP_NAME}. Crafted with{" "}
+            <Heart className="mx-1 inline size-3.5 fill-red-500 text-red-500" />{" "}
+            for students everywhere.
           </p>
           <div className="flex items-center gap-8">
             {/* <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> */}

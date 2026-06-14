@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { Store, Plus, Power, ChevronRight, KeyRound } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import type { AdminVendor } from "./types";
+import { useState } from "react"
+import Link from "next/link"
+import { Store, Plus, Power, ChevronRight, KeyRound } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import type { AdminVendor } from "./types"
 
 interface AdminVendorsProps {
-  vendors: AdminVendor[];
-  optimisticVendors: AdminVendor[];
-  loadingVendors: boolean;
-  noAccountVendors: AdminVendor[];
-  togglingId: string | null;
-  onToggleActive: (vendor: AdminVendor) => void;
-  onAddLogin: (vendor: AdminVendor) => void;
+  vendors: AdminVendor[]
+  optimisticVendors: AdminVendor[]
+  loadingVendors: boolean
+  noAccountVendors: AdminVendor[]
+  togglingId: string | null
+  onToggleActive: (vendor: AdminVendor) => void
+  onAddLogin: (vendor: AdminVendor) => void
 }
 
 export function AdminVendors({
@@ -30,8 +30,10 @@ export function AdminVendors({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading font-bold text-2xl">Vendors</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage vendor profiles and login accounts</p>
+          <h1 className="font-heading text-2xl font-bold">Vendors</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage vendor profiles and login accounts
+          </p>
         </div>
         <Button variant="hero" asChild className="gap-2">
           <Link href="/admin/vendors/new">
@@ -40,79 +42,113 @@ export function AdminVendors({
         </Button>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-          <p className="font-semibold text-sm">{optimisticVendors.length} vendors total</p>
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <p className="text-sm font-semibold">
+            {optimisticVendors.length} vendors total
+          </p>
           <p className="text-xs text-muted-foreground">
-            {optimisticVendors.filter((v) => v.isActive).length} active · {noAccountVendors.length} without login
+            {optimisticVendors.filter((v) => v.isActive).length} active ·{" "}
+            {noAccountVendors.length} without login
           </p>
         </div>
 
         {loadingVendors ? (
           <div className="divide-y divide-border">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="px-6 py-4 flex items-center gap-4 animate-pulse">
-                <div className="h-10 w-10 rounded-xl bg-muted shrink-0" />
+              <div
+                key={i}
+                className="flex animate-pulse items-center gap-4 px-6 py-4"
+              >
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-muted rounded w-1/3" />
-                  <div className="h-2 bg-muted rounded w-1/2" />
+                  <div className="h-3 w-1/3 rounded bg-muted" />
+                  <div className="h-2 w-1/2 rounded bg-muted" />
                 </div>
               </div>
             ))}
           </div>
         ) : vendors.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <Store className="size-10 text-muted-foreground mx-auto mb-3" />
+            <Store className="mx-auto mb-3 size-10 text-muted-foreground" />
             <p className="font-semibold">No vendors yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              <Link href="/admin/vendors/new" className="text-primary hover:underline">Create your first vendor</Link>
+            <p className="mt-1 text-sm text-muted-foreground">
+              <Link
+                href="/admin/vendors/new"
+                className="text-primary hover:underline"
+              >
+                Create your first vendor
+              </Link>
             </p>
           </div>
         ) : (
           <div className="divide-y divide-border">
             {optimisticVendors.map((vendor) => {
-              const initials = vendor.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+              const initials = vendor.name
+                .split(" ")
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase()
               return (
-                <div key={vendor.id} className="px-6 py-4 flex items-center gap-4 hover:bg-muted/30 transition-colors">
+                <div
+                  key={vendor.id}
+                  className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30"
+                >
                   {/* Avatar */}
-                  <div className="h-10 w-10 rounded-xl overflow-hidden grid place-items-center text-primary-foreground font-bold text-sm shrink-0 bg-primary shadow-lg shadow-primary/20">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
                     {vendor.image?.url ? (
-                      <img src={vendor.image.url} alt={vendor.name} className="h-full w-full object-cover" />
+                      <img
+                        src={vendor.image.url}
+                        alt={vendor.name}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       initials
                     )}
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm truncate">{vendor.name}</p>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${vendor.isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold">
+                        {vendor.name}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.isActive ? "bg-status-completed/20 text-status-completed-foreground" : "bg-muted text-muted-foreground"}`}
+                      >
                         {vendor.isActive ? "Active" : "Inactive"}
                       </span>
                       {vendor.account ? (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${vendor.account.isActive ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-muted text-muted-foreground"}`}>
-                          Login {vendor.account.isActive ? "active" : "disabled"}
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.account.isActive ? "bg-status-confirmed/20 text-status-confirmed-foreground" : "bg-muted text-muted-foreground"}`}
+                        >
+                          Login{" "}
+                          {vendor.account.isActive ? "active" : "disabled"}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <span className="shrink-0 rounded-full bg-status-pending/20 px-2 py-0.5 text-[10px] font-bold text-status-pending-foreground">
                           No login
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
                       {vendor.whatsappNumber} · {vendor.campus}
-                      {vendor.account && <span className="ml-2 text-primary/70">· {vendor.account.email}</span>}
+                      {vendor.account && (
+                        <span className="ml-2 text-primary/70">
+                          · {vendor.account.email}
+                        </span>
+                      )}
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex shrink-0 items-center gap-1">
                     {!vendor.account && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 gap-1.5 text-xs border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                        className="h-8 gap-1.5 border-status-pending/30 text-xs text-status-pending-foreground hover:bg-status-pending/10"
                         onClick={() => onAddLogin(vendor)}
                       >
                         <KeyRound className="size-3" />
@@ -126,11 +162,13 @@ export function AdminVendors({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                            className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "cursor-not-allowed opacity-50" : ""}`}
                             title="Deactivate storefront"
                             disabled={togglingId === vendor.id}
                           >
-                            <Power className={`size-4 text-destructive ${togglingId === vendor.id ? "scale-75" : ""}`} />
+                            <Power
+                              className={`size-4 text-destructive ${togglingId === vendor.id ? "scale-75" : ""}`}
+                            />
                           </Button>
                         }
                         title="Deactivate Storefront?"
@@ -143,27 +181,34 @@ export function AdminVendors({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`h-8 w-8 transition-opacity ${togglingId === vendor.id ? "cursor-not-allowed opacity-50" : ""}`}
                         title="Activate storefront"
                         onClick={() => onToggleActive(vendor)}
                         disabled={togglingId === vendor.id}
                       >
-                        <Power className={`size-4 text-green-600 ${togglingId === vendor.id ? "scale-75" : ""}`} />
+                        <Power
+                          className={`size-4 text-status-completed-foreground ${togglingId === vendor.id ? "scale-75" : ""}`}
+                        />
                       </Button>
                     )}
 
                     <Link href={`/vendors/${vendor.slug}`} target="_blank">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="View storefront">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        title="View storefront"
+                      >
                         <ChevronRight className="size-4 text-muted-foreground" />
                       </Button>
                     </Link>
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

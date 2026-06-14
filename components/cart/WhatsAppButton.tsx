@@ -14,7 +14,7 @@ interface WhatsAppButtonProps {
     total?: number
     totalAmount?: number
     notes?: string
-    paymentMethod?: "paystack"
+    paymentMethod?: "monnify"
     paymentStatus?: string
   }
   status?: OrderStatus

@@ -14,16 +14,27 @@ import { useForm, Controller, type Resolver } from "react-hook-form"
 import { Field, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { formatPrice, formatPriceExact } from "@/lib/format"
-import { computePaystackServiceFee } from "@/lib/fees"
+import { computeMonnifyServiceFee } from "@/lib/fees"
 import apiClient from "@/lib/axios"
 import { AxiosError } from "axios"
 import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
-import dynamic from "next/dynamic"
 
-const PaystackHandler = dynamic(
-  () => import("@/components/cart/PaystackHandler"),
-  { ssr: false }
-)
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+interface DeliveryZone {
+  id: string
+  name: string
+  fee: number
+  subLandmarks: { id: string; name: string; fee: number }[]
+}
 
 interface OrderFormProps {
   open: boolean
@@ -36,7 +47,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
   const [loading, setLoading] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [platformFeePercent, setPlatformFeePercent] = useState<number>(5)
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
 
   const form = useForm<OrderFormInputValues>({
     resolver: zodResolver(
@@ -47,20 +58,23 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       email: "",
       phone: "",
       location: "",
+      exactLocation: "",
       notes: "",
-      paymentMethod: "paystack",
+      paymentMethod: "monnify",
     },
   })
 
-  // Load saved email from local storage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedEmail = localStorage.getItem("bitehub_customer_email")
-      if (savedEmail) {
-        form.setValue("email", savedEmail)
-      }
+    const saved = localStorage.getItem("bitehub_customer")
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        form.reset({ ...form.getValues(), ...parsed, notes: "" })
+      } catch (e) {}
     }
   }, [form])
+
+  // Local storage handles email loading now
 
   useEffect(() => {
     if (open && cart.vendorId) {
@@ -70,55 +84,60 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
       apiClient
         .get(`/vendors/fee/${cart.vendorId}`)
         .then((res) => {
-          if (res.data && typeof res.data.deliveryFee === "number") {
+          if (res.data) {
+            // We set fee to 0 initially to force location selection
             syncVendorDetails(
               cart.vendorId!,
-              res.data.deliveryFee,
+              0,
               res.data.prepTime,
-              res.data.paystackSubaccountCode
+              res.data.monnifySubaccountCode
             )
           }
         })
         .catch((err) =>
-          console.error("Failed to sync latest delivery fee", err)
+          console.error("Failed to sync latest vendor details", err)
         )
         .finally(() => {
           setIsSyncing(false)
         })
 
       apiClient
-        .get("/admin/settings/global")
-        .then((res) => {
-          if (res.data && typeof res.data.platformFeePercentage === "number") {
-            setPlatformFeePercent(res.data.platformFeePercentage)
-          }
-        })
-        .catch((err) => console.error("Failed to sync global settings", err))
+        .get(`/vendors/${cart.vendorId}/delivery-zones`)
+        .then((res) => setDeliveryZones(res.data))
+        .catch((err) => console.error("Failed to fetch delivery zones", err))
     }
   }, [open, cart.vendorId, syncVendorDetails])
 
-  // Gross-up formula: collect exactly enough from the customer so Paystack's 1.5% cut
+  const selectedLocation = form.watch("location")
+
+  // Auto-resolve fee when deliveryZones or selectedLocation changes (fixes localStorage restore bug)
+  useEffect(() => {
+    if (deliveryZones.length > 0 && selectedLocation && cart.vendorId) {
+      let fee = 0
+      deliveryZones.forEach((z) => {
+        z.subLandmarks.forEach((s) => {
+          if (`${z.name} - ${s.name}` === selectedLocation) fee = s.fee
+        })
+      })
+
+      // Only update if it's different from current to prevent infinite loops
+      if (cart.vendorDeliveryFee !== fee) {
+        syncVendorDetails(cart.vendorId, fee)
+      }
+    }
+  }, [
+    deliveryZones,
+    selectedLocation,
+    cart.vendorId,
+    cart.vendorDeliveryFee,
+    syncVendorDetails,
+  ])
+
+  // Gross-up formula: collect exactly enough from the customer so Monnify's 1.5% cut
   // of the total equals serviceFee. Vendor absorbs zero processing cost.
   // See lib/fees.ts for the full derivation.
-  const serviceFee = computePaystackServiceFee(total)
+  const serviceFee = computeMonnifyServiceFee(total)
   const finalTotal = total + serviceFee
-
-  // Platform commission on the base subtotal (food + delivery) only — exact decimal.
-  // Must match the backend calculation in /api/orders/route.ts
-  const platformCommission = total * (platformFeePercent / 100)
-  // Paystack requires kobo as an integer; Math.round() only at this final conversion step.
-  const transactionChargeKobo = Math.round(platformCommission * 100)
-
-  const [paystackConfig, setPaystackConfig] = useState<{
-    reference: string
-    email: string
-    amount: number
-    publicKey: string
-    subaccount?: string
-    bearer?: string
-    transaction_charge?: number
-    metadata?: Record<string, unknown>
-  } | null>(null)
 
   if (!open) return null
 
@@ -127,23 +146,25 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
 
     if (cart.items.length === 0 || !cart.vendorId) return
 
-    if (!cart.vendorPaystackSubaccountCode) {
-      setServerError(
-        "This vendor is not connected to Paystack. Cannot process payment."
-      )
-      return
-    }
-
     const customerPhone = normaliseNigerianPhone(values.phone)
-    const reference = new Date().getTime().toString()
 
     setLoading(true)
     try {
       if (typeof window !== "undefined") {
-        localStorage.setItem("bitehub_customer_email", values.email)
+        localStorage.setItem(
+          "bitehub_customer",
+          JSON.stringify({
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            location: values.location,
+            exactLocation: values.exactLocation,
+          })
+        )
       }
 
-      // 1. Create the pending order first so the webhook can find it
+      // 1. POST to our backend — it creates the order AND inits Monnify server-side.
+      //    Returns { orderId, checkoutUrl } where checkoutUrl is from Monnify's API.
       const response = await apiClient.post("/orders", {
         vendorId: cart.vendorId,
         vendorName: cart.vendorName,
@@ -158,39 +179,21 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
         customerEmail: values.email,
         customerPhone,
         location: values.location,
+        exactLocation: values.exactLocation,
         notes: values.notes,
-        paymentMethod: "paystack",
-        paystackReference: reference,
+        paymentMethod: "monnify",
         total: finalTotal,
       })
 
-      const { orderId } = response.data
+      const { orderId, checkoutUrl } = response.data
 
-      // 2. Configure and trigger Paystack popup
-      setPaystackConfig({
-        reference,
-        email: values.email,
-        amount: Math.round(finalTotal * 100), // kobo — must be integer; round avoids fractional kobo drift
-        publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-        subaccount: cart.vendorPaystackSubaccountCode,
-        bearer: "subaccount", // Platform takes its cut, vendor bears the fee difference since we already added serviceFee to finalTotal
-        transaction_charge: transactionChargeKobo, // Dynamically overrides the subaccount's fixed percentage!
-        metadata: {
-          orderId,
-          custom_fields: [
-            {
-              display_name: "Customer Name",
-              variable_name: "customer_name",
-              value: values.name,
-            },
-            {
-              display_name: "Phone Number",
-              variable_name: "phone_number",
-              value: values.phone,
-            },
-          ],
-        },
-      })
+      // 2. Redirect the current tab to Monnify's hosted checkout.
+      //    The backend set redirectUrl = /order/${orderId}, so after payment
+      //    Monnify redirects the customer back to their order page automatically.
+      toast.success("Redirecting to secure payment...")
+      onClose()
+      clearCart()
+      window.location.href = checkoutUrl
     } catch (error) {
       const apiError =
         error instanceof AxiosError
@@ -232,8 +235,23 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
           {/* Fees Breakdown */}
           <div className="space-y-2 rounded-2xl bg-muted/30 p-4 text-sm">
             <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal & Delivery</span>
-              <span>{formatPrice(total)}</span>
+              <span>Items Subtotal</span>
+              <span>
+                {formatPrice(
+                  cart.items.reduce(
+                    (sum, ci) => sum + ci.menuItem.price * ci.quantity,
+                    0
+                  )
+                )}
+              </span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Delivery Fee</span>
+              <span>
+                {cart.vendorDeliveryFee > 0
+                  ? formatPriceExact(cart.vendorDeliveryFee)
+                  : "Select location"}
+              </span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Service Fee</span>
@@ -254,10 +272,13 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Full Name <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     {...field}
                     id={field.name}
-                    placeholder="Your name *"
+                    placeholder="e.g. John Doe"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (
@@ -272,11 +293,14 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Email Address <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     {...field}
                     id={field.name}
                     type="email"
-                    placeholder="Your email address * (for receipt)"
+                    placeholder="For your receipt"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (
@@ -291,11 +315,14 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Phone Number <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     {...field}
                     id={field.name}
                     type="tel"
-                    placeholder="Phone number * (e.g. 08012345678)"
+                    placeholder="e.g. 08012345678"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (
@@ -310,10 +337,65 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Nearest Landmark (Delivery Zone){" "}
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={deliveryZones.length === 0}
+                  >
+                    <SelectTrigger
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    >
+                      <SelectValue
+                        placeholder={
+                          deliveryZones.length === 0
+                            ? "No delivery zones available"
+                            : "Select delivery zone"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deliveryZones.map((zone) => (
+                        <SelectGroup key={zone.id}>
+                          <SelectLabel className="mx-1 my-1 rounded-md bg-accent/30 px-2 font-bold text-foreground">
+                            {zone.name}
+                          </SelectLabel>
+                          {zone.subLandmarks.map((sub) => (
+                            <SelectItem
+                              key={sub.id}
+                              value={`${zone.name} - ${sub.name}`}
+                            >
+                              <span className="ml-2">{sub.name}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="exactLocation"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Exact Location (Lodge Name){" "}
+                    <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     {...field}
                     id={field.name}
-                    placeholder="Delivery location * (e.g. Bella Hostel)"
+                    placeholder="e.g. Block C, Room 4, SUG Lodge"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (
@@ -346,13 +428,13 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold">Pay with Paystack</h4>
+                  <h4 className="text-sm font-semibold">Pay with Monnify</h4>
                   <p className="text-xs text-muted-foreground">
                     Secure, automated payments
                   </p>
                 </div>
                 <div className="flex h-8 items-center rounded bg-white px-2 shadow-sm">
-                  <span className="font-bold text-[#0BA4DB]">paystack</span>
+                  <span className="font-bold text-primary">monnify</span>
                 </div>
               </div>
             </div>
@@ -380,30 +462,6 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             {loading ? "Processing…" : `Pay ${formatPriceExact(finalTotal)}`}
           </Button>
         </form>
-
-        {paystackConfig && (
-          <PaystackHandler
-            config={paystackConfig}
-            onSuccess={async (_reference: string) => {
-              const orderId = paystackConfig?.metadata?.orderId as string
-              try {
-                // Manually verify payment in case webhook is delayed or blocked in dev
-                await apiClient.post(`/orders/${orderId}/verify`)
-              } catch (e) {
-                console.error("Manual verification failed", e)
-              }
-              toast.success("Payment successful! Order confirmed.")
-              onClose()
-              router.push(`/order/${orderId}`)
-              clearCart()
-            }}
-            onClose={() => {
-              toast.error("Payment cancelled. You can try again.")
-              setLoading(false)
-              setPaystackConfig(null) // reset config so it can be re-triggered
-            }}
-          />
-        )}
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
@@ -35,12 +36,11 @@ export async function GET(
     const category = searchParams.get("category")
     const q = searchParams.get("q")
 
-    // We intentionally do NOT filter by isAvailable here.
-    // The vendor page shows ALL menu items — unavailable ones are blurred
-    // with a "Not available" label on the frontend (MenuItemCard).
-    // This lets students see the full menu and vendors keep visibility
-    // on their complete offering even when some items are temporarily off.
-    const menuQuery: Record<string, unknown> = { vendorId: vendor._id }
+    // Only show available items on the public profile as requested by the vendor
+    const menuQuery: Record<string, unknown> = {
+      vendorId: vendor._id,
+      isAvailable: true,
+    }
 
     if (category && category !== "all") {
       menuQuery.category = category

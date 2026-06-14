@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import {
   VendorSidebar,
   MobileSidebarTrigger,
-} from "@/components/vendor/VendorSidebar"
+} from "@/components/vendor-dashboard/VendorSidebar"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { SessionProvider, useSession } from "next-auth/react"
 import { ThemeToggle } from "@/components/ThemeToggle"

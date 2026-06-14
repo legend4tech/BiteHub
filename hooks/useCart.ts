@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, startTransition } from "react"
 import type { CartItem, MenuItem } from "@/lib/types"
 import { LS_CART } from "@/lib/constants"
 
@@ -15,7 +15,7 @@ interface CartState {
   vendorWhatsappNumber: string | null
   vendorDeliveryFee: number
   vendorPrepTime: string | null
-  vendorPaystackSubaccountCode: string | null
+  vendorMonnifySubaccountCode: string | null
 }
 
 const EMPTY_CART: CartState = {
@@ -25,22 +25,27 @@ const EMPTY_CART: CartState = {
   vendorWhatsappNumber: null,
   vendorDeliveryFee: 0,
   vendorPrepTime: null,
-  vendorPaystackSubaccountCode: null,
+  vendorMonnifySubaccountCode: null,
 }
 
 const CART_EVENT = "cb:cart:update"
 
+let cachedCart: CartState | null = null
+
 function readCart(): CartState {
+  if (cachedCart) return cachedCart
   if (typeof window === "undefined") return EMPTY_CART
   try {
     const raw = localStorage.getItem(LS_CART)
-    return raw ? JSON.parse(raw) : EMPTY_CART
+    cachedCart = raw ? JSON.parse(raw) : EMPTY_CART
+    return cachedCart!
   } catch {
     return EMPTY_CART
   }
 }
 
 function writeCart(state: CartState) {
+  cachedCart = state
   localStorage.setItem(LS_CART, JSON.stringify(state))
   window.dispatchEvent(new Event(CART_EVENT))
 }
@@ -50,7 +55,11 @@ export function useCart() {
 
   useEffect(() => {
     const timer = setTimeout(() => setCart(readCart()), 0)
-    const handler = () => setCart(readCart())
+    const handler = () => {
+      startTransition(() => {
+        setCart(readCart())
+      })
+    }
     window.addEventListener(CART_EVENT, handler)
     return () => {
       clearTimeout(timer)
@@ -60,7 +69,9 @@ export function useCart() {
 
   const persist = useCallback((next: CartState) => {
     writeCart(next)
-    setCart(next)
+    startTransition(() => {
+      setCart(next)
+    })
   }, [])
 
   const isDifferentVendor = useCallback(
@@ -94,7 +105,7 @@ export function useCart() {
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
-        vendorPaystackSubaccountCode: current.vendorPaystackSubaccountCode,
+        vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
       })
     },
     [persist]
@@ -109,7 +120,7 @@ export function useCart() {
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
-        vendorPaystackSubaccountCode: null, // Will be synced by checkout effect
+        vendorMonnifySubaccountCode: null, // Will be synced by checkout effect
       })
     },
     [persist]
@@ -148,25 +159,25 @@ export function useCart() {
       vendorId: string,
       deliveryFee: number,
       prepTime?: string,
-      paystackSubaccountCode?: string
+      monnifySubaccountCode?: string
     ) => {
       const current = readCart()
       if (
         current.vendorId === vendorId &&
         (current.vendorDeliveryFee !== deliveryFee ||
           (prepTime !== undefined && current.vendorPrepTime !== prepTime) ||
-          (paystackSubaccountCode !== undefined &&
-            current.vendorPaystackSubaccountCode !== paystackSubaccountCode))
+          (monnifySubaccountCode !== undefined &&
+            current.vendorMonnifySubaccountCode !== monnifySubaccountCode))
       ) {
         persist({
           ...current,
           vendorDeliveryFee: deliveryFee,
           vendorPrepTime:
             prepTime !== undefined ? prepTime : current.vendorPrepTime,
-          vendorPaystackSubaccountCode:
-            paystackSubaccountCode !== undefined
-              ? paystackSubaccountCode
-              : current.vendorPaystackSubaccountCode,
+          vendorMonnifySubaccountCode:
+            monnifySubaccountCode !== undefined
+              ? monnifySubaccountCode
+              : current.vendorMonnifySubaccountCode,
         })
       }
     },

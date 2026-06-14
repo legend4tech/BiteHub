@@ -2,13 +2,14 @@
 
 import { useSession } from "next-auth/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { DashboardStats } from "@/components/vendor/DashboardStats"
-import { OrderTable } from "@/components/vendor/OrderTable"
+import { DashboardStats } from "@/components/vendor-dashboard/DashboardStats"
+import { OrderTable } from "@/components/vendor-dashboard/OrderTable"
 import type { OrderStatus } from "@/lib/types"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { AlertBanner } from "@/components/shared/AlertBanner"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
+import { FetchError } from "@/components/shared/FetchError"
 import apiClient from "@/lib/axios"
 import { toast } from "sonner"
 import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
@@ -17,7 +18,7 @@ import { formatPrice } from "@/lib/format"
 import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
 import { useVendorStats } from "@/hooks/queries/useVendorStats"
-import { TermsAcceptanceModal } from "@/components/vendor/TermsAcceptanceModal"
+import { TermsAcceptanceModal } from "@/components/vendor-dashboard/TermsAcceptanceModal"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -62,7 +63,12 @@ export default function VendorDashboardPage() {
       }
     }
   }, [isReady])
-  const { data: stats, isLoading: loadingStats } = useVendorStats({
+  const {
+    data: stats,
+    isPending: loadingStats,
+    isError: isStatsError,
+    refetch: refetchStats,
+  } = useVendorStats({
     enabled: isReady,
   })
 
@@ -90,9 +96,12 @@ export default function VendorDashboardPage() {
 
   // ── Recent orders: only the 10 most recent for the table ──────────────────
   // We never load all orders on the dashboard — that belongs to /vendor/orders.
-  const { data: recentOrders = [], isLoading: loadingOrders } = useVendorOrders(
-    { limit: 10, enabled: isReady }
-  )
+  const {
+    data: recentOrders = [],
+    isPending: loadingOrders,
+    isError: isOrdersError,
+    refetch: refetchOrders,
+  } = useVendorOrders({ limit: 10, enabled: isReady })
 
   if (status === "loading") {
     return <PageSkeleton variant="dashboard" />
@@ -162,7 +171,7 @@ export default function VendorDashboardPage() {
               {greeting},
             </p>
             <h1 className="mt-0.5 font-heading text-2xl font-bold md:text-3xl">
-              {session?.user?.name || "Vendor"} 👋
+              {session?.user?.name || "Vendor"}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
               {now.toLocaleDateString("en-US", {
@@ -196,28 +205,66 @@ export default function VendorDashboardPage() {
         </div>
 
         {/* Warning banner for missing payment details */}
-        {!loadingStats && stats?.hasPaymentDetails === false && (
-          <AlertBanner
-            title="Complete your profile to be visible!"
-            description="One more step! Please connect your bank account so customers can pay you securely. Your vendor profile will NOT be visible publicly until you do this."
-            icon={AlertCircle}
-            variant="destructive"
-            action={{
-              label: "Add Details",
-              href: "/vendor/settings?tab=payment",
-            }}
-          />
-        )}
+        {!loadingStats &&
+          !isStatsError &&
+          stats?.hasPaymentDetails === false && (
+            <AlertBanner
+              title="Complete your profile to be visible!"
+              description="One more step! Please connect your bank account so customers can pay you securely. Your vendor profile will NOT be visible publicly until you do this."
+              icon={AlertCircle}
+              variant="destructive"
+              action={{
+                label: "Add Details",
+                href: "/vendor/settings?tab=payment",
+              }}
+            />
+          )}
 
         {/* Stats — sourced from server-side aggregation, not client filtering */}
         {loadingStats ? (
-          <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-28 animate-pulse rounded-2xl border border-border bg-card p-5"
-              />
-            ))}
+          <div className="flex flex-col gap-4 md:gap-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={`order-skel-${i}`}
+                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/40 p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="h-11 w-11 animate-pulse rounded-2xl bg-muted" />
+                  </div>
+                  <div className="mt-1 space-y-2">
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                    <div className="h-7 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="hidden h-2 w-full animate-pulse rounded bg-muted sm:block" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div
+                  key={`fin-skel-${i}`}
+                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/40 p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="h-11 w-11 animate-pulse rounded-2xl bg-muted" />
+                  </div>
+                  <div className="mt-1 space-y-2">
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                    <div className="h-7 w-3/4 animate-pulse rounded bg-muted" />
+                    <div className="hidden h-2 w-full animate-pulse rounded bg-muted sm:block" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : isStatsError ? (
+          <div className="rounded-3xl border border-border/50 bg-card py-10">
+            <FetchError
+              title="Couldn't load stats"
+              onRetry={() => refetchStats()}
+              size="md"
+            />
           </div>
         ) : (
           <DashboardStats
@@ -226,7 +273,8 @@ export default function VendorDashboardPage() {
             pending={stats?.pending ?? 0}
             inProgress={stats?.inProgress ?? 0}
             totalCompleted={stats?.totalCompleted ?? 0}
-            totalRevenue={stats?.totalRevenue ?? 0}
+            monnifyDisbursed={stats?.monnifyDisbursed ?? 0}
+            monnifyPending={stats?.monnifyPending ?? 0}
           />
         )}
 
@@ -238,8 +286,8 @@ export default function VendorDashboardPage() {
                 Recent Orders
               </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {stats?.todayOrders ?? 0} today · {stats?.totalOrders ?? 0}{" "}
-                all-time
+                {isStatsError ? "-" : (stats?.todayOrders ?? 0)} today ·{" "}
+                {isStatsError ? "-" : (stats?.totalOrders ?? 0)} all-time
               </p>
             </div>
             <Link
@@ -253,6 +301,14 @@ export default function VendorDashboardPage() {
           <div className="p-5">
             {loadingOrders ? (
               <PageSkeleton variant="orders-table" count={4} />
+            ) : isOrdersError ? (
+              <div className="py-6">
+                <FetchError
+                  title="Couldn't load orders"
+                  onRetry={() => refetchOrders()}
+                  size="sm"
+                />
+              </div>
             ) : recentOrders.length === 0 ? (
               <EmptyState
                 size="sm"

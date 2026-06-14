@@ -25,10 +25,10 @@ export function AlertBanner({
     default: "border-border bg-card text-foreground",
     destructive: "border-destructive/20 bg-destructive/10 text-destructive",
     warning:
-      "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-500",
+      "border-status-pending/20 bg-status-pending/10 text-status-pending-foreground",
     success:
-      "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-500",
-    info: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-500",
+      "border-status-completed/20 bg-status-completed/10 text-status-completed-foreground",
+    info: "border-status-confirmed/20 bg-status-confirmed/10 text-status-confirmed-foreground",
   }
 
   const buttonVariants = {

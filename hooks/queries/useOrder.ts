@@ -12,8 +12,8 @@ export function useOrder(orderId: string | undefined) {
       const { data } = await apiClient.get(`/orders?orderId=${orderId}`)
       return data as Order
     },
-    staleTime: 1000 * 30, // 30 seconds (orders change frequently)
-    gcTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 5,
+    gcTime: 1000 * 60 * 5,
     enabled: !!orderId,
     retry: (failureCount, error: unknown) => {
       const e = error as { response?: { status?: number } }
@@ -24,10 +24,24 @@ export function useOrder(orderId: string | undefined) {
       const err = query.state.error as { response?: { status?: number } } | null
       if (err?.response?.status === 404) return false
 
-      const status = (query.state.data as Order | undefined)?.status
-      if (status === "completed" || status === "cancelled") return false
-
-      return 5000
+      const order = query.state.data as Order | undefined
+      // Stop polling for terminal states
+      if (order?.status === "completed" || order?.status === "cancelled")
+        return false
+      // Poll aggressively while awaiting payment confirmation from Monnify webhook
+      if (!order || order.paymentStatus === "pending") {
+        // Stop polling if the order is older than 3 minutes to prevent infinite loops and memory leaks
+        if (
+          order &&
+          new Date().getTime() - new Date(order.createdAt).getTime() >
+            3 * 60 * 1000
+        ) {
+          return false
+        }
+        return 3000
+      }
+      // Slower polling once payment confirmed, still tracking prep/delivery status
+      return 8000
     },
   })
 }

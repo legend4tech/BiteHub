@@ -14,6 +14,8 @@ export interface VendorStats {
   slug?: string
   acceptedTermsVersion?: string
   isNewcomer?: boolean
+  monnifyDisbursed?: number
+  monnifyPending?: number
 }
 
 export function useVendorStats(options?: { enabled?: boolean }) {

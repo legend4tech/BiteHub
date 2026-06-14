@@ -147,7 +147,6 @@ export default async function MenusPage({
             message="We couldn't reach the server. Check your connection and try again."
           >
             <Suspense
-              key={`${q}-${category}-${school}-${campus}`}
               fallback={
                 <div className="py-8">
                   <PageSkeleton variant="menu-item-grid" count={12} />
