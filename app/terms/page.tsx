@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { APP_NAME } from "@/lib/constants"
+import { APP_NAME, CONTACT_EMAIL } from "@/lib/constants"
 import { getPlatformFeePercentage } from "@/lib/services/settingService"
 
 export const metadata: Metadata = {
@@ -187,7 +187,7 @@ export default async function TermsOfUsePage() {
                 If you have any questions about these Terms of Use, please
                 contact us at:
                 <br />
-                <strong>Email:</strong> contact@bitehubapp.com
+                <strong>Email:</strong> {CONTACT_EMAIL}
               </p>
             </section>
           </div>

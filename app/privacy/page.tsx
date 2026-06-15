@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { APP_NAME } from "@/lib/constants"
+import { APP_NAME, CONTACT_EMAIL } from "@/lib/constants"
 
 export const metadata: Metadata = {
   title: `Privacy Policy | ${APP_NAME}`,
@@ -168,7 +168,7 @@ export default function PrivacyPolicyPage() {
                 If you have any questions or concerns about this Privacy Policy,
                 please contact us at:
                 <br />
-                <strong>Email:</strong> contact@bitehubapp.com
+                <strong>Email:</strong> {CONTACT_EMAIL}
               </p>
             </section>
           </div>

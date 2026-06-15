@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Mail, MapPin, Heart } from "lucide-react"
-import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
+import { APP_NAME, APP_LOGO_URL, CONTACT_EMAIL } from "@/lib/constants"
 
 const VENDOR_FORM_URL = "https://forms.gle/KEwY8nthHHfjLL1n6"
 
@@ -91,7 +91,7 @@ export function Footer() {
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                   <Mail className="size-4" />
                 </div>
-                <span>contact@bitehubapp.com</span>
+                <span>{CONTACT_EMAIL}</span>
               </div>
               <div className="group flex cursor-pointer items-center gap-3 text-sm text-muted-foreground transition-colors hover:text-foreground">
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent transition-colors group-hover:bg-primary/10 group-hover:text-primary">
@@ -125,10 +125,6 @@ export function Footer() {
             <Heart className="mx-1 inline size-3.5 fill-red-500 text-red-500" />{" "}
             for students everywhere.
           </p>
-          <div className="flex items-center gap-8">
-            {/* <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> */}
-            {/* <Link href="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link> */}
-          </div>
         </div>
       </div>
     </footer>

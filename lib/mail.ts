@@ -6,6 +6,9 @@ import BankChangeConfirmationEmail from "@/emails/BankChangeConfirmationEmail"
 import OrderReceiptEmail from "@/emails/OrderReceiptEmail"
 import VendorNewOrderEmail from "@/emails/VendorNewOrderEmail"
 import CustomerOrderInitiatedEmail from "@/emails/CustomerOrderInitiatedEmail"
+import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
+import { OrderItem } from "./types"
+import { NO_REPLY_EMAIL } from "./constants"
 import React from "react"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -16,8 +19,7 @@ export async function sendPasswordResetEmail(
   resetLink: string,
   expiryMinutes: number = 15
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
 
   // Resend requires verified domains in production. In development without a verified domain,
   // we fallback to their testing sandbox onboarding address if EMAIL_FROM isn't configured.
@@ -65,8 +67,7 @@ export async function sendBankSetupConfirmationEmail(
   accountNumber: string,
   lockDays: number
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -108,8 +109,7 @@ export async function sendBankChangeOtpEmail(
   otp: string,
   expiryMinutes: number = 15
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -151,8 +151,7 @@ export async function sendBankChangeConfirmationEmail(
   accountNumber: string,
   lockDays: number
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -199,8 +198,7 @@ export async function sendOrderReceiptEmail(
   items: Array<{ name: string; quantity: number; price: number }>,
   trackingUrl: string
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -247,8 +245,7 @@ export async function sendAdminPasswordChangedEmail(
   email: string,
   adminName: string
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -264,17 +261,10 @@ export async function sendAdminPasswordChangedEmail(
       from: resolvedFrom,
       to: email,
       subject: "Security Alert: Admin Password Changed",
-      html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Security Alert</h2>
-          <p>Hi ${adminName},</p>
-          <p>The password for your BiteHub Admin account (<strong>${email}</strong>) was just changed.</p>
-          <p>If you made this change, you can safely ignore this email.</p>
-          <p style="color: red; font-weight: bold;">If you did NOT make this change, please contact your security team or reset your password immediately.</p>
-          <br/>
-          <p>Best regards,<br/>BiteHub Security Team</p>
-        </div>
-      `,
+      react: React.createElement(AdminPasswordChangedEmail, {
+        adminName,
+        email,
+      }),
     })
 
     if (error) {
@@ -324,8 +314,7 @@ export async function sendVendorNewOrderEmail(
     return { success: false, error: "Vendor email not found" }
   }
 
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
@@ -375,8 +364,7 @@ export async function sendOrderInitiatedEmail(
   totalAmount: number,
   trackingUrl: string
 ) {
-  const fromEmail =
-    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
