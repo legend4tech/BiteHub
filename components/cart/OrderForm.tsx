@@ -115,6 +115,7 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     if (deliveryZones.length > 0 && selectedLocation && cart.vendorId) {
       let fee = 0
       deliveryZones.forEach((z) => {
+        if (z.name === selectedLocation) fee = z.fee
         z.subLandmarks.forEach((s) => {
           if (`${z.name} - ${s.name}` === selectedLocation) fee = s.fee
         })
@@ -132,6 +133,13 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
     cart.vendorDeliveryFee,
     syncVendorDetails,
   ])
+
+  // Close the form automatically if the last item is removed
+  useEffect(() => {
+    if (open && cart.items.length === 0) {
+      onClose()
+    }
+  }, [cart.items.length, open, onClose])
 
   // Gross-up formula: collect exactly enough from the customer so Monnify's 1.5% cut
   // of the total equals serviceFee. Vendor absorbs zero processing cost.
@@ -358,18 +366,23 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
                         }
                       />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px]">
                       {deliveryZones.map((zone) => (
                         <SelectGroup key={zone.id}>
-                          <SelectLabel className="mx-1 my-1 rounded-md bg-accent/30 px-2 font-bold text-foreground">
-                            {zone.name}
-                          </SelectLabel>
+                          <SelectItem
+                            value={zone.name}
+                            className="font-bold text-foreground"
+                          >
+                            <span className="ml-1">{zone.name}</span>
+                          </SelectItem>
                           {zone.subLandmarks.map((sub) => (
                             <SelectItem
                               key={sub.id}
                               value={`${zone.name} - ${sub.name}`}
                             >
-                              <span className="ml-2">{sub.name}</span>
+                              <span className="ml-4 text-muted-foreground">
+                                {sub.name}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -452,7 +465,12 @@ export function OrderForm({ open, onClose }: OrderFormProps) {
             variant="hero"
             size="xl"
             className="w-full"
-            disabled={loading || isSyncing || cart.items.length === 0}
+            disabled={
+              loading ||
+              isSyncing ||
+              cart.items.length === 0 ||
+              !selectedLocation
+            }
           >
             {loading || isSyncing ? (
               <Loader2 className="size-4 animate-spin" />
