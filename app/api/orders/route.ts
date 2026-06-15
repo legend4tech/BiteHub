@@ -10,6 +10,7 @@ import { serializeOrder } from "@/lib/serializers"
 import { ORDER_STATUS, generateOrderId } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
+import { sendOrderInitiatedEmail } from "@/lib/mail"
 import { z } from "zod"
 
 const orderItemSchema = z.object({
@@ -334,6 +335,16 @@ export async function POST(request: Request) {
       paymentStatus: "pending",
       monnifyReference: paymentReference,
     })
+
+    // Float the promise so it sends asynchronously without blocking the checkout redirect
+    sendOrderInitiatedEmail(
+      customerEmail,
+      customerName,
+      order.orderId,
+      finalVendorName,
+      finalTotal,
+      redirectUrl
+    ).catch(console.error)
 
     return NextResponse.json(
       { orderId: order.orderId, checkoutUrl, transactionReference },

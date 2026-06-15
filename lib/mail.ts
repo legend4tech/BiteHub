@@ -5,6 +5,7 @@ import BankChangeOtpEmail from "@/emails/BankChangeOtpEmail"
 import BankChangeConfirmationEmail from "@/emails/BankChangeConfirmationEmail"
 import OrderReceiptEmail from "@/emails/OrderReceiptEmail"
 import VendorNewOrderEmail from "@/emails/VendorNewOrderEmail"
+import CustomerOrderInitiatedEmail from "@/emails/CustomerOrderInitiatedEmail"
 import React from "react"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -362,6 +363,55 @@ export async function sendVendorNewOrderEmail(
     return { success: true, data }
   } catch (error) {
     console.error("Failed to send vendor new order email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendOrderInitiatedEmail(
+  email: string,
+  customerName: string,
+  orderId: string,
+  vendorName: string,
+  totalAmount: number,
+  trackingUrl: string
+) {
+  const fromEmail =
+    process.env.EMAIL_FROM || "BiteHub <no-reply@bitehubapp.com>"
+  const resolvedFrom =
+    process.env.NODE_ENV === "production"
+      ? fromEmail
+      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(
+      "⚠️ RESEND_API_KEY is not defined in env. Order initiated logged:",
+      trackingUrl
+    )
+    return { success: false, error: "Email provider key missing" }
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolvedFrom,
+      to: email,
+      subject: `Action Required: Complete your BiteHub Order ${orderId}`,
+      react: React.createElement(CustomerOrderInitiatedEmail, {
+        customerName,
+        orderId,
+        vendorName,
+        totalAmount,
+        trackingUrl,
+      }),
+    })
+
+    if (error) {
+      console.error("Resend API Error (Order Initiated):", error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send order initiated email:", error)
     return { success: false, error }
   }
 }
