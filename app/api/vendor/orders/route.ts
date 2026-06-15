@@ -33,7 +33,6 @@ export async function GET(request: Request) {
 
     const query: Record<string, unknown> = {
       vendorId,
-      paymentStatus: { $ne: "pending" },
     }
     if (status && status !== "all") {
       query.status = status
