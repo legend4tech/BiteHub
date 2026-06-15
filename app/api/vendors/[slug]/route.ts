@@ -19,13 +19,7 @@ export async function GET(
     const vendor = await VendorModel.findOne({
       slug,
       isActive: true,
-      $or: [
-        {
-          "paymentDetails.bankName": { $exists: true, $ne: "" },
-          "paymentDetails.accountNumber": { $exists: true, $ne: "" },
-        },
-        { "paymentDetails.acceptsCashOnDelivery": true },
-      ],
+      monnifyIntegrationStatus: "active",
     }).lean()
 
     if (!vendor) {

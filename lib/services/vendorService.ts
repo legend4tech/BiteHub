@@ -45,18 +45,12 @@ export async function getVendors(options: GetVendorsOptions = {}) {
   const finalQuery: Record<string, unknown> = { ...query }
 
   if (q) {
-    finalQuery.$and = [
-      { $or: query.$or }, // keep the payment OR
-      {
-        $or: [
-          { name: { $regex: q, $options: "i" } },
-          { description: { $regex: q, $options: "i" } },
-          { tags: { $regex: q, $options: "i" } },
-          { category: { $regex: q, $options: "i" } },
-        ],
-      },
+    finalQuery.$or = [
+      { name: { $regex: q, $options: "i" } },
+      { description: { $regex: q, $options: "i" } },
+      { tags: { $regex: q, $options: "i" } },
+      { category: { $regex: q, $options: "i" } },
     ]
-    delete finalQuery.$or // remove the top-level $or since it's now in $and
   }
 
   const [vendors, totalVendors] = await Promise.all([

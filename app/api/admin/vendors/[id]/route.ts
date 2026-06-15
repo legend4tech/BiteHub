@@ -34,11 +34,9 @@ export async function PATCH(
       if (isActive) {
         // Enforce payment details requirement before activating
         const vendor = await VendorModel.findById(id).lean()
-        const hasPaymentDetails = !!(
-          vendor?.paymentDetails?.bankName &&
-          vendor?.paymentDetails?.accountNumber &&
-          vendor?.paymentDetails?.accountName
-        )
+        const hasPaymentDetails =
+          vendor?.monnifyIntegrationStatus === "active" ||
+          !!vendor?.monnifySubAccountCode
         if (!hasPaymentDetails) {
           return NextResponse.json(
             {
