@@ -30,9 +30,9 @@ export function DashboardStats(props: DashboardStatsProps) {
       accent: true,
     },
     {
-      label: "Pending",
+      label: "New Orders",
       value: props.pending,
-      sub: "awaiting your action",
+      sub: "paid, ready to prep",
       icon: Clock,
       color: "text-status-pending",
       bg: "bg-status-pending/10",
@@ -41,7 +41,7 @@ export function DashboardStats(props: DashboardStatsProps) {
     {
       label: "In Progress",
       value: props.inProgress,
-      sub: "confirmed / preparing / ready",
+      sub: "preparing / ready",
       icon: Zap,
       color: "text-status-preparing",
       bg: "bg-status-preparing/10",

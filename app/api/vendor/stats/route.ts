@@ -87,9 +87,11 @@ export async function GET() {
               ],
             },
           },
-          // Active orders needing vendor attention — regardless of when placed
+          // Active orders needing vendor attention — newly paid (CONFIRMED)
           pending: {
-            $sum: { $cond: [{ $eq: ["$status", ORDER_STATUS.PENDING] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$status", ORDER_STATUS.CONFIRMED] }, 1, 0],
+            },
           },
           inProgress: {
             $sum: {
@@ -97,11 +99,7 @@ export async function GET() {
                 {
                   $in: [
                     "$status",
-                    [
-                      ORDER_STATUS.CONFIRMED,
-                      ORDER_STATUS.PREPARING,
-                      ORDER_STATUS.READY,
-                    ],
+                    [ORDER_STATUS.PREPARING, ORDER_STATUS.READY],
                   ],
                 },
                 1,
