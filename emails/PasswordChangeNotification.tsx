@@ -12,6 +12,7 @@ import {
   Img,
 } from "@react-email/components"
 import * as React from "react"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 interface PasswordChangeNotificationProps {
   vendorName: string
@@ -62,8 +63,8 @@ export const PasswordChangeNotification = ({
               If you did not authorize this password change, your account may be
               compromised. Please reset your password immediately using the{" "}
               {'"Forgot Password"'} link on the login page or contact support at{" "}
-              <Link href="mailto:contact@bitehubapp.com" style={link}>
-                contact@bitehubapp.com
+              <Link href={`mailto:{CONTACT_EMAIL}`} style={link}>
+                {CONTACT_EMAIL}
               </Link>
               .
             </Text>

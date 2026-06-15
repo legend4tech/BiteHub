@@ -58,6 +58,14 @@ export default function PrivacyPolicyPage() {
                   address, phone number, and account credentials.
                 </li>
                 <li>
+                  <strong>Financial Data:</strong> For vendors, we collect bank
+                  account details (account numbers and bank codes) strictly to
+                  facilitate automated payouts. We <strong>do not</strong>{" "}
+                  collect or store sensitive KYC data (such as BVNs or NINs) or
+                  customer credit card numbers. All payment processing is
+                  securely handled by our licensed third-party gateway.
+                </li>
+                <li>
                   <strong>Order Data:</strong> Details about the food you order,
                   delivery locations, and vendor preferences.
                 </li>
@@ -126,6 +134,12 @@ export default function PrivacyPolicyPage() {
                   parties to host our platform, send emails, process images
                   (e.g., Cloudinary), and send notifications (e.g.,
                   Meta/WhatsApp).
+                </li>
+                <li>
+                  <strong>Payment Processors:</strong> We share necessary
+                  transaction and payout data with licensed payment gateways
+                  (e.g., Monnify) to securely process customer payments and
+                  execute vendor settlements.
                 </li>
                 <li>
                   <strong>Legal Requirements:</strong> If required by law or to

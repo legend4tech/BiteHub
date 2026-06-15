@@ -13,6 +13,7 @@ import {
   Button,
 } from "@react-email/components"
 import * as React from "react"
+import { SUPPORT_EMAIL } from "@/lib/constants"
 
 interface CustomerOrderInitiatedEmailProps {
   customerName: string
@@ -84,8 +85,8 @@ export const CustomerOrderInitiatedEmail = ({
               If you have already paid, you can use the button above to track
               the status of your order. If you have any issues, please reach out
               to us at{" "}
-              <Link href="mailto:support@bitehubapp.com" style={link}>
-                support@bitehubapp.com
+              <Link href={`mailto:{SUPPORT_EMAIL}`} style={link}>
+                {SUPPORT_EMAIL}
               </Link>
               .
             </Text>

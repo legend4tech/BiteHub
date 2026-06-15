@@ -3,6 +3,7 @@ import { Resend } from "resend"
 import React from "react"
 import { z } from "zod"
 import ContactAutoReply from "@/emails/ContactAutoReply"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
       // 1. Notify BiteHub inbox with full message details (critical — must arrive)
       resend.emails.send({
         from: fromEmail,
-        to: "contact@bitehubapp.com",
+        to: CONTACT_EMAIL,
         replyTo: email,
         subject: `[Contact] ${subject}`,
         text: `Message from: ${name} (${email})\n\n${message}`,

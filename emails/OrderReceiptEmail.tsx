@@ -13,6 +13,7 @@ import {
   Button,
 } from "@react-email/components"
 import * as React from "react"
+import { SUPPORT_EMAIL } from "@/lib/constants"
 
 interface OrderItem {
   name: string
@@ -134,8 +135,8 @@ export const OrderReceiptEmail = ({
             <Text style={text}>
               If you have any issues with your order, please contact the vendor
               directly from your tracking page or reach out to us at{" "}
-              <Link href="mailto:support@bitehubapp.com" style={link}>
-                support@bitehubapp.com
+              <Link href={`mailto:{SUPPORT_EMAIL}`} style={link}>
+                {SUPPORT_EMAIL}
               </Link>
               .
             </Text>

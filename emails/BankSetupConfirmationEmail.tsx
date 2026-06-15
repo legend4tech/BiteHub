@@ -12,6 +12,7 @@ import {
   Img,
 } from "@react-email/components"
 import * as React from "react"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 interface BankSetupConfirmationEmailProps {
   vendorName: string
@@ -84,8 +85,8 @@ export const BankSetupConfirmationEmail = ({
             <Text style={text}>
               If you did not authorize this setup, please contact support
               immediately at{" "}
-              <Link href="mailto:contact@bitehubapp.com" style={link}>
-                contact@bitehubapp.com
+              <Link href={`mailto:{CONTACT_EMAIL}`} style={link}>
+                {CONTACT_EMAIL}
               </Link>
               .
             </Text>

@@ -12,6 +12,7 @@ import {
   Img,
 } from "@react-email/components"
 import * as React from "react"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 interface BankChangeOtpEmailProps {
   vendorName: string
@@ -71,8 +72,8 @@ export const BankChangeOtpEmail = ({
               If you did not authorize this change, do not share this code with
               anyone. Your account may be compromised. Please reset your
               password immediately or contact support at{" "}
-              <Link href="mailto:contact@bitehubapp.com" style={link}>
-                contact@bitehubapp.com
+              <Link href={`mailto:{CONTACT_EMAIL}`} style={link}>
+                {CONTACT_EMAIL}
               </Link>
               .
             </Text>

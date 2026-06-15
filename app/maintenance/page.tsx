@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Mail, ServerCog } from "lucide-react"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 export default function MaintenancePage() {
   return (
@@ -41,7 +42,7 @@ export default function MaintenancePage() {
         </p>
 
         <a
-          href="mailto:contact@bitehubapp.com"
+          href={`mailto:${CONTACT_EMAIL}`}
           className="inline-flex items-center justify-center space-x-2 rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
         >
           <Mail className="h-5 w-5" />

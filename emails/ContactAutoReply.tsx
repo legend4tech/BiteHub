@@ -13,6 +13,7 @@ import {
   Link,
 } from "@react-email/components"
 import * as React from "react"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 interface ContactAutoReplyProps {
   senderName: string
@@ -84,7 +85,7 @@ export const ContactAutoReply = ({
             <Text style={warningText}>
               Please do not reply to this email — it is sent from an unmonitored
               address. We will reach out to you directly from{" "}
-              <strong>contact@bitehubapp.com</strong>.
+              <strong>{CONTACT_EMAIL}</strong>.
             </Text>
           </Section>
 
@@ -103,8 +104,8 @@ export const ContactAutoReply = ({
                 bitehubapp.com
               </Link>{" "}
               •{" "}
-              <Link href="mailto:contact@bitehubapp.com" style={footerLink}>
-                contact@bitehubapp.com
+              <Link href={`mailto:{CONTACT_EMAIL}`} style={footerLink}>
+                {CONTACT_EMAIL}
               </Link>
             </Text>
           </Section>

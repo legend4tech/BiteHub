@@ -98,18 +98,21 @@ export default async function TermsOfUsePage() {
                 </li>
                 <li>
                   <strong>Delivery & Timeliness:</strong> Delivery times are
-                  estimates. Vendors are responsible for fulfilling and
-                  delivering the orders in a timely manner.
+                  estimates. Vendors or platform administrators configure
+                  dynamic delivery fees based on physical Landmarks and
+                  Sub-Landmarks. {APP_NAME} acts solely as a calculator and
+                  facilitator; we do not guarantee the physical accessibility of
+                  these landmarks nor execute the delivery.
                 </li>
                 <li>
-                  <strong>Disputes and Refunds:</strong> {APP_NAME} acts solely
-                  as a technology platform connecting customers with independent
-                  vendors. Any disputes regarding food quality, fulfillment,
-                  missing items, or refunds are the sole responsibility of the
-                  vendor and must be resolved directly between the customer and
-                  the vendor. However, {APP_NAME} reserves the right to
-                  investigate complaints and may suspend or terminate vendors
-                  who consistently fail to resolve disputes or maintain adequate
+                  <strong>Disputes and Refunds:</strong> While vendors are
+                  responsible for food quality and fulfillment, {APP_NAME} acts
+                  as the primary intermediary for dispute resolution. Customers
+                  should contact {APP_NAME} support directly for any issues
+                  regarding missing items, poor food quality, or refund
+                  requests. {APP_NAME} will mediate the issue with the vendor on
+                  the customer&apos;s behalf and reserves the right to issue
+                  refunds or penalize vendors who fail to maintain adequate
                   service standards.
                 </li>
               </ul>
@@ -141,10 +144,21 @@ export default async function TermsOfUsePage() {
                   <strong>Automated Split Payouts:</strong> Vendor payouts are
                   executed automatically via Monnify Income Split. Earnings
                   (subtotal minus platform commission) are routed directly to
-                  the vendor&apos;s registered bank account on a standard T+1
-                  business day cycle (Transaction day + 1 business day, meaning
-                  earnings from a transaction are settled into the bank account
-                  on the next business day).
+                  the vendor&apos;s registered bank account. Monnify settles
+                  these funds on a{" "}
+                  <strong>
+                    T+0 (Same Day) cycle, processing at 10 PM daily
+                  </strong>
+                  .
+                </li>
+                <li>
+                  <strong>Bank Account Integrity:</strong> Vendors must provide
+                  accurate, personally identifiable bank account details for
+                  payouts. To prevent fraud, {APP_NAME} enforces a strict
+                  unique-account policy—a single bank account cannot be linked
+                  to multiple vendor profiles. Any attempt to circumvent this
+                  may result in immediate account suspension and withheld
+                  payouts.
                 </li>
                 <li>
                   <strong>Idempotency and Payment Safety:</strong> Transactions

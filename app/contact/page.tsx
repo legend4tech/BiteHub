@@ -19,6 +19,7 @@ import { useForm, Controller, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import axios from "axios"
+import { CONTACT_EMAIL } from "@/lib/constants"
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -109,7 +110,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-sm font-bold">Email Us</p>
                     <p className="text-sm text-muted-foreground">
-                      contact@bitehubapp.com
+                      {CONTACT_EMAIL}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       We reply within 24 hours
