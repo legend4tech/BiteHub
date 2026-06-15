@@ -118,7 +118,6 @@ export default async function VendorDetailPage({
   if (!data || !data.vendor) notFound()
 
   const { vendor, menuItems: rawMenuItems, allCategories } = data
-  console.log("VENDOR FROM API", vendor)
 
   const menuItems = rawMenuItems.map((item: RawMenuItem) => ({
     id: item.id,
@@ -138,9 +137,6 @@ export default async function VendorDetailPage({
     availableTo: item.availableTo,
     tag: item.tag,
   }))
-
-  console.log("FIRST MENU ITEM", menuItems[0])
-
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString("en-US", {
