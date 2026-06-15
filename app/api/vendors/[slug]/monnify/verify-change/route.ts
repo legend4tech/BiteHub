@@ -39,6 +39,19 @@ export async function POST(
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
+    // Prevent multiple vendors from linking the exact same bank account
+    const existingBankUser = await Vendor.findOne({
+      monnifyAccountNumber: accountNumber,
+      _id: { $ne: vendorId },
+    })
+
+    if (existingBankUser) {
+      return NextResponse.json(
+        { error: "This bank account is already registered to another vendor." },
+        { status: 400 }
+      )
+    }
+
     if (!vendor.monnifySubAccountCode) {
       return NextResponse.json(
         { error: "No subaccount exists. Use the setup flow." },
