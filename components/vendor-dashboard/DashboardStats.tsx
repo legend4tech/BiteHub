@@ -6,7 +6,7 @@ import {
   TrendingUp,
   Banknote,
 } from "lucide-react"
-import { formatPrice } from "@/lib/format"
+import { formatPriceExact } from "@/lib/format"
 
 interface DashboardStatsProps {
   totalOrders: number
@@ -56,7 +56,7 @@ export function DashboardStats(props: DashboardStatsProps) {
     },
     {
       label: "Disbursed to Bank",
-      value: formatPrice(props.monnifyDisbursed || 0),
+      value: formatPriceExact(props.monnifyDisbursed || 0),
       sub: "successfully deposited",
       icon: Banknote,
       color: "text-status-completed",
@@ -64,7 +64,7 @@ export function DashboardStats(props: DashboardStatsProps) {
     },
     {
       label: "Pending Payout",
-      value: formatPrice(props.monnifyPending || 0),
+      value: formatPriceExact(props.monnifyPending || 0),
       sub: "arriving 10pm same day",
       icon: TrendingUp,
       color: "text-status-confirmed",
