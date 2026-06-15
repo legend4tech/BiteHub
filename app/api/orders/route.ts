@@ -125,7 +125,23 @@ export async function POST(request: Request) {
       landmarkId: { $in: landmarks.map((l) => l._id) },
     }).lean()
 
+    let deliveryZoneMatched = false
     for (const lm of landmarks) {
+      if (location === lm.name) {
+        // Matched main landmark directly
+        const vendorLmOverride = vendor.landmarkOverrides?.find(
+          (o: { landmarkId: string; fee: number }) =>
+            String(o.landmarkId) === String(lm._id)
+        )
+        if (vendorLmOverride) {
+          deliveryFee = vendorLmOverride.fee
+        } else {
+          deliveryFee = lm.defaultDeliveryFee
+        }
+        deliveryZoneMatched = true
+        break
+      }
+
       for (const sub of subLandmarks) {
         if (
           String(sub.landmarkId) === String(lm._id) &&
@@ -153,9 +169,11 @@ export async function POST(request: Request) {
           } else {
             deliveryFee = lm.defaultDeliveryFee
           }
+          deliveryZoneMatched = true
           break
         }
       }
+      if (deliveryZoneMatched) break
     }
 
     let calculatedTotal = deliveryFee

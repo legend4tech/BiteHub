@@ -6,6 +6,7 @@ import { useVendorDeliverySettings } from "@/hooks/queries/useVendorDeliverySett
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, MapPin, Save, Undo } from "lucide-react"
+import { formatPrice } from "@/lib/format"
 import { FetchError } from "@/components/shared/FetchError"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -35,7 +36,7 @@ export function VendorDeliverySettings() {
         (o: { subLandmarkId: string; fee: number }) =>
           (initialSub[o.subLandmarkId] = o.fee)
       )
-       
+
       setLocalSubLandmarkOverrides(initialSub)
     }
   }, [data])
@@ -158,7 +159,7 @@ export function VendorDeliverySettings() {
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         Platform Default:{" "}
                         <span className="font-medium text-foreground">
-                          ₦{lm.defaultDeliveryFee}
+                          {formatPrice(lm.defaultDeliveryFee)}
                         </span>
                       </p>
                     </div>
@@ -239,7 +240,7 @@ export function VendorDeliverySettings() {
                                   {sub.name}
                                 </span>
                                 <span className="ml-2 hidden text-xs text-muted-foreground sm:inline">
-                                  Default: ₦{subDefaultFee}
+                                  Default: {formatPrice(Number(subDefaultFee))}
                                 </span>
                               </div>
                             </div>

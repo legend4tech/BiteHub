@@ -278,7 +278,10 @@ export default function OrderPage() {
 
             {/* Status badge */}
             <div className="mt-5 border-t border-border/60 pt-5">
-              <StatusBadge status={order.status} />
+              <StatusBadge
+                status={order.status}
+                paymentStatus={order.paymentStatus}
+              />
             </div>
           </div>
         </div>
@@ -356,7 +359,10 @@ export default function OrderPage() {
             </div>
           )}
 
-          <OrderStatusTracker status={order.status} />
+          <OrderStatusTracker
+            status={order.status}
+            paymentStatus={order.paymentStatus}
+          />
         </div>
 
         {/* ── Items breakdown ────────────────────────────────────── */}

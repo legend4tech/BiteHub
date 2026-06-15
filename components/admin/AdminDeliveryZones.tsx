@@ -32,6 +32,7 @@ import {
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MapPin, Plus, Trash2, Edit2, Map } from "lucide-react"
+import { formatPrice } from "@/lib/format"
 
 export function AdminDeliveryZones() {
   const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(
@@ -199,9 +200,9 @@ export function AdminDeliveryZones() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="text-sm font-medium">Default Fee</p>
-                    <p className="font-bold text-primary">
-                      ₦{lm.defaultDeliveryFee}
-                    </p>
+                    <span className="text-sm font-medium">
+                      {formatPrice(lm.defaultDeliveryFee)}
+                    </span>
                   </div>
                   <div className="ml-4 flex gap-2 border-l pl-4">
                     <Button
@@ -251,10 +252,10 @@ export function AdminDeliveryZones() {
                       >
                         <span>{sub.name}</span>
                         <div className="flex items-center gap-4">
-                          <span className="text-muted-foreground">
-                            {sub.defaultDeliveryFee
-                              ? `₦${sub.defaultDeliveryFee}`
-                              : `Inherits (₦${lm.defaultDeliveryFee})`}
+                          <span className="text-sm text-muted-foreground">
+                            {sub.defaultDeliveryFee !== undefined
+                              ? formatPrice(sub.defaultDeliveryFee)
+                              : `Inherits (${formatPrice(lm.defaultDeliveryFee)})`}
                           </span>
                           <ConfirmDialog
                             title="Delete Sub-Landmark"
@@ -418,8 +419,8 @@ export function AdminDeliveryZones() {
                 }
               />
               <p className="text-xs text-muted-foreground">
-                If left blank, it will inherit the main landmark fee (₦
-                {selectedLandmark?.defaultDeliveryFee}).
+                If left blank, it will inherit the main landmark fee (
+                {formatPrice(selectedLandmark?.defaultDeliveryFee || 0)}).
               </p>
             </div>
             <div className="flex items-center gap-2 pt-2">

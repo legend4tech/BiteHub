@@ -4,10 +4,15 @@ import type { OrderStatus } from "@/lib/types"
 
 interface StatusBadgeProps {
   status: OrderStatus
+  paymentStatus?: string
   className?: string
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({
+  status,
+  paymentStatus,
+  className,
+}: StatusBadgeProps) {
   const config = ORDER_STATUS_CONFIG[status]
   return (
     <span
@@ -17,7 +22,9 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {config.label}
+      {status === "pending" && paymentStatus === "pending"
+        ? "Awaiting Payment"
+        : config.label}
     </span>
   )
 }

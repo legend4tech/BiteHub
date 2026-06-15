@@ -70,9 +70,13 @@ const statusColorMap: Record<
 
 interface OrderStatusTrackerProps {
   status: OrderStatus
+  paymentStatus?: string
 }
 
-export function OrderStatusTracker({ status }: OrderStatusTrackerProps) {
+export function OrderStatusTracker({
+  status,
+  paymentStatus,
+}: OrderStatusTrackerProps) {
   if (status === ORDER_STATUS.CANCELLED) {
     const colors = statusColorMap[ORDER_STATUS.CANCELLED]
     return (
@@ -147,7 +151,9 @@ export function OrderStatusTracker({ status }: OrderStatusTrackerProps) {
                     : "text-muted-foreground"
                 )}
               >
-                {ORDER_STATUS_CONFIG[step].label}
+                {step === ORDER_STATUS.PENDING && paymentStatus === "pending"
+                  ? "Awaiting Payment"
+                  : ORDER_STATUS_CONFIG[step].label}
               </p>
             </div>
           )
@@ -162,12 +168,16 @@ export function OrderStatusTracker({ status }: OrderStatusTrackerProps) {
         )}
       >
         <p className={cn("text-sm font-semibold", statusColorMap[status].fg)}>
-          {ORDER_STATUS_CONFIG[status].label}
+          {status === ORDER_STATUS.PENDING && paymentStatus === "pending"
+            ? "Awaiting Payment"
+            : ORDER_STATUS_CONFIG[status].label}
         </p>
         <p
           className={cn("mt-0.5 text-xs opacity-80", statusColorMap[status].fg)}
         >
-          {ORDER_STATUS_CONFIG[status].description}
+          {status === ORDER_STATUS.PENDING && paymentStatus === "pending"
+            ? "Please complete your payment to proceed"
+            : ORDER_STATUS_CONFIG[status].description}
         </p>
       </div>
     </div>
