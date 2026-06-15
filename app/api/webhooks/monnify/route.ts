@@ -178,30 +178,60 @@ export async function POST(request: Request) {
       event.eventType === "SETTLEMENT_COMPLETION" ||
       event.eventType === "SETTLEMENT"
     ) {
-      console.log("[Monnify Webhook] Settlement completed:", {
-        amount: event.eventData?.amount || event.eventData?.totalAmountSettled,
-        account: event.eventData?.destinationAccountDetails?.accountNumber,
-      })
+      console.log(
+        "[Monnify Webhook] SETTLEMENT FULL PAYLOAD:",
+        JSON.stringify(event.eventData, null, 2)
+      )
       const amount =
-        event.eventData?.amount || event.eventData?.totalAmountSettled
-      const account = event.eventData?.destinationAccountDetails?.accountNumber
+        event.eventData?.amount ||
+        event.eventData?.netAmount ||
+        event.eventData?.totalAmountSettled
+
+      const account =
+        event.eventData?.destinationAccountNumber ||
+        event.eventData?.destinationAccountDetails?.accountNumber ||
+        event.eventData?.accountNumber
+
+      console.log("[Monnify Webhook] Extracted Settlement values:", {
+        amount,
+        account,
+      })
+
       if (amount && account) {
         processDisbursement(Number(amount), account)
+      } else {
+        console.warn(
+          "[Monnify Webhook] Could not extract amount or account for settlement",
+          event.eventData
+        )
       }
     }
 
     // ── Disbursement: initiated payout to sub-account ────────────────────
     if (event.eventType === "SUCCESSFUL_DISBURSEMENT") {
-      console.log("[Monnify Webhook] Disbursement successful:", {
-        reference: event.eventData?.reference,
-        amount: event.eventData?.amount,
-        destination: event.eventData?.destinationAccountName,
-        account: event.eventData?.destinationAccountNumber,
+      console.log(
+        "[Monnify Webhook] DISBURSEMENT FULL PAYLOAD:",
+        JSON.stringify(event.eventData, null, 2)
+      )
+      const amount = event.eventData?.amount || event.eventData?.netAmount
+
+      const account =
+        event.eventData?.destinationAccountNumber ||
+        event.eventData?.destinationAccountDetails?.accountNumber ||
+        event.eventData?.accountNumber
+
+      console.log("[Monnify Webhook] Extracted Disbursement values:", {
+        amount,
+        account,
       })
-      const amount = event.eventData?.amount
-      const account = event.eventData?.destinationAccountNumber
+
       if (amount && account) {
         processDisbursement(Number(amount), account)
+      } else {
+        console.warn(
+          "[Monnify Webhook] Could not extract amount or account for disbursement",
+          event.eventData
+        )
       }
     }
 
