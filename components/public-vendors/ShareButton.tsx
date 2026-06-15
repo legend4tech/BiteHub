@@ -21,31 +21,47 @@ export function ShareButton({
       ? `${window.location.origin}${urlPath}`
       : window.location.href
 
+    let copySuccess = false
+
+    // 1. Always copy to clipboard first while we have user interaction (transient activation)
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url)
+        copySuccess = true
+      } else {
+        throw new Error("Clipboard API not available")
+      }
+    } catch {
+      try {
+        // Fallback for older browsers
+        const ta = document.createElement("textarea")
+        ta.value = url
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand("copy")
+        document.body.removeChild(ta)
+        copySuccess = true
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (copySuccess) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+
+    // 2. Open native share sheet if supported
     if (navigator.share) {
       try {
         await navigator.share({
           title,
           url,
         })
-        return
       } catch {
-        // Fallback if user cancels or fails
+        // User cancelled or share failed, but we already copied it to clipboard!
       }
     }
-
-    try {
-      await navigator.clipboard.writeText(url)
-    } catch {
-      // Fallback for older browsers
-      const ta = document.createElement("textarea")
-      ta.value = url
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand("copy")
-      document.body.removeChild(ta)
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   return (

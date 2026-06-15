@@ -9,6 +9,7 @@ import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { formatPrice, formatTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { ShareButton } from "@/components/public-vendors/ShareButton"
 
 interface MenuItemCardProps {
   item: MenuItem
@@ -187,8 +188,15 @@ export function MenuItemCard({
           onConfirm={handleToggle}
         />
 
-        {/* Edit + Delete — single set, always visible */}
+        {/* Actions — always visible */}
         <div className="flex shrink-0 items-center gap-1">
+          <div className="origin-right scale-[0.85]">
+            <ShareButton
+              urlPath={`/menu/${item.id}`}
+              title={`Order ${item.name} on BiteHub!`}
+              buttonText="Share"
+            />
+          </div>
           <Button
             variant="ghost"
             size="icon"
