@@ -65,7 +65,7 @@ export function DashboardStats(props: DashboardStatsProps) {
     {
       label: "Pending Payout",
       value: formatPrice(props.monnifyPending || 0),
-      sub: "arriving next working day",
+      sub: "arriving 10pm same day",
       icon: TrendingUp,
       color: "text-status-confirmed",
       bg: "bg-status-confirmed/10",

@@ -49,10 +49,10 @@ export const ORDER_STATUS_CONFIG: Record<
     description: "Waiting for vendor to confirm",
   },
   [ORDER_STATUS.CONFIRMED]: {
-    label: "Confirmed",
+    label: "Payment Confirmed",
     className:
       "border-status-confirmed/20 bg-status-confirmed/10 text-status-confirmed",
-    description: "Vendor confirmed your order",
+    description: "Payment for order confirmed",
   },
   [ORDER_STATUS.PREPARING]: {
     label: "Preparing",
