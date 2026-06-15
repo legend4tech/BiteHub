@@ -103,10 +103,6 @@ export default function VendorDashboardPage() {
     refetch: refetchOrders,
   } = useVendorOrders({ limit: 10, enabled: isReady })
 
-  if (status === "loading") {
-    return <PageSkeleton variant="dashboard" />
-  }
-
   const handleStatusChange = async (
     orderId: string,
     newStatus: OrderStatus
