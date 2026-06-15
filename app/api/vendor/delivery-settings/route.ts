@@ -4,6 +4,7 @@ import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
 import Vendor from "@/models/Vendor"
 import { auth } from "@/auth"
+import { vendorDeliverySettingsUpdateSchema } from "@/lib/schemas"
 
 export async function GET() {
   try {
@@ -50,8 +51,18 @@ export async function GET() {
     return NextResponse.json({
       landmarks: result,
       overrides: {
-        landmarks: vendor.landmarkOverrides || [],
-        subLandmarks: vendor.subLandmarkOverrides || [],
+        landmarks: (vendor.landmarkOverrides || []).map(
+          (o: { landmarkId: unknown; fee: number }) => ({
+            landmarkId: String(o.landmarkId),
+            fee: o.fee,
+          })
+        ),
+        subLandmarks: (vendor.subLandmarkOverrides || []).map(
+          (o: { subLandmarkId: unknown; fee: number }) => ({
+            subLandmarkId: String(o.subLandmarkId),
+            fee: o.fee,
+          })
+        ),
       },
     })
   } catch (error) {
@@ -74,23 +85,15 @@ export async function PUT(request: Request) {
     const data = await request.json()
 
     // Validate payloads
-    const landmarkOverrides = Array.isArray(data.landmarkOverrides)
-      ? data.landmarkOverrides.map(
-          (o: { landmarkId: string; fee: number }) => ({
-            landmarkId: o.landmarkId,
-            fee: Number(o.fee),
-          })
-        )
-      : []
+    const parsed = vendorDeliverySettingsUpdateSchema.safeParse(data)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsed.error.format() },
+        { status: 400 }
+      )
+    }
 
-    const subLandmarkOverrides = Array.isArray(data.subLandmarkOverrides)
-      ? data.subLandmarkOverrides.map(
-          (o: { subLandmarkId: string; fee: number }) => ({
-            subLandmarkId: o.subLandmarkId,
-            fee: Number(o.fee),
-          })
-        )
-      : []
+    const { landmarkOverrides, subLandmarkOverrides } = parsed.data
 
     const updatedVendor = await Vendor.findByIdAndUpdate(
       session.user.vendorId,

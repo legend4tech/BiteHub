@@ -1,27 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import apiClient from "@/lib/axios"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { useVendorDeliverySettings } from "@/hooks/queries/useVendorDeliverySettings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, MapPin, Save, Undo, AlertCircle } from "lucide-react"
-import { Landmark, SubLandmark } from "@/components/admin/AdminDeliveryZones"
+import { Loader2, MapPin, Save, Undo } from "lucide-react"
 import { FetchError } from "@/components/shared/FetchError"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface DeliverySettingsResponse {
-  landmarks: Landmark[]
-  overrides: {
-    landmarks: { landmarkId: string; fee: number }[]
-    subLandmarks: { subLandmarkId: string; fee: number }[]
-  }
-}
-
 export function VendorDeliverySettings() {
-  const queryClient = useQueryClient()
-
   const [localLandmarkOverrides, setLocalLandmarkOverrides] = useState<
     Record<string, number | "">
   >({})
@@ -29,58 +17,46 @@ export function VendorDeliverySettings() {
     Record<string, number | "">
   >({})
 
-  const { data, isPending, isError, refetch } =
-    useQuery<DeliverySettingsResponse>({
-      queryKey: ["vendor-delivery-settings"],
-      queryFn: async () => {
-        const res = await apiClient.get("/vendor/delivery-settings")
-        const d = res.data
+  const { data, isPending, isError, refetch, saveMutation } =
+    useVendorDeliverySettings()
 
-        // Initialize local state with saved overrides
-        const initialLm: Record<string, number> = {}
-        d.overrides.landmarks.forEach(
-          (o: { landmarkId: string; fee: number }) =>
-            (initialLm[o.landmarkId] = o.fee)
-        )
-        setLocalLandmarkOverrides(initialLm)
+  useEffect(() => {
+    if (data) {
+      const initialLm: Record<string, number> = {}
+      data.overrides.landmarks.forEach(
+        (o: { landmarkId: string; fee: number }) =>
+          (initialLm[o.landmarkId] = o.fee)
+      )
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalLandmarkOverrides(initialLm)
 
-        const initialSub: Record<string, number> = {}
-        d.overrides.subLandmarks.forEach(
-          (o: { subLandmarkId: string; fee: number }) =>
-            (initialSub[o.subLandmarkId] = o.fee)
-        )
-        setLocalSubLandmarkOverrides(initialSub)
-
-        return d
-      },
-      refetchOnWindowFocus: false,
-    })
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      // Clean up empty strings before sending
-      const landmarkOverrides = Object.entries(localLandmarkOverrides)
-        .filter(([_, v]) => v !== "")
-        .map(([landmarkId, fee]) => ({ landmarkId, fee }))
-
-      const subLandmarkOverrides = Object.entries(localSubLandmarkOverrides)
-        .filter(([_, v]) => v !== "")
-        .map(([subLandmarkId, fee]) => ({ subLandmarkId, fee }))
-
-      return apiClient.put("/vendor/delivery-settings", {
-        landmarkOverrides,
-        subLandmarkOverrides,
-      })
-    },
-    onSuccess: () => {
-      toast.success("Delivery settings saved successfully")
-      queryClient.invalidateQueries({ queryKey: ["vendor-delivery-settings"] })
-    },
-    onError: () => toast.error("Failed to save delivery settings"),
-  })
+      const initialSub: Record<string, number> = {}
+      data.overrides.subLandmarks.forEach(
+        (o: { subLandmarkId: string; fee: number }) =>
+          (initialSub[o.subLandmarkId] = o.fee)
+      )
+       
+      setLocalSubLandmarkOverrides(initialSub)
+    }
+  }, [data])
 
   const handleSave = () => {
-    saveMutation.mutate()
+    // Clean up empty strings before sending
+    const landmarkOverrides = Object.entries(localLandmarkOverrides)
+      .filter(([, v]) => v !== "")
+      .map(([landmarkId, fee]) => ({ landmarkId, fee: Number(fee) }))
+
+    const subLandmarkOverrides = Object.entries(localSubLandmarkOverrides)
+      .filter(([, v]) => v !== "")
+      .map(([subLandmarkId, fee]) => ({ subLandmarkId, fee: Number(fee) }))
+
+    saveMutation.mutate(
+      { landmarkOverrides, subLandmarkOverrides },
+      {
+        onSuccess: () => toast.success("Delivery settings saved successfully"),
+        onError: () => toast.error("Failed to save delivery settings"),
+      }
+    )
   }
 
   if (isPending) {

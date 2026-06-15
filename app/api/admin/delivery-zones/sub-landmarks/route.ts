@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import SubLandmark from "@/models/SubLandmark"
 import { auth } from "@/auth"
+import { adminSubLandmarkSchema } from "@/lib/schemas"
+import { serializeSubLandmark } from "@/lib/serializers"
 
 export async function POST(request: Request) {
   try {
@@ -16,29 +18,21 @@ export async function POST(request: Request) {
     await dbConnect()
     const data = await request.json()
 
-    if (!data.name || !data.landmarkId) {
+    const parsed = adminSubLandmarkSchema.safeParse(data)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Name and Landmark ID are required" },
+        { error: "Invalid data", details: parsed.error.format() },
         { status: 400 }
       )
     }
 
     const subLandmark = await SubLandmark.create({
-      name: data.name.trim(),
-      landmarkId: data.landmarkId,
-      defaultDeliveryFee:
-        data.defaultDeliveryFee !== undefined && data.defaultDeliveryFee !== ""
-          ? Number(data.defaultDeliveryFee)
-          : undefined,
-      isActive: data.isActive ?? true,
+      ...parsed.data,
     })
 
     return NextResponse.json(
       {
-        subLandmark: {
-          ...subLandmark.toObject(),
-          id: String(subLandmark._id),
-        },
+        subLandmark: serializeSubLandmark(subLandmark.toObject()),
       },
       { status: 201 }
     )

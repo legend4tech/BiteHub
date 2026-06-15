@@ -3,6 +3,13 @@ import dbConnect from "@/lib/db"
 import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
 import { auth } from "@/auth"
+import { adminLandmarkSchema } from "@/lib/schemas"
+import {
+  serializeLandmark,
+  serializeSubLandmark,
+  LeanLandmark,
+  LeanSubLandmark,
+} from "@/lib/serializers"
 
 export async function GET() {
   try {
@@ -22,12 +29,15 @@ export async function GET() {
 
     const result = landmarks.map((lm) => {
       const lmId = String(lm._id)
+      const subLms = subLandmarks.filter(
+        (sub) => String(sub.landmarkId) === lmId
+      )
+
       return {
-        ...lm,
-        id: lmId,
-        subLandmarks: subLandmarks
-          .filter((sub) => String(sub.landmarkId) === lmId)
-          .map((sub) => ({ ...sub, id: String(sub._id) })),
+        ...serializeLandmark(lm as unknown as LeanLandmark),
+        subLandmarks: subLms.map((sub) =>
+          serializeSubLandmark(sub as unknown as LeanSubLandmark)
+        ),
       }
     })
 
@@ -54,28 +64,20 @@ export async function POST(request: Request) {
     await dbConnect()
     const data = await request.json()
 
-    if (
-      !data.name ||
-      !data.school ||
-      !data.campus ||
-      data.defaultDeliveryFee === undefined
-    ) {
+    const parsed = adminLandmarkSchema.safeParse(data)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Invalid data", details: parsed.error.format() },
         { status: 400 }
       )
     }
 
     const landmark = await Landmark.create({
-      name: data.name.trim(),
-      school: data.school.trim(),
-      campus: data.campus.trim(),
-      defaultDeliveryFee: Number(data.defaultDeliveryFee),
-      isActive: data.isActive ?? true,
+      ...parsed.data,
     })
 
     return NextResponse.json(
-      { landmark: { ...landmark.toObject(), id: String(landmark._id) } },
+      { landmark: serializeLandmark(landmark.toObject()) },
       { status: 201 }
     )
   } catch (error) {

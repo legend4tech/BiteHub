@@ -254,3 +254,49 @@ export const globalSettingsSchema = z.object({
 })
 
 export type GlobalSettingsValues = z.infer<typeof globalSettingsSchema>
+
+// ─── Delivery Settings & Zones Schemas ────────────────────────────────────────
+
+export const vendorDeliverySettingsUpdateSchema = z.object({
+  landmarkOverrides: z
+    .array(
+      z.object({
+        landmarkId: z.string().min(1, "Landmark ID is required"),
+        fee: z.number().min(0, "Fee must be a positive number"),
+      })
+    )
+    .optional(),
+  subLandmarkOverrides: z
+    .array(
+      z.object({
+        subLandmarkId: z.string().min(1, "Sub-landmark ID is required"),
+        fee: z.number().min(0, "Fee must be a positive number"),
+      })
+    )
+    .optional(),
+})
+
+export type VendorDeliverySettingsUpdateValues = z.infer<
+  typeof vendorDeliverySettingsUpdateSchema
+>
+
+export const adminLandmarkSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  school: z.string().trim().min(1, "School is required"),
+  campus: z.string().trim().min(1, "Campus is required"),
+  defaultDeliveryFee: z
+    .number()
+    .min(0, "Default delivery fee must be a positive number"),
+  isActive: z.boolean().optional().default(true),
+})
+
+export type AdminLandmarkValues = z.infer<typeof adminLandmarkSchema>
+
+export const adminSubLandmarkSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  landmarkId: z.string().trim().min(1, "Landmark ID is required"),
+  defaultDeliveryFee: z.number().min(0).optional(),
+  isActive: z.boolean().optional().default(true),
+})
+
+export type AdminSubLandmarkValues = z.infer<typeof adminSubLandmarkSchema>

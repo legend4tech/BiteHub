@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import apiClient from "@/lib/axios"
+import {
+  useAdminDeliveryZones,
+  Landmark,
+} from "@/hooks/queries/useAdminDeliveryZones"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,27 +29,11 @@ import {
   getSchoolName,
   getCampusName,
 } from "@/lib/config/campus"
-import { MapPin, Plus, Trash2, Edit2, Loader2, Map } from "lucide-react"
-
-export interface SubLandmark {
-  id: string
-  name: string
-  defaultDeliveryFee?: number
-  isActive: boolean
-}
-
-export interface Landmark {
-  id: string
-  school: string
-  campus: string
-  name: string
-  defaultDeliveryFee: number
-  isActive: boolean
-  subLandmarks: SubLandmark[]
-}
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { Skeleton } from "@/components/ui/skeleton"
+import { MapPin, Plus, Trash2, Edit2, Map } from "lucide-react"
 
 export function AdminDeliveryZones() {
-  const queryClient = useQueryClient()
   const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(
     null
   )
@@ -71,72 +57,14 @@ export function AdminDeliveryZones() {
     isActive: true,
   })
 
-  const { data: landmarks = [], isLoading } = useQuery<Landmark[]>({
-    queryKey: ["admin-landmarks"],
-    queryFn: async () =>
-      (await apiClient.get("/admin/delivery-zones/landmarks")).data,
-  })
-
-  const saveLandmarkMutation = useMutation({
-    mutationFn: async (data: {
-      school: string
-      campus: string
-      name: string
-      defaultDeliveryFee: string
-      isActive: boolean
-    }) => {
-      if (selectedLandmark) {
-        return apiClient.put(
-          `/admin/delivery-zones/landmarks/${selectedLandmark.id}`,
-          data
-        )
-      } else {
-        return apiClient.post("/admin/delivery-zones/landmarks", data)
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-landmarks"] })
-      toast.success(selectedLandmark ? "Landmark updated" : "Landmark created")
-      setIsLandmarkOpen(false)
-    },
-    onError: () => toast.error("Failed to save landmark"),
-  })
-
-  const deleteLandmarkMutation = useMutation({
-    mutationFn: async (id: string) =>
-      apiClient.delete(`/admin/delivery-zones/landmarks/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-landmarks"] })
-      toast.success("Landmark deleted")
-    },
-  })
-
-  const saveSubLandmarkMutation = useMutation({
-    mutationFn: async (data: {
-      name: string
-      defaultDeliveryFee: string
-      isActive: boolean
-      landmarkId?: string
-    }) => {
-      // Not handling edit sub-landmark yet for simplicity, just create
-      return apiClient.post("/admin/delivery-zones/sub-landmarks", data)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-landmarks"] })
-      toast.success("Sub-Landmark created")
-      setIsSubLandmarkOpen(false)
-    },
-    onError: () => toast.error("Failed to save sub-landmark"),
-  })
-
-  const deleteSubLandmarkMutation = useMutation({
-    mutationFn: async (id: string) =>
-      apiClient.delete(`/admin/delivery-zones/sub-landmarks/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-landmarks"] })
-      toast.success("Sub-Landmark deleted")
-    },
-  })
+  const {
+    data: landmarks = [],
+    isPending: isLoading,
+    saveLandmarkMutation,
+    deleteLandmarkMutation,
+    saveSubLandmarkMutation,
+    deleteSubLandmarkMutation,
+  } = useAdminDeliveryZones()
 
   const handleOpenLandmark = (landmark?: Landmark) => {
     if (landmark) {
@@ -169,21 +97,61 @@ export function AdminDeliveryZones() {
 
   const handleSaveLandmark = (e: React.FormEvent) => {
     e.preventDefault()
-    saveLandmarkMutation.mutate(formData)
+    saveLandmarkMutation.mutate(
+      {
+        id: selectedLandmark?.id,
+        data: {
+          ...formData,
+          defaultDeliveryFee: Number(formData.defaultDeliveryFee),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            selectedLandmark ? "Landmark updated" : "Landmark created"
+          )
+          setIsLandmarkOpen(false)
+        },
+        onError: () => toast.error("Failed to save landmark"),
+      }
+    )
   }
 
   const handleSaveSubLandmark = (e: React.FormEvent) => {
     e.preventDefault()
-    saveSubLandmarkMutation.mutate({
-      ...subFormData,
-      landmarkId: selectedLandmark?.id,
-    })
+    saveSubLandmarkMutation.mutate(
+      {
+        ...subFormData,
+        landmarkId: selectedLandmark?.id as string,
+        defaultDeliveryFee: subFormData.defaultDeliveryFee
+          ? Number(subFormData.defaultDeliveryFee)
+          : undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Sub-Landmark created")
+          setIsSubLandmarkOpen(false)
+        },
+        onError: () => toast.error("Failed to save sub-landmark"),
+      }
+    )
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="mb-2 h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+        <div className="grid gap-6">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -243,16 +211,17 @@ export function AdminDeliveryZones() {
                     >
                       <Edit2 className="size-4" />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        if (confirm("Delete this landmark?"))
-                          deleteLandmarkMutation.mutate(lm.id)
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <ConfirmDialog
+                      title="Delete Landmark"
+                      description={`Are you sure you want to delete ${lm.name}?`}
+                      isDestructive
+                      onConfirm={() => deleteLandmarkMutation.mutate(lm.id)}
+                      trigger={
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="size-4" />
+                        </Button>
+                      }
+                    />
                   </div>
                 </div>
               </div>
@@ -287,17 +256,23 @@ export function AdminDeliveryZones() {
                               ? `₦${sub.defaultDeliveryFee}`
                               : `Inherits (₦${lm.defaultDeliveryFee})`}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              if (confirm("Delete sub-landmark?"))
-                                deleteSubLandmarkMutation.mutate(sub.id)
-                            }}
-                          >
-                            <Trash2 className="size-3" />
-                          </Button>
+                          <ConfirmDialog
+                            title="Delete Sub-Landmark"
+                            description={`Are you sure you want to delete ${sub.name}?`}
+                            isDestructive
+                            onConfirm={() =>
+                              deleteSubLandmarkMutation.mutate(sub.id)
+                            }
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="size-3" />
+                              </Button>
+                            }
+                          />
                         </div>
                       </div>
                     ))}

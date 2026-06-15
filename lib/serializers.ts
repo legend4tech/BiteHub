@@ -123,3 +123,39 @@ export function serializeOrder(doc: LeanOrder | null) {
     updatedAt: doc.updatedAt.toISOString(),
   }
 }
+
+// ─── Delivery Zones ───────────────────────────────────────────────────────────
+
+export type LeanLandmark = LeanDoc<import("@/models/Landmark").ILandmark>
+export type LeanSubLandmark = LeanDoc<
+  import("@/models/SubLandmark").ISubLandmark
+>
+
+export function serializeLandmark(doc: LeanLandmark | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    school: doc.school,
+    campus: doc.campus,
+    name: doc.name,
+    defaultDeliveryFee: doc.defaultDeliveryFee,
+    isActive: doc.isActive,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
+  }
+}
+
+export function serializeSubLandmark(doc: LeanSubLandmark | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    landmarkId: doc.landmarkId.toString(),
+    name: doc.name,
+    defaultDeliveryFee: doc.defaultDeliveryFee ?? null,
+    isActive: doc.isActive,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
+  }
+}
