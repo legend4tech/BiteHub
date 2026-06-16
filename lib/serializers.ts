@@ -93,34 +93,46 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
 export function serializeOrder(doc: LeanOrder | null) {
   if (!doc) return null
 
+  // Safely parse dates which might come back as strings or be missing in raw DB docs
+  const safeDate = (val: unknown): string => {
+    if (val instanceof Date) return val.toISOString()
+    if (typeof val === "string" || typeof val === "number") {
+      const d = new Date(val)
+      if (!isNaN(d.getTime())) return d.toISOString()
+    }
+    return new Date().toISOString()
+  }
+
   return {
-    id: doc._id.toString(),
-    orderId: doc.orderId,
-    vendorId: doc.vendorId.toString(),
-    vendorName: doc.vendorName,
-    vendorWhatsappNumber: doc.vendorWhatsappNumber,
+    id: doc._id?.toString() || "",
+    orderId: doc.orderId || "",
+    vendorId: doc.vendorId?.toString() || "",
+    vendorName: doc.vendorName || "Unknown Vendor",
+    vendorWhatsappNumber: doc.vendorWhatsappNumber || "",
     vendorPrepTime: doc.vendorPrepTime ?? "",
-    customerName: doc.customerName,
-    customerPhone: doc.customerPhone,
-    location: doc.location,
-    items: doc.items.map((item) => ({
-      menuItemId: item.menuItemId,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    })),
+    customerName: doc.customerName || "Customer",
+    customerPhone: doc.customerPhone || "",
+    location: doc.location || "",
+    items: Array.isArray(doc.items)
+      ? doc.items.map((item) => ({
+          menuItemId: item.menuItemId || "",
+          name: item.name || "Item",
+          price: Number(item.price) || 0,
+          quantity: Number(item.quantity) || 1,
+        }))
+      : [],
     notes: doc.notes ?? "",
-    deliveryFee: doc.deliveryFee ?? 0,
-    serviceFee: doc.serviceFee ?? 0,
-    platformCommission: doc.platformCommission ?? 0,
-    vendorRevenue: doc.vendorRevenue ?? 0,
-    totalAmount: doc.totalAmount ?? 0,
-    status: doc.status,
+    deliveryFee: Number(doc.deliveryFee) || 0,
+    serviceFee: Number(doc.serviceFee) || 0,
+    platformCommission: Number(doc.platformCommission) || 0,
+    vendorRevenue: Number(doc.vendorRevenue) || 0,
+    totalAmount: Number(doc.totalAmount) || 0,
+    status: doc.status || "pending",
     paymentMethod: doc.paymentMethod ?? "monnify",
     paymentStatus: doc.paymentStatus ?? "pending",
     monnifyReference: doc.monnifyReference ?? null,
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
   }
 }
 
