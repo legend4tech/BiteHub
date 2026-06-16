@@ -1,0 +1,106 @@
+import { NextResponse } from "next/server"
+import crypto from "crypto"
+import dbConnect from "@/lib/db"
+import Vendor from "@/models/Vendor"
+
+async function processDisbursement(
+  amount: number,
+  accountNumber: string,
+  reference: string,
+  status: string
+) {
+  await dbConnect()
+
+  // Monnify sends destinationAccountNumber = the vendor's bank account they registered
+  const vendor = await Vendor.findOne({ monnifyAccountNumber: accountNumber })
+
+  if (!vendor) {
+    console.warn(
+      `[Disbursement Webhook] No vendor found for account: ${accountNumber}`
+    )
+    return
+  }
+
+  if (status === "SUCCESS") {
+    const currentDisbursed = vendor.monnifyTotalDisbursed || 0
+    vendor.monnifyTotalDisbursed = currentDisbursed + amount
+    await vendor.save()
+    console.log(
+      `[Disbursement Webhook] ✅ Updated vendor "${vendor.slug}" — added ₦${amount}. Total disbursed: ₦${vendor.monnifyTotalDisbursed}. Ref: ${reference}`
+    )
+  } else {
+    console.warn(
+      `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}`
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const rawBody = await request.text()
+    const signature = request.headers.get("monnify-signature")
+
+    if (!signature) {
+      console.error("[Disbursement Webhook] Missing monnify-signature header")
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    }
+
+    const secretKey = process.env.MONNIFY_SECRET_KEY || ""
+    const computedHash = crypto
+      .createHmac("sha512", secretKey)
+      .update(rawBody)
+      .digest("hex")
+
+    if (computedHash !== signature) {
+      console.error("[Disbursement Webhook] Invalid signature — rejected")
+      return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
+    }
+
+    const event = JSON.parse(rawBody)
+    const { eventType, eventData } = event
+
+    console.log(
+      `[Disbursement Webhook] Received event: ${eventType}`,
+      JSON.stringify(eventData, null, 2)
+    )
+
+    if (
+      eventType === "SUCCESSFUL_DISBURSEMENT" ||
+      eventType === "FAILED_DISBURSEMENT"
+    ) {
+      const amount = Number(eventData?.amount ?? 0)
+      // Per Monnify docs: the field is "destinationAccountNumber"
+      const accountNumber =
+        eventData?.destinationAccountNumber ||
+        eventData?.accountNumber ||
+        eventData?.destinationAccountDetails?.accountNumber
+
+      const reference = eventData?.reference || eventData?.transactionReference
+      const status = eventData?.status ?? "FAILED"
+
+      if (!accountNumber || !amount) {
+        console.error(
+          "[Disbursement Webhook] Could not extract accountNumber or amount",
+          { accountNumber, amount, eventData }
+        )
+        // Return 200 so Monnify doesn't keep retrying for a data issue
+        return NextResponse.json({ status: "ignored" })
+      }
+
+      // ✅ Awaited — ensures DB update completes before Vercel terminates
+      await processDisbursement(amount, accountNumber, reference, status)
+    } else {
+      console.warn(
+        `[Disbursement Webhook] Unexpected eventType: ${eventType} — ignoring`
+      )
+    }
+
+    return NextResponse.json({ status: "success" })
+  } catch (error) {
+    console.error("[Disbursement Webhook] Unhandled error:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
