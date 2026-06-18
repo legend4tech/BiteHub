@@ -25,7 +25,7 @@ export function DashboardStats(props: DashboardStatsProps) {
       {/* Overview Stats Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
         {/* Total Orders (Highlight Card) */}
-        <div className="group col-span-2 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
+        <div className="group col-span-2 flex transform-gpu flex-col justify-between rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
           <div className="flex items-center justify-between">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <ShoppingBag className="size-6" />
@@ -47,7 +47,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         </div>
 
         {/* Pending Orders */}
-        <div className="col-span-1 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+        <div className="col-span-1 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
               <Clock className="size-5" />
@@ -71,7 +71,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         </div>
 
         {/* In Progress */}
-        <div className="col-span-1 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+        <div className="col-span-1 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
               <Zap className="size-5" />
@@ -89,7 +89,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         </div>
 
         {/* Completed */}
-        <div className="col-span-2 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
+        <div className="col-span-2 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
           <div className="flex items-center justify-between">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
               <CheckCircle2 className="size-5" />
