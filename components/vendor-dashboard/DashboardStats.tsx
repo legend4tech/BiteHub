@@ -3,8 +3,9 @@ import {
   Clock,
   CheckCircle2,
   Zap,
-  TrendingUp,
   Banknote,
+  ArrowUpRight,
+  Wallet,
 } from "lucide-react"
 import { formatPriceExact } from "@/lib/format"
 
@@ -19,113 +20,130 @@ interface DashboardStatsProps {
 }
 
 export function DashboardStats(props: DashboardStatsProps) {
-  const statCards = [
-    {
-      label: "All Orders",
-      value: props.totalOrders,
-      sub: `${props.todayOrders} placed today`,
-      icon: ShoppingBag,
-      color: "text-primary",
-      bg: "bg-primary/10",
-      accent: true,
-    },
-    {
-      label: "New Orders",
-      value: props.pending,
-      sub: "paid, ready to prep",
-      icon: Clock,
-      color: "text-status-pending",
-      bg: "bg-status-pending/10",
-      alert: props.pending > 0,
-    },
-    {
-      label: "In Progress",
-      value: props.inProgress,
-      sub: "preparing / ready",
-      icon: Zap,
-      color: "text-status-preparing",
-      bg: "bg-status-preparing/10",
-    },
-    {
-      label: "Completed",
-      value: props.totalCompleted,
-      sub: "all-time fulfilled",
-      icon: CheckCircle2,
-      color: "text-status-completed",
-      bg: "bg-status-completed/10",
-    },
-    {
-      label: "Disbursed to Bank",
-      value: formatPriceExact(props.monnifyDisbursed || 0),
-      sub: "successfully deposited",
-      icon: Banknote,
-      color: "text-status-completed",
-      bg: "bg-status-completed/10",
-    },
-    {
-      label: "Pending Payout",
-      value: formatPriceExact(props.monnifyPending || 0),
-      sub: "arriving 10pm same day",
-      icon: TrendingUp,
-      color: "text-status-confirmed",
-      bg: "bg-status-confirmed/10",
-    },
-  ]
-
-  const orderCards = statCards.slice(0, 4)
-  const financialCards = statCards.slice(4, 6)
-
-  const renderCard = (s: (typeof statCards)[0]) => (
-    <div
-      key={s.label}
-      className={`group relative flex transform-gpu flex-col gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 ${
-        s.accent
-          ? "border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background"
-          : s.alert
-            ? "border-status-pending/50 bg-gradient-to-br from-status-pending/10 via-status-pending/5 to-background dark:border-status-pending/40"
-            : "border-border/50 bg-gradient-to-br from-card via-card/80 to-muted/20"
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${s.bg} transition-transform duration-300 group-hover:scale-110 group-hover:shadow-sm`}
-        >
-          <s.icon className={`size-5 ${s.color}`} />
-        </div>
-        {s.accent && <TrendingUp className="size-4 text-primary opacity-50" />}
-        {s.alert && (
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-pending opacity-75"></span>
-            <span className="relative inline-flex size-2.5 rounded-full bg-status-pending"></span>
-          </span>
-        )}
-      </div>
-      <div className="mt-1">
-        <p className="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase">
-          {s.label}
-        </p>
-        <p
-          className={`mt-1.5 font-heading text-2xl font-bold tracking-tight md:text-3xl ${s.accent ? "text-primary" : s.alert ? "text-status-pending-foreground" : ""}`}
-        >
-          {s.value}
-        </p>
-        <p className="mt-1.5 hidden text-[11px] font-medium text-muted-foreground/60 sm:block">
-          {s.sub}
-        </p>
-      </div>
-    </div>
-  )
-
   return (
-    <div className="flex flex-col gap-4 md:gap-5">
-      {/* Order Operations Grid (4 columns) */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-        {orderCards.map(renderCard)}
+    <div className="flex flex-col gap-6">
+      {/* Overview Stats Grid */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+        {/* Total Orders (Highlight Card) */}
+        <div className="group col-span-2 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
+          <div className="flex items-center justify-between">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <ShoppingBag className="size-6" />
+            </div>
+            <ArrowUpRight className="size-5 text-primary/50 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+          </div>
+          <div className="mt-8">
+            <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+              Total Orders
+            </p>
+            <p className="mt-2 font-heading text-4xl font-bold tracking-tight text-foreground">
+              {props.totalOrders}
+            </p>
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              <ArrowUpRight className="size-3" />
+              {props.todayOrders} new today
+            </div>
+          </div>
+        </div>
+
+        {/* Pending Orders */}
+        <div className="col-span-1 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+              <Clock className="size-5" />
+            </div>
+            {props.pending > 0 && (
+              <span className="relative flex size-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75"></span>
+                <span className="relative inline-flex size-3 rounded-full bg-orange-500"></span>
+              </span>
+            )}
+          </div>
+          <div className="mt-6">
+            <p className="text-xs font-medium text-muted-foreground">
+              New Orders
+            </p>
+            <p className="mt-1 font-heading text-3xl font-bold text-foreground">
+              {props.pending}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Ready to prep</p>
+          </div>
+        </div>
+
+        {/* In Progress */}
+        <div className="col-span-1 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+              <Zap className="size-5" />
+            </div>
+          </div>
+          <div className="mt-6">
+            <p className="text-xs font-medium text-muted-foreground">
+              In Progress
+            </p>
+            <p className="mt-1 font-heading text-3xl font-bold text-foreground">
+              {props.inProgress}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Preparing now</p>
+          </div>
+        </div>
+
+        {/* Completed */}
+        <div className="col-span-2 flex flex-col justify-between overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
+          <div className="flex items-center justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="size-5" />
+            </div>
+          </div>
+          <div className="mt-6">
+            <p className="text-xs font-medium text-muted-foreground">
+              Completed
+            </p>
+            <p className="mt-1 font-heading text-3xl font-bold text-foreground">
+              {props.totalCompleted}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              All-time fulfilled
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Financials Grid (2 columns) */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5">
-        {financialCards.map(renderCard)}
+      {/* Financial Stats */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="flex items-center gap-5 rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-emerald-500/10 text-emerald-500">
+            <Banknote className="size-8" />
+          </div>
+          <div>
+            <p className="text-sm font-medium tracking-wide text-muted-foreground">
+              Disbursed to Bank
+            </p>
+            <p className="mt-1 font-heading text-3xl font-bold text-foreground">
+              {formatPriceExact(props.monnifyDisbursed || 0)}
+            </p>
+            <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              Successfully deposited
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-5 rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-amber-500/10 text-amber-500">
+            <Wallet className="size-8" />
+          </div>
+          <div>
+            <p className="text-sm font-medium tracking-wide text-muted-foreground">
+              Pending Payout
+            </p>
+            <p className="mt-1 font-heading text-3xl font-bold text-foreground">
+              {formatPriceExact(props.monnifyPending || 0)}
+            </p>
+            <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+              Arriving 10pm today
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

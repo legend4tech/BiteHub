@@ -161,7 +161,7 @@ export default function VendorDashboardPage() {
     <SectionErrorBoundary title="Couldn't load dashboard">
       <div className="space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">
               {greeting},
@@ -177,7 +177,7 @@ export default function VendorDashboardPage() {
               })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <Button
               variant="outline"
               size="sm"
@@ -186,7 +186,8 @@ export default function VendorDashboardPage() {
               disabled={loadingStats || !stats?.slug}
             >
               <Share2 className="size-4" />
-              Share Profile
+              <span className="hidden sm:inline">Share Profile</span>
+              <span className="sm:hidden">Share</span>
             </Button>
             <Button
               variant="outline"
@@ -195,7 +196,8 @@ export default function VendorDashboardPage() {
               onClick={() => setShowPlatformFeedbackModal(true)}
             >
               <Star className="size-4" />
-              Rate Platform
+              <span className="hidden sm:inline">Rate Platform</span>
+              <span className="sm:hidden">Rate</span>
             </Button>
           </div>
         </div>

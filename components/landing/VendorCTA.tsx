@@ -74,7 +74,7 @@ export function VendorCTA() {
               <ul className="space-y-4">
                 {perks.map((p, i) => (
                   <FadeIn key={p} delay={0.3 + i * 0.1} direction="left">
-                    <li className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+                    <li className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/10 p-4">
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-background text-primary">
                         <Check className="size-4" />
                       </span>

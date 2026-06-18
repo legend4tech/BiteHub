@@ -73,13 +73,13 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         )}
 
         {item.tag && (
-          <span className="absolute top-2.5 left-2.5 rounded-full border border-border bg-background/95 px-2.5 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
+          <span className="absolute top-2.5 left-2.5 rounded-full border border-border bg-background/95 px-2.5 py-0.5 text-[10px] font-semibold text-foreground">
             {item.tag}
           </span>
         )}
 
         {!isCurrentlyAvailable && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/60 backdrop-blur-[2px]">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/60">
             <span className="text-xs font-bold tracking-wider text-white uppercase">
               {!item.isAvailable ? "Out of Stock" : "Closed"}
             </span>

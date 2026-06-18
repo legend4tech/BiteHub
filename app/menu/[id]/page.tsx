@@ -119,7 +119,7 @@ export default async function SingleMenuPage({ params }: Props) {
                   </div>
                 )}
                 {mainItem.tag && (
-                  <span className="absolute top-4 left-4 rounded-full border border-border bg-background/95 px-3 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur">
+                  <span className="absolute top-4 left-4 rounded-full border border-border bg-background/95 px-3 py-1 text-xs font-bold text-foreground shadow-sm">
                     {mainItem.tag}
                   </span>
                 )}

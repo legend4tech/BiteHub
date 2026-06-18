@@ -90,15 +90,14 @@ export function MenuItemCard({
           </div>
         )}
 
-        {/* Image overlay badges — top-left only */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
           {cat && (
-            <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+            <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
               {cat.label}
             </span>
           )}
           {!localAvailable && (
-            <span className="flex items-center gap-1 rounded-full bg-destructive/80 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+            <span className="flex items-center gap-1 rounded-full bg-destructive/80 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
               <EyeOff className="size-2.5" /> Unlisted
             </span>
           )}
