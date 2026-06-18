@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { motion } from "framer-motion"
+import { ReactNode } from "react"
 import {
   WifiOff,
   ServerCrash,
@@ -10,8 +10,8 @@ import {
   AlertTriangle,
   RefreshCw,
   ArrowLeft,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 // ─── FetchError ───────────────────────────────────────────────────────────────
 // A fully reusable error component for when a data fetch fails.
@@ -30,25 +30,25 @@ import { Button } from "@/components/ui/button";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type FetchErrorSize = "sm" | "md" | "lg";
+type FetchErrorSize = "sm" | "md" | "lg"
 
 interface FetchErrorProps {
   /** Short heading shown above the message */
-  title?: string;
+  title?: string
   /** Optional override of the default error message */
-  message?: string;
+  message?: string
   /** Custom list of possible reasons — overrides the defaults */
-  reasons?: string[];
+  reasons?: string[]
   /** Called when the user clicks "Try again" */
-  onRetry?: () => void;
+  onRetry?: () => void
   /** Called / href when the user clicks "Go back" */
-  onBack?: (() => void) | string;
+  onBack?: (() => void) | string
   /** Size variant */
-  size?: FetchErrorSize;
+  size?: FetchErrorSize
   /** Extra class on the root wrapper */
-  className?: string;
+  className?: string
   /** Optional custom icon */
-  icon?: ReactNode;
+  icon?: ReactNode
 }
 
 // ─── Default reasons shown to the user ────────────────────────────────────────
@@ -70,19 +70,19 @@ const DEFAULT_REASONS: { icon: ReactNode; text: string }[] = [
     icon: <ShieldAlert className="size-3.5 shrink-0" />,
     text: "A firewall or VPN may be blocking the connection",
   },
-];
+]
 
 // ─── Size tokens ──────────────────────────────────────────────────────────────
 
 const sizeMap: Record<
   FetchErrorSize,
   {
-    wrapper: string;
-    iconBox: string;
-    iconSize: string;
-    title: string;
-    message: string;
-    reasonText: string;
+    wrapper: string
+    iconBox: string
+    iconSize: string
+    title: string
+    message: string
+    reasonText: string
   }
 > = {
   sm: {
@@ -109,7 +109,7 @@ const sizeMap: Record<
     message: "text-base",
     reasonText: "text-sm",
   },
-};
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -123,27 +123,35 @@ export function FetchError({
   className = "",
   icon,
 }: FetchErrorProps) {
-  const s = sizeMap[size];
+  const s = sizeMap[size]
   const displayReasons = reasons
-    ? reasons.map((r) => ({ icon: <AlertTriangle className="size-3.5 shrink-0" />, text: r }))
-    : DEFAULT_REASONS;
+    ? reasons.map((r) => ({
+        icon: <AlertTriangle className="size-3.5 shrink-0" />,
+        text: r,
+      }))
+    : DEFAULT_REASONS
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className={`flex flex-col items-center justify-center text-center w-full mx-auto ${s.wrapper} ${className}`}
+      className={`mx-auto flex w-full flex-col items-center justify-center text-center ${s.wrapper} ${className}`}
     >
       {/* Error icon */}
       <motion.div
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.45, delay: 0.08, type: "spring", stiffness: 200 }}
-        className={`relative flex items-center justify-center rounded-2xl mb-6 ${s.iconBox}`}
+        transition={{
+          duration: 0.45,
+          delay: 0.08,
+          type: "spring",
+          stiffness: 200,
+        }}
+        className={`relative mb-6 flex items-center justify-center rounded-2xl ${s.iconBox}`}
       >
         {/* Pulsing red ring */}
-        <span className="absolute inset-0 rounded-2xl bg-destructive/10 animate-pulse" />
+        <span className="absolute inset-0 animate-pulse rounded-2xl bg-destructive/10" />
         <span className="absolute inset-0 rounded-2xl ring-1 ring-destructive/30" />
         <span className="relative text-destructive">
           {icon ?? <ServerCrash className={s.iconSize} />}
@@ -158,7 +166,9 @@ export function FetchError({
         className="space-y-2"
       >
         <h3 className={`text-foreground ${s.title}`}>{title}</h3>
-        <p className={`text-muted-foreground leading-relaxed ${s.message}`}>{message}</p>
+        <p className={`leading-relaxed text-muted-foreground ${s.message}`}>
+          {message}
+        </p>
       </motion.div>
 
       {/* Possible reasons card */}
@@ -166,9 +176,11 @@ export function FetchError({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.28 }}
-        className="mt-6 w-full rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4 text-left space-y-2.5"
+        className="mt-6 w-full space-y-2.5 rounded-2xl border border-border bg-card/60 p-4 text-left"
       >
-        <p className={`font-semibold text-muted-foreground mb-3 ${s.reasonText}`}>
+        <p
+          className={`mb-3 font-semibold text-muted-foreground ${s.reasonText}`}
+        >
           Possible reasons:
         </p>
         {displayReasons.map((reason, i) => (
@@ -229,5 +241,5 @@ export function FetchError({
         </motion.div>
       )}
     </motion.div>
-  );
+  )
 }
