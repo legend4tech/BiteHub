@@ -59,13 +59,13 @@ export function MenuItemCard({
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-300",
+        "flex transform-gpu flex-col rounded-2xl border bg-card transition-all duration-300",
         "hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-black/5",
         !localAvailable && "opacity-75"
       )}
     >
       {/* ── Image ── */}
-      <div className="group relative h-40 w-full overflow-hidden bg-muted">
+      <div className="group relative h-40 w-full overflow-hidden rounded-t-2xl bg-muted">
         {imageUrl ? (
           <Image
             src={imageUrl}
