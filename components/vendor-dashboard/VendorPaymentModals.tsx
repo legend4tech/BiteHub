@@ -87,7 +87,9 @@ export function VendorPaymentModals({
               variant="hero"
               onClick={handleSetupConfirm}
               disabled={
-                saving || setupConfirmText.toLowerCase() !== "add account"
+                saving ||
+                setupConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
+                  "add account"
               }
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -172,7 +174,8 @@ export function VendorPaymentModals({
               disabled={
                 saving ||
                 !otpValue ||
-                changeConfirmText.toLowerCase() !== "change account"
+                changeConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
+                  "change account"
               }
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

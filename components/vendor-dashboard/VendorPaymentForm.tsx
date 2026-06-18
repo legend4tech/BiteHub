@@ -126,7 +126,11 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
 
   // Final Setup Confirm
   const handleSetupConfirm = async () => {
-    if (setupConfirmText.toLowerCase() !== "add account") return
+    if (
+      setupConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
+      "add account"
+    )
+      return
 
     setSaving(true)
     try {
@@ -174,7 +178,11 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
 
   // Step 2: Verify OTP
   const handleVerifyConfirm = async () => {
-    if (changeConfirmText.toLowerCase() !== "change account" || !otpValue)
+    if (
+      changeConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
+        "change account" ||
+      !otpValue
+    )
       return
 
     setSaving(true)
