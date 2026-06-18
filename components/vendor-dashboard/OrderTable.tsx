@@ -200,7 +200,7 @@ export function OrderTable({
         {orders.map((order) => (
           <div
             key={order.orderId}
-            className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5"
+            className="flex transform-gpu flex-col rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5"
           >
             {/* Header: Order ID & Date */}
             <div className="mb-4 flex items-start justify-between gap-4 border-b border-border/50 pb-4">

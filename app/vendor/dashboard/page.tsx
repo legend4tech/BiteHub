@@ -166,8 +166,12 @@ export default function VendorDashboardPage() {
             <p className="text-sm font-medium text-muted-foreground">
               {greeting},
             </p>
-            <h1 className="mt-0.5 font-heading text-2xl font-bold md:text-3xl">
-              {session?.user?.name || "Vendor"}
+            <h1 className="mt-0.5 flex h-9 items-center font-heading text-2xl font-bold md:text-3xl">
+              {status === "loading" ? (
+                <div className="h-8 w-48 animate-pulse rounded-md bg-muted/60"></div>
+              ) : (
+                session?.user?.name || "Vendor"
+              )}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
               {now.toLocaleDateString("en-US", {
@@ -277,7 +281,7 @@ export default function VendorDashboardPage() {
         )}
 
         {/* Recent orders — capped at 10, full list is at /vendor/orders */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="font-heading text-base font-bold">
