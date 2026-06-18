@@ -11,6 +11,7 @@ import { CampusProvider } from "@/components/providers/CampusProvider"
 import { Suspense } from "react"
 import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
 import { CookieBanner } from "@/components/CookieBanner"
+import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -40,6 +41,9 @@ export const metadata: Metadata = {
   description:
     "Discover campus food vendors near you, browse their menus, and place your order in seconds — all from one app.",
   manifest: "/manifest.json",
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -95,6 +99,7 @@ export default function RootLayout({
                 <MaintenanceGuard>
                   {children}
                   <CookieBanner />
+                  <PWAInstallBanner />
                   <Toaster position="top-right" richColors closeButton expand />
                 </MaintenanceGuard>
               </CampusProvider>

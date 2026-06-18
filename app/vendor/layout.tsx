@@ -56,7 +56,7 @@ function VendorLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Top bar (mobile only) */}
-        <header className="flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-sm md:hidden">
+        <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
           <div className="flex items-center gap-3">
             <MobileSidebarTrigger />
             <span className="font-heading text-base font-bold">

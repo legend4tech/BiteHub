@@ -41,7 +41,10 @@ export async function FeaturedVendors({
           <EmptyState
             title="No featured vendors yet"
             description="We're onboarding campus kitchens — check back soon to discover great food near you."
-            action={{ label: "Browse all vendors", href: "/vendors" }}
+            action={{
+              label: "Browse all vendors",
+              href: `/vendors?school=${school}&campus=${campus}`,
+            }}
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

@@ -37,6 +37,10 @@ async function dbConnect() {
     const opts = {
       bufferCommands: false,
       dbName: MONGODB_DB,
+      maxPoolSize: 5, // Limit connections per serverless instance to prevent exhausting M0 quota
+      minPoolSize: 1,
+      serverSelectionTimeoutMS: 5000, // Fail fast if connections are exhausted
+      socketTimeoutMS: 45000, // Prevent timeouts during heavy aggregations
     }
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {

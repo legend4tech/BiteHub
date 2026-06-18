@@ -1,22 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Cookie, X } from "lucide-react"
 
+const emptySubscribe = () => () => {}
+
 export function CookieBanner() {
-  const [show, setShow] = useState(() => {
-    if (typeof window === "undefined") return false
-    return !localStorage.getItem("cookie_consent")
-  })
+  const show = useSyncExternalStore(
+    emptySubscribe,
+    () => !localStorage.getItem("cookie_consent"),
+    () => false
+  )
+
+  const [isDismissed, setIsDismissed] = useState(false)
 
   const acceptCookies = () => {
     localStorage.setItem("cookie_consent", "true")
-    setShow(false)
+    setIsDismissed(true)
   }
 
-  if (!show) return null
+  if (isDismissed || !show) return null
 
   return (
     <div className="fixed right-4 bottom-4 z-[99] max-w-sm rounded-xl border border-border bg-background p-4 shadow-xl transition-all duration-300 sm:right-6 sm:bottom-6">
@@ -39,7 +44,7 @@ export function CookieBanner() {
           </p>
         </div>
         <button
-          onClick={() => setShow(false)}
+          onClick={() => setIsDismissed(true)}
           className="text-muted-foreground hover:text-foreground"
           aria-label="Close"
         >

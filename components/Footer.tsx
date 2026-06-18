@@ -1,11 +1,17 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Mail, MapPin, Heart } from "lucide-react"
 import { APP_NAME, APP_LOGO_URL, CONTACT_EMAIL } from "@/lib/constants"
+import { useCampus } from "@/components/providers/CampusProvider"
 
 const VENDOR_FORM_URL = "https://forms.gle/KEwY8nthHHfjLL1n6"
 
 export function Footer() {
+  const { schoolId, campusId } = useCampus()
+  const cq = `school=${schoolId}&campus=${campusId}`
+
   return (
     <footer className="relative overflow-hidden border-t border-border bg-card/40">
       {/* Background decoration */}
@@ -16,7 +22,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-7 lg:gap-8">
           {/* Brand section */}
           <div className="space-y-6 lg:col-span-2">
-            <Link href="/" className="group flex items-center gap-2.5">
+            <Link href={`/?${cq}`} className="group flex items-center gap-2.5">
               <Image
                 src={APP_LOGO_URL}
                 alt={APP_NAME}
@@ -46,8 +52,8 @@ export function Footer() {
           <div className="lg:col-span-1">
             <FooterHeading>Product</FooterHeading>
             <ul className="mt-4 space-y-3">
-              <FooterLink href="/vendors">Browse Vendors</FooterLink>
-              <FooterLink href="/menus">Our Menus</FooterLink>
+              <FooterLink href={`/vendors?${cq}`}>Browse Vendors</FooterLink>
+              <FooterLink href={`/menus?${cq}`}>Our Menus</FooterLink>
               <FooterLink href="/#how">How it Works</FooterLink>
               {/* <FooterLink href="/#pricing">Pricing</FooterLink> */}
             </ul>

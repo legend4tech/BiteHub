@@ -28,6 +28,7 @@ export function useVendorStats(options?: { enabled?: boolean }) {
     staleTime: 1000 * 30, // re-use cached data for 30s
     gcTime: 1000 * 60 * 5, // keep in cache for 5 minutes
     enabled: options?.enabled ?? true,
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff up to 10s
   })
 }

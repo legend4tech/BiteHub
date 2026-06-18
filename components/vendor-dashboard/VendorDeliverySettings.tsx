@@ -1,8 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
-import { useVendorDeliverySettings } from "@/hooks/queries/useVendorDeliverySettings"
+import {
+  useVendorDeliverySettings,
+  DeliverySettingsResponse,
+} from "@/hooks/queries/useVendorDeliverySettings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, MapPin, Save, Undo } from "lucide-react"
@@ -17,29 +20,30 @@ export function VendorDeliverySettings() {
   const [localSubLandmarkOverrides, setLocalSubLandmarkOverrides] = useState<
     Record<string, number | "">
   >({})
+  const [prevData, setPrevData] = useState<DeliverySettingsResponse | null>(
+    null
+  )
 
   const { data, isPending, isError, refetch, saveMutation } =
     useVendorDeliverySettings()
 
-  useEffect(() => {
-    if (data) {
-      const initialLm: Record<string, number> = {}
-      data.overrides.landmarks.forEach(
-        (o: { landmarkId: string; fee: number }) =>
-          (initialLm[o.landmarkId] = o.fee)
-      )
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLocalLandmarkOverrides(initialLm)
+  if (data && data !== prevData) {
+    setPrevData(data)
+    const initialLm: Record<string, number> = {}
+    data.overrides.landmarks.forEach(
+      (o: { landmarkId: string; fee: number }) =>
+        (initialLm[o.landmarkId] = o.fee)
+    )
+    setLocalLandmarkOverrides(initialLm)
 
-      const initialSub: Record<string, number> = {}
-      data.overrides.subLandmarks.forEach(
-        (o: { subLandmarkId: string; fee: number }) =>
-          (initialSub[o.subLandmarkId] = o.fee)
-      )
+    const initialSub: Record<string, number> = {}
+    data.overrides.subLandmarks.forEach(
+      (o: { subLandmarkId: string; fee: number }) =>
+        (initialSub[o.subLandmarkId] = o.fee)
+    )
 
-      setLocalSubLandmarkOverrides(initialSub)
-    }
-  }, [data])
+    setLocalSubLandmarkOverrides(initialSub)
+  }
 
   const handleSave = () => {
     // Clean up empty strings before sending

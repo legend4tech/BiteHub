@@ -32,14 +32,16 @@ export function CampusSelector() {
   // Local state for the dropdown form
   const [localSchool, setLocalSchool] = useState(schoolId)
   const [localCampus, setLocalCampus] = useState(campusId)
+  const [prevGlobalSchoolId, setPrevGlobalSchoolId] = useState(schoolId)
+  const [prevGlobalCampusId, setPrevGlobalCampusId] = useState(campusId)
 
   // Sync local state when global state loads
-  useEffect(() => {
-    setTimeout(() => {
-      setLocalSchool(schoolId)
-      setLocalCampus(campusId)
-    }, 0)
-  }, [schoolId, campusId])
+  if (schoolId !== prevGlobalSchoolId || campusId !== prevGlobalCampusId) {
+    setPrevGlobalSchoolId(schoolId)
+    setPrevGlobalCampusId(campusId)
+    setLocalSchool(schoolId)
+    setLocalCampus(campusId)
+  }
 
   // Click outside to close — but NOT when a Radix Select portal is open
   // (Select renders outside the DOM tree so mousedown on it looks like "outside")

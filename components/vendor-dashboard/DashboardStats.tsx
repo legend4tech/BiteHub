@@ -78,7 +78,7 @@ export function DashboardStats(props: DashboardStatsProps) {
   const renderCard = (s: (typeof statCards)[0]) => (
     <div
       key={s.label}
-      className={`group relative flex flex-col gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 ${
+      className={`group relative flex transform-gpu flex-col gap-4 overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 ${
         s.accent
           ? "border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-background"
           : s.alert

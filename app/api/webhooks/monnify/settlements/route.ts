@@ -56,7 +56,11 @@ export async function POST(request: Request) {
       JSON.stringify(eventData, null, 2)
     )
 
-    if (eventType === "SETTLEMENT" || eventType === "SETTLEMENT_COMPLETION") {
+    if (
+      eventType === "SETTLEMENT" ||
+      eventType === "SETTLEMENT_COMPLETION" ||
+      eventType === "SUCCESSFUL_SETTLEMENT"
+    ) {
       // Per Monnify docs: amount is a string e.g. "1199.00"
       const amount = Number(
         eventData?.amount ||

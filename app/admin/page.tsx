@@ -19,6 +19,8 @@ import { AdminSettings } from "@/components/admin/AdminSettings"
 import { AdminDeliveryZones } from "@/components/admin/AdminDeliveryZones"
 import { AddLoginModal, AddVendorModal } from "@/components/admin/AdminModals"
 import type { AdminStats, AdminVendor } from "@/components/admin/types"
+import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
+import { FetchError } from "@/components/shared/FetchError"
 
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("overview")
@@ -27,7 +29,12 @@ export default function AdminPage() {
   const [showAddVendor, setShowAddVendor] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: stats, isLoading: loadingStats } = useQuery<AdminStats>({
+  const {
+    data: stats,
+    isLoading: loadingStats,
+    isError: isStatsError,
+    refetch: refetchStats,
+  } = useQuery<AdminStats>({
     queryKey: ["admin-stats"],
     queryFn: async () => (await apiClient.get("/admin/stats")).data,
   })
@@ -35,13 +42,19 @@ export default function AdminPage() {
   const {
     data: vendorsData,
     isLoading: loadingVendors,
-    refetch: fetchVendors,
+    isError: isVendorsError,
+    refetch: refetchVendors,
   } = useQuery<AdminVendor[]>({
     queryKey: ["admin-vendors"],
     queryFn: async () => (await apiClient.get("/admin/vendors")).data,
   })
 
-  const { data: feedbacks, isLoading: loadingFeedback } = useQuery<Feedback[]>({
+  const {
+    data: feedbacks,
+    isLoading: loadingFeedback,
+    isError: isFeedbackError,
+    refetch: refetchFeedback,
+  } = useQuery<Feedback[]>({
     queryKey: ["admin-feedback"],
     queryFn: async () => (await apiClient.get("/admin/feedback")).data,
   })
@@ -110,35 +123,55 @@ export default function AdminPage() {
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-6xl px-6 py-8">
-            {activeSection === "overview" && (
-              <AdminOverview
-                stats={stats}
-                loadingStats={loadingStats}
-                noAccountVendors={noAccountVendors}
-                onGoToVendors={() => setActiveSection("vendors")}
-              />
-            )}
-            {activeSection === "vendors" && (
-              <AdminVendors
-                vendors={vendors}
-                optimisticVendors={optimisticVendors}
-                loadingVendors={loadingVendors}
-                noAccountVendors={noAccountVendors}
-                togglingId={togglingId}
-                onToggleActive={toggleVendorActive}
-                onAddLogin={setAddLoginFor}
-              />
-            )}
-            {activeSection === "feedback" && (
-              <AdminFeedback
-                feedbacks={feedbacks}
-                loadingFeedback={loadingFeedback}
-              />
-            )}
-            {activeSection === "delivery-zones" && <AdminDeliveryZones />}
-            {activeSection === "settings" && <AdminSettings />}
-          </div>
+          <SectionErrorBoundary title="Couldn't load admin dashboard">
+            <div className="mx-auto max-w-6xl px-6 py-8">
+              {activeSection === "overview" &&
+                (isStatsError ? (
+                  <FetchError
+                    title="Couldn't load overview stats"
+                    onRetry={() => refetchStats()}
+                  />
+                ) : (
+                  <AdminOverview
+                    stats={stats}
+                    loadingStats={loadingStats}
+                    noAccountVendors={noAccountVendors}
+                    onGoToVendors={() => setActiveSection("vendors")}
+                  />
+                ))}
+              {activeSection === "vendors" &&
+                (isVendorsError ? (
+                  <FetchError
+                    title="Couldn't load vendors"
+                    onRetry={() => refetchVendors()}
+                  />
+                ) : (
+                  <AdminVendors
+                    vendors={vendors}
+                    optimisticVendors={optimisticVendors}
+                    loadingVendors={loadingVendors}
+                    noAccountVendors={noAccountVendors}
+                    togglingId={togglingId}
+                    onToggleActive={toggleVendorActive}
+                    onAddLogin={setAddLoginFor}
+                  />
+                ))}
+              {activeSection === "feedback" &&
+                (isFeedbackError ? (
+                  <FetchError
+                    title="Couldn't load feedback"
+                    onRetry={() => refetchFeedback()}
+                  />
+                ) : (
+                  <AdminFeedback
+                    feedbacks={feedbacks}
+                    loadingFeedback={loadingFeedback}
+                  />
+                ))}
+              {activeSection === "delivery-zones" && <AdminDeliveryZones />}
+              {activeSection === "settings" && <AdminSettings />}
+            </div>
+          </SectionErrorBoundary>
         </main>
       </div>
 
@@ -146,13 +179,13 @@ export default function AdminPage() {
         <AddLoginModal
           vendor={addLoginFor}
           onClose={() => setAddLoginFor(null)}
-          onSuccess={fetchVendors}
+          onSuccess={refetchVendors}
         />
       )}
       {showAddVendor && (
         <AddVendorModal
           onClose={() => setShowAddVendor(false)}
-          onSuccess={fetchVendors}
+          onSuccess={refetchVendors}
         />
       )}
     </div>
