@@ -34,6 +34,7 @@ export interface IOrder extends Document {
   paymentMethod: "monnify"
   paymentStatus: "pending" | "paid" | "failed"
   monnifyReference?: string
+  isDisbursed?: boolean
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -91,6 +92,7 @@ const OrderSchema = new Schema<IOrder>(
       default: "pending",
     },
     monnifyReference: { type: String },
+    isDisbursed: { type: Boolean, default: false },
   },
   {
     timestamps: true,

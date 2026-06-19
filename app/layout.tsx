@@ -12,6 +12,7 @@ import { Suspense } from "react"
 import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
 import { CookieBanner } from "@/components/CookieBanner"
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner"
+import { TawkToChat } from "@/components/shared/TawkToChat"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -100,6 +101,7 @@ export default function RootLayout({
                   {children}
                   <CookieBanner />
                   <PWAInstallBanner />
+                  <TawkToChat />
                   <Toaster position="top-right" richColors closeButton expand />
                 </MaintenanceGuard>
               </CampusProvider>
