@@ -2,11 +2,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Plus, Minus, ExternalLink, UtensilsCrossed } from "lucide-react"
+import { Plus, Minus, ExternalLink, UtensilsCrossed, Clock } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/lib/types"
 import { useState } from "react"
-import { formatPrice, formatTime } from "@/lib/format"
+import {
+  formatPrice,
+  formatTime,
+  isPreorderPrepTime,
+  formatPrepTime,
+} from "@/lib/format"
+import { toast } from "sonner"
 
 interface MenuItemCardProps {
   item: MenuItem
@@ -37,7 +43,10 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
       onDifferentVendor?.(item)
       return
     }
-    addItem(item)
+    const result = addItem(item)
+    if (result && !result.success) {
+      toast.error(result.error)
+    }
   }
 
   return (
@@ -121,6 +130,26 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           </h3>
         </Link>
 
+        {(item.prepTimeValue && item.prepTimeUnit) || item.vendorPrepTime ? (
+          <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+            <Clock className="size-3" />
+            <span className="capitalize">
+              {item.prepTimeValue && item.prepTimeUnit ? (
+                <>
+                  {isPreorderPrepTime(item.prepTimeValue, item.prepTimeUnit) ? (
+                    <span className="font-bold text-primary">Pre-order: </span>
+                  ) : (
+                    "Prep time: "
+                  )}
+                  {formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}
+                </>
+              ) : (
+                `Prep time: ${item.vendorPrepTime}`
+              )}
+            </span>
+          </div>
+        ) : null}
+
         {/* ── Price + Cart controls ──────────────────────── */}
         {/*
          * mt-auto pins this row to the bottom of every card.
@@ -155,7 +184,12 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
                 {qty}
               </span>
               <button
-                onClick={() => addItem(item)}
+                onClick={() => {
+                  const result = addItem(item)
+                  if (result && !result.success) {
+                    toast.error(result.error)
+                  }
+                }}
                 aria-label="Increase quantity"
                 disabled={!isCurrentlyAvailable}
                 className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary text-white transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"

@@ -46,13 +46,14 @@ export async function getMenus(options: GetMenusOptions = {}) {
   if (campus) vendorFilter.campus = campus
 
   const validVendors = await Vendor.find(vendorFilter)
-    .select("_id name slug whatsappNumber")
+    .select("_id name slug whatsappNumber prepTime")
     .lean<
       Array<{
         _id: unknown
         name: string
         slug: string
         whatsappNumber?: string
+        prepTime?: string
       }>
     >()
   query.vendorId = { $in: validVendors.map((v) => v._id) }
@@ -78,10 +79,17 @@ export async function getMenus(options: GetMenusOptions = {}) {
   ])
 
   // Build vendor maps for name/slug/whatsapp enrichment using the already fetched validVendors
-  const vendorMap = new Map<string, { name: string; slug: string }>()
+  const vendorMap = new Map<
+    string,
+    { name: string; slug: string; prepTime: string }
+  >()
   const vendorWhatsappMap = new Map<string, string>()
   validVendors.forEach((v) => {
-    vendorMap.set(String(v._id), { name: v.name, slug: v.slug })
+    vendorMap.set(String(v._id), {
+      name: v.name,
+      slug: v.slug,
+      prepTime: v.prepTime || "",
+    })
     vendorWhatsappMap.set(String(v._id), v.whatsappNumber || "")
   })
 
@@ -97,6 +105,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
         vendorSlug: vendorData?.slug || "",
         vendorWhatsappNumber:
           vendorWhatsappMap.get(item.vendorId.toString()) || "",
+        vendorPrepTime: vendorData?.prepTime || "",
         tag: getItemTag(item.price),
       }
     })
@@ -166,6 +175,7 @@ export async function getMenuItemById(id: string) {
     vendorName: vendor.name,
     vendorSlug: vendor.slug,
     vendorWhatsappNumber: vendor.whatsappNumber || "",
+    vendorPrepTime: vendor.prepTime || "",
     tag: getItemTag(itemDoc.price),
   }
 
@@ -188,6 +198,7 @@ export async function getMenuItemById(id: string) {
         vendorName: vendor.name,
         vendorSlug: vendor.slug,
         vendorWhatsappNumber: vendor.whatsappNumber || "",
+        vendorPrepTime: vendor.prepTime || "",
         tag: getItemTag(doc.price),
       }
     })

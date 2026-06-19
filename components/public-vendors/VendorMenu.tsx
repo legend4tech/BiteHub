@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useTransition } from "react"
+import { useState, useEffect, useCallback, useTransition } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { MenuItemCard } from "@/components/menus/MenuItemCard"
 import { CartSummary } from "@/components/cart/CartSummary"
 import { OrderForm } from "@/components/cart/OrderForm"
@@ -13,6 +12,8 @@ import { FadeIn } from "@/components/FadeIn"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import Image from "next/image"
+import { Search } from "lucide-react"
+import { useDebounce } from "@/hooks/useDebounce"
 
 interface VendorMenuProps {
   // All items already filtered by the server (category/q applied on the backend)
@@ -32,8 +33,45 @@ export function VendorMenu({
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
   const { clearAndAdd } = useCart()
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+
+  const urlSearch = searchParams.get("q") || ""
+  const [searchVal, setSearchVal] = useState(urlSearch)
+  const debouncedSearch = useDebounce(searchVal, 350)
+
+  useEffect(() => {
+    setTimeout(() => setSearchVal(urlSearch), 0)
+  }, [urlSearch])
+
+  const applyFilters = useCallback(
+    (cat: string, search: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (search.trim()) {
+        params.set("q", search.trim())
+      } else {
+        params.delete("q")
+      }
+
+      if (cat && cat !== "all") {
+        params.set("category", cat)
+      } else {
+        params.delete("category")
+      }
+
+      startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      })
+    },
+    [searchParams, pathname, router]
+  )
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      applyFilters(activeCategory, debouncedSearch)
+    }
+  }, [debouncedSearch, activeCategory, urlSearch, applyFilters])
 
   // Build tabs from categories this vendor actually has (not from the filtered subset).
   // This ensures tabs don't disappear when you select a different category.
@@ -54,19 +92,30 @@ export function VendorMenu({
 
   const handleCategoryClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
+    catValue: string
   ) => {
     e.preventDefault()
-    startTransition(() => {
-      router.push(href, { scroll: false })
-    })
+    applyFilters(catValue, searchVal)
   }
 
   return (
-    <>
+    <div className="space-y-6">
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchVal}
+          disabled={isPending}
+          onChange={(e) => setSearchVal(e.target.value)}
+          placeholder="Search menu items…"
+          className="w-full rounded-2xl border border-border bg-card py-3.5 pr-4 pl-10 text-base transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30 focus:outline-none disabled:opacity-70"
+        />
+      </div>
+
       {/* Category tabs */}
       {availableCategories.length > 1 && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           {availableCategories.map((cat) => {
             const params = new URLSearchParams(searchParams)
             if (cat.value === "all") {
@@ -80,7 +129,7 @@ export function VendorMenu({
               <a
                 key={cat.value}
                 href={href}
-                onClick={(e) => handleCategoryClick(e, href)}
+                onClick={(e) => handleCategoryClick(e, cat.value)}
                 className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
                   activeCategory === cat.value
                     ? "border-primary bg-primary text-white shadow-[0_4px_12px_-2px_rgba(255,107,0,0.4)]"
@@ -175,6 +224,6 @@ export function VendorMenu({
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

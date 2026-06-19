@@ -48,6 +48,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
           : initial?.image,
       availableFrom: initial?.availableFrom ?? "",
       availableTo: initial?.availableTo ?? "",
+      prepTimeValue: initial?.prepTimeValue
+        ? initial.prepTimeValue.toString()
+        : "",
+      prepTimeUnit: initial?.prepTimeUnit ?? "minutes",
     },
   })
 
@@ -95,6 +99,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         image: imageToSave ?? undefined,
         availableFrom: values.availableFrom || null,
         availableTo: values.availableTo || null,
+        prepTimeValue: values.prepTimeValue
+          ? Number(values.prepTimeValue)
+          : null,
+        prepTimeUnit: values.prepTimeUnit || null,
         tag: null,
       })
     } catch (error: unknown) {
@@ -251,12 +259,62 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <Controller
+          name="prepTimeValue"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Prep Time (Optional)</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                type="number"
+                min="1"
+                placeholder="e.g. 45"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="prepTimeUnit"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Unit</FieldLabel>
+              <Select
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  className="h-11 w-full rounded-xl"
+                >
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minutes">Minutes</SelectItem>
+                  <SelectItem value="hours">Hours</SelectItem>
+                  <SelectItem value="days">Days</SelectItem>
+                </SelectContent>
+              </Select>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+      </div>
+
       <Controller
         name="image"
         control={form.control}
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Image</FieldLabel>
+            <FieldLabel htmlFor={field.name}>Image *</FieldLabel>
             <ImageUpload
               value={field.value}
               onChange={field.onChange}

@@ -11,6 +11,11 @@ import { ORDER_STATUS, generateOrderId } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
 import { sendOrderInitiatedEmail } from "@/lib/mail"
+import {
+  getPrepTimeInHours,
+  isPreorderPrepTime,
+  formatPrepTime,
+} from "@/lib/format"
 import { z } from "zod"
 
 const orderItemSchema = z.object({
@@ -195,6 +200,9 @@ export async function POST(request: Request) {
     const currentMinStr = lagosDate.getMinutes().toString().padStart(2, "0")
     const currentTimeStr = `${currentHourStr}:${currentMinStr}`
 
+    let maxHours = -1
+    let maxItemPrepTime = ""
+
     for (const item of items) {
       const dbItem = dbMenuItemsMap.get(item.menuItemId)
       if (!dbItem) {
@@ -230,6 +238,24 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         )
+      }
+
+      if (dbItem.prepTimeValue && dbItem.prepTimeUnit) {
+        const hours = getPrepTimeInHours(
+          dbItem.prepTimeValue,
+          dbItem.prepTimeUnit
+        )
+
+        if (hours > maxHours) {
+          maxHours = hours
+          const isPreorder = isPreorderPrepTime(
+            dbItem.prepTimeValue,
+            dbItem.prepTimeUnit
+          )
+          maxItemPrepTime = isPreorder
+            ? `Pre-order: ${formatPrepTime(dbItem.prepTimeValue, dbItem.prepTimeUnit)}`
+            : `${formatPrepTime(dbItem.prepTimeValue, dbItem.prepTimeUnit)}`
+        }
       }
 
       calculatedTotal += dbItem.price * item.quantity
@@ -318,7 +344,7 @@ export async function POST(request: Request) {
       vendorId,
       vendorName: finalVendorName,
       vendorWhatsappNumber: finalWhatsapp,
-      vendorPrepTime: vendor.prepTime || "",
+      vendorPrepTime: maxHours !== -1 ? maxItemPrepTime : vendor.prepTime || "",
       items,
       customerName,
       customerEmail,

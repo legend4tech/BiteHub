@@ -64,9 +64,9 @@ export const ORDER_STATUS_CONFIG: Record<
     description: "Your food is being prepared",
   },
   [ORDER_STATUS.READY]: {
-    label: "Ready for pickup",
+    label: "Out for delivery",
     className: "border-status-ready/20 bg-status-ready/10 text-status-ready",
-    description: "Your order is ready!",
+    description: "Your order is on the way!",
   },
   [ORDER_STATUS.COMPLETED]: {
     label: "Completed",

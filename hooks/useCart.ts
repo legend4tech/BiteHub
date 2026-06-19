@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, startTransition } from "react"
 import type { CartItem, MenuItem } from "@/lib/types"
 import { LS_CART } from "@/lib/constants"
+import { isPreorderPrepTime, getPrepTimeInHours } from "@/lib/format"
 
 // Added vendorWhatsappNumber to CartState so OrderForm can pass it to the API
 // without needing to look up the vendor separately.
@@ -81,9 +82,37 @@ export function useCart() {
   )
 
   const addItem = useCallback(
-    (menuItem: MenuItem, quantity = 1) => {
+    (
+      menuItem: MenuItem,
+      quantity = 1
+    ): { success: boolean; error?: string } => {
       const current = readCart()
-      if (current.vendorId && current.vendorId !== menuItem.vendorId) return
+      if (current.vendorId && current.vendorId !== menuItem.vendorId) {
+        return { success: false, error: "Different vendor" }
+      }
+
+      // Pre-order constraint
+      const isIncomingPreorder = isPreorderPrepTime(
+        menuItem.prepTimeValue,
+        menuItem.prepTimeUnit
+      )
+
+      if (current.items.length > 0) {
+        const existingItem = current.items[0].menuItem
+        const existingIsPreorder = isPreorderPrepTime(
+          existingItem.prepTimeValue,
+          existingItem.prepTimeUnit
+        )
+
+        if (isIncomingPreorder !== existingIsPreorder) {
+          return {
+            success: false,
+            error: isIncomingPreorder
+              ? "Cannot mix pre-order items with instant delivery items. Please complete your current order first."
+              : "Cannot mix instant items with your current pre-order cart. Please complete your current order first.",
+          }
+        }
+      }
 
       const existing = current.items.find(
         (ci) => ci.menuItem.id === menuItem.id
@@ -107,6 +136,8 @@ export function useCart() {
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
       })
+
+      return { success: true }
     },
     [persist]
   )
@@ -190,6 +221,29 @@ export function useCart() {
   )
   const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0)
 
+  // Calculate dynamic prep time
+  let maxHours = -1
+  let maxPrepItem: MenuItem | null = null
+  let isPreorderCart = false
+
+  for (const ci of cart.items) {
+    const item = ci.menuItem
+    if (item.prepTimeValue && item.prepTimeUnit) {
+      const hours = getPrepTimeInHours(item.prepTimeValue, item.prepTimeUnit)
+      if (hours > maxHours) {
+        maxHours = hours
+        maxPrepItem = item
+      }
+    }
+  }
+
+  if (maxPrepItem) {
+    isPreorderCart = isPreorderPrepTime(
+      maxPrepItem.prepTimeValue,
+      maxPrepItem.prepTimeUnit
+    )
+  }
+
   return {
     cart,
     addItem,
@@ -202,5 +256,7 @@ export function useCart() {
     total,
     count,
     isEmpty: cart.items.length === 0,
+    maxPrepItem,
+    isPreorderCart,
   }
 }

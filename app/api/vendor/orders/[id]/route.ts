@@ -3,7 +3,11 @@ import { Types } from "mongoose"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
-import { VALID_ORDER_STATUSES } from "@/lib/constants"
+import {
+  VALID_ORDER_STATUSES,
+  ORDER_STATUS_CONFIG,
+  OrderStatusType,
+} from "@/lib/constants"
 import { z } from "zod"
 
 const statusUpdateSchema = z.object({
@@ -51,8 +55,26 @@ export async function PATCH(
     }
 
     const wasCancelled = order.status === "cancelled"
+    const oldStatus = order.status
     order.status = status
     await order.save()
+
+    // Send customer email if email exists and status changed
+    if (order.customerEmail && status !== oldStatus) {
+      const { sendCustomerOrderStatusEmail } = await import("@/lib/mail")
+      const statusConfig = ORDER_STATUS_CONFIG[status as OrderStatusType]
+      if (statusConfig) {
+        // Fire and forget
+        void sendCustomerOrderStatusEmail(
+          order.customerEmail,
+          order.customerName,
+          order.orderId,
+          order.vendorName,
+          statusConfig.label,
+          statusConfig.description
+        )
+      }
+    }
 
     if (status === "cancelled" && !wasCancelled) {
       const { default: AdminUser } = await import("@/models/AdminUser")

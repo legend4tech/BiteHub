@@ -89,26 +89,43 @@ export function OrdersTableSkeleton({ count }: { count: number }) {
 
 export function MenuManagementSkeleton({ count }: { count: number }) {
   return (
-    <div className="space-y-3">
-      <div className="mb-4 flex items-center justify-between">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-9 w-28 rounded-lg" />
+    <div className="space-y-5">
+      {/* Stats strip */}
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-[76px] rounded-2xl" />
+        ))}
       </div>
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 rounded-xl border border-border p-4"
-        >
-          <Skeleton className="h-12 w-12 rounded-xl" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-5 w-16" />
-          <Skeleton className="h-6 w-10 rounded-full" />
-          <Skeleton className="h-8 w-8 rounded-lg" />
+
+      {/* Search Input and Category Filters */}
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full rounded-xl" />
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-20 rounded-full" />
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Content Rendering Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: count }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col rounded-2xl border border-border bg-card"
+          >
+            <Skeleton className="h-40 w-full rounded-t-2xl" />
+            <div className="space-y-3 p-3.5 pt-3 pb-4">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <div className="mt-auto border-t border-border/50 px-3.5 pt-2 pb-3">
+              <Skeleton className="h-9 w-full rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

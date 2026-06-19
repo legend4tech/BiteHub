@@ -7,7 +7,12 @@ import type { MenuItem } from "@/lib/types"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import { formatPrice, formatTime } from "@/lib/format"
+import {
+  formatPrice,
+  formatTime,
+  isPreorderPrepTime,
+  formatPrepTime,
+} from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
 
@@ -140,6 +145,18 @@ export function MenuItemCard({
                   )
                 </span>
               )}
+            </span>
+          </div>
+        )}
+
+        {item.prepTimeValue && item.prepTimeUnit && (
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            <Clock className="size-3 shrink-0" />
+            <span className="capitalize">
+              {isPreorderPrepTime(item.prepTimeValue, item.prepTimeUnit)
+                ? "Pre-order: "
+                : "Prep time: "}
+              {formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}
             </span>
           </div>
         )}

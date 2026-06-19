@@ -82,6 +82,8 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
     isAvailable: doc.isAvailable,
     availableFrom: doc.availableFrom ?? null,
     availableTo: doc.availableTo ?? null,
+    prepTimeValue: doc.prepTimeValue ?? null,
+    prepTimeUnit: doc.prepTimeUnit ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     // vendorName, vendorWhatsappNumber, tag — merged at route level

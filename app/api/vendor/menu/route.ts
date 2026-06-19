@@ -71,18 +71,15 @@ export async function POST(request: Request) {
       isAvailable,
       availableFrom,
       availableTo,
+      prepTimeValue,
+      prepTimeUnit,
     } = body
 
-    if (!name || !price || !category) {
+    if (!name || !price || !category || !image) {
       return NextResponse.json(
-        { error: "Name, price, and category are required" },
+        { error: "Name, price, category, and image are required" },
         { status: 400 }
       )
-    }
-
-    const imageObj = image || {
-      url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400",
-      publicId: "default_menu_image",
     }
 
     const newItem = await MenuItem.create({
@@ -91,10 +88,12 @@ export async function POST(request: Request) {
       description: description?.trim(),
       price: Number(price),
       category: category.trim(),
-      image: imageObj,
+      image,
       isAvailable: isAvailable ?? true,
       availableFrom,
       availableTo,
+      prepTimeValue: prepTimeValue ? Number(prepTimeValue) : null,
+      prepTimeUnit: prepTimeUnit || null,
     })
 
     return NextResponse.json(serializeMenuItem(newItem.toObject()), {

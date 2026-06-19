@@ -60,6 +60,8 @@ export interface MenuItem {
   isAvailable: boolean
   availableFrom: string | null
   availableTo: string | null
+  prepTimeValue: number | null
+  prepTimeUnit: "minutes" | "hours" | "days" | null
   createdAt: string
   updatedAt: string
 

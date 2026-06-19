@@ -280,30 +280,17 @@ export default async function VendorDetailPage({
             </div>
           }
         >
-          {menuItems.length > 0 ? (
+          {allCategories && allCategories.length > 0 ? (
             <VendorMenu
               initialItems={menuItems}
               activeCategory={category}
-              allCategories={allCategories ?? []}
+              allCategories={allCategories}
             />
           ) : (
             <EmptyState
-              title={
-                category === "all"
-                  ? "No menu items found"
-                  : "No items in this category"
-              }
-              description={
-                category === "all"
-                  ? "This vendor hasn't added any items to their menu yet."
-                  : "Try a different category or search term."
-              }
+              title="No menu items found"
+              description="This vendor hasn't added any items to their menu yet."
               className="rounded-3xl border border-border bg-card py-20"
-              action={
-                category !== "all"
-                  ? { label: "Clear filter", href: `/vendors/${vendor.slug}` }
-                  : undefined
-              }
             />
           )}
         </Suspense>

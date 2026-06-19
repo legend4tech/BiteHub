@@ -13,6 +13,8 @@ export interface IMenuItem extends Document {
   isAvailable: boolean
   availableFrom?: string
   availableTo?: string
+  prepTimeValue?: number
+  prepTimeUnit?: "minutes" | "hours" | "days"
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -33,6 +35,8 @@ const MenuItemSchema: Schema = new Schema(
     isAvailable: { type: Boolean, default: true },
     availableFrom: { type: String },
     availableTo: { type: String },
+    prepTimeValue: { type: Number },
+    prepTimeUnit: { type: String, enum: ["minutes", "hours", "days"] },
   },
   {
     timestamps: true,

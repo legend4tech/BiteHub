@@ -147,13 +147,18 @@ export async function POST(request: Request) {
 
     // Hash password and create login account
     const passwordHash = await bcrypt.hash(password, 12)
+    const vendorEmail = email.toLowerCase().trim()
     await VendorUserModel.create({
       vendorId: vendor._id,
-      email: email.toLowerCase().trim(),
+      email: vendorEmail,
       password: passwordHash,
       role: "vendor",
       isActive: true,
     })
+
+    // Send welcome email in the background
+    const { sendVendorWelcomeEmail } = await import("@/lib/mail")
+    void sendVendorWelcomeEmail(vendorEmail, vendor.name, password)
 
     return NextResponse.json(
       {

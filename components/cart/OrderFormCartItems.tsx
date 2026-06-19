@@ -3,13 +3,21 @@
 import { Minus, Plus, X, Clock } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { useCart } from "@/hooks/useCart"
+import { formatPrepTime } from "@/lib/format"
 
 interface OrderFormCartItemsProps {
   loading: boolean
 }
 
 export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
-  const { cart, updateQuantity, removeItem, total } = useCart()
+  const {
+    cart,
+    updateQuantity,
+    removeItem,
+    total,
+    maxPrepItem,
+    isPreorderCart,
+  } = useCart()
 
   return (
     <div className="space-y-2">
@@ -57,14 +65,47 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
         </div>
       ))}
 
-      {cart.vendorPrepTime && (
+      {isPreorderCart && maxPrepItem ? (
+        <div className="flex flex-col gap-1 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+          <div className="flex items-center gap-2 font-bold">
+            <Clock className="size-4" />
+            <span className="capitalize">
+              Pre-order:{" "}
+              {formatPrepTime(
+                maxPrepItem.prepTimeValue,
+                maxPrepItem.prepTimeUnit
+              )}
+            </span>
+          </div>
+          <p className="text-xs font-medium text-primary/80">
+            Your order contains pre-order items. The estimated readiness time
+            for this entire order is{" "}
+            {formatPrepTime(
+              maxPrepItem.prepTimeValue,
+              maxPrepItem.prepTimeUnit
+            )}
+            .
+          </p>
+        </div>
+      ) : maxPrepItem ? (
+        <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
+          <Clock className="size-4 animate-pulse" />
+          <span className="font-medium">
+            Estimated prep time:{" "}
+            {formatPrepTime(
+              maxPrepItem.prepTimeValue,
+              maxPrepItem.prepTimeUnit
+            )}
+          </span>
+        </div>
+      ) : cart.vendorPrepTime ? (
         <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
           <Clock className="size-4 animate-pulse" />
           <span className="font-medium">
             Estimated prep time: {cart.vendorPrepTime}
           </span>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

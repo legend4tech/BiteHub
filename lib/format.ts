@@ -65,3 +65,46 @@ export function formatTime(date: Date | string): string {
     hour12: true,
   })
 }
+
+export const PREORDER_MIN_HOURS = 2
+
+export function getPrepTimeInHours(value: number, unit: string): number {
+  if (unit === "days") return value * 24
+  if (unit === "hours") return value
+  return value / 60
+}
+
+export function isPreorderPrepTime(
+  value?: number | null,
+  unit?: string | null
+): boolean {
+  if (!value || !unit) return false
+  return getPrepTimeInHours(value, unit) >= PREORDER_MIN_HOURS
+}
+
+export function formatPrepTime(
+  value?: number | null,
+  unit?: string | null
+): string {
+  if (!value || !unit) return ""
+
+  const totalMinutes =
+    unit === "days" ? value * 24 * 60 : unit === "hours" ? value * 60 : value
+
+  if (totalMinutes < 60) {
+    return `${Math.round(totalMinutes)} mins`
+  }
+
+  if (totalMinutes < 24 * 60) {
+    const hours = Math.floor(totalMinutes / 60)
+    const mins = Math.round(totalMinutes % 60)
+    if (mins === 0) return `${hours} hour${hours > 1 ? "s" : ""}`
+    return `${hours} hr${hours > 1 ? "s" : ""} ${mins} min${mins > 1 ? "s" : ""}`
+  }
+
+  const days = Math.floor(totalMinutes / (24 * 60))
+  const remainingHours = Math.floor((totalMinutes % (24 * 60)) / 60)
+
+  if (remainingHours === 0) return `${days} day${days > 1 ? "s" : ""}`
+  return `${days} day${days > 1 ? "s" : ""} ${remainingHours} hr${remainingHours > 1 ? "s" : ""}`
+}

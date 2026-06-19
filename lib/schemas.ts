@@ -160,9 +160,11 @@ export const menuItemFormSchema = z
       "food",
     ]),
     isAvailable: z.boolean(),
-    image: z.any().nullable().optional(),
+    image: z.any().refine((val) => val != null, "An image is required."),
     availableFrom: z.string().optional(),
     availableTo: z.string().optional(),
+    prepTimeValue: z.string().optional(),
+    prepTimeUnit: z.enum(["minutes", "hours", "days"]).optional(),
   })
   .refine(
     (data) => {

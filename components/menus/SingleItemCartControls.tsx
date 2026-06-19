@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Plus, Minus, ShoppingBag } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/lib/types"
@@ -19,7 +20,10 @@ export function SingleItemCartControls({ item }: { item: MenuItem }) {
       setConflictItem(item)
       return
     }
-    addItem(item)
+    const result = addItem(item)
+    if (result && !result.success) {
+      toast.error(result.error)
+    }
   }
 
   const handleClearAndAdd = () => {
@@ -52,7 +56,12 @@ export function SingleItemCartControls({ item }: { item: MenuItem }) {
             {qty}
           </span>
           <button
-            onClick={() => addItem(item)}
+            onClick={() => {
+              const result = addItem(item)
+              if (result && !result.success) {
+                toast.error(result.error)
+              }
+            }}
             className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white transition-all hover:bg-primary/90 active:scale-95"
           >
             <Plus className="size-5" />
