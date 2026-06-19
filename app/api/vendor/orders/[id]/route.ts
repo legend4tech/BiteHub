@@ -44,14 +44,34 @@ export async function PATCH(
 
     const { status } = parsedBody.data
 
-    const order = await Order.findOneAndUpdate(
-      { orderId: params.id, vendorId },
-      { $set: { status } },
-      { new: true }
-    )
+    const order = await Order.findOne({ orderId: params.id, vendorId })
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    const wasCancelled = order.status === "cancelled"
+    order.status = status
+    await order.save()
+
+    if (status === "cancelled" && !wasCancelled) {
+      const { default: AdminUser } = await import("@/models/AdminUser")
+      const { sendAdminOrderCancelledEmail } = await import("@/lib/mail")
+
+      const admins = await AdminUser.find({ isActive: true })
+        .select("email")
+        .lean()
+      const adminEmails = admins.map((a: { email: string }) => a.email)
+
+      if (adminEmails.length > 0) {
+        // Fire and forget
+        void sendAdminOrderCancelledEmail(
+          adminEmails,
+          order.orderId,
+          order.vendorName,
+          order.monnifyReference || ""
+        )
+      }
     }
 
     return NextResponse.json({ success: true, status: order.status })

@@ -116,7 +116,12 @@ export async function GET() {
           totalRevenue: {
             $sum: {
               $cond: [
-                { $eq: ["$paymentStatus", "paid"] },
+                {
+                  $and: [
+                    { $eq: ["$paymentStatus", "paid"] },
+                    { $ne: ["$status", "cancelled"] },
+                  ],
+                },
                 {
                   $cond: [
                     {

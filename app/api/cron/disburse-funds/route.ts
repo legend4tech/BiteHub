@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     const query = {
       paymentStatus: "paid",
       paymentMethod: "monnify",
+      status: "completed",
       isDisbursed: { $ne: true },
       createdAt: { $lt: cutoffTime },
     }

@@ -7,7 +7,7 @@ import OrderReceiptEmail from "@/emails/OrderReceiptEmail"
 import VendorNewOrderEmail from "@/emails/VendorNewOrderEmail"
 import CustomerOrderInitiatedEmail from "@/emails/CustomerOrderInitiatedEmail"
 import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
-import { OrderItem } from "./types"
+import AdminOrderCancelledEmail from "@/emails/AdminOrderCancelledEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 import React from "react"
 
@@ -400,6 +400,51 @@ export async function sendOrderInitiatedEmail(
     return { success: true, data }
   } catch (error) {
     console.error("Failed to send order initiated email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendAdminOrderCancelledEmail(
+  emails: string[],
+  orderId: string,
+  vendorName: string,
+  monnifyReference: string
+) {
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
+  const resolvedFrom =
+    process.env.NODE_ENV === "production"
+      ? fromEmail
+      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("⚠️ RESEND_API_KEY is not defined in env.")
+    return { success: false, error: "Email provider key missing" }
+  }
+
+  if (emails.length === 0) {
+    return { success: false, error: "No admin emails provided" }
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolvedFrom,
+      to: emails,
+      subject: `URGENT: Order Cancelled - Manual Refund Required (${orderId})`,
+      react: React.createElement(AdminOrderCancelledEmail, {
+        orderId,
+        vendorName,
+        monnifyReference,
+      }),
+    })
+
+    if (error) {
+      console.error("Resend API Error (Admin Order Cancelled):", error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send admin order cancelled email:", error)
     return { success: false, error }
   }
 }
