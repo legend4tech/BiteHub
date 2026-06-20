@@ -27,7 +27,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { isActive, accountIsActive } = body
+    const { isActive, accountIsActive, isFeatured } = body
 
     // Toggle vendor storefront
     if (typeof isActive === "boolean") {
@@ -56,6 +56,11 @@ export async function PATCH(
         { vendorId: id },
         { isActive: accountIsActive }
       )
+    }
+
+    // Toggle featured status
+    if (typeof isFeatured === "boolean") {
+      await VendorModel.findByIdAndUpdate(id, { isFeatured })
     }
 
     return NextResponse.json({ message: "Updated successfully" })

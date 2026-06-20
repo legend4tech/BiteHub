@@ -44,6 +44,7 @@ export async function GET() {
         campus: v.campus,
         school: v.school,
         isActive: v.isActive,
+        isFeatured: v.isFeatured || false,
         image: v.image,
         createdAt: (v as { createdAt: string }).createdAt,
         // Login account info (may be null if not yet created)

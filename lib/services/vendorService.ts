@@ -105,7 +105,7 @@ export async function getFeaturedVendors(
     .select(
       "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
     )
-    .sort({ createdAt: -1 })
+    .sort({ isFeatured: -1, rating: -1, createdAt: -1 })
     .limit(limit)
     .lean()
 

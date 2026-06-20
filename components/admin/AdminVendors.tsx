@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { Store, Plus, Power, ChevronRight, KeyRound } from "lucide-react"
+import { Store, Plus, Power, ChevronRight, KeyRound, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import type { AdminVendor } from "./types"
@@ -13,7 +12,9 @@ interface AdminVendorsProps {
   loadingVendors: boolean
   noAccountVendors: AdminVendor[]
   togglingId: string | null
+  togglingFeaturedId: string | null
   onToggleActive: (vendor: AdminVendor) => void
+  onToggleFeatured: (vendor: AdminVendor) => void
   onAddLogin: (vendor: AdminVendor) => void
 }
 
@@ -23,7 +24,9 @@ export function AdminVendors({
   loadingVendors,
   noAccountVendors,
   togglingId,
+  togglingFeaturedId,
   onToggleActive,
+  onToggleFeatured,
   onAddLogin,
 }: AdminVendorsProps) {
   return (
@@ -49,6 +52,7 @@ export function AdminVendors({
           </p>
           <p className="text-xs text-muted-foreground">
             {optimisticVendors.filter((v) => v.isActive).length} active ·{" "}
+            {optimisticVendors.filter((v) => v.isFeatured).length} featured ·{" "}
             {noAccountVendors.length} without login
           </p>
         </div>
@@ -144,6 +148,49 @@ export function AdminVendors({
 
                   {/* Actions */}
                   <div className="flex shrink-0 items-center gap-1">
+                    {vendor.isFeatured ? (
+                      <ConfirmDialog
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 transition-opacity ${togglingFeaturedId === vendor.id ? "cursor-not-allowed opacity-50" : ""}`}
+                            title="Remove from featured"
+                            disabled={togglingFeaturedId === vendor.id}
+                          >
+                            <Star
+                              className={`size-4 fill-primary text-primary ${togglingFeaturedId === vendor.id ? "scale-75" : ""}`}
+                            />
+                          </Button>
+                        }
+                        title="Remove from Featured?"
+                        description={`Are you sure you want to remove ${vendor.name} from the featured list on the landing page?`}
+                        confirmText="Yes, remove"
+                        isDestructive
+                        onConfirm={() => onToggleFeatured(vendor)}
+                      />
+                    ) : (
+                      <ConfirmDialog
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 transition-opacity ${togglingFeaturedId === vendor.id ? "cursor-not-allowed opacity-50" : ""}`}
+                            title="Feature this vendor"
+                            disabled={togglingFeaturedId === vendor.id}
+                          >
+                            <Star
+                              className={`size-4 text-muted-foreground ${togglingFeaturedId === vendor.id ? "scale-75" : ""}`}
+                            />
+                          </Button>
+                        }
+                        title="Feature Vendor?"
+                        description={`Are you sure you want to feature ${vendor.name} on the landing page?`}
+                        confirmText="Yes, feature vendor"
+                        onConfirm={() => onToggleFeatured(vendor)}
+                      />
+                    )}
+
                     {!vendor.account && (
                       <Button
                         variant="outline"

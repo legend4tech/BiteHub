@@ -25,6 +25,9 @@ export interface IVendor extends Document {
   bankUpdateOtp?: string
   bankUpdateOtpExpiry?: Date
   bankUpdateOtpAttempts?: number
+  isFeatured?: boolean
+  rating?: number
+  ratingCount?: number
 
   landmarkOverrides?: {
     landmarkId: mongoose.Types.ObjectId
@@ -71,6 +74,9 @@ const VendorSchema: Schema = new Schema(
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
     bankUpdateOtpAttempts: { type: Number, default: 0 },
+    isFeatured: { type: Boolean, default: false },
+    rating: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
     landmarkOverrides: [
       {
         landmarkId: {

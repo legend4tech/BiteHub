@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
+@theme {
 
   --animate-float: float 6s ease-in-out infinite;
   
@@ -64,6 +64,7 @@
     --color-status-ready-foreground: var(--status-ready-foreground);
     --color-status-completed-foreground: var(--status-completed-foreground);
     --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+    --color-rating: var(--rating);
 }
 
 /* Light theme — Primary: #FF6B00, Background: #FFF4EC, Text: #1A1A1A */
@@ -112,6 +113,7 @@
     --status-ready-foreground: #6d28d9;
     --status-completed-foreground: #047857;
     --status-cancelled-foreground: #b91c1c;
+    --rating: #f59e0b;
 }
 
 /* Dark theme — warm brown-black surfaces, orange primary glows */
@@ -159,6 +161,7 @@
     --status-ready-foreground: #ddd6fe;
     --status-completed-foreground: #a7f3d0;
     --status-cancelled-foreground: #fecaca;
+    --rating: #fbbf24;
 }
 
 @layer base {

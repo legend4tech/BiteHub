@@ -25,6 +25,9 @@ import { FetchError } from "@/components/shared/FetchError"
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>("overview")
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(
+    null
+  )
   const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null)
   const [showAddVendor, setShowAddVendor] = useState(false)
   const queryClient = useQueryClient()
@@ -91,6 +94,27 @@ export default function AdminPage() {
     })
   }
 
+  const toggleVendorFeatured = (vendor: AdminVendor) => {
+    setTogglingFeaturedId(vendor.id)
+    addOptimisticVendor({ ...vendor, isFeatured: !vendor.isFeatured })
+    startTransition(async () => {
+      try {
+        await apiClient.patch(`/admin/vendors/${vendor.id}`, {
+          isFeatured: !vendor.isFeatured,
+        })
+        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+        toast.success(
+          `${vendor.name} is ${!vendor.isFeatured ? "now featured" : "no longer featured"}`
+        )
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { error?: string } } }
+        toast.error(err.response?.data?.error || "An error occurred")
+      } finally {
+        setTogglingFeaturedId(null)
+      }
+    })
+  }
+
   return (
     <div className="fixed inset-0 flex bg-background text-foreground">
       {/* Desktop sidebar */}
@@ -152,7 +176,9 @@ export default function AdminPage() {
                     loadingVendors={loadingVendors}
                     noAccountVendors={noAccountVendors}
                     togglingId={togglingId}
+                    togglingFeaturedId={togglingFeaturedId}
                     onToggleActive={toggleVendorActive}
+                    onToggleFeatured={toggleVendorFeatured}
                     onAddLogin={setAddLoginFor}
                   />
                 ))}
