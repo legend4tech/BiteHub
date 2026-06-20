@@ -8,7 +8,10 @@ import {
   Tag,
   Clock,
 } from "lucide-react"
+import Link from "next/link"
+import { RatingBadge } from "@/components/shared/RatingBadge"
 import { VendorMenu } from "@/components/public-vendors/VendorMenu"
+import { VendorRecentReviews } from "@/components/public-vendors/VendorRecentReviews"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -19,6 +22,28 @@ import Image from "next/image"
 interface Props {
   params: Promise<{ slug: string }>
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+interface RawVendor {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  tagline?: string
+  category: string
+  tags?: string[]
+  whatsappNumber?: string
+  phone?: string
+  school: string
+  campus: string
+  isActive: boolean
+  deliveryFee?: number
+  prepTime?: string
+  image?: { url: string }
+  initials?: string
+  createdAt: string
+  rating?: number
+  ratingCount?: number
 }
 
 interface RawMenuItem {
@@ -57,6 +82,20 @@ async function getVendorData(slug: string, category?: string, q?: string) {
   }
 
   return res.json()
+}
+
+async function getVendorRecentReviews(slug: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  const url = `${baseUrl}/api/vendors/${slug}/reviews?limit=5`
+
+  try {
+    const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return { reviews: [] }
+    return await res.json()
+  } catch (error) {
+    console.error("Failed to fetch recent reviews:", error)
+    return { reviews: [] }
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -113,7 +152,10 @@ export default async function VendorDetailPage({
   const q =
     typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : ""
 
-  const data = await getVendorData(slug, category, q)
+  const [data, reviewsData] = await Promise.all([
+    getVendorData(slug, category, q),
+    getVendorRecentReviews(slug),
+  ])
 
   if (!data || !data.vendor) notFound()
 
@@ -205,20 +247,35 @@ export default async function VendorDetailPage({
                 )}
               </div>
 
-              {/* Badges/Tags */}
-              <div className="flex flex-wrap gap-2 pt-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary capitalize">
-                  <Tag className="size-3.5" />
-                  {vendor.category}
-                </span>
-                {vendor.tags?.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground capitalize"
-                  >
-                    {tag}
+              {/* Badges/Tags & Rating */}
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary capitalize">
+                    <Tag className="size-3.5" />
+                    {vendor.category}
                   </span>
-                ))}
+                  {vendor.tags?.map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground capitalize"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Rating Link */}
+                <Link
+                  href={`/vendors/${vendor.slug}/reviews`}
+                  className="group"
+                >
+                  <RatingBadge
+                    rating={vendor.rating}
+                    count={vendor.ratingCount}
+                    size="md"
+                    showCount={true}
+                  />
+                </Link>
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 border-t border-border/50 pt-6 md:grid-cols-2">
@@ -271,6 +328,13 @@ export default async function VendorDetailPage({
             </div>
           </div>
         </div>
+
+        {/* Recent Reviews Carousel */}
+        <VendorRecentReviews
+          reviews={reviewsData.reviews || []}
+          vendorSlug={vendor.slug}
+          totalReviews={vendor.ratingCount}
+        />
 
         {/* VendorMenu owns: category tabs, grid, cart, conflict dialog */}
         <Suspense

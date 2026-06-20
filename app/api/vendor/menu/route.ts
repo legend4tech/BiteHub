@@ -73,6 +73,8 @@ export async function POST(request: Request) {
       availableTo,
       prepTimeValue,
       prepTimeUnit,
+      quantityAvailable,
+      availableDays,
     } = body
 
     if (!name || !price || !category || !image) {
@@ -94,6 +96,21 @@ export async function POST(request: Request) {
       availableTo,
       prepTimeValue: prepTimeValue ? Number(prepTimeValue) : null,
       prepTimeUnit: prepTimeUnit || null,
+      quantityAvailable:
+        quantityAvailable !== undefined &&
+        quantityAvailable !== null &&
+        quantityAvailable !== ""
+          ? Number(quantityAvailable)
+          : null,
+      availableDays: availableDays || [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
     })
 
     return NextResponse.json(serializeMenuItem(newItem.toObject()), {

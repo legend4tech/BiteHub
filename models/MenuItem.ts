@@ -15,6 +15,8 @@ export interface IMenuItem extends Document {
   availableTo?: string
   prepTimeValue?: number
   prepTimeUnit?: "minutes" | "hours" | "days"
+  quantityAvailable?: number | null
+  availableDays: string[]
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -37,6 +39,19 @@ const MenuItemSchema: Schema = new Schema(
     availableTo: { type: String },
     prepTimeValue: { type: Number },
     prepTimeUnit: { type: String, enum: ["minutes", "hours", "days"] },
+    quantityAvailable: { type: Number, default: null },
+    availableDays: {
+      type: [String],
+      default: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
+    },
   },
   {
     timestamps: true,

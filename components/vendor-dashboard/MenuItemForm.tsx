@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import type { MenuItem, MenuItemPayload } from "@/lib/types"
@@ -52,6 +53,16 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         ? initial.prepTimeValue.toString()
         : "",
       prepTimeUnit: initial?.prepTimeUnit ?? "minutes",
+      quantityAvailable: initial?.quantityAvailable?.toString() ?? "",
+      availableDays: initial?.availableDays ?? [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
     },
   })
 
@@ -103,6 +114,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
           ? Number(values.prepTimeValue)
           : null,
         prepTimeUnit: values.prepTimeUnit || null,
+        quantityAvailable: values.quantityAvailable
+          ? Number(values.quantityAvailable)
+          : null,
+        availableDays: values.availableDays,
         tag: null,
       })
     } catch (error: unknown) {
@@ -258,6 +273,67 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
           )}
         />
       </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Controller
+          name="quantityAvailable"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Quantity Available</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                type="number"
+                min="0"
+                placeholder="Unlimited if blank"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+      </div>
+
+      <Controller
+        name="availableDays"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel>Days Available</FieldLabel>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+              ].map((day) => (
+                <label key={day} className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={field.value?.includes(day)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        field.onChange([...(field.value || []), day])
+                      } else {
+                        field.onChange(
+                          (field.value || []).filter((d) => d !== day)
+                        )
+                      }
+                    }}
+                  />
+                  <span className="text-sm leading-none font-medium">
+                    {day}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <Controller

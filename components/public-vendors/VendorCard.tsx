@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { MapPin, ArrowUpRight, Circle, Clock } from "lucide-react"
 import type { Vendor } from "@/lib/types"
+import { RatingBadge } from "@/components/shared/RatingBadge"
 
 interface VendorCardProps {
   vendor: Vendor
@@ -56,6 +57,9 @@ export function VendorCard({ vendor, itemCount }: VendorCardProps) {
       </p>
 
       <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
+        {/* Rating */}
+        <RatingBadge rating={vendor.rating} />
+
         <span className="flex items-center gap-1">
           <MapPin className="size-3.5" />
           {vendor.location}

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/disburse-funds",
       "schedule": "30 21 * * *"
+    },
+    {
+      "path": "/api/cron/release-quantity",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

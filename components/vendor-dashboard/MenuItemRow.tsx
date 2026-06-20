@@ -9,7 +9,7 @@ import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { toast } from "sonner"
 
-import { formatPrice, formatTime } from "@/lib/format"
+import { formatPrice, formatTime, isItemAvailableToday } from "@/lib/format"
 
 interface MenuItemRowProps {
   item: MenuItem
@@ -42,6 +42,12 @@ export function MenuItemRow({
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
   const imageUrl = typeof item.image === "string" ? item.image : item.image?.url
+
+  const isAvailableToday = isItemAvailableToday(item.availableDays)
+  const isSoldOut =
+    item.quantityAvailable !== null &&
+    item.quantityAvailable !== undefined &&
+    item.quantityAvailable <= 0
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30">
@@ -80,9 +86,27 @@ export function MenuItemRow({
         <div className="mt-1 flex flex-wrap gap-1">
           {!localAvailable && (
             <span className="inline-flex items-center rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-destructive uppercase">
-              Out of stock
+              Unlisted
             </span>
           )}
+          {localAvailable && !isAvailableToday && (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-400">
+              Not active today
+            </span>
+          )}
+          {localAvailable && isSoldOut && (
+            <span className="inline-flex items-center rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-destructive uppercase">
+              Sold out
+            </span>
+          )}
+          {localAvailable &&
+            item.quantityAvailable !== null &&
+            item.quantityAvailable !== undefined &&
+            item.quantityAvailable > 0 && (
+              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-blue-700 uppercase dark:bg-blue-900/30 dark:text-blue-400">
+                Qty: {item.quantityAvailable}
+              </span>
+            )}
           {isScheduled && (
             <>
               {isOffSchedule ? (

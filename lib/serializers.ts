@@ -63,6 +63,8 @@ export function serializeVendor(doc: LeanVendor | null) {
     monnifyBankCode: doc.monnifyBankCode ?? null,
     monnifyIntegrationStatus: doc.monnifyIntegrationStatus ?? "pending",
     lastBankUpdateAt: doc.lastBankUpdateAt?.toISOString() ?? null,
+    rating: doc.rating ?? 0,
+    ratingCount: doc.ratingCount ?? 0,
   }
 }
 
@@ -84,6 +86,16 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
     availableTo: doc.availableTo ?? null,
     prepTimeValue: doc.prepTimeValue ?? null,
     prepTimeUnit: doc.prepTimeUnit ?? null,
+    quantityAvailable: doc.quantityAvailable ?? null,
+    availableDays: doc.availableDays ?? [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ],
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
     // vendorName, vendorWhatsappNumber, tag — merged at route level
@@ -133,6 +145,8 @@ export function serializeOrder(doc: LeanOrder | null) {
     paymentMethod: doc.paymentMethod ?? "monnify",
     paymentStatus: doc.paymentStatus ?? "pending",
     monnifyReference: doc.monnifyReference ?? null,
+    isRated: doc.isRated ?? false,
+    expiresAt: doc.expiresAt ? safeDate(doc.expiresAt) : null,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

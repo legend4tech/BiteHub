@@ -45,6 +45,8 @@ export interface Vendor {
   initials?: string
   location?: string
   tagline?: string
+  rating?: number
+  ratingCount?: number
 }
 
 // ─── Menu ─────────────────────────────────────────────────────────────────────
@@ -62,6 +64,8 @@ export interface MenuItem {
   availableTo: string | null
   prepTimeValue: number | null
   prepTimeUnit: "minutes" | "hours" | "days" | null
+  quantityAvailable: number | null
+  availableDays: string[]
   createdAt: string
   updatedAt: string
 
@@ -136,6 +140,7 @@ export interface Order {
     accountName?: string
     acceptsCashOnDelivery?: boolean
   }
+  isRated?: boolean
 }
 
 // ─── Vendor Auth Session ──────────────────────────────────────────────────────

@@ -90,7 +90,7 @@ export function FeedbackModal({
                       (hoveredRating ||
                         (feedbackStep === 1 ? platformRating : vendorRating)) >=
                       star
-                        ? "fill-amber-400 text-amber-400"
+                        ? "fill-rating text-rating"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -199,6 +199,7 @@ export function FeedbackModal({
                     toast.success("Feedback submitted! Thank you.")
                     localStorage.setItem(`feedback_handled_${orderId}`, "true")
                     onOpenChange(false)
+                    window.location.reload()
                   } else {
                     const data = await response.json()
                     toast.error(

@@ -35,6 +35,8 @@ export interface IOrder extends Document {
   paymentStatus: "pending" | "paid" | "failed"
   monnifyReference?: string
   isDisbursed?: boolean
+  expiresAt?: Date
+  isRated?: boolean
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -93,6 +95,8 @@ const OrderSchema = new Schema<IOrder>(
     },
     monnifyReference: { type: String },
     isDisbursed: { type: Boolean, default: false },
+    expiresAt: { type: Date },
+    isRated: { type: Boolean, default: false },
   },
   {
     timestamps: true,

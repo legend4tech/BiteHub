@@ -9,6 +9,7 @@ import CustomerOrderInitiatedEmail from "@/emails/CustomerOrderInitiatedEmail"
 import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
 import AdminOrderCancelledEmail from "@/emails/AdminOrderCancelledEmail"
 import CustomerOrderStatusEmail from "@/emails/CustomerOrderStatusEmail"
+import OrderCompletedEmail from "@/emails/OrderCompletedEmail"
 import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 import React from "react"
@@ -495,6 +496,50 @@ export async function sendCustomerOrderStatusEmail(
     return { success: true, data }
   } catch (error) {
     console.error("Failed to send customer order status email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendOrderCompletedEmail(
+  email: string,
+  customerName: string,
+  orderId: string,
+  vendorName: string
+) {
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
+  const resolvedFrom =
+    process.env.NODE_ENV === "production"
+      ? fromEmail
+      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("⚠️ RESEND_API_KEY is not defined in env.")
+    return { success: false, error: "Email provider key missing" }
+  }
+
+  const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/order/${orderId}`
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolvedFrom,
+      to: email,
+      subject: `How was your food from ${vendorName}?`,
+      react: React.createElement(OrderCompletedEmail, {
+        customerName,
+        orderId,
+        vendorName,
+        trackingUrl,
+      }),
+    })
+
+    if (error) {
+      console.error("Resend API Error (Order Completed Email):", error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send order completed email:", error)
     return { success: false, error }
   }
 }

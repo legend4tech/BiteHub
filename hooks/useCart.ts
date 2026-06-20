@@ -117,6 +117,19 @@ export function useCart() {
       const existing = current.items.find(
         (ci) => ci.menuItem.id === menuItem.id
       )
+
+      const newQuantity = (existing ? existing.quantity : 0) + quantity
+      if (
+        menuItem.quantityAvailable !== null &&
+        menuItem.quantityAvailable !== undefined &&
+        newQuantity > menuItem.quantityAvailable
+      ) {
+        return {
+          success: false,
+          error: `Only ${menuItem.quantityAvailable} available.`,
+        }
+      }
+
       const items: CartItem[] = existing
         ? current.items.map((ci) =>
             ci.menuItem.id === menuItem.id
@@ -167,12 +180,27 @@ export function useCart() {
   )
 
   const updateQuantity = useCallback(
-    (menuItemId: string, quantity: number) => {
+    (
+      menuItemId: string,
+      quantity: number
+    ): { success: boolean; error?: string } | void => {
       if (quantity <= 0) {
         removeItem(menuItemId)
         return
       }
       const current = readCart()
+
+      // Enforce limit synchronously
+      const existingItem = current.items.find(
+        (ci) => ci.menuItem.id === menuItemId
+      )
+      if (existingItem) {
+        const maxQty = existingItem.menuItem.quantityAvailable
+        if (maxQty !== null && maxQty !== undefined && quantity > maxQty) {
+          return { success: false, error: `Only ${maxQty} available.` }
+        }
+      }
+
       persist({
         ...current,
         items: current.items.map((ci) =>

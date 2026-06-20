@@ -61,18 +61,29 @@ export async function PATCH(
 
     // Send customer email if email exists and status changed
     if (order.customerEmail && status !== oldStatus) {
-      const { sendCustomerOrderStatusEmail } = await import("@/lib/mail")
-      const statusConfig = ORDER_STATUS_CONFIG[status as OrderStatusType]
-      if (statusConfig) {
+      if (status === "completed") {
+        const { sendOrderCompletedEmail } = await import("@/lib/mail")
         // Fire and forget
-        void sendCustomerOrderStatusEmail(
+        void sendOrderCompletedEmail(
           order.customerEmail,
           order.customerName,
           order.orderId,
-          order.vendorName,
-          statusConfig.label,
-          statusConfig.description
+          order.vendorName
         )
+      } else {
+        const { sendCustomerOrderStatusEmail } = await import("@/lib/mail")
+        const statusConfig = ORDER_STATUS_CONFIG[status as OrderStatusType]
+        if (statusConfig) {
+          // Fire and forget
+          void sendCustomerOrderStatusEmail(
+            order.customerEmail,
+            order.customerName,
+            order.orderId,
+            order.vendorName,
+            statusConfig.label,
+            statusConfig.description
+          )
+        }
       }
     }
 

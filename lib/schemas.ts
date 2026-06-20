@@ -165,6 +165,18 @@ export const menuItemFormSchema = z
     availableTo: z.string().optional(),
     prepTimeValue: z.string().optional(),
     prepTimeUnit: z.enum(["minutes", "hours", "days"]).optional(),
+    quantityAvailable: z.string().optional(),
+    availableDays: z
+      .array(z.string())
+      .default([
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ]),
   })
   .refine(
     (data) => {

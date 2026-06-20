@@ -15,6 +15,7 @@ import {
   getPrepTimeInHours,
   isPreorderPrepTime,
   formatPrepTime,
+  isItemAvailableToday,
 } from "@/lib/format"
 import { z } from "zod"
 
@@ -222,6 +223,31 @@ export async function POST(request: Request) {
         )
       }
 
+      // Block ordering if the meal is not available today
+      if (!isItemAvailableToday(dbItem.availableDays)) {
+        return NextResponse.json(
+          {
+            error: `Sorry, ${dbItem.name} is not available today.`,
+          },
+          { status: 400 }
+        )
+      }
+
+      // Block ordering if quantity is insufficient
+      if (
+        dbItem.quantityAvailable !== null &&
+        dbItem.quantityAvailable !== undefined
+      ) {
+        if (dbItem.quantityAvailable < item.quantity) {
+          return NextResponse.json(
+            {
+              error: `Sorry, only ${dbItem.quantityAvailable} portions of ${dbItem.name} are available. Please reduce your quantity.`,
+            },
+            { status: 400 }
+          )
+        }
+      }
+
       // Block ordering if it's outside the meal's time window
       if (dbItem.availableFrom && currentTimeStr < dbItem.availableFrom) {
         return NextResponse.json(
@@ -339,6 +365,19 @@ export async function POST(request: Request) {
       )
     }
 
+    // Reserve quantity by decrementing immediately
+    const bulkOps = items.map((item) => ({
+      updateOne: {
+        filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
+        update: { $inc: { quantityAvailable: -item.quantity } },
+      },
+    }))
+    if (bulkOps.length > 0) {
+      await MenuItem.bulkWrite(bulkOps).catch((err) => {
+        console.error("[POST /api/orders] Failed to decrement quantity:", err)
+      })
+    }
+
     const order = await Order.create({
       orderId,
       vendorId,
@@ -360,6 +399,7 @@ export async function POST(request: Request) {
       paymentMethod: "monnify",
       paymentStatus: "pending",
       monnifyReference: paymentReference,
+      expiresAt: new Date(Date.now() + 30 * 60000), // 30 minutes from now
     })
 
     // Float the promise so it sends asynchronously without blocking the checkout redirect

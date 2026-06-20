@@ -11,6 +11,7 @@ import {
   formatTime,
   isPreorderPrepTime,
   formatPrepTime,
+  isItemAvailableToday,
 } from "@/lib/format"
 import { toast } from "sonner"
 
@@ -31,14 +32,35 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
     now.getMinutes()
   ).padStart(2, "0")}`
+
+  const isAvailableToday = isItemAvailableToday(item.availableDays)
+
   const isScheduled = item.availableFrom && item.availableTo
   const isOffSchedule =
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
-  const isCurrentlyAvailable = item.isAvailable && !isOffSchedule
+
+  const isSoldOut =
+    item.quantityAvailable !== null &&
+    item.quantityAvailable !== undefined &&
+    item.quantityAvailable <= 0
+
+  const isCurrentlyAvailable =
+    item.isAvailable && isAvailableToday && !isSoldOut && !isOffSchedule
 
   const handleAdd = () => {
     if (!isCurrentlyAvailable) return
+
+    // Prevent adding more than available quantity
+    if (
+      item.quantityAvailable !== null &&
+      item.quantityAvailable !== undefined &&
+      qty >= item.quantityAvailable
+    ) {
+      toast.error(`Only ${item.quantityAvailable} available.`)
+      return
+    }
+
     if (isDifferentVendor(item)) {
       onDifferentVendor?.(item)
       return
@@ -88,17 +110,38 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         )}
 
         {!isCurrentlyAvailable && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/60">
-            <span className="text-xs font-bold tracking-wider text-white uppercase">
-              {!item.isAvailable ? "Out of Stock" : "Closed"}
-            </span>
-            {isOffSchedule && (
-              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/90">
-                Opens {formatTime(item.availableFrom!)}
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+            <div className="flex flex-col items-center gap-1 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-center shadow-2xl backdrop-blur-md">
+              <span className="text-xs font-black tracking-widest text-white uppercase drop-shadow-md">
+                {!item.isAvailable
+                  ? "Unlisted"
+                  : !isAvailableToday
+                    ? "Unavailable"
+                    : isSoldOut
+                      ? "Sold Out"
+                      : "Closed"}
               </span>
-            )}
+              {(!isAvailableToday || isSoldOut || isOffSchedule) &&
+                item.isAvailable && (
+                  <span className="text-[10px] font-medium text-white/90">
+                    {isOffSchedule && !isSoldOut && isAvailableToday
+                      ? `Opens ${formatTime(item.availableFrom!)}`
+                      : "Check back later"}
+                  </span>
+                )}
+            </div>
           </div>
         )}
+
+        {isCurrentlyAvailable &&
+          item.quantityAvailable !== null &&
+          item.quantityAvailable !== undefined &&
+          item.quantityAvailable <= 5 &&
+          item.quantityAvailable > 0 && (
+            <span className="absolute bottom-2.5 left-2.5 z-10 rounded-full border border-border bg-orange-100 px-2.5 py-0.5 text-[10px] font-semibold text-orange-700 shadow-sm dark:bg-orange-900/30 dark:text-orange-400">
+              Limited: {item.quantityAvailable} left
+            </span>
+          )}
       </Link>
 
       {/* ── Content ───────────────────────────────────────── */}
@@ -162,7 +205,24 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
             {formatPrice(item.price)}
           </p>
 
-          {qty === 0 ? (
+          {qty > 0 && !isCurrentlyAvailable ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-[10px] font-bold text-destructive">
+                Unavailable
+              </span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  updateQuantity(item.id, 0)
+                }}
+                aria-label="Remove from cart"
+                className="rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-destructive uppercase transition-colors hover:bg-destructive/20 active:scale-95"
+              >
+                Remove
+              </button>
+            </div>
+          ) : qty === 0 ? (
             <button
               onClick={handleAdd}
               disabled={!isCurrentlyAvailable}
@@ -185,13 +245,26 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
               </span>
               <button
                 onClick={() => {
+                  if (
+                    item.quantityAvailable !== null &&
+                    item.quantityAvailable !== undefined &&
+                    qty >= item.quantityAvailable
+                  ) {
+                    toast.error(`Only ${item.quantityAvailable} available.`)
+                    return
+                  }
                   const result = addItem(item)
                   if (result && !result.success) {
                     toast.error(result.error)
                   }
                 }}
                 aria-label="Increase quantity"
-                disabled={!isCurrentlyAvailable}
+                disabled={
+                  !isCurrentlyAvailable ||
+                  (item.quantityAvailable !== null &&
+                    item.quantityAvailable !== undefined &&
+                    qty >= item.quantityAvailable)
+                }
                 className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary text-white transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="size-3" />

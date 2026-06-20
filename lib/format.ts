@@ -108,3 +108,12 @@ export function formatPrepTime(
   if (remainingHours === 0) return `${days} day${days > 1 ? "s" : ""}`
   return `${days} day${days > 1 ? "s" : ""} ${remainingHours} hr${remainingHours > 1 ? "s" : ""}`
 }
+
+export function isItemAvailableToday(availableDays?: string[] | null): boolean {
+  if (!availableDays || availableDays.length === 0) return true
+  const currentDayOfWeek = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    timeZone: "Africa/Lagos",
+  })
+  return availableDays.includes(currentDayOfWeek)
+}
