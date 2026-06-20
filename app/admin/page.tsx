@@ -13,6 +13,7 @@ import {
   type AdminSection,
 } from "@/components/admin/AdminSidebar"
 import { AdminOverview } from "@/components/admin/AdminOverview"
+import { AdminOrders } from "@/components/admin/AdminOrders"
 import { AdminVendors } from "@/components/admin/AdminVendors"
 import { AdminFeedback, type Feedback } from "@/components/admin/AdminFeedback"
 import { AdminSettings } from "@/components/admin/AdminSettings"
@@ -163,6 +164,7 @@ export default function AdminPage() {
                     onGoToVendors={() => setActiveSection("vendors")}
                   />
                 ))}
+              {activeSection === "orders" && <AdminOrders />}
               {activeSection === "vendors" &&
                 (isVendorsError ? (
                   <FetchError

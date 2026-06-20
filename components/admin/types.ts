@@ -32,3 +32,22 @@ export interface AdminVendor {
   image?: { url: string; publicId: string }
   account: VendorAccount | null
 }
+
+export interface AdminOrder {
+  id: string
+  orderId: string
+  customerName: string
+  customerPhone: string
+  vendorName: string
+  vendorWhatsappNumber: string
+  status: string
+  paymentMethod: string
+  paymentStatus: string
+  totalAmount: number
+  items: {
+    name: string
+    quantity: number
+    price: number
+  }[]
+  createdAt: string
+}

@@ -14,6 +14,7 @@ import {
   Home,
   Settings,
   MapPin,
+  ShoppingCart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -39,6 +40,7 @@ import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
 export type AdminSection =
   | "overview"
+  | "orders"
   | "vendors"
   | "feedback"
   | "delivery-zones"
@@ -57,6 +59,7 @@ const navItems: {
   icon: React.ElementType
 }[] = [
   { section: "overview", label: "Overview", icon: LayoutDashboard },
+  { section: "orders", label: "Orders", icon: ShoppingCart },
   { section: "vendors", label: "Vendors", icon: Store },
   { section: "feedback", label: "Feedback", icon: Star },
   { section: "delivery-zones", label: "Delivery Zones", icon: MapPin },

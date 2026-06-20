@@ -1,0 +1,263 @@
+"use client"
+
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import {
+  ShoppingCart,
+  Copy,
+  PhoneCall,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import apiClient from "@/lib/axios"
+import type { AdminOrder } from "./types"
+import { formatPrice } from "@/lib/format"
+
+interface OrdersResponse {
+  orders: AdminOrder[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasMore: boolean
+  }
+}
+
+export function AdminOrders() {
+  const [page, setPage] = useState(1)
+  const limit = 20
+
+  const { data, isLoading, isError, refetch } = useQuery<OrdersResponse>({
+    queryKey: ["admin-orders", page],
+    queryFn: async () => {
+      const res = await apiClient.get(
+        `/admin/orders?page=${page}&limit=${limit}`
+      )
+      return res.data
+    },
+  })
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success(`${label} copied to clipboard`)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-status-pending/20 text-status-pending-foreground"
+      case "confirmed":
+        return "bg-status-confirmed/20 text-status-confirmed-foreground"
+      case "preparing":
+        return "bg-status-preparing/20 text-status-preparing-foreground"
+      case "ready":
+        return "bg-status-ready/20 text-status-ready-foreground"
+      case "completed":
+        return "bg-status-completed/20 text-status-completed-foreground"
+      case "cancelled":
+        return "bg-status-cancelled/20 text-status-cancelled-foreground"
+      default:
+        return "bg-muted text-muted-foreground"
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-bold">Orders</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            View all orders across the platform and access contact details
+          </p>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <p className="text-sm font-semibold">
+            {data?.pagination.total ?? 0} total orders
+          </p>
+        </div>
+
+        {isError ? (
+          <div className="px-6 py-8 text-center text-destructive">
+            <p>Failed to load orders.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="mt-4"
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : isLoading ? (
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex animate-pulse flex-col gap-4 px-6 py-4"
+              >
+                <div className="h-4 w-1/3 rounded bg-muted" />
+                <div className="h-10 w-full rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        ) : data?.orders.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <ShoppingCart className="mx-auto mb-3 size-10 text-muted-foreground" />
+            <p className="font-semibold">No orders yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Orders placed by customers will appear here.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="divide-y divide-border">
+              {data?.orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex flex-col gap-4 px-6 py-5 transition-colors hover:bg-muted/30 md:flex-row md:items-start md:justify-between"
+                >
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono text-sm font-bold text-foreground">
+                        {order.orderId}
+                      </p>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
+                      >
+                        {order.status}
+                      </span>
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                        Paid via {order.paymentMethod}
+                      </span>
+                      <p className="ml-auto text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleString("en-NG", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1 rounded-xl border border-border/50 bg-background/50 p-3">
+                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          Customer
+                        </p>
+                        <p className="text-sm font-medium">
+                          {order.customerName}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{order.customerPhone}</span>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(
+                                order.customerPhone,
+                                "Customer phone"
+                              )
+                            }
+                            className="hover:text-primary"
+                            title="Copy Phone"
+                          >
+                            <Copy className="size-3" />
+                          </button>
+                          <a
+                            href={`tel:${order.customerPhone}`}
+                            className="hover:text-primary"
+                            title="Call Customer"
+                          >
+                            <PhoneCall className="size-3" />
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 rounded-xl border border-border/50 bg-background/50 p-3">
+                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          Vendor
+                        </p>
+                        <p className="text-sm font-medium">
+                          {order.vendorName}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{order.vendorWhatsappNumber}</span>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(
+                                order.vendorWhatsappNumber,
+                                "Vendor WhatsApp"
+                              )
+                            }
+                            className="hover:text-primary"
+                            title="Copy WhatsApp"
+                          >
+                            <Copy className="size-3" />
+                          </button>
+                          <a
+                            href={`https://wa.me/${order.vendorWhatsappNumber.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary"
+                            title="WhatsApp Vendor"
+                          >
+                            <PhoneCall className="size-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <p>
+                        <span className="font-semibold text-foreground">
+                          {order.items.length} items
+                        </span>{" "}
+                        — {order.items.map((i) => i.name).join(", ")}
+                      </p>
+                      <p className="ml-auto font-bold text-foreground">
+                        {formatPrice(order.totalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {data && data.pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-border px-6 py-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {data.pagination.page} of {data.pagination.totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={data.pagination.page === 1 || isLoading}
+                  >
+                    <ChevronLeft className="mr-1 size-4" /> Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setPage((p) =>
+                        Math.min(data.pagination.totalPages, p + 1)
+                      )
+                    }
+                    disabled={!data.pagination.hasMore || isLoading}
+                  >
+                    Next <ChevronRight className="ml-1 size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
