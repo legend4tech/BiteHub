@@ -262,6 +262,13 @@ export default function OrderPage() {
                   </span>
                   <span className="text-border">·</span>
                   <span>
+                    For:{" "}
+                    <span className="font-semibold text-foreground">
+                      {order.customerName}
+                    </span>
+                  </span>
+                  <span className="text-border">·</span>
+                  <span>
                     Deliver to:{" "}
                     <span className="font-semibold text-foreground">
                       {order.location}
