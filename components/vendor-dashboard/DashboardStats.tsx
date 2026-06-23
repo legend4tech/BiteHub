@@ -68,7 +68,7 @@ export function DashboardStats(props: DashboardStatsProps) {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Ready to prep</p>
             <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-              Unpaid orders auto-cancel at midnight
+              Unpaid orders auto-cancel after 30 mins
             </p>
           </div>
         </div>
