@@ -27,6 +27,7 @@ export function LoadMoreVendors({
     hasNextPage,
     isFetchingNextPage,
     status,
+    refetch,
   } = useVendors({
     q: searchQuery,
     school: searchParams.school || undefined,
@@ -71,7 +72,7 @@ export function LoadMoreVendors({
             error?.message ||
             "Something went wrong while fetching the next page of vendors."
           }
-          onRetry={() => fetchNextPage()}
+          onRetry={() => refetch()}
         />
       )}
     </>

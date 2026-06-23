@@ -10,6 +10,7 @@ import type { Types } from "mongoose"
 import type { IVendor } from "@/models/Vendor"
 import type { IMenuItem } from "@/models/MenuItem"
 import type { IOrder } from "@/models/Order"
+import { isItemAvailableNow } from "@/lib/timeUtils"
 
 /**
  * Represents a .lean() Mongoose document: _id is an ObjectId, timestamps are
@@ -17,13 +18,23 @@ import type { IOrder } from "@/models/Order"
  */
 type LeanDoc<T> = Omit<T, keyof import("mongoose").Document> & {
   _id: Types.ObjectId
-  createdAt: Date
-  updatedAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export type LeanVendor = LeanDoc<IVendor>
 export type LeanMenuItem = LeanDoc<IMenuItem>
 export type LeanOrder = LeanDoc<IOrder>
+
+// Safely parse dates which might come back as strings or be missing in raw DB docs
+const safeDate = (val: unknown): string => {
+  if (val instanceof Date) return val.toISOString()
+  if (typeof val === "string" || typeof val === "number") {
+    const d = new Date(val)
+    if (!isNaN(d.getTime())) return d.toISOString()
+  }
+  return new Date().toISOString()
+}
 
 // ─── Vendor ───────────────────────────────────────────────────────────────────
 
@@ -52,8 +63,8 @@ export function serializeVendor(doc: LeanVendor | null) {
     deliveryFee: doc.deliveryFee ?? 0,
     prepTime: doc.prepTime ?? "",
     image: doc.image ?? null,
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
     // Virtuals
     initials,
     tagline: doc.description ?? "The best food on campus",
@@ -62,7 +73,9 @@ export function serializeVendor(doc: LeanVendor | null) {
     monnifySubAccountCode: doc.monnifySubAccountCode ?? null,
     monnifyBankCode: doc.monnifyBankCode ?? null,
     monnifyIntegrationStatus: doc.monnifyIntegrationStatus ?? "pending",
-    lastBankUpdateAt: doc.lastBankUpdateAt?.toISOString() ?? null,
+    lastBankUpdateAt: doc.lastBankUpdateAt
+      ? safeDate(doc.lastBankUpdateAt)
+      : null,
     rating: doc.rating ?? 0,
     ratingCount: doc.ratingCount ?? 0,
   }
@@ -96,8 +109,15 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
       "Friday",
       "Saturday",
     ],
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
+    dietaryTags: doc.dietaryTags ?? [],
+    isAvailableNow: isItemAvailableNow(
+      doc.isAvailable,
+      doc.availableFrom,
+      doc.availableTo,
+      doc.availableDays
+    ),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
     // vendorName, vendorWhatsappNumber, tag — merged at route level
   }
 }
@@ -106,16 +126,6 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
 
 export function serializeOrder(doc: LeanOrder | null) {
   if (!doc) return null
-
-  // Safely parse dates which might come back as strings or be missing in raw DB docs
-  const safeDate = (val: unknown): string => {
-    if (val instanceof Date) return val.toISOString()
-    if (typeof val === "string" || typeof val === "number") {
-      const d = new Date(val)
-      if (!isNaN(d.getTime())) return d.toISOString()
-    }
-    return new Date().toISOString()
-  }
 
   return {
     id: doc._id?.toString() || "",
@@ -169,8 +179,8 @@ export function serializeLandmark(doc: LeanLandmark | null) {
     name: doc.name,
     defaultDeliveryFee: doc.defaultDeliveryFee,
     isActive: doc.isActive,
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
   }
 }
 
@@ -183,7 +193,7 @@ export function serializeSubLandmark(doc: LeanSubLandmark | null) {
     name: doc.name,
     defaultDeliveryFee: doc.defaultDeliveryFee ?? null,
     isActive: doc.isActive,
-    createdAt: doc.createdAt.toISOString(),
-    updatedAt: doc.updatedAt.toISOString(),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
   }
 }

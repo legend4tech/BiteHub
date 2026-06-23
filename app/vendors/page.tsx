@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { VendorCard } from "@/components/public-vendors/VendorCard"
 import type { Metadata } from "next"
+import Link from "next/link"
 import { FadeIn } from "@/components/FadeIn"
 import { SearchInput } from "@/components/shared/SearchInput"
 import {
@@ -50,15 +51,24 @@ async function VendorListContent({
   q,
   school,
   campus,
+  openNow,
+  freeDelivery,
+  topRated,
 }: {
   q: string
   school: string
   campus: string
+  openNow: boolean
+  freeDelivery: boolean
+  topRated: boolean
 }) {
   const { vendors, totalVendors } = await getVendors({
     q,
     school,
     campus,
+    openNow,
+    freeDelivery,
+    topRated,
     limit: 20,
   })
 
@@ -99,7 +109,14 @@ async function VendorListContent({
       {vendors.length === 20 && (
         <LoadMoreVendors
           initialPage={1}
-          searchParams={{ q: q || undefined, school, campus }}
+          searchParams={{
+            q: q || undefined,
+            school,
+            campus,
+            openNow: openNow ? "true" : undefined,
+            freeDelivery: freeDelivery ? "true" : undefined,
+            topRated: topRated ? "true" : undefined,
+          }}
         />
       )}
     </>
@@ -124,7 +141,31 @@ export default async function VendorsPage({
       ? resolvedSearchParams.campus
       : DEFAULT_CAMPUS_ID
 
+  const openNow = resolvedSearchParams.openNow === "true"
+  const freeDelivery = resolvedSearchParams.freeDelivery === "true"
+  const topRated = resolvedSearchParams.topRated === "true"
+
   const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`
+
+  // Base URL for toggling filters
+  const buildFilterUrl = (key: string, value: boolean) => {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (school !== DEFAULT_SCHOOL_ID) params.set("school", school)
+    if (campus !== DEFAULT_CAMPUS_ID) params.set("campus", campus)
+
+    // Copy existing filters
+    if (openNow && key !== "openNow") params.set("openNow", "true")
+    if (freeDelivery && key !== "freeDelivery")
+      params.set("freeDelivery", "true")
+    if (topRated && key !== "topRated") params.set("topRated", "true")
+
+    // Toggle the targeted filter
+    if (value) params.set(key, "true")
+
+    const str = params.toString()
+    return str ? `?${str}` : "?"
+  }
 
   return (
     <main className="flex min-h-screen flex-col bg-background text-foreground">
@@ -169,7 +210,14 @@ export default async function VendorsPage({
                 </div>
               }
             >
-              <VendorListContent q={q} school={school} campus={campus} />
+              <VendorListContent
+                q={q}
+                school={school}
+                campus={campus}
+                openNow={openNow}
+                freeDelivery={freeDelivery}
+                topRated={topRated}
+              />
             </Suspense>
           </SectionErrorBoundary>
         </div>

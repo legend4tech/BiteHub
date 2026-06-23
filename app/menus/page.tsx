@@ -7,6 +7,7 @@ import { MenuGrid } from "@/components/menus/MenuGrid"
 import { SearchInput } from "@/components/shared/SearchInput"
 import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus"
 import { FadeIn } from "@/components/FadeIn"
+import { SlidersHorizontal, ArrowUpDown } from "lucide-react"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { Suspense } from "react"
@@ -46,17 +47,23 @@ async function MenuListContent({
   category,
   school,
   campus,
+  sortBy,
+  availableOnly,
 }: {
   q: string
   category: string
   school: string
   campus: string
+  sortBy: string
+  availableOnly: boolean
 }) {
   const { items, totalItems } = await getMenus({
     q,
     category,
     school,
     campus,
+    sortBy: sortBy !== "none" ? sortBy : undefined,
+    availableOnly: availableOnly ? true : undefined,
     limit: 20,
   })
 
@@ -74,6 +81,8 @@ async function MenuListContent({
             category: category !== "all" ? category : undefined,
             school,
             campus,
+            sortBy: sortBy !== "none" ? sortBy : undefined,
+            availableOnly: availableOnly ? "true" : undefined,
           }}
         />
       )}
@@ -104,6 +113,35 @@ export default async function MenusPage({
       : DEFAULT_CAMPUS_ID
 
   const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`
+
+  const sortBy =
+    typeof resolvedSearchParams.sortBy === "string"
+      ? resolvedSearchParams.sortBy
+      : "none"
+  const availableOnly = resolvedSearchParams.availableOnly === "true"
+
+  const buildFilterUrl = (
+    paramsToUpdate: Record<string, string | undefined>
+  ) => {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (category !== "all") params.set("category", category)
+    if (school !== DEFAULT_SCHOOL_ID) params.set("school", school)
+    if (campus !== DEFAULT_CAMPUS_ID) params.set("campus", campus)
+    if (sortBy !== "none") params.set("sortBy", sortBy)
+    if (availableOnly) params.set("availableOnly", "true")
+
+    Object.entries(paramsToUpdate).forEach(([key, value]) => {
+      if (value === undefined) {
+        params.delete(key)
+      } else {
+        params.set(key, value)
+      }
+    })
+
+    const str = params.toString()
+    return str ? `?${str}` : "?"
+  }
 
   return (
     <main className="flex min-h-screen flex-col bg-background">
@@ -139,6 +177,62 @@ export default async function MenusPage({
                   <CampusSelector />
                 </div>
               </div>
+
+              {/* Filters Panel inline for server component */}
+              <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-4">
+                  <Link
+                    href={buildFilterUrl({
+                      availableOnly: availableOnly ? undefined : "true",
+                    })}
+                    className="flex cursor-pointer items-center gap-2.5"
+                  >
+                    <div className="relative flex items-center">
+                      <div
+                        className={`h-6 w-11 rounded-full transition-colors ${availableOnly ? "bg-primary" : "bg-muted"}`}
+                      ></div>
+                      <div
+                        className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform ${availableOnly ? "translate-x-5" : ""}`}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium select-none">
+                      Available to order now
+                    </span>
+                  </Link>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <ArrowUpDown className="size-4 text-muted-foreground" />
+                  <div className="relative">
+                    {/* Native select that navigates on change isn't trivial without client JS, 
+                        so we'll use links styled as buttons or just accept that changing sort
+                        requires a small client component. Since this is a server page, 
+                        we can make the select update the URL using a tiny bit of inline script 
+                        or just rely on the existing approach. Better yet, we can extract this 
+                        filter bar to a small client component. But for simplicity, we'll use 
+                        standard links for the sort options. */}
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Recommended", value: "none" },
+                        { label: "Price: Low to High", value: "price_asc" },
+                        { label: "Price: High to Low", value: "price_desc" },
+                        { label: "Name: A to Z", value: "name_asc" },
+                      ].map((opt) => (
+                        <Link
+                          key={opt.value}
+                          href={buildFilterUrl({
+                            sortBy:
+                              opt.value === "none" ? undefined : opt.value,
+                          })}
+                          className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${sortBy === opt.value ? "border-primary bg-primary text-white" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+                        >
+                          {opt.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </FadeIn>
 
@@ -158,6 +252,8 @@ export default async function MenusPage({
                 category={category}
                 school={school}
                 campus={campus}
+                sortBy={sortBy}
+                availableOnly={availableOnly}
               />
             </Suspense>
           </SectionErrorBoundary>

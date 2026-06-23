@@ -258,3 +258,32 @@ export async function initMonnifyTransaction({
     throw err
   }
 }
+
+export async function getMonnifyWalletBalance() {
+  const accountNumber = process.env.MONNIFY_WALLET_ACCOUNT_NUMBER
+  if (!accountNumber) {
+    return null
+  }
+
+  try {
+    const token = await getMonnifyToken()
+    const response = await axiosInstance.get(
+      `${MONNIFY_API_URL}/api/v2/disbursements/wallet-balance`,
+      {
+        params: { accountNumber },
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+
+    if (response.data.requestSuccessful) {
+      return response.data.responseBody.availableBalance as number
+    }
+    return null
+  } catch (err: unknown) {
+    console.error(
+      "[getMonnifyWalletBalance] Error fetching balance:",
+      axios.isAxiosError(err) ? err.response?.data : (err as Error).message
+    )
+    return null
+  }
+}

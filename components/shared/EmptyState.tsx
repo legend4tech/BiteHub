@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+import { motion } from "framer-motion"
+import { ReactNode } from "react"
+import { Button } from "@/components/ui/button"
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 // A fully reusable empty-state component. Drop it anywhere there's no data.
@@ -19,31 +19,31 @@ import { Button } from "@/components/ui/button";
 //   <EmptyState size="sm" icon="🔍" title="Nothing matched" />
 
 interface EmptyStateAction {
-  label: string;
-  onClick?: () => void;
-  href?: string;
-  icon?: ReactNode;
+  label: string
+  onClick?: () => void
+  href?: string
+  icon?: ReactNode
 }
 
-type EmptyStateSize = "sm" | "md" | "lg";
+type EmptyStateSize = "sm" | "md" | "lg"
 
 interface EmptyStateProps {
   /** Main heading */
-  title?: string;
+  title?: string
   /** Supporting paragraph */
-  description?: string;
+  description?: string
   /** Optional emoji or ReactNode to show instead of the illustration */
-  icon?: ReactNode;
+  icon?: ReactNode
   /** Whether to show the illustrated image (default: true) */
-  showImage?: boolean;
+  showImage?: boolean
   /** Primary CTA */
-  action?: EmptyStateAction;
+  action?: EmptyStateAction
   /** Secondary CTA */
-  secondaryAction?: EmptyStateAction;
+  secondaryAction?: EmptyStateAction
   /** Size variant — controls padding, image size and text scale */
-  size?: EmptyStateSize;
+  size?: EmptyStateSize
   /** Extra classes applied to the root wrapper */
-  className?: string;
+  className?: string
 }
 
 const sizeMap: Record<
@@ -68,7 +68,7 @@ const sizeMap: Record<
     title: "text-2xl font-bold",
     desc: "text-base",
   },
-};
+}
 
 export function EmptyState({
   title = "Nothing here yet",
@@ -80,14 +80,14 @@ export function EmptyState({
   size = "md",
   className = "",
 }: EmptyStateProps) {
-  const s = sizeMap[size];
+  const s = sizeMap[size]
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className={`flex flex-col items-center justify-center text-center w-full ${s.wrapper} ${className}`}
+      className={`flex w-full flex-col items-center justify-center text-center ${s.wrapper} ${className}`}
     >
       {/* Illustration / icon */}
       {icon ? (
@@ -104,11 +104,11 @@ export function EmptyState({
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-2 relative"
+          className="relative mb-2"
           style={{ width: s.lottie, height: s.lottie }}
         >
           <DotLottieReact
-            src="https://lottie.host/0a5fc4f9-6839-4556-a424-a8883ec9845d/rsIE5Bl9Fp.lottie"
+            src="https://lottie.host/31b63bd1-29b8-45f7-8eb1-90635bf713c8/KmQceBnItc.lottie"
             loop
             autoplay
             style={{ width: "100%", height: "100%" }}
@@ -121,10 +121,10 @@ export function EmptyState({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
-        className="space-y-2 max-w-sm"
+        className="max-w-sm space-y-2"
       >
         <h3 className={`text-foreground ${s.title}`}>{title}</h3>
-        <p className={`text-muted-foreground leading-relaxed ${s.desc}`}>
+        <p className={`leading-relaxed text-muted-foreground ${s.desc}`}>
           {description}
         </p>
       </motion.div>
@@ -185,5 +185,5 @@ export function EmptyState({
         </motion.div>
       )}
     </motion.div>
-  );
+  )
 }

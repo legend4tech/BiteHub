@@ -1,18 +1,23 @@
-"use client";
+"use client"
 
-import React, { Component, ReactNode } from "react";
-import { FetchError } from "./FetchError";
+import React, { Component, ReactNode, startTransition } from "react"
+import { useRouter } from "next/navigation"
+import { FetchError } from "./FetchError"
 
 interface Props {
-  children: ReactNode;
-  title?: string;
-  message?: string;
+  children: ReactNode
+  title?: string
+  message?: string
   /** Wrap the fallback in a section-like container to preserve layout spacing */
-  padded?: boolean;
+  padded?: boolean
+}
+
+interface InnerProps extends Props {
+  router: ReturnType<typeof useRouter>
 }
 
 interface State {
-  hasError: boolean;
+  hasError: boolean
 }
 
 /**
@@ -26,15 +31,22 @@ interface State {
  *     </Suspense>
  *   </SectionErrorBoundary>
  */
-export class SectionErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+class SectionErrorBoundaryInner extends Component<InnerProps, State> {
+  state: State = { hasError: false }
 
   static getDerivedStateFromError(): State {
-    return { hasError: true };
+    return { hasError: true }
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[SectionErrorBoundary]", error.message, info.componentStack);
+    console.error("[SectionErrorBoundary]", error.message, info.componentStack)
+  }
+
+  handleRetry = () => {
+    startTransition(() => {
+      this.props.router.refresh()
+      this.setState({ hasError: false })
+    })
   }
 
   render() {
@@ -47,20 +59,27 @@ export class SectionErrorBoundary extends Component<Props, State> {
             this.props.message ??
             "Something went wrong while loading. Check your connection and try again."
           }
-          onRetry={() => this.setState({ hasError: false })}
+          onRetry={this.handleRetry}
         />
-      );
+      )
 
       // padded: one single py-16 wrapping — no double spacing
       return this.props.padded ? (
-        <section className="py-16 flex items-center justify-center px-6">
+        <section className="flex items-center justify-center px-6 py-16">
           {inner}
         </section>
       ) : (
-        <div className="flex items-center justify-center py-10 px-6">{inner}</div>
-      );
+        <div className="flex items-center justify-center px-6 py-10">
+          {inner}
+        </div>
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
+}
+
+export function SectionErrorBoundary(props: Props) {
+  const router = useRouter()
+  return <SectionErrorBoundaryInner {...props} router={router} />
 }

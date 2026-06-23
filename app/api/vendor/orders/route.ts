@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { Types } from "mongoose"
+import { Types, type PipelineStage } from "mongoose"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
@@ -7,7 +7,11 @@ import { serializeOrder } from "@/lib/serializers"
 
 /**
  * GET /api/vendor/orders
- * Returns orders for the authenticated vendor, sorted newest first.
+ * Returns orders for the authenticated vendor with a priority sort:
+ * paid orders (paymentStatus: "paid") appear first, then unpaid —
+ * both tiers ordered newest-first by createdAt.
+ *
+ * Used by the vendor dashboard (limit: 10) and the useVendorOrders hook.
  *
  * Query params:
  *  - status: filter by order status (or "all" to skip)
@@ -38,12 +42,23 @@ export async function GET(request: Request) {
       query.status = status
     }
 
-    let q = Order.find(query).sort({ createdAt: -1 })
+    // Smart priority sort: paid orders first, then newest first within each tier
+    const pipeline: PipelineStage[] = [
+      { $match: query },
+      {
+        $addFields: {
+          _sortPriority: {
+            $cond: [{ $eq: ["$paymentStatus", "paid"] }, 0, 1],
+          },
+        },
+      },
+      { $sort: { _sortPriority: 1, createdAt: -1 } },
+    ]
     if (limit > 0) {
-      q = q.limit(limit)
+      pipeline.push({ $limit: limit })
     }
 
-    const orders = await q.lean()
+    const orders = await Order.aggregate(pipeline)
     return NextResponse.json(orders.map(serializeOrder))
   } catch (error) {
     console.error("[vendor/orders GET]", error)

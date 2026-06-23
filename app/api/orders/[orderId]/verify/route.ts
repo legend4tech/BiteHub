@@ -5,6 +5,7 @@ import Order from "@/models/Order"
 import { sendOrderReceiptEmail } from "@/lib/mail"
 import { sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
+import { ORDER_STATUS } from "@/lib/constants"
 
 export async function POST(
   request: Request,
@@ -40,7 +41,7 @@ export async function POST(
         {
           $set: {
             paymentStatus: "paid",
-            status: "confirmed",
+            status: ORDER_STATUS.CONFIRMED,
           },
         },
         { new: true }

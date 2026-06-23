@@ -66,10 +66,12 @@ export interface MenuItem {
   prepTimeUnit: "minutes" | "hours" | "days" | null
   quantityAvailable: number | null
   availableDays: string[]
+  dietaryTags?: string[]
   createdAt: string
   updatedAt: string
 
   // Fabricated UI properties
+  isAvailableNow?: boolean
   vendorName?: string
   vendorSlug?: string
   vendorWhatsappNumber?: string // Carried from vendor so the cart can send it with the order

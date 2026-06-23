@@ -2,7 +2,11 @@
 
 import { MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { buildWhatsAppLink, buildOrderWhatsAppMessage } from "@/lib/constants"
+import {
+  buildWhatsAppLink,
+  buildOrderWhatsAppMessage,
+  ORDER_STATUS,
+} from "@/lib/constants"
 import type { OrderStatus } from "@/lib/types"
 
 interface WhatsAppButtonProps {
@@ -32,15 +36,15 @@ export function WhatsAppButton({
   const handleClick = () => {
     let message = ""
 
-    if (status === "pending") {
+    if (status === ORDER_STATUS.PENDING) {
       message = `Hello! My order *${order.orderId}* is still pending. Could you please check on it?`
-    } else if (status === "confirmed") {
+    } else if (status === ORDER_STATUS.CONFIRMED) {
       message = `Hello! I see my order *${order.orderId}* is confirmed. Could you give me a rough estimate of when it will be ready?`
-    } else if (status === "preparing") {
+    } else if (status === ORDER_STATUS.PREPARING) {
       message = `Hello! I see you are preparing my order *${order.orderId}*. Thank you!`
-    } else if (status === "ready") {
+    } else if (status === ORDER_STATUS.READY) {
       message = `Hello! I see my order *${order.orderId}* is ready for pickup. I am on my way!`
-    } else if (status === "completed") {
+    } else if (status === ORDER_STATUS.COMPLETED) {
       message = `Hello! I just received my order *${order.orderId}*. Thank you so much!`
     } else {
       message = buildOrderWhatsAppMessage(order)
@@ -57,15 +61,15 @@ export function WhatsAppButton({
       className={`border-0 bg-[#25D366] text-white hover:bg-[#1ebe5d] ${className ?? ""}`}
     >
       <MessageCircle className="size-5" />
-      {status === "pending"
+      {status === ORDER_STATUS.PENDING
         ? "Ask why still pending"
-        : status === "confirmed"
+        : status === ORDER_STATUS.CONFIRMED
           ? "Ask for ETA"
-          : status === "preparing"
+          : status === ORDER_STATUS.PREPARING
             ? "Say thank you"
-            : status === "ready"
+            : status === ORDER_STATUS.READY
               ? "Say I'm on my way"
-              : status === "completed"
+              : status === ORDER_STATUS.COMPLETED
                 ? "Send a thank you"
                 : "Chat vendor on WhatsApp"}
     </Button>

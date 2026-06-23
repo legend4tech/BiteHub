@@ -177,6 +177,7 @@ export const menuItemFormSchema = z
         "Friday",
         "Saturday",
       ]),
+    dietaryTags: z.array(z.string()).optional().default([]),
   })
   .refine(
     (data) => {

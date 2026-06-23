@@ -119,7 +119,7 @@ export async function GET() {
                 {
                   $and: [
                     { $eq: ["$paymentStatus", "paid"] },
-                    { $ne: ["$status", "cancelled"] },
+                    { $ne: ["$status", ORDER_STATUS.CANCELLED] },
                   ],
                 },
                 {

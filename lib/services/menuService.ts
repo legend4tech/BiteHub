@@ -11,6 +11,8 @@ import MenuItem from "@/models/MenuItem"
 import Vendor from "@/models/Vendor"
 import { serializeMenuItem } from "@/lib/serializers"
 import type mongoose from "mongoose"
+import type { SortOrder } from "mongoose"
+import { isItemAvailableNow } from "@/lib/timeUtils"
 
 // Tag logic — single definition for the entire codebase
 export function getItemTag(price: number): string | null {
@@ -24,12 +26,23 @@ export interface GetMenusOptions {
   campus?: string
   page?: number
   limit?: number
+  sortBy?: string
+  availableOnly?: boolean
 }
 
 /// ─── List menu items (paginated, filtered) ─────────────────────────────────────
 
 export async function getMenus(options: GetMenusOptions = {}) {
-  const { q, category, school, campus, page = 1, limit = 20 } = options
+  const {
+    q,
+    category,
+    school,
+    campus,
+    page = 1,
+    limit = 20,
+    sortBy,
+    availableOnly,
+  } = options
   const skip = (page - 1) * limit
 
   await dbConnect()
@@ -62,6 +75,70 @@ export async function getMenus(options: GetMenusOptions = {}) {
     query.category = category
   }
 
+  if (availableOnly) {
+    const now = new Date()
+    const options: Intl.DateTimeFormatOptions = { timeZone: "Africa/Lagos" }
+    const currentDayOfWeek = new Intl.DateTimeFormat("en-US", {
+      ...options,
+      weekday: "long",
+    }).format(now)
+    const timeString = new Intl.DateTimeFormat("en-US", {
+      ...options,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(now)
+
+    query.$and = [
+      { isAvailable: true },
+      {
+        $or: [
+          { availableDays: { $size: 0 } },
+          { availableDays: { $exists: false } },
+          { availableDays: currentDayOfWeek },
+        ],
+      },
+      {
+        $or: [
+          // No schedule or quantity sold out (handled by quantityAvailable > 0 or null)
+          { availableFrom: null, availableTo: null },
+          { availableFrom: "", availableTo: "" },
+          {
+            availableFrom: { $exists: false },
+            availableTo: { $exists: false },
+          },
+          // Simple interval
+          {
+            $and: [
+              { $expr: { $lte: ["$availableFrom", "$availableTo"] } },
+              { availableFrom: { $lte: timeString } },
+              { availableTo: { $gte: timeString } },
+            ],
+          },
+          // Cross-midnight interval
+          {
+            $and: [
+              { $expr: { $gt: ["$availableFrom", "$availableTo"] } },
+              {
+                $or: [
+                  { availableFrom: { $lte: timeString } },
+                  { availableTo: { $gte: timeString } },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        $or: [
+          { quantityAvailable: null },
+          { quantityAvailable: { $exists: false } },
+          { quantityAvailable: { $gt: 0 } },
+        ],
+      },
+    ]
+  }
+
   if (q) {
     query = {
       ...query,
@@ -73,8 +150,13 @@ export async function getMenus(options: GetMenusOptions = {}) {
     }
   }
 
+  let sortQuery: Record<string, SortOrder> = { createdAt: -1, _id: -1 }
+  if (sortBy === "price_asc") sortQuery = { price: 1, _id: -1 }
+  else if (sortBy === "price_desc") sortQuery = { price: -1, _id: -1 }
+  else if (sortBy === "name_asc") sortQuery = { name: 1, _id: -1 }
+
   const [items, totalItems] = await Promise.all([
-    MenuItem.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    MenuItem.find(query).sort(sortQuery).skip(skip).limit(limit).lean(),
     MenuItem.countDocuments(query),
   ])
 
@@ -107,6 +189,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
           vendorWhatsappMap.get(item.vendorId.toString()) || "",
         vendorPrepTime: vendorData?.prepTime || "",
         tag: getItemTag(item.price),
+        isAvailableNow: base.isAvailableNow,
       }
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
@@ -125,7 +208,7 @@ export async function getVendorMenuItems(
 
   // Fetch all items for stats and full category list
   const allItemsDocs = await MenuItem.find({ vendorId })
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1, _id: -1 })
     .lean()
 
   const allItems = allItemsDocs
@@ -138,7 +221,7 @@ export async function getVendorMenuItems(
   if (category && category !== "all") filter.category = category
 
   const filteredDocs = await MenuItem.find(filter)
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1, _id: -1 })
     .lean()
 
   const filteredItems = filteredDocs
@@ -185,7 +268,7 @@ export async function getMenuItemById(id: string) {
     isAvailable: true,
     _id: { $ne: itemDoc._id },
   })
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1, _id: -1 })
     .limit(4)
     .lean()
 

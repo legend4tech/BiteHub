@@ -12,7 +12,7 @@ import { FadeIn } from "@/components/FadeIn"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import Image from "next/image"
-import { Search } from "lucide-react"
+import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react"
 import { useDebounce } from "@/hooks/useDebounce"
 
 interface VendorMenuProps {
@@ -40,6 +40,11 @@ export function VendorMenu({
   const urlSearch = searchParams.get("q") || ""
   const [searchVal, setSearchVal] = useState(urlSearch)
   const debouncedSearch = useDebounce(searchVal, 350)
+
+  // Client-side filters & sorting
+  const [showFilters, setShowFilters] = useState(false)
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false)
+  const [sortBy, setSortBy] = useState("none") // none, price_asc, price_desc, name_asc
 
   useEffect(() => {
     setTimeout(() => setSearchVal(urlSearch), 0)
@@ -87,8 +92,18 @@ export function VendorMenu({
     ),
   ]
 
-  // Items are already filtered by the backend — no client-side filtering needed
+  // Apply client-side sorting and filtering
   const filtered = initialItems
+    .filter((item) => {
+      if (showAvailableOnly && item.isAvailableNow === false) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === "price_asc") return a.price - b.price
+      if (sortBy === "price_desc") return b.price - a.price
+      if (sortBy === "name_asc") return a.name.localeCompare(b.name)
+      return 0
+    })
 
   const handleCategoryClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -100,18 +115,70 @@ export function VendorMenu({
 
   return (
     <div className="space-y-6">
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={searchVal}
-          disabled={isPending}
-          onChange={(e) => setSearchVal(e.target.value)}
-          placeholder="Search menu items…"
-          className="w-full rounded-2xl border border-border bg-card py-3.5 pr-4 pl-10 text-base transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30 focus:outline-none disabled:opacity-70"
-        />
+      {/* Search Input & Filters Toggle */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchVal}
+            disabled={isPending}
+            onChange={(e) => setSearchVal(e.target.value)}
+            placeholder="Search menu items…"
+            className="w-full rounded-2xl border border-border bg-card py-3.5 pr-4 pl-10 text-base transition-all placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/30 focus:outline-none disabled:opacity-70"
+          />
+        </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-medium transition-colors md:px-5 ${
+            showFilters || showAvailableOnly || sortBy !== "none"
+              ? "border-primary bg-primary/5 text-primary"
+              : "border-border bg-card text-foreground hover:bg-muted"
+          }`}
+        >
+          <SlidersHorizontal className="size-4" />
+          <span className="hidden md:inline">Filters</span>
+        </button>
       </div>
+
+      {/* Expanded Filters panel */}
+      {showFilters && (
+        <FadeIn className="rounded-2xl border border-border bg-card p-4 shadow-sm md:p-5">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={showAvailableOnly}
+                    onChange={(e) => setShowAvailableOnly(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="h-6 w-11 rounded-full bg-muted transition-colors peer-checked:bg-primary"></div>
+                  <div className="absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5"></div>
+                </div>
+                <span className="text-sm font-medium select-none">
+                  Available to order now
+                </span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <ArrowUpDown className="size-4 text-muted-foreground" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rounded-xl border border-border bg-background py-2 pr-8 pl-3 text-sm focus:border-primary/50 focus:ring-2 focus:ring-primary/30 focus:outline-none"
+              >
+                <option value="none">Sort by: Recommended</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="name_asc">Name: A to Z</option>
+              </select>
+            </div>
+          </div>
+        </FadeIn>
+      )}
 
       {/* Category tabs */}
       {availableCategories.length > 1 && (

@@ -162,6 +162,7 @@ export default function AdminPage() {
                     loadingStats={loadingStats}
                     noAccountVendors={noAccountVendors}
                     onGoToVendors={() => setActiveSection("vendors")}
+                    onRefresh={() => refetchStats()}
                   />
                 ))}
               {activeSection === "orders" && <AdminOrders />}

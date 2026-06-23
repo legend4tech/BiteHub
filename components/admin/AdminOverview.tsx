@@ -11,8 +11,10 @@ import {
   Store,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
+import apiClient from "@/lib/axios"
 import { formatPrice } from "@/lib/format"
-import type { AdminStats, AdminVendor } from "./types"
+import type { AdminStats, AdminVendor, AdminOrder } from "./types"
 import type { AdminSection } from "./AdminSidebar"
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ interface AdminOverviewProps {
   loadingStats: boolean
   noAccountVendors: AdminVendor[]
   onGoToVendors: () => void
+  onRefresh: () => void
 }
 
 export function AdminOverview({
@@ -71,14 +74,53 @@ export function AdminOverview({
   loadingStats,
   noAccountVendors,
   onGoToVendors,
+  onRefresh,
 }: AdminOverviewProps) {
+  // Fetch the 5 most recent orders for the quick feed
+  const { data: recentOrdersData, isLoading: loadingOrders } = useQuery<{
+    orders: AdminOrder[]
+  }>({
+    queryKey: ["admin-recent-orders"],
+    queryFn: async () =>
+      (await apiClient.get("/admin/orders?page=1&limit=5")).data,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  })
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-status-pending/20 text-status-pending-foreground"
+      case "confirmed":
+        return "bg-status-confirmed/20 text-status-confirmed-foreground"
+      case "preparing":
+        return "bg-status-preparing/20 text-status-preparing-foreground"
+      case "ready":
+        return "bg-status-ready/20 text-status-ready-foreground"
+      case "completed":
+        return "bg-status-completed/20 text-status-completed-foreground"
+      case "cancelled":
+        return "bg-status-cancelled/20 text-status-cancelled-foreground"
+      default:
+        return "bg-muted text-muted-foreground"
+    }
+  }
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Platform stats at a glance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-bold">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Platform stats at a glance
+          </p>
+        </div>
+        <Button
+          onClick={onRefresh}
+          variant="outline"
+          size="sm"
+          disabled={loadingStats}
+        >
+          Refresh Stats
+        </Button>
       </div>
 
       {loadingStats ? (
@@ -92,7 +134,7 @@ export function AdminOverview({
         </div>
       ) : stats ? (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             <StatCard
               label="Total Vendors"
               value={stats.totalVendors}
@@ -112,10 +154,28 @@ export function AdminOverview({
               accent
             />
             <StatCard
-              label="Total Revenue"
-              value={formatPrice(stats.totalRevenue)}
+              label="Gross Volume (GMV)"
+              value={formatPrice(stats.grossVolume)}
+              icon={TrendingUp}
+              sub="Total money processed"
+            />
+            <StatCard
+              label="Platform Profit"
+              value={formatPrice(stats.platformProfit)}
               icon={TrendingUp}
               accent
+              sub="BiteHub gross commission"
+            />
+            <StatCard
+              label="Live Monnify Balance"
+              value={
+                stats.monnifyBalance !== null
+                  ? formatPrice(stats.monnifyBalance)
+                  : "N/A"
+              }
+              icon={TrendingUp}
+              accent
+              sub="Actual available cash"
             />
           </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -169,6 +229,77 @@ export function AdminOverview({
               </Button>
             </div>
           )}
+
+          {/* Recent Orders Feed */}
+          <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border bg-muted/20 px-6 py-4">
+              <h2 className="font-heading text-lg font-bold">
+                Recent Live Orders
+              </h2>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-preparing opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-status-preparing"></span>
+              </span>
+            </div>
+            {loadingOrders ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                Loading recent orders...
+              </div>
+            ) : recentOrdersData?.orders &&
+              recentOrdersData.orders.length > 0 ? (
+              <div className="divide-y divide-border">
+                {recentOrdersData.orders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex flex-col gap-3 px-6 py-4 transition-colors hover:bg-muted/30"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-sm font-bold">
+                        {order.orderId}
+                      </p>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          Customer
+                        </p>
+                        <p className="font-medium">{order.customerName}</p>
+                        <a
+                          href={`tel:${order.customerPhone}`}
+                          className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        >
+                          {order.customerPhone}
+                        </a>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          Vendor
+                        </p>
+                        <p className="font-medium">{order.vendorName}</p>
+                        <a
+                          href={`https://wa.me/${order.vendorWhatsappNumber.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        >
+                          {order.vendorWhatsappNumber}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                No recent orders found.
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <p className="text-sm text-muted-foreground">Failed to load stats.</p>

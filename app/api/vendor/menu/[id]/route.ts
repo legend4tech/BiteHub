@@ -5,6 +5,7 @@ import MenuItem from "@/models/MenuItem"
 import { auth } from "@/auth"
 import { serializeMenuItem } from "@/lib/serializers"
 import { deleteFromCloudinary } from "@/lib/cloudinary"
+import { isItemAvailableNow } from "@/lib/timeUtils"
 
 export async function GET(
   request: Request,
@@ -79,6 +80,21 @@ export async function PATCH(
         await deleteFromCloudinary(oldPublicId)
       }
     }
+
+    // Prepare updated fields for availability calculation
+    const updatedIsAvailable = body.isAvailable ?? existingItem.isAvailable
+    const updatedAvailableFrom =
+      body.availableFrom ?? existingItem.availableFrom
+    const updatedAvailableTo = body.availableTo ?? existingItem.availableTo
+    const updatedAvailableDays =
+      body.availableDays ?? existingItem.availableDays
+
+    body.computedIsAvailableNow = isItemAvailableNow(
+      updatedIsAvailable,
+      updatedAvailableFrom,
+      updatedAvailableTo,
+      updatedAvailableDays
+    )
 
     const item = await MenuItem.findOneAndUpdate(
       { _id: id, vendorId },

@@ -10,6 +10,7 @@ import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
 import AdminOrderCancelledEmail from "@/emails/AdminOrderCancelledEmail"
 import CustomerOrderStatusEmail from "@/emails/CustomerOrderStatusEmail"
 import OrderCompletedEmail from "@/emails/OrderCompletedEmail"
+import CustomerOrderCancelledEmail from "@/emails/CustomerOrderCancelledEmail"
 import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 import React from "react"
@@ -583,6 +584,47 @@ export async function sendVendorWelcomeEmail(
     return { success: true, data }
   } catch (error) {
     console.error("Failed to send vendor welcome email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendCustomerOrderCancelledEmail(
+  email: string,
+  customerName: string,
+  orderId: string,
+  vendorName: string
+) {
+  const fromEmail = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
+  const resolvedFrom =
+    process.env.NODE_ENV === "production"
+      ? fromEmail
+      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("⚠️ RESEND_API_KEY is not defined in env.")
+    return { success: false, error: "Email provider key missing" }
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolvedFrom,
+      to: email,
+      subject: `Your BiteHub Order ${orderId} Was Cancelled`,
+      react: React.createElement(CustomerOrderCancelledEmail, {
+        customerName,
+        orderId,
+        vendorName,
+      }),
+    })
+
+    if (error) {
+      console.error("Resend API Error (Customer Order Cancelled):", error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send customer order cancelled email:", error)
     return { success: false, error }
   }
 }

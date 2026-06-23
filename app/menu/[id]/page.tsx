@@ -238,7 +238,10 @@ export default async function SingleMenuPage({ params }: Props) {
 
                 {/* Fixed controls area */}
                 <div className="mt-auto border-t border-border pt-8">
-                  <SingleItemCartControls item={mainItem} />
+                  <SingleItemCartControls
+                    item={mainItem}
+                    vendorIsActive={vendor.isActive}
+                  />
                 </div>
               </div>
             </div>

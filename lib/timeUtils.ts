@@ -1,0 +1,70 @@
+export function isItemAvailableNow(
+  isAvailable: boolean,
+  availableFrom: string | null | undefined,
+  availableTo: string | null | undefined,
+  availableDays: string[] | undefined
+): boolean {
+  if (!isAvailable) return false
+
+  const now = new Date()
+
+  // Use West Africa Time (WAT) for Nigerian students by default,
+  // or fall back to system local time if Intl is not supported.
+  // Actually, simpler to just get local time string in a specific timezone if we can,
+  // but to avoid complex timezone math, let's get the current day and time using Intl
+  const options: Intl.DateTimeFormatOptions = { timeZone: "Africa/Lagos" }
+
+  const dayName = new Intl.DateTimeFormat("en-US", {
+    ...options,
+    weekday: "long",
+  }).format(now)
+
+  if (availableDays && availableDays.length > 0) {
+    if (!availableDays.includes(dayName)) {
+      return false
+    }
+  }
+
+  if (availableFrom || availableTo) {
+    const timeString = new Intl.DateTimeFormat("en-US", {
+      ...options,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(now) // e.g. "14:30" or "24:30" (wait, 24-hour can be "24:00" in some runtimes, usually "00:00" to "23:59")
+
+    // Node 18+ might return '24:00' for midnight. Let's handle standard formatting:
+    const [hourStr, minStr] = timeString.split(":")
+    const currentMinutes = parseInt(hourStr) * 60 + parseInt(minStr)
+
+    if (availableFrom) {
+      const [fromH, fromM] = availableFrom.split(":")
+      const fromMinutes = parseInt(fromH) * 60 + parseInt(fromM)
+      if (currentMinutes < fromMinutes) return false
+    }
+
+    if (availableTo) {
+      const [toH, toM] = availableTo.split(":")
+      const toMinutes = parseInt(toH) * 60 + parseInt(toM)
+
+      // Handle cases where availableTo is "00:00" or similar meaning midnight
+      // If from > to, it means it crosses midnight (e.g. 20:00 to 02:00)
+      if (availableFrom) {
+        const [fromH, fromM] = availableFrom.split(":")
+        const fromMinutes = parseInt(fromH) * 60 + parseInt(fromM)
+        if (fromMinutes > toMinutes) {
+          // Crosses midnight.
+          // It's available if time >= fromMinutes OR time <= toMinutes
+          if (currentMinutes < fromMinutes && currentMinutes > toMinutes) {
+            return false
+          }
+          return true
+        }
+      }
+
+      if (currentMinutes > toMinutes) return false
+    }
+  }
+
+  return true
+}

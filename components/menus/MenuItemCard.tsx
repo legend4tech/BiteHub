@@ -104,14 +104,27 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         )}
 
         {item.tag && (
-          <span className="absolute top-2.5 left-2.5 rounded-full border border-border bg-background/95 px-2.5 py-0.5 text-[10px] font-semibold text-foreground">
+          <span className="absolute top-2.5 left-2.5 rounded-full border border-border bg-background/95 px-2.5 py-0.5 text-[10px] font-semibold text-foreground shadow-sm">
             {item.tag}
           </span>
         )}
 
+        {item.dietaryTags && item.dietaryTags.length > 0 && (
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1">
+            {item.dietaryTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-border bg-background/95 px-2 py-0.5 text-[9px] font-bold text-foreground uppercase shadow-sm"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         {!isCurrentlyAvailable && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-            <div className="flex flex-col items-center gap-1 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-center shadow-2xl backdrop-blur-md">
+          <div className="absolute inset-0 flex transform-gpu flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+            <div className="flex transform-gpu flex-col items-center gap-1 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-center shadow-2xl backdrop-blur-md">
               <span className="text-xs font-black tracking-widest text-white uppercase drop-shadow-md">
                 {!item.isAvailable
                   ? "Unlisted"

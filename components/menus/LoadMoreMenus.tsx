@@ -41,6 +41,7 @@ export function LoadMoreMenus({
     hasNextPage,
     isFetchingNextPage,
     status,
+    refetch,
   } = useMenuItems({
     q: searchQuery,
     category: categoryQuery,
@@ -85,7 +86,7 @@ export function LoadMoreMenus({
             error?.message ||
             "Something went wrong while fetching the next batch of menu items."
           }
-          onRetry={() => fetchNextPage()}
+          onRetry={() => refetch()}
         />
       )}
 

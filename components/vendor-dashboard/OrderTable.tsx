@@ -353,7 +353,11 @@ export function OrderTable({
                       const isBackwards =
                         STATUS_LEVELS[s] < STATUS_LEVELS[order.status]
                       const isCancelled = s === ORDER_STATUS.CANCELLED
-                      const isDisabled = isBackwards && !isCancelled
+
+                      const isPendingPayment = order.paymentStatus === "pending"
+                      const isDisabled =
+                        (isBackwards && !isCancelled) ||
+                        (isPendingPayment && !isCancelled)
 
                       return (
                         <option key={s} value={s} disabled={isDisabled}>

@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db"
 import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
+import { ORDER_STATUS } from "@/lib/constants"
 
 async function processSuccessfulTransaction(paymentReference: string) {
   const monnifyData = await verifyMonnifyTransaction(paymentReference)
@@ -49,7 +50,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
     {
       $set: {
         paymentStatus: "paid",
-        status: "confirmed",
+        status: ORDER_STATUS.CONFIRMED,
       },
     },
     { new: true }

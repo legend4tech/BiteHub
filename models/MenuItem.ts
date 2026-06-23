@@ -17,6 +17,7 @@ export interface IMenuItem extends Document {
   prepTimeUnit?: "minutes" | "hours" | "days"
   quantityAvailable?: number | null
   availableDays: string[]
+  dietaryTags?: string[]
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -51,6 +52,10 @@ const MenuItemSchema: Schema = new Schema(
         "Friday",
         "Saturday",
       ],
+    },
+    dietaryTags: {
+      type: [String],
+      default: [],
     },
   },
   {

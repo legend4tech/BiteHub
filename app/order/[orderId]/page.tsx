@@ -32,6 +32,7 @@ import {
   FeedbackModal,
   FEEDBACK_SNOOZE_DURATION,
 } from "@/components/shared/FeedbackModal"
+import { ORDER_STATUS } from "@/lib/constants"
 
 export default function OrderPage() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -94,7 +95,7 @@ export default function OrderPage() {
   }
 
   useEffect(() => {
-    if (order?.status === "completed") {
+    if (order?.status === ORDER_STATUS.COMPLETED) {
       const handled = localStorage.getItem(`feedback_handled_${orderId}`)
       const snoozedAt = localStorage.getItem(`feedback_snoozed_${orderId}`)
 

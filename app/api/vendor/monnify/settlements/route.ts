@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import { serializeOrder, type LeanOrder } from "@/lib/serializers"
+import { ORDER_STATUS } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -58,13 +59,26 @@ export async function GET() {
           totalOrders: { $sum: 1 },
           completedRevenue: {
             $sum: {
-              $cond: [{ $eq: ["$status", "completed"] }, "$vendorRevenue", 0],
+              $cond: [
+                { $eq: ["$status", ORDER_STATUS.COMPLETED] },
+                "$vendorRevenue",
+                0,
+              ],
             },
           },
           pendingRevenue: {
             $sum: {
               $cond: [
-                { $in: ["$status", ["confirmed", "preparing", "ready"]] },
+                {
+                  $in: [
+                    "$status",
+                    [
+                      ORDER_STATUS.CONFIRMED,
+                      ORDER_STATUS.PREPARING,
+                      ORDER_STATUS.READY,
+                    ],
+                  ],
+                },
                 "$vendorRevenue",
                 0,
               ],

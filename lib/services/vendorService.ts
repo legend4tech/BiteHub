@@ -18,6 +18,9 @@ export interface GetVendorsOptions {
   campus?: string
   page?: number
   limit?: number
+  freeDelivery?: boolean
+  topRated?: boolean
+  openNow?: boolean
 }
 
 export interface GetFeaturedVendorsOptions {
@@ -41,6 +44,9 @@ export async function getVendors(options: GetVendorsOptions = {}) {
 
   if (school) query.school = school
   if (campus) query.campus = campus
+  if (options.freeDelivery) query.deliveryFee = 0
+  if (options.topRated) query.rating = { $gte: 4.0 }
+  if (options.openNow) query.isActive = true
 
   const finalQuery: Record<string, unknown> = { ...query }
 
@@ -58,7 +64,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
       .select(
         "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
       )
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -105,7 +111,7 @@ export async function getFeaturedVendors(
     .select(
       "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
     )
-    .sort({ isFeatured: -1, rating: -1, createdAt: -1 })
+    .sort({ isFeatured: -1, rating: -1, createdAt: -1, _id: -1 })
     .limit(limit)
     .lean()
 

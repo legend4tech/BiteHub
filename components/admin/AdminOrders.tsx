@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import apiClient from "@/lib/axios"
 import type { AdminOrder } from "./types"
 import { formatPrice } from "@/lib/format"
+import { ORDER_STATUS } from "@/lib/constants"
 
 interface OrdersResponse {
   orders: AdminOrder[]
@@ -47,17 +48,17 @@ export function AdminOrders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
+      case ORDER_STATUS.PENDING:
         return "bg-status-pending/20 text-status-pending-foreground"
-      case "confirmed":
+      case ORDER_STATUS.CONFIRMED:
         return "bg-status-confirmed/20 text-status-confirmed-foreground"
-      case "preparing":
+      case ORDER_STATUS.PREPARING:
         return "bg-status-preparing/20 text-status-preparing-foreground"
-      case "ready":
+      case ORDER_STATUS.READY:
         return "bg-status-ready/20 text-status-ready-foreground"
-      case "completed":
+      case ORDER_STATUS.COMPLETED:
         return "bg-status-completed/20 text-status-completed-foreground"
-      case "cancelled":
+      case ORDER_STATUS.CANCELLED:
         return "bg-status-cancelled/20 text-status-cancelled-foreground"
       default:
         return "bg-muted text-muted-foreground"
@@ -133,7 +134,9 @@ export function AdminOrders() {
                         {order.status}
                       </span>
                       <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        Paid via {order.paymentMethod}
+                        {order.paymentStatus === "paid"
+                          ? `Paid via ${order.paymentMethod}`
+                          : `Payment ${order.paymentStatus}`}
                       </span>
                       <p className="ml-auto text-xs text-muted-foreground">
                         {new Date(order.createdAt).toLocaleString("en-NG", {

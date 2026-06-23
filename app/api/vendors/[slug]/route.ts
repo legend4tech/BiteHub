@@ -5,6 +5,7 @@ import VendorModel from "@/models/Vendor"
 import MenuItemModel from "@/models/MenuItem"
 import { getItemTag } from "@/lib/services/menuService"
 import { serializeVendor, serializeMenuItem } from "@/lib/serializers"
+import { isItemAvailableNow } from "@/lib/timeUtils"
 
 export async function GET(
   request: Request,
@@ -58,6 +59,7 @@ export async function GET(
     const mappedItems = menuItems.map((item) => ({
       ...serializeMenuItem(item),
       tag: getItemTag(item.price),
+      isAvailableNow: item.computedIsAvailableNow ?? true,
     }))
 
     return NextResponse.json({

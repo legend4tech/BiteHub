@@ -90,7 +90,6 @@ export async function POST(request: Request) {
 
     // Save Vendor Feedback if provided
     if (vendor) {
-      console.log("[API] Received vendor feedback:", vendor)
       await VendorFeedback.create({
         orderId,
         vendorId: vendor.vendorId,

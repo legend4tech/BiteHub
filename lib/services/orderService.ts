@@ -1,12 +1,16 @@
 /**
  * orderService.ts
  *
- * Single source of truth for all order DB queries.
+ * Single source of truth for all vendor order DB queries.
+ * Used by:
+ *   - /vendor/orders (Server Component — paginated order list page)
+ *   - Consumed server-side only; client-side fetching goes through /api/vendor/orders
  */
 
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { serializeOrder, type LeanOrder } from "@/lib/serializers"
+import { Types } from "mongoose"
 import type mongoose from "mongoose"
 import type { Order as OrderType } from "@/lib/types"
 
@@ -18,6 +22,15 @@ export interface GetVendorOrdersOptions {
   limit?: number
 }
 
+/**
+ * Fetches a paginated, priority-sorted list of orders for a vendor.
+ *
+ * Sort order: paid orders (paymentStatus: "paid") always appear first,
+ * then unpaid orders — both tiers sorted newest-first by createdAt.
+ *
+ * NOTE: Uses aggregate() — vendorId MUST be cast to ObjectId before use
+ * since aggregate() does not auto-cast types like find() does.
+ */
 export async function getVendorOrdersPaginated(
   options: GetVendorOrdersOptions
 ) {
@@ -25,7 +38,12 @@ export async function getVendorOrdersPaginated(
 
   await dbConnect()
 
-  const baseMatch: Record<string, unknown> = { vendorId }
+  // Aggregate does NOT auto-cast types — must explicitly convert to ObjectId
+  // so $match correctly compares against the vendorId ObjectId field in MongoDB.
+  const vendorObjectId =
+    vendorId instanceof Types.ObjectId ? vendorId : new Types.ObjectId(vendorId)
+
+  const baseMatch: Record<string, unknown> = { vendorId: vendorObjectId }
 
   if (q) {
     const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -60,17 +78,28 @@ export async function getVendorOrdersPaginated(
   const totalPages = Math.max(1, Math.ceil(currentStatusCount / limit))
   const skip = (page - 1) * limit
 
-  // Fetch only the paginated orders
-  const query = { ...baseMatch }
+  // Fetch paginated orders with smart priority sort:
+  //   Priority 0 → paid orders (paymentStatus: "paid")   — always first
+  //   Priority 1 → unpaid orders                          — last
+  // Within each priority tier, newest order comes first.
+  const pipelineMatch = { ...baseMatch }
   if (status !== "all") {
-    query.status = status
+    pipelineMatch.status = status
   }
 
-  const ordersDocs = await Order.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean()
+  const ordersDocs = await Order.aggregate([
+    { $match: pipelineMatch },
+    {
+      $addFields: {
+        _sortPriority: {
+          $cond: [{ $eq: ["$paymentStatus", "paid"] }, 0, 1],
+        },
+      },
+    },
+    { $sort: { _sortPriority: 1, createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+  ])
 
   const orders = ordersDocs
     .map((doc) => serializeOrder(doc as LeanOrder))

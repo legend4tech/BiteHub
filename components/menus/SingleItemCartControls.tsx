@@ -6,8 +6,17 @@ import { Plus, Minus, ShoppingBag } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import { isItemAvailableToday } from "@/lib/format"
 
-export function SingleItemCartControls({ item }: { item: MenuItem }) {
+interface SingleItemCartControlsProps {
+  item: MenuItem
+  vendorIsActive?: boolean
+}
+
+export function SingleItemCartControls({
+  item,
+  vendorIsActive = true,
+}: SingleItemCartControlsProps) {
   const { cart, addItem, updateQuantity, isDifferentVendor, clearAndAdd } =
     useCart()
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
@@ -15,7 +24,41 @@ export function SingleItemCartControls({ item }: { item: MenuItem }) {
   const cartEntry = cart.items.find((ci) => ci.menuItem.id === item.id)
   const qty = cartEntry?.quantity ?? 0
 
+  const now = new Date()
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`
+
+  const isAvailableToday = isItemAvailableToday(item.availableDays)
+
+  const isScheduled = item.availableFrom && item.availableTo
+  const isOffSchedule =
+    isScheduled &&
+    (currentTime < item.availableFrom! || currentTime > item.availableTo!)
+
+  const isSoldOut =
+    item.quantityAvailable !== null &&
+    item.quantityAvailable !== undefined &&
+    item.quantityAvailable <= 0
+
+  const isCurrentlyAvailable =
+    item.isAvailable &&
+    isAvailableToday &&
+    !isSoldOut &&
+    !isOffSchedule &&
+    vendorIsActive
+
+  let disabledReason = "Unavailable"
+  if (!vendorIsActive) disabledReason = "Vendor Closed"
+  else if (!item.isAvailable) disabledReason = "Unlisted"
+  else if (!isAvailableToday) disabledReason = "Unavailable Today"
+  else if (isSoldOut) disabledReason = "Sold Out"
+  else if (isOffSchedule) disabledReason = "Closed for now"
+
+  const disabled = !isCurrentlyAvailable
+
   const handleAdd = () => {
+    if (disabled) return
     if (isDifferentVendor(item)) {
       setConflictItem(item)
       return
@@ -34,15 +77,34 @@ export function SingleItemCartControls({ item }: { item: MenuItem }) {
 
   return (
     <>
-      {qty === 0 ? (
+      {qty > 0 && disabled ? (
+        <div className="flex w-full items-center justify-between rounded-2xl border-2 border-destructive bg-destructive/5 px-4 py-3 sm:w-auto">
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-destructive">
+              {disabledReason}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Please remove this item
+            </span>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => updateQuantity(item.id, 0)}
+          >
+            Remove
+          </Button>
+        </div>
+      ) : qty === 0 ? (
         <Button
           size="xl"
           variant="hero"
-          className="w-full px-8 text-base font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
+          className="w-full px-8 text-base font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           onClick={handleAdd}
+          disabled={disabled}
         >
           <ShoppingBag className="mr-2 size-5" />
-          Add to Cart
+          {disabled ? disabledReason : "Add to Cart"}
         </Button>
       ) : (
         <div className="flex w-full items-center rounded-2xl border-2 border-primary bg-card p-1 shadow-xl shadow-primary/10 sm:w-[200px]">
@@ -62,7 +124,8 @@ export function SingleItemCartControls({ item }: { item: MenuItem }) {
                 toast.error(result.error)
               }
             }}
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white transition-all hover:bg-primary/90 active:scale-95"
+            disabled={disabled}
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white transition-all hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="size-5" />
           </button>

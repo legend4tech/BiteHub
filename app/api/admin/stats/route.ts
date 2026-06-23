@@ -4,6 +4,7 @@ import VendorModel from "@/models/Vendor"
 import OrderModel from "@/models/Order"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
+import { getMonnifyWalletBalance } from "@/lib/monnify"
 
 export async function GET() {
   try {
@@ -17,12 +18,21 @@ export async function GET() {
 
     await dbConnect()
 
+    // Calculate todayStart in Nigerian time (UTC+1)
     const now = new Date()
-    const todayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    )
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Lagos",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    })
+    const parts = formatter.formatToParts(now)
+    const tzYear = Number(parts.find((p) => p.type === "year")?.value)
+    const tzMonth = Number(parts.find((p) => p.type === "month")?.value) - 1 // 0-indexed
+    const tzDay = Number(parts.find((p) => p.type === "day")?.value)
+
+    // Create Date object for midnight Nigerian time in UTC
+    const todayStart = new Date(Date.UTC(tzYear, tzMonth, tzDay, -1, 0, 0))
 
     const [
       totalVendors,
@@ -30,6 +40,7 @@ export async function GET() {
       totalOrders,
       todayOrders,
       statusCounts,
+      monnifyBalance,
     ] = await Promise.all([
       VendorModel.countDocuments({}),
       VendorModel.countDocuments({ isActive: true }),
@@ -38,6 +49,7 @@ export async function GET() {
       OrderModel.aggregate([
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
+      getMonnifyWalletBalance(),
     ])
 
     // Build a status → count map
@@ -46,12 +58,19 @@ export async function GET() {
       byStatus[entry._id] = entry.count
     }
 
-    // Revenue: sum totalAmount for completed orders
+    // Financials: sum totalAmount (GMV) and platformCommission (Profit) for all PAID orders
     const revenueAgg = await OrderModel.aggregate([
-      { $match: { status: ORDER_STATUS.COMPLETED } },
-      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+      { $match: { paymentStatus: "paid" } },
+      {
+        $group: {
+          _id: null,
+          grossVolume: { $sum: "$totalAmount" },
+          platformProfit: { $sum: "$platformCommission" },
+        },
+      },
     ])
-    const totalRevenue = revenueAgg[0]?.total ?? 0
+    const grossVolume = revenueAgg[0]?.grossVolume ?? 0
+    const platformProfit = revenueAgg[0]?.platformProfit ?? 0
 
     return NextResponse.json({
       totalVendors,
@@ -63,7 +82,9 @@ export async function GET() {
       preparingOrders: byStatus[ORDER_STATUS.PREPARING] ?? 0,
       completedOrders: byStatus[ORDER_STATUS.COMPLETED] ?? 0,
       cancelledOrders: byStatus[ORDER_STATUS.CANCELLED] ?? 0,
-      totalRevenue,
+      grossVolume,
+      platformProfit,
+      monnifyBalance,
     })
   } catch (error) {
     console.error("[admin/stats]", error)

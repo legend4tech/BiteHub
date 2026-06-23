@@ -6,6 +6,7 @@ import { auth } from "@/auth"
 import {
   VALID_ORDER_STATUSES,
   ORDER_STATUS_CONFIG,
+  ORDER_STATUS,
   OrderStatusType,
 } from "@/lib/constants"
 import { z } from "zod"
@@ -54,14 +55,24 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    const wasCancelled = order.status === "cancelled"
+    if (
+      order.paymentStatus === "pending" &&
+      status !== ORDER_STATUS.CANCELLED
+    ) {
+      return NextResponse.json(
+        { error: "Cannot process an unpaid order. You may only cancel it." },
+        { status: 400 }
+      )
+    }
+
+    const wasCancelled = order.status === ORDER_STATUS.CANCELLED
     const oldStatus = order.status
     order.status = status
     await order.save()
 
     // Send customer email if email exists and status changed
     if (order.customerEmail && status !== oldStatus) {
-      if (status === "completed") {
+      if (status === ORDER_STATUS.COMPLETED) {
         const { sendOrderCompletedEmail } = await import("@/lib/mail")
         // Fire and forget
         void sendOrderCompletedEmail(
@@ -87,7 +98,7 @@ export async function PATCH(
       }
     }
 
-    if (status === "cancelled" && !wasCancelled) {
+    if (status === ORDER_STATUS.CANCELLED && !wasCancelled) {
       const { default: AdminUser } = await import("@/models/AdminUser")
       const { sendAdminOrderCancelledEmail } = await import("@/lib/mail")
 

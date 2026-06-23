@@ -8,7 +8,9 @@ export interface AdminStats {
   pendingOrders: number
   completedOrders: number
   cancelledOrders: number
-  totalRevenue: number
+  grossVolume: number
+  platformProfit: number
+  monnifyBalance: number | null
 }
 
 export interface VendorAccount {

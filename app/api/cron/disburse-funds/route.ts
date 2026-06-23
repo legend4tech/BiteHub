@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import Vendor from "@/models/Vendor"
+import { ORDER_STATUS } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
     const query = {
       paymentStatus: "paid",
       paymentMethod: "monnify",
-      status: "completed",
+      status: ORDER_STATUS.COMPLETED,
       isDisbursed: { $ne: true },
       createdAt: { $lt: cutoffTime },
     }
