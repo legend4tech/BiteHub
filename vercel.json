@@ -5,16 +5,8 @@
       "schedule": "30 21 * * *"
     },
     {
-      "path": "/api/cron/cancel-unpaid-orders",
-      "schedule": "55 22 * * *"
-    },
-    {
       "path": "/api/cron/release-quantity",
       "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/update-menu-availability",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
