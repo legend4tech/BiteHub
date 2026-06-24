@@ -8,6 +8,7 @@ const withPWA = withPWAInit({
   skipWaiting: true,
 });
 
+// cache-bust: mail.ts barrel refactor (2026-06-24)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
