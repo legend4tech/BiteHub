@@ -18,6 +18,7 @@ export interface IMenuItem extends Document {
   quantityAvailable?: number | null
   availableDays: string[]
   dietaryTags?: string[]
+  lowStockAlertSent?: boolean
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -56,6 +57,10 @@ const MenuItemSchema: Schema = new Schema(
     dietaryTags: {
       type: [String],
       default: [],
+    },
+    lowStockAlertSent: {
+      type: Boolean,
+      default: false,
     },
   },
   {

@@ -9,6 +9,7 @@ export const CURRENT_TERMS_VERSION = "2026-05-27"
 export const SUPPORT_EMAIL = "contact@bitehubapp.com"
 export const CONTACT_EMAIL = "contact@bitehubapp.com"
 export const NO_REPLY_EMAIL = "no-reply@bitehubapp.com"
+export const LOW_STOCK_THRESHOLD = 5
 
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 

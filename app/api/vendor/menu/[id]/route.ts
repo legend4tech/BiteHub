@@ -6,6 +6,7 @@ import { auth } from "@/auth"
 import { serializeMenuItem } from "@/lib/serializers"
 import { deleteFromCloudinary } from "@/lib/cloudinary"
 import { isItemAvailableNow } from "@/lib/timeUtils"
+import { LOW_STOCK_THRESHOLD } from "@/lib/constants"
 
 export async function GET(
   request: Request,
@@ -95,6 +96,15 @@ export async function PATCH(
       updatedAvailableTo,
       updatedAvailableDays
     )
+
+    // Reset low stock alert if the vendor restocks the item above the threshold or sets it to infinite
+    if (
+      body.quantityAvailable === null ||
+      (body.quantityAvailable !== undefined &&
+        body.quantityAvailable > LOW_STOCK_THRESHOLD)
+    ) {
+      body.lowStockAlertSent = false
+    }
 
     const item = await MenuItem.findOneAndUpdate(
       { _id: id, vendorId },
