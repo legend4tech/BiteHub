@@ -7,10 +7,15 @@ import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
 import GlobalSettings from "@/models/GlobalSettings"
 import { serializeOrder } from "@/lib/serializers"
-import { ORDER_STATUS, generateOrderId } from "@/lib/constants"
+import {
+  ORDER_STATUS,
+  generateOrderId,
+  LOW_STOCK_THRESHOLD,
+} from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
 import { sendOrderInitiatedEmail } from "@/lib/mail"
+import { sendVendorLowStockAlertEmail } from "@/lib/vendorAlertMail"
 import {
   getPrepTimeInHours,
   isPreorderPrepTime,
@@ -366,12 +371,40 @@ export async function POST(request: Request) {
     }
 
     // Reserve quantity by decrementing immediately
-    const bulkOps = items.map((item) => ({
-      updateOne: {
-        filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
-        update: { $inc: { quantityAvailable: -item.quantity } },
-      },
-    }))
+    const bulkOps = items.map((item) => {
+      const dbItem = dbMenuItemsMap.get(item.menuItemId)
+      const updateDoc: {
+        $inc: { quantityAvailable: number }
+        $set?: { lowStockAlertSent: boolean }
+      } = { $inc: { quantityAvailable: -item.quantity } }
+
+      if (
+        dbItem &&
+        dbItem.quantityAvailable !== null &&
+        dbItem.quantityAvailable !== undefined
+      ) {
+        const newQuantity = dbItem.quantityAvailable - item.quantity
+        if (newQuantity <= LOW_STOCK_THRESHOLD && !dbItem.lowStockAlertSent) {
+          updateDoc.$set = { lowStockAlertSent: true }
+          // Fire-and-forget — alert must not block the checkout response
+          sendVendorLowStockAlertEmail(
+            vendorId,
+            finalVendorName,
+            dbItem.name,
+            newQuantity
+          ).catch((err) =>
+            console.error("[POST /api/orders] Low stock alert failed:", err)
+          )
+        }
+      }
+
+      return {
+        updateOne: {
+          filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
+          update: updateDoc,
+        },
+      }
+    })
     if (bulkOps.length > 0) {
       await MenuItem.bulkWrite(bulkOps).catch((err) => {
         console.error("[POST /api/orders] Failed to decrement quantity:", err)
