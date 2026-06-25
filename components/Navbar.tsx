@@ -58,7 +58,7 @@ export function Navbar() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="pointer-events-auto flex h-20 w-full max-w-7xl transform-gpu items-center justify-between rounded-3xl border border-white/20 bg-background/60 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-2xl sm:px-6 dark:border-white/10"
+        className="pointer-events-auto flex h-20 w-full max-w-7xl items-center justify-between rounded-3xl border border-white/20 bg-background/60 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-2xl sm:px-6 dark:border-white/10"
       >
         <Link href={`/?${cq}`} className="group flex items-center gap-2.5">
           <Image
@@ -137,7 +137,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex h-full w-[85vw] max-w-[350px] transform-gpu flex-col overflow-hidden border-l border-white/10 bg-background/90 p-0 shadow-2xl backdrop-blur-2xl"
+              className="flex h-full w-[85vw] max-w-[350px] flex-col overflow-hidden border-l border-white/10 bg-background/90 p-0 shadow-2xl backdrop-blur-2xl"
             >
               {/* Decorative Background Orbs */}
               <div className="pointer-events-none absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
@@ -204,7 +204,7 @@ export function Navbar() {
               </div>
 
               {/* Footer CTA & Info */}
-              <div className="mt-auto transform-gpu border-t border-border/50 bg-background/50 p-6 backdrop-blur-md">
+              <div className="mt-auto border-t border-border/50 bg-background/50 p-6 backdrop-blur-md">
                 <SheetClose asChild>
                   <Button
                     asChild

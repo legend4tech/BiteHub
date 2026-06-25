@@ -123,8 +123,8 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         )}
 
         {!isCurrentlyAvailable && (
-          <div className="absolute inset-0 flex transform-gpu flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
-            <div className="flex transform-gpu flex-col items-center gap-1 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-center shadow-2xl backdrop-blur-md">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+            <div className="flex flex-col items-center gap-1 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-center shadow-2xl backdrop-blur-md">
               <span className="text-xs font-black tracking-widest text-white uppercase drop-shadow-md">
                 {!item.isAvailable
                   ? "Unlisted"

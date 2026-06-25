@@ -18,7 +18,7 @@ export function CartSummary({ onCheckout }: CartSummaryProps) {
 
   return (
     <div className="fixed bottom-6 left-1/2 z-40 w-full max-w-md -translate-x-1/2 px-4">
-      <div className="flex transform-gpu flex-col overflow-hidden rounded-2xl border border-primary/30 bg-primary shadow-[0_8px_32px_-4px_rgba(var(--primary),0.35)] backdrop-blur-xl">
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-primary/30 bg-primary shadow-[0_8px_32px_-4px_rgba(var(--primary),0.35)] backdrop-blur-xl">
         {/* Subtle Header */}
         <div className="flex items-center justify-between bg-black/10 px-5 py-2 dark:bg-black/20">
           <span className="text-[11px] font-semibold tracking-wider text-primary-foreground/80 uppercase">
