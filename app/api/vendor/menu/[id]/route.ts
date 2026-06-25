@@ -90,11 +90,17 @@ export async function PATCH(
     const updatedAvailableDays =
       body.availableDays ?? existingItem.availableDays
 
+    const updatedQuantityAvailable =
+      body.quantityAvailable !== undefined
+        ? body.quantityAvailable
+        : existingItem.quantityAvailable
+
     body.computedIsAvailableNow = isItemAvailableNow(
       updatedIsAvailable,
       updatedAvailableFrom,
       updatedAvailableTo,
-      updatedAvailableDays
+      updatedAvailableDays,
+      updatedQuantityAvailable
     )
 
     // Reset low stock alert if the vendor restocks the item above the threshold or sets it to infinite

@@ -118,7 +118,8 @@ export async function POST(request: Request) {
       newItem.isAvailable,
       newItem.availableFrom,
       newItem.availableTo,
-      newItem.availableDays
+      newItem.availableDays,
+      newItem.quantityAvailable
     )
     newItem.computedIsAvailableNow = computedIsAvailableNow
     await newItem.save()

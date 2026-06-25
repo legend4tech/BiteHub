@@ -2,9 +2,19 @@ export function isItemAvailableNow(
   isAvailable: boolean,
   availableFrom: string | null | undefined,
   availableTo: string | null | undefined,
-  availableDays: string[] | undefined
+  availableDays: string[] | undefined,
+  quantityAvailable?: number | null
 ): boolean {
   if (!isAvailable) return false
+
+  // Handle sold out items
+  if (
+    quantityAvailable !== undefined &&
+    quantityAvailable !== null &&
+    quantityAvailable <= 0
+  ) {
+    return false
+  }
 
   const now = new Date()
 

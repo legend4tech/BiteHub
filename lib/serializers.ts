@@ -114,7 +114,8 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
       doc.isAvailable,
       doc.availableFrom,
       doc.availableTo,
-      doc.availableDays
+      doc.availableDays,
+      doc.quantityAvailable
     ),
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),

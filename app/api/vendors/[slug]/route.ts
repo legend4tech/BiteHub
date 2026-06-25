@@ -59,7 +59,6 @@ export async function GET(
     const mappedItems = menuItems.map((item) => ({
       ...serializeMenuItem(item),
       tag: getItemTag(item.price),
-      isAvailableNow: item.computedIsAvailableNow ?? true,
     }))
 
     return NextResponse.json({
