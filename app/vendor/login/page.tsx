@@ -25,11 +25,7 @@ import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 import Image from "next/image"
 
-const vendorLoginSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-})
-type VendorLoginValues = z.infer<typeof vendorLoginSchema>
+import { vendorLoginSchema, type VendorLoginValues } from "@/lib/schemas"
 
 export default function VendorLoginPage() {
   const router = useRouter()

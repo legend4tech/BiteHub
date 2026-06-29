@@ -64,13 +64,13 @@ export const VendorLowStockAlertEmail = ({
 }
 
 const main = {
-  backgroundColor: "#f6f9fc",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "var(--card)",
   margin: "0 auto",
   padding: "20px 0 48px",
   marginBottom: "64px",
@@ -96,14 +96,14 @@ const text = {
 
 const alertSection = {
   padding: "24px",
-  backgroundColor: "#fffbeb",
+  backgroundColor: "var(--status-pending)",
   borderRadius: "8px",
   margin: "24px 48px",
   borderLeft: "4px solid #f59e0b",
 }
 
 const alertText = {
-  color: "#92400e",
+  color: "var(--status-pending-foreground)",
   fontSize: "16px",
   lineHeight: "24px",
   margin: "0",
@@ -118,7 +118,7 @@ const buttonContainer = {
 const button = {
   backgroundColor: "#f97316", // Brand primary color
   borderRadius: "8px",
-  color: "#fff",
+  color: "var(--primary-foreground)",
   fontSize: "16px",
   fontWeight: "bold",
   textDecoration: "none",

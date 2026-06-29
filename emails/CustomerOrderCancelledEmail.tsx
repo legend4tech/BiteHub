@@ -99,7 +99,7 @@ export default CustomerOrderCancelledEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f9fafb",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -108,8 +108,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -131,11 +131,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const logoHighlight = {
-  color: "#ff6b00",
+  color: "var(--primary)",
 }
 
 const subHeader = {
@@ -144,11 +144,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "#6b7280",
+  color: "var(--muted-foreground)",
 }
 
 const divider = {
-  borderColor: "#e5e7eb",
+  borderColor: "var(--border)",
   margin: "20px 0",
 }
 
@@ -175,7 +175,7 @@ const infoHeading = {
   margin: "0 0 8px 0",
   fontSize: "14px",
   fontWeight: "bold",
-  color: "#92400e",
+  color: "var(--status-pending-foreground)",
 }
 
 const infoDesc = {
@@ -186,8 +186,8 @@ const infoDesc = {
 }
 
 const button = {
-  backgroundColor: "#ff6b00",
-  color: "#fff",
+  backgroundColor: "var(--primary)",
+  color: "var(--primary-foreground)",
   padding: "12px 24px",
   borderRadius: "8px",
   textDecoration: "none",
@@ -206,6 +206,6 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "#9ca3af",
+  color: "var(--muted-foreground)",
   margin: "0 0 6px 0",
 }

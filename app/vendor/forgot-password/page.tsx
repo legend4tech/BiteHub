@@ -12,13 +12,10 @@ import { useForm, Controller, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-import axios from "axios"
+import { useVendorForgotPassword } from "@/hooks/mutations/useVendorMutations"
 import Image from "next/image"
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-})
-type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>
+import { forgotPasswordSchema, type ForgotPasswordValues } from "@/lib/schemas"
 
 export default function ForgotPasswordPage() {
   const searchParams = useSearchParams()
@@ -40,22 +37,29 @@ export default function ForgotPasswordPage() {
     }
   }, [searchParams, form])
 
-  const onSubmit = async (values: ForgotPasswordValues) => {
+  const forgotPasswordMutation = useVendorForgotPassword()
+
+  const onSubmit = (values: ForgotPasswordValues) => {
     setLoading(true)
-    try {
-      await axios.post("/api/vendor/forgot-password", {
-        email: values.email.trim(),
-      })
-      setSubmitted(true)
-      toast.success("Verification link sent!")
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      const errorMsg =
-        err.response?.data?.message || "Something went wrong. Please try again."
-      toast.error(errorMsg)
-    } finally {
-      setLoading(false)
-    }
+    forgotPasswordMutation.mutate(
+      { email: values.email.trim() },
+      {
+        onSuccess: () => {
+          setSubmitted(true)
+          toast.success("Verification link sent!")
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          const errorMsg =
+            err.response?.data?.message ||
+            "Something went wrong. Please try again."
+          toast.error(errorMsg)
+        },
+        onSettled: () => {
+          setLoading(false)
+        },
+      }
+    )
   }
 
   return (
@@ -130,8 +134,8 @@ export default function ForgotPasswordPage() {
             </form>
           ) : (
             <div className="space-y-4 py-4 text-center">
-              <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-green-100 dark:bg-green-900/20">
-                <CheckCircle2 className="size-6 text-green-600 dark:text-green-400" />
+              <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-success/10">
+                <CheckCircle2 className="size-6 text-success" />
               </div>
               <h3 className="font-heading text-lg font-semibold text-foreground">
                 Check your inbox

@@ -19,6 +19,7 @@ import {
   getSchoolName,
 } from "@/lib/config/campus"
 import { CampusSelector } from "@/components/shared/CampusSelector"
+import { VendorFilter } from "@/components/menus/VendorFilter"
 
 export const metadata: Metadata = {
   title: "All Menus",
@@ -49,6 +50,7 @@ async function MenuListContent({
   campus,
   sortBy,
   availableOnly,
+  vendorId,
 }: {
   q: string
   category: string
@@ -56,6 +58,7 @@ async function MenuListContent({
   campus: string
   sortBy: string
   availableOnly: boolean
+  vendorId?: string
 }) {
   const { items, totalItems } = await getMenus({
     q,
@@ -65,6 +68,7 @@ async function MenuListContent({
     sortBy: sortBy !== "none" ? sortBy : undefined,
     availableOnly: availableOnly ? true : undefined,
     limit: 20,
+    vendorId: vendorId || undefined,
   })
 
   return (
@@ -83,6 +87,7 @@ async function MenuListContent({
             campus,
             sortBy: sortBy !== "none" ? sortBy : undefined,
             availableOnly: availableOnly ? "true" : undefined,
+            vendorId: vendorId || undefined,
           }}
         />
       )}
@@ -119,6 +124,10 @@ export default async function MenusPage({
       ? resolvedSearchParams.sortBy
       : "none"
   const availableOnly = resolvedSearchParams.availableOnly === "true"
+  const vendorId =
+    typeof resolvedSearchParams.vendorId === "string"
+      ? resolvedSearchParams.vendorId
+      : undefined
 
   const buildFilterUrl = (
     paramsToUpdate: Record<string, string | undefined>
@@ -130,6 +139,7 @@ export default async function MenusPage({
     if (campus !== DEFAULT_CAMPUS_ID) params.set("campus", campus)
     if (sortBy !== "none") params.set("sortBy", sortBy)
     if (availableOnly) params.set("availableOnly", "true")
+    if (vendorId) params.set("vendorId", vendorId)
 
     Object.entries(paramsToUpdate).forEach(([key, value]) => {
       if (value === undefined) {
@@ -176,6 +186,17 @@ export default async function MenusPage({
                   </p>
                   <CampusSelector />
                 </div>
+              </div>
+
+              {/* Vendor filter + filter panel */}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Suspense>
+                  <VendorFilter
+                    school={school}
+                    campus={campus}
+                    activeVendorId={vendorId}
+                  />
+                </Suspense>
               </div>
 
               {/* Filters Panel inline for server component */}
@@ -254,6 +275,7 @@ export default async function MenusPage({
                 campus={campus}
                 sortBy={sortBy}
                 availableOnly={availableOnly}
+                vendorId={vendorId}
               />
             </Suspense>
           </SectionErrorBoundary>

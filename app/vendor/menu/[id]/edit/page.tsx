@@ -6,7 +6,7 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import apiClient from "@/lib/axios"
+import { useVendorUpdateMenu } from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 import type { MenuItemPayload } from "@/lib/types"
 import { useMenuItemDetail } from "@/hooks/queries/useMenuItemDetail"
@@ -21,16 +21,23 @@ export default function EditMenuItemPage() {
   const { data: item, isPending, isError, refetch } = useMenuItemDetail(id)
   const queryClient = useQueryClient()
 
-  const handleSave = async (data: MenuItemPayload) => {
-    try {
-      await apiClient.patch(`/vendor/menu/${id}`, data)
-      toast.success("Menu item updated")
-      queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
-      router.push("/vendor/menu")
-      router.refresh()
-    } catch {
-      toast.error("Couldn't update this menu item. Please try again.")
-    }
+  const updateMenuMutation = useVendorUpdateMenu()
+
+  const handleSave = (data: MenuItemPayload) => {
+    updateMenuMutation.mutate(
+      { id, data },
+      {
+        onSuccess: () => {
+          toast.success("Menu item updated")
+          queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
+          router.push("/vendor/menu")
+          router.refresh()
+        },
+        onError: () => {
+          toast.error("Couldn't update this menu item. Please try again.")
+        },
+      }
+    )
   }
 
   if (isPending) {

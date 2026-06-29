@@ -21,51 +21,19 @@ import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { MENU_CATEGORIES, VENDOR_CATEGORIES } from "@/lib/constants"
-import {
-  getSchoolOptions,
-  getCampusOptions,
-  DEFAULT_SCHOOL_ID,
-  DEFAULT_CAMPUS_ID,
-} from "@/lib/config/campus"
-import apiClient from "@/lib/axios"
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
+import { useAdminAddVendor } from "@/hooks/mutations/useAdminMutations"
 import Link from "next/link"
-import { strongPasswordSchema, whatsappInputSchema } from "@/lib/schemas"
-import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
-
-// ─── Schema ───────────────────────────────────────────────────────────────────
-
-const addVendorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  whatsappNumber: whatsappInputSchema,
-  email: z.string().email("Invalid email"),
-  password: strongPasswordSchema,
-  description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
-  tags: z.array(z.string()).min(1, "At least one tag is required"),
-  prepTime: z.string().optional(),
-  school: z.string().min(1, "School is required"),
-  campus: z.string().min(1, "Campus is required"),
-  image: z
-    .object({
-      url: z.string().min(1, "Image is required"),
-      publicId: z.string(),
-      file: z.instanceof(File).optional(),
-    })
-    .nullable()
-    .optional()
-    .refine((val) => val !== null && val !== undefined && val.url.length > 0, {
-      message: "Image is required",
-    }),
-})
-
-type AddVendorValues = z.infer<typeof addVendorSchema>
+import { vendorCreationSchema } from "@/lib/schemas"
+import type { VendorCreationValues } from "@/lib/schemas"
+import { VendorAccountFields } from "./VendorAccountFields"
+import { VendorLocationFields } from "./VendorLocationFields"
 
 export function VendorCreationForm() {
   const [submitting, setSubmitting] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
 
-  const form = useForm<AddVendorValues>({
-    resolver: zodResolver(addVendorSchema as never),
+  const form = useForm<VendorCreationValues>({
+    resolver: zodResolver(vendorCreationSchema as never),
     defaultValues: {
       name: "",
       whatsappNumber: "",
@@ -81,11 +49,9 @@ export function VendorCreationForm() {
     mode: "onChange",
   })
 
-  const passwordValue = useWatch({ control: form.control, name: "password" })
-  const selectedSchool = useWatch({ control: form.control, name: "school" })
-  const campusOptions = getCampusOptions(selectedSchool)
+  const addVendorMutation = useAdminAddVendor()
 
-  const onSubmit = async (values: AddVendorValues) => {
+  const onSubmit = async (values: VendorCreationValues) => {
     setSubmitting(true)
     try {
       let imageToSave = values.image
@@ -114,7 +80,7 @@ export function VendorCreationForm() {
         }
       }
 
-      await apiClient.post("/admin/vendors", { ...values, image: imageToSave })
+      await addVendorMutation.mutateAsync({ ...values, image: imageToSave })
       toast.success(`Vendor "${values.name}" created successfully!`)
       form.reset()
     } catch (error: unknown) {
@@ -267,73 +233,7 @@ export function VendorCreationForm() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Controller
-            name="school"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>School *</FieldLabel>
-                <Select
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    className="h-11 w-full rounded-xl"
-                  >
-                    <SelectValue placeholder="Select school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getSchoolOptions().map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
-          <Controller
-            name="campus"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Campus *</FieldLabel>
-                <Select
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger
-                    id={field.name}
-                    aria-invalid={fieldState.invalid}
-                    className="h-11 w-full rounded-xl"
-                  >
-                    <SelectValue placeholder="Select campus" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campusOptions.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-        </div>
+        <VendorLocationFields control={form.control} />
 
         <Controller
           name="tags"
@@ -370,70 +270,7 @@ export function VendorCreationForm() {
           )}
         />
 
-        {/* Account credentials */}
-        <div className="space-y-4 border-t border-border pt-6">
-          <h3 className="font-heading text-lg font-semibold">
-            Account Credentials
-          </h3>
-
-          <Controller
-            name="email"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Email *</FieldLabel>
-                <Input
-                  {...field}
-                  id={field.name}
-                  type="email"
-                  placeholder="vendor@email.com"
-                  aria-invalid={fieldState.invalid}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-
-          <Controller
-            name="password"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>Password *</FieldLabel>
-                <div className="relative">
-                  <Input
-                    {...field}
-                    id={field.name}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min. 8 chars, uppercase, number, symbol"
-                    aria-invalid={fieldState.invalid}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
-                </div>
-                <PasswordStrengthMeter password={passwordValue ?? ""} />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </Field>
-            )}
-          />
-        </div>
+        <VendorAccountFields control={form.control} />
 
         {/* Profile image */}
         <div className="border-t border-border pt-6">

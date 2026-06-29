@@ -40,7 +40,7 @@ export function VendorCard({ vendor, itemCount }: VendorCardProps) {
         <div className="flex flex-col items-end gap-1">
           <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
           {vendor.isActive ? (
-            <span className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
+            <span className="flex items-center gap-1 text-xs font-medium text-success">
               <Circle className="size-1.5 fill-current" /> Open
             </span>
           ) : (

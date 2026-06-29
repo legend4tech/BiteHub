@@ -2,22 +2,26 @@
 
 import { useRouter } from "next/navigation"
 import { MenuItemForm } from "@/components/vendor-dashboard/MenuItemForm"
-import apiClient from "@/lib/axios"
+import { useVendorCreateMenu } from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 import type { MenuItemPayload } from "@/lib/types"
 
 export default function NewMenuItemPage() {
   const router = useRouter()
 
-  const handleSave = async (data: MenuItemPayload) => {
-    try {
-      await apiClient.post("/vendor/menu", data)
-      toast.success("Menu item created")
-      router.push("/vendor/menu")
-      router.refresh()
-    } catch {
-      toast.error("Couldn't add this menu item. Please try again.")
-    }
+  const createMenuMutation = useVendorCreateMenu()
+
+  const handleSave = (data: MenuItemPayload) => {
+    createMenuMutation.mutate(data, {
+      onSuccess: () => {
+        toast.success("Menu item created")
+        router.push("/vendor/menu")
+        router.refresh()
+      },
+      onError: () => {
+        toast.error("Couldn't add this menu item. Please try again.")
+      },
+    })
   }
 
   return (

@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller } from "react-hook-form"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { formatInputNumber, parseInputNumber } from "@/lib/format"
+import { MenuItemChecklists } from "./MenuItemChecklists"
 
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>
@@ -297,79 +298,7 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         />
       </div>
 
-      <Controller
-        name="availableDays"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Days Available</FieldLabel>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                "Sunday",
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-              ].map((day) => (
-                <label key={day} className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={field.value?.includes(day)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        field.onChange([...(field.value || []), day])
-                      } else {
-                        field.onChange(
-                          (field.value || []).filter((d) => d !== day)
-                        )
-                      }
-                    }}
-                  />
-                  <span className="text-sm leading-none font-medium">
-                    {day}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <Controller
-        name="dietaryTags"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Dietary Tags</FieldLabel>
-            <div className="mt-2 flex flex-wrap gap-4">
-              {["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Spicy"].map(
-                (tag) => (
-                  <label key={tag} className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={field.value?.includes(tag)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          field.onChange([...(field.value || []), tag])
-                        } else {
-                          field.onChange(
-                            (field.value || []).filter((d) => d !== tag)
-                          )
-                        }
-                      }}
-                    />
-                    <span className="text-sm leading-none font-medium">
-                      {tag}
-                    </span>
-                  </label>
-                )
-              )}
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
+      <MenuItemChecklists control={form.control} />
 
       <div className="grid grid-cols-2 gap-4">
         <Controller

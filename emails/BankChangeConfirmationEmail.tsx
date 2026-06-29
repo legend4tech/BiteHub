@@ -121,7 +121,7 @@ export default BankChangeConfirmationEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f9fafb",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -130,8 +130,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -153,11 +153,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const logoHighlight = {
-  color: "#ff6b00",
+  color: "var(--primary)",
 }
 
 const subHeader = {
@@ -166,11 +166,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "#6b7280",
+  color: "var(--muted-foreground)",
 }
 
 const divider = {
-  borderColor: "#e5e7eb",
+  borderColor: "var(--border)",
   margin: "20px 0",
 }
 
@@ -181,7 +181,7 @@ const contentSection = {
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
-  color: "#111827",
+  color: "var(--foreground)",
   marginBottom: "16px",
 }
 
@@ -193,7 +193,7 @@ const text = {
 }
 
 const detailsSection = {
-  backgroundColor: "#f3f4f6",
+  backgroundColor: "var(--muted)",
   padding: "16px",
   borderRadius: "8px",
   margin: "16px 0",
@@ -202,22 +202,22 @@ const detailsSection = {
 const detailText = {
   fontSize: "15px",
   margin: "0 0 8px 0",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const warningText = {
   fontSize: "13px",
   lineHeight: "20px",
-  color: "#047857",
-  backgroundColor: "#d1fae5",
+  color: "var(--status-completed-foreground)",
+  backgroundColor: "var(--status-completed)",
   padding: "16px",
   borderRadius: "8px",
   margin: "20px 0",
-  border: "1px solid #a7f3d0",
+  border: "1px solid var(--status-completed-foreground)",
 }
 
 const link = {
-  color: "#ff6b00",
+  color: "var(--primary)",
   textDecoration: "underline",
 }
 
@@ -229,11 +229,11 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "#9ca3af",
+  color: "var(--muted-foreground)",
   margin: "0 0 6px 0",
 }
 
 const footerLink = {
-  color: "#9ca3af",
+  color: "var(--muted-foreground)",
   textDecoration: "underline",
 }

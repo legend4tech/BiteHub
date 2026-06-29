@@ -21,7 +21,7 @@ import Image from "next/image"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-import axios from "axios"
+import { useVendorResetPassword } from "@/hooks/mutations/useVendorMutations"
 import { strongPasswordSchema } from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 
@@ -72,38 +72,44 @@ export default function ResetPasswordPage() {
 
   const passwordValue = useWatch({ control: form.control, name: "password" })
 
-  const onSubmit = async (values: ResetPasswordValues) => {
+  const resetPasswordMutation = useVendorResetPassword()
+
+  const onSubmit = (values: ResetPasswordValues) => {
     if (!token || !email) {
       toast.error("Missing reset parameters. Try requesting a new link.")
       return
     }
 
     setLoading(true)
-    try {
-      await axios.post("/api/vendor/reset-password", {
+    resetPasswordMutation.mutate(
+      {
         token,
         email: decodeURIComponent(email),
         password: values.password,
-      })
-
-      toast.success("Password reset successful! Please log in.")
-
-      if (isAuth) {
-        setTimeout(() => {
-          signOut({ callbackUrl: "/vendor/login" })
-        }, 2000)
-      } else {
-        router.replace("/vendor/login")
+      },
+      {
+        onSuccess: () => {
+          toast.success("Password reset successful! Please log in.")
+          if (isAuth) {
+            setTimeout(() => {
+              signOut({ callbackUrl: "/vendor/login" })
+            }, 2000)
+          } else {
+            router.replace("/vendor/login")
+          }
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          const errorMsg =
+            err.response?.data?.message ||
+            "Failed to reset password. Link may be expired."
+          toast.error(errorMsg)
+        },
+        onSettled: () => {
+          setLoading(false)
+        },
       }
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      const errorMsg =
-        err.response?.data?.message ||
-        "Failed to reset password. Link may be expired."
-      toast.error(errorMsg)
-    } finally {
-      setLoading(false)
-    }
+    )
   }
 
   return (
@@ -141,7 +147,7 @@ export default function ResetPasswordPage() {
 
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10">
               {invalidParams ? (
-                <ShieldAlert className="size-6 text-red-500" />
+                <ShieldAlert className="size-6 text-destructive" />
               ) : (
                 <Lock className="size-6 text-primary" />
               )}

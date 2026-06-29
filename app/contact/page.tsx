@@ -18,17 +18,10 @@ import { toast } from "sonner"
 import { useForm, Controller, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import axios from "axios"
+import { useContactSubmit } from "@/hooks/mutations/usePublicMutations"
 import { CONTACT_EMAIL } from "@/lib/constants"
 
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  subject: z.string().min(2, "Subject is required"),
-  message: z.string().min(3, "Message is required"),
-})
-
-type ContactValues = z.infer<typeof contactSchema>
+import { contactSchema, type ContactValues } from "@/lib/schemas"
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
@@ -42,20 +35,27 @@ export default function ContactPage() {
     mode: "onTouched",
   })
 
-  const onSubmit = async (values: ContactValues) => {
+  const contactSubmitMutation = useContactSubmit()
+
+  const onSubmit = (values: ContactValues) => {
     setLoading(true)
-    try {
-      await axios.post("/api/contact", values)
-      setSubmitted(true)
-      toast.success("Message sent! We'll get back to you shortly.")
-    } catch (error: unknown) {
-      const msg = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : "Failed to send message. Please try again."
-      toast.error(msg)
-    } finally {
-      setLoading(false)
-    }
+    contactSubmitMutation.mutate(values, {
+      onSuccess: () => {
+        setSubmitted(true)
+        toast.success("Message sent! We'll get back to you shortly.")
+      },
+      onError: (error: unknown) => {
+        // Simple heuristic: if error has a response.data.message, show it
+        const err = error as { response?: { data?: { message?: string } } }
+        const msg =
+          err.response?.data?.message ||
+          "Failed to send message. Please try again."
+        toast.error(msg)
+      },
+      onSettled: () => {
+        setLoading(false)
+      },
+    })
   }
 
   return (
@@ -172,7 +172,7 @@ export default function ContactPage() {
               <div className="rounded-3xl border border-white/10 bg-card/40 p-8 backdrop-blur-xl">
                 {submitted ? (
                   <div className="space-y-4 py-12 text-center">
-                    <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-green-500/10 text-green-500">
+                    <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-success/10 text-success">
                       <CheckCircle2 className="size-8" />
                     </div>
                     <h2 className="font-heading text-2xl font-bold">

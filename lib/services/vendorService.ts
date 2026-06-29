@@ -10,6 +10,7 @@ import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
 import MenuItem from "@/models/MenuItem"
 import { serializeVendor, type LeanVendor } from "@/lib/serializers"
+import type { VendorFilterItem } from "@/lib/types"
 import type mongoose from "mongoose"
 
 export interface GetVendorsOptions {
@@ -62,7 +63,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
   const [vendors, totalVendors] = await Promise.all([
     VendorModel.find(finalQuery)
       .select(
-        "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
+        "name isActive slug description category tags phone whatsappNumber school campus image rating ratingCount createdAt updatedAt"
       )
       .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
@@ -109,7 +110,7 @@ export async function getFeaturedVendors(
 
   const vendorDocs = await VendorModel.find(query)
     .select(
-      "name isActive slug description category tags phone whatsappNumber school campus image createdAt updatedAt"
+      "name isActive slug description category tags phone whatsappNumber school campus image rating ratingCount createdAt updatedAt"
     )
     .sort({ isFeatured: -1, rating: -1, createdAt: -1, _id: -1 })
     .limit(limit)
@@ -127,4 +128,56 @@ export async function getVendorProfile(
   const vendor = await VendorModel.findById(vendorId).lean()
   if (!vendor) return null
   return serializeVendor(vendor as LeanVendor)
+}
+
+// ─── Vendor Filter (lightweight — for /menus dropdown) ─────────────────────────
+// VendorFilterItem is defined in lib/types.ts — imported above.
+
+export interface GetVendorsForFilterOptions {
+  school?: string
+  campus?: string
+  page?: number
+  limit?: number
+}
+
+export async function getVendorsForFilter(
+  options: GetVendorsForFilterOptions = {}
+) {
+  const { school, campus, page = 1, limit = 20 } = options
+  const skip = (page - 1) * limit
+
+  await dbConnect()
+
+  const query: Record<string, unknown> = {
+    isActive: true,
+    monnifyIntegrationStatus: "active",
+  }
+  if (school) query.school = school
+  if (campus) query.campus = campus
+
+  const [vendors, total] = await Promise.all([
+    VendorModel.find(query)
+      .select("_id name slug image isFeatured rating")
+      .sort({ isFeatured: -1, rating: -1, name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean<
+        Array<{
+          _id: unknown
+          name: string
+          slug: string
+          image?: { url: string; publicId: string }
+        }>
+      >(),
+    VendorModel.countDocuments(query),
+  ])
+
+  const items: VendorFilterItem[] = vendors.map((v) => ({
+    id: String(v._id),
+    name: v.name,
+    slug: v.slug,
+    image: v.image,
+  }))
+
+  return { items, total, hasMore: skip + limit < total }
 }

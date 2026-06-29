@@ -1,19 +1,13 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
 import { usePathname } from "next/navigation"
-import apiClient from "@/lib/axios"
+import { useGlobalSettings } from "@/hooks/queries/useGlobalSettings"
 import { Wrench } from "lucide-react"
 
 export function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["global-settings"],
-    queryFn: async () => {
-      const { data } = await apiClient.get("/admin/settings/global")
-      return data
-    },
+  const { data, isLoading } = useGlobalSettings({
     refetchInterval: 1000 * 60, // Poll every minute to detect changes
     staleTime: 1000 * 30,
   })

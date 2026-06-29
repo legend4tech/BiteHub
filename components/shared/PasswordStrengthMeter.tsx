@@ -67,12 +67,12 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
       <p
         className={`text-xs font-medium ${
           score === 3
-            ? "text-green-600 dark:text-green-400"
+            ? "text-status-completed"
             : score === 2
-              ? "text-yellow-600 dark:text-yellow-400"
+              ? "text-status-confirmed"
               : score === 1
-                ? "text-orange-500"
-                : "text-red-500"
+                ? "text-status-preparing"
+                : "text-status-cancelled"
         }`}
       >
         {cfg.label} password
@@ -85,17 +85,11 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
           return (
             <li key={rule.id} className="flex items-center gap-1.5 text-xs">
               {ok ? (
-                <Check className="size-3 shrink-0 text-green-500" />
+                <Check className="size-3 shrink-0 text-success" />
               ) : (
                 <X className="size-3 shrink-0 text-muted-foreground" />
               )}
-              <span
-                className={
-                  ok
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-muted-foreground"
-                }
-              >
+              <span className={ok ? "text-success" : "text-muted-foreground"}>
                 {rule.label}
               </span>
             </li>

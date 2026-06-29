@@ -128,7 +128,7 @@ export function Footer() {
         <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 text-xs font-medium text-muted-foreground md:flex-row">
           <p>
             © {new Date().getFullYear()} {APP_NAME}. Crafted with{" "}
-            <Heart className="mx-1 inline size-3.5 fill-red-500 text-red-500" />{" "}
+            <Heart className="mx-1 inline size-3.5 fill-destructive text-destructive" />{" "}
             for students everywhere.
           </p>
         </div>

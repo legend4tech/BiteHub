@@ -6,7 +6,10 @@ import { MenuItemCard } from "@/components/vendor-dashboard/MenuItemCard"
 import type { MenuItem } from "@/lib/types"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
-import apiClient from "@/lib/axios"
+import {
+  useVendorDeleteMenu,
+  useVendorUpdateMenuAvailability,
+} from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import { Search } from "lucide-react"
@@ -34,7 +37,7 @@ function StatsStrip({ items }: { items: MenuItem[] }) {
     {
       label: "Listed",
       value: listed,
-      color: "text-green-600 dark:text-green-400",
+      color: "text-success",
     },
     { label: "Unlisted", value: unlisted, color: "text-destructive" },
   ]
@@ -199,31 +202,44 @@ export function VendorMenuManagement({
     router.push(`/vendor/menu/${item.id}/edit`)
   }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await apiClient.delete(`/vendor/menu/${id}`)
-      toast.success("Menu item deleted")
-      router.refresh() // dynamically triggers server data refresh
-    } catch {
-      toast.error("Couldn't delete this item. Please try again.")
-    }
+  const deleteMenuMutation = useVendorDeleteMenu()
+
+  const handleDelete = (id: string) => {
+    deleteMenuMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Menu item deleted")
+        router.refresh() // dynamically triggers server data refresh
+      },
+      onError: () => {
+        toast.error("Couldn't delete this item. Please try again.")
+      },
+    })
   }
 
-  const handleToggleAvailability = async (id: string, isAvailable: boolean) => {
-    try {
-      await apiClient.patch(`/vendor/menu/${id}`, { isAvailable })
-      toast.success(
-        isAvailable
-          ? "Menu item listed successfully"
-          : "Menu item unlisted successfully"
+  const updateAvailabilityMutation = useVendorUpdateMenuAvailability()
+
+  const handleToggleAvailability = (id: string, isAvailable: boolean) => {
+    return new Promise<void>((resolve, reject) => {
+      updateAvailabilityMutation.mutate(
+        { id, isAvailable },
+        {
+          onSuccess: () => {
+            toast.success(
+              isAvailable
+                ? "Menu item listed successfully"
+                : "Menu item unlisted successfully"
+            )
+            queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
+            router.refresh()
+            resolve()
+          },
+          onError: () => {
+            toast.error("Couldn't update item availability. Try again.")
+            reject(new Error("API action failed"))
+          },
+        }
       )
-      // Invalidate the cache for this specific item so Edit page sees the fresh state
-      queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
-      router.refresh() // dynamically triggers server data refresh
-    } catch {
-      toast.error("Couldn't update item availability. Try again.")
-      throw new Error("API action failed") // propagate to let MenuItemCard restore local toggle state on error
-    }
+    })
   }
 
   return (

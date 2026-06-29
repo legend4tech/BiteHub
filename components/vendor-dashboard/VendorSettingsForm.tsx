@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { toast } from "sonner"
 import type { Vendor } from "@/lib/types"
-import apiClient from "@/lib/axios"
+import { useVendorUpdateSettings } from "@/hooks/mutations/useVendorMutations"
 import { useRouter } from "next/navigation"
 import {
   vendorSettingsSchema,
@@ -68,6 +68,8 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
     },
   })
 
+  const updateSettingsMutation = useVendorUpdateSettings()
+
   const onSubmit = async (values: VendorSettingsValues) => {
     setSaving(true)
     try {
@@ -103,7 +105,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         }
       }
 
-      const response = await apiClient.patch("/vendor/settings", {
+      await updateSettingsMutation.mutateAsync({
         name: values.name,
         description: values.description,
         whatsappNumber: values.whatsappNumber,
@@ -115,10 +117,10 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         campus: values.campus,
       })
 
-      const updatedVendor = response.data
       const initialImageUrl =
         typeof initial.image === "string" ? initial.image : initial.image?.url
-      const updatedImageUrl = updatedVendor.image?.url || null
+      const updatedImageUrl =
+        typeof imageToSave === "object" ? imageToSave?.url : undefined
 
       const nameChanged = values.name !== initial.name
       const imageChanged = updatedImageUrl !== (initialImageUrl || null)

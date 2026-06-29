@@ -110,7 +110,7 @@ export default VendorWelcomeEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f9fafb",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -119,8 +119,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -142,11 +142,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const logoHighlight = {
-  color: "#ff6b00",
+  color: "var(--primary)",
 }
 
 const subHeader = {
@@ -155,11 +155,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "#6b7280",
+  color: "var(--muted-foreground)",
 }
 
 const divider = {
-  borderColor: "#e5e7eb",
+  borderColor: "var(--border)",
   margin: "20px 0",
 }
 
@@ -170,7 +170,7 @@ const contentSection = {
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
-  color: "#111827",
+  color: "var(--foreground)",
   marginBottom: "16px",
 }
 
@@ -182,7 +182,7 @@ const text = {
 }
 
 const credentialsBox = {
-  backgroundColor: "#f3f4f6",
+  backgroundColor: "var(--muted)",
   borderRadius: "8px",
   padding: "20px",
   margin: "20px 0",
@@ -193,7 +193,7 @@ const credentialsHeading = {
   margin: "0 0 12px 0",
   fontSize: "16px",
   fontWeight: "bold",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const credentialItem = {
@@ -205,17 +205,17 @@ const credentialItem = {
 const warningText = {
   fontSize: "14px",
   lineHeight: "20px",
-  color: "#854d0e",
-  backgroundColor: "#fefce8",
+  color: "var(--status-pending-foreground)",
+  backgroundColor: "var(--status-pending)",
   padding: "20px",
   borderRadius: "8px",
   margin: "24px 0",
-  border: "1px solid #fef08a",
+  border: "1px solid var(--status-pending-foreground)",
 }
 
 const button = {
-  backgroundColor: "#111827",
-  color: "#fff",
+  backgroundColor: "var(--foreground)",
+  color: "var(--primary-foreground)",
   padding: "12px 24px",
   borderRadius: "8px",
   textDecoration: "none",
@@ -234,6 +234,6 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "#9ca3af",
+  color: "var(--muted-foreground)",
   margin: "0 0 6px 0",
 }

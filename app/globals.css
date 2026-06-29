@@ -65,6 +65,8 @@
     --color-status-completed-foreground: var(--status-completed-foreground);
     --color-status-cancelled-foreground: var(--status-cancelled-foreground);
     --color-rating: var(--rating);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
 }
 
 /* Light theme — Primary: #FF6B00, Background: #FFF4EC, Text: #1A1A1A */
@@ -114,6 +116,8 @@
     --status-completed-foreground: #047857;
     --status-cancelled-foreground: #b91c1c;
     --rating: #f59e0b;
+    --success: oklch(0.723 0.149 161.761);
+    --success-foreground: oklch(0.978 0.012 60);
 }
 
 /* Dark theme — warm brown-black surfaces, orange primary glows */
@@ -162,6 +166,8 @@
     --status-completed-foreground: #a7f3d0;
     --status-cancelled-foreground: #fecaca;
     --rating: #fbbf24;
+    --success: oklch(0.723 0.149 161.761);
+    --success-foreground: oklch(0.148 0.022 42);
 }
 
 @layer base {

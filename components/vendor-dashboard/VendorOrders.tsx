@@ -4,7 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { OrderTable } from "@/components/vendor-dashboard/OrderTable"
 import type { Order, OrderStatus } from "@/lib/types"
-import apiClient from "@/lib/axios"
+import {
+  useVendorUpdateOrderStatus,
+  useVendorUpdateOrderPayment,
+} from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -86,29 +89,38 @@ export function VendorOrders({
     }
   }, [debouncedSearch, searchQuery, searchParams, router])
 
-  const handleStatusChange = async (
-    orderId: string,
-    newStatus: OrderStatus
-  ) => {
-    try {
-      await apiClient.patch(`/vendor/orders/${orderId}`, { status: newStatus })
-      toast.success("Order status updated")
-      router.refresh() // Refresh the server component data
-    } catch {
-      toast.error("Couldn't update order status. Please try again.")
-    }
+  const updateOrderStatusMutation = useVendorUpdateOrderStatus()
+
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    updateOrderStatusMutation.mutate(
+      { orderId, newStatus },
+      {
+        onSuccess: () => {
+          toast.success("Order status updated")
+          router.refresh() // Refresh the server component data
+        },
+        onError: () => {
+          toast.error("Couldn't update order status. Please try again.")
+        },
+      }
+    )
   }
 
-  const handlePaymentConfirm = async (orderId: string) => {
-    try {
-      await apiClient.patch(`/vendor/orders/${orderId}/payment`, {
-        paymentStatus: "confirmed",
-      })
-      toast.success("Payment confirmed successfully!")
-      router.refresh()
-    } catch {
-      toast.error("Couldn't confirm payment. Please try again.")
-    }
+  const updateOrderPaymentMutation = useVendorUpdateOrderPayment()
+
+  const handlePaymentConfirm = (orderId: string) => {
+    updateOrderPaymentMutation.mutate(
+      { orderId, isPaid: true },
+      {
+        onSuccess: () => {
+          toast.success("Payment confirmed successfully!")
+          router.refresh()
+        },
+        onError: () => {
+          toast.error("Couldn't confirm payment. Please try again.")
+        },
+      }
+    )
   }
 
   return (

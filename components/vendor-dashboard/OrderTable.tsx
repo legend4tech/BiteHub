@@ -27,7 +27,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react"
-import apiClient from "@/lib/axios"
+import { useVendorVerifyOrder } from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 
 function CopyableText({
@@ -57,7 +57,7 @@ function CopyableText({
         title="Copy to clipboard"
       >
         {copied ? (
-          <Check className="size-3.5 text-green-500" />
+          <Check className="size-3.5 text-success" />
         ) : (
           <Copy className="size-3.5" />
         )}
@@ -166,22 +166,26 @@ export function OrderTable({
   }>({ isOpen: false, orderId: null, newStatus: null })
   const [verifyingOrderId, setVerifyingOrderId] = useState<string | null>(null)
 
-  const handleVerifyPayment = async (orderId: string) => {
+  const verifyPaymentMutation = useVendorVerifyOrder()
+
+  const handleVerifyPayment = (orderId: string) => {
     setVerifyingOrderId(orderId)
-    try {
-      const res = await apiClient.post(`/vendor/orders/${orderId}/verify`)
-      if (res.data.success) {
-        toast.success(res.data.message || "Payment verified! Order confirmed.")
-        // Trigger parent refresh if provided
-        if (onPaymentConfirm) await onPaymentConfirm(orderId)
-      } else {
-        toast.error(res.data.message || "Payment not confirmed yet.")
-      }
-    } catch {
-      toast.error("Failed to verify payment. Please try again.")
-    } finally {
-      setVerifyingOrderId(null)
-    }
+    verifyPaymentMutation.mutate(orderId, {
+      onSuccess: async (data) => {
+        if (data.success) {
+          toast.success(data.message || "Payment verified! Order confirmed.")
+          if (onPaymentConfirm) await onPaymentConfirm(orderId)
+        } else {
+          toast.error(data.message || "Payment not confirmed yet.")
+        }
+      },
+      onError: () => {
+        toast.error("Failed to verify payment. Please try again.")
+      },
+      onSettled: () => {
+        setVerifyingOrderId(null)
+      },
+    })
   }
 
   if (orders.length === 0) {

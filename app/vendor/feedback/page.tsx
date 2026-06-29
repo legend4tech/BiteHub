@@ -1,21 +1,15 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useQuery } from "@tanstack/react-query"
+import {
+  useVendorFeedback,
+  type Feedback,
+} from "@/hooks/queries/useVendorFeedback"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { FetchError } from "@/components/shared/FetchError"
-import apiClient from "@/lib/axios"
 import { Star } from "lucide-react"
-
-interface Feedback {
-  _id: string
-  rating: number
-  comments?: string
-  orderId?: string
-  createdAt: string
-}
 
 export default function VendorFeedbackPage() {
   const { data: session, status } = useSession()
@@ -26,14 +20,7 @@ export default function VendorFeedbackPage() {
     isPending: loadingFeedback,
     isError,
     refetch,
-  } = useQuery<Feedback[]>({
-    queryKey: ["vendor-feedback"],
-    queryFn: async () => {
-      const res = await apiClient.get("/vendor/feedback")
-      return Array.isArray(res.data) ? res.data : []
-    },
-    enabled: isReady,
-  })
+  } = useVendorFeedback(isReady)
 
   if (status === "loading") {
     return <PageSkeleton variant="dashboard" />

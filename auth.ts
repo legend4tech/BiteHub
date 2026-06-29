@@ -24,11 +24,7 @@ class CustomAuthError extends CredentialsSignin {
   }
 }
 
-// ─── Shared credential schema ─────────────────────────────────────────────────
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-})
+import { adminLoginSchema as credentialsSchema } from "@/lib/schemas"
 
 // ─── Rate limit helper ────────────────────────────────────────────────────────
 async function checkRateLimit(email: string) {

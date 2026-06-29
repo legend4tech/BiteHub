@@ -12,6 +12,9 @@ interface UseMenuItemsOptions {
   limit?: number
   initialPage?: number
   enabled?: boolean
+  availableOnly?: boolean
+  sortBy?: string
+  vendorId?: string
 }
 
 export function useMenuItems(options?: UseMenuItemsOptions) {
@@ -20,13 +23,25 @@ export function useMenuItems(options?: UseMenuItemsOptions) {
     category = "all",
     school,
     campus,
-    limit = 10,
+    limit = 30,
     initialPage = 1,
     enabled = true,
+    availableOnly,
+    sortBy,
+    vendorId,
   } = options || {}
 
   return useInfiniteQuery({
-    queryKey: ["menus", q, category, school, campus],
+    queryKey: [
+      "menus",
+      q,
+      category,
+      school,
+      campus,
+      availableOnly,
+      sortBy,
+      vendorId,
+    ],
     queryFn: async ({ pageParam = initialPage }) => {
       const { data } = await apiClient.get("/menus", {
         params: {
@@ -36,6 +51,9 @@ export function useMenuItems(options?: UseMenuItemsOptions) {
           category: category !== "all" ? category : undefined,
           school: school || undefined,
           campus: campus || undefined,
+          availableOnly: availableOnly ? "true" : undefined,
+          sortBy: sortBy !== "none" ? sortBy : undefined,
+          vendorId: vendorId || undefined,
         },
       })
       return {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
 import {
   ShoppingCart,
   Copy,
@@ -11,35 +11,14 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import apiClient from "@/lib/axios"
-import type { AdminOrder } from "./types"
-import { formatPrice } from "@/lib/format"
 import { ORDER_STATUS } from "@/lib/constants"
-
-interface OrdersResponse {
-  orders: AdminOrder[]
-  pagination: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-    hasMore: boolean
-  }
-}
+import { formatPrice } from "@/lib/format"
 
 export function AdminOrders() {
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const { data, isLoading, isError, refetch } = useQuery<OrdersResponse>({
-    queryKey: ["admin-orders", page],
-    queryFn: async () => {
-      const res = await apiClient.get(
-        `/admin/orders?page=${page}&limit=${limit}`
-      )
-      return res.data
-    },
-  })
+  const { data, isLoading, isError, refetch } = useAdminOrders(page, limit)
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)

@@ -30,9 +30,11 @@ export function LoadMoreMenus({
     setConflictItem(null)
   }
 
-  const { q, category, school, campus } = searchParams
+  const { q, category, school, campus, availableOnly, sortBy, vendorId } =
+    searchParams
   const searchQuery = typeof q === "string" ? q : ""
   const categoryQuery = typeof category === "string" ? category : "all"
+  const isAvailableOnly = availableOnly === "true"
 
   const {
     data,
@@ -47,6 +49,9 @@ export function LoadMoreMenus({
     category: categoryQuery,
     school: school || undefined,
     campus: campus || undefined,
+    availableOnly: isAvailableOnly,
+    sortBy: sortBy || undefined,
+    vendorId: vendorId || undefined,
     initialPage: initialPage + 1,
     enabled: true,
   })

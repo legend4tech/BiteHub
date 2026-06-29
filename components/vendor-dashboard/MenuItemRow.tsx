@@ -103,7 +103,7 @@ export function MenuItemRow({
             item.quantityAvailable !== null &&
             item.quantityAvailable !== undefined &&
             item.quantityAvailable > 0 && (
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-blue-700 uppercase dark:bg-blue-900/30 dark:text-blue-400">
+              <span className="inline-flex items-center rounded-full bg-status-confirmed/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-status-confirmed uppercase">
                 Qty: {item.quantityAvailable}
               </span>
             )}
@@ -115,7 +115,7 @@ export function MenuItemRow({
                     Opens order at {formatTime(item.availableFrom!)}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-gray-700 uppercase dark:bg-gray-800 dark:text-gray-400">
+                  <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                     Closed
                   </span>
                 )

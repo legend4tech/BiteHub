@@ -2,12 +2,9 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import GlobalSettings from "@/models/GlobalSettings"
 import { auth } from "@/auth"
-import { z } from "zod"
+import { globalSettingsSchema } from "@/lib/schemas"
 
-const settingsSchema = z.object({
-  platformFeePercentage: z.number().min(0).max(100).optional(),
-  maintenanceMode: z.boolean().optional(),
-})
+const settingsSchema = globalSettingsSchema.partial()
 
 // Helper to get or create the singleton settings document
 async function getSettings() {

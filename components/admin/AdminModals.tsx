@@ -10,18 +10,20 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import apiClient from "@/lib/axios"
+import {
+  useAdminAddLogin,
+  useAdminAddVendor,
+} from "@/hooks/mutations/useAdminMutations"
 import type { AdminVendor } from "./types"
-import { strongPasswordSchema } from "@/lib/schemas"
+import {
+  strongPasswordSchema,
+  addLoginSchema,
+  quickAddVendorSchema,
+} from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
+import type { AddLoginValues, QuickAddVendorValues } from "@/lib/schemas"
 
 // ─── Add Login Modal ──────────────────────────────────────────────────────────
-
-const addLoginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email"),
-  password: strongPasswordSchema,
-})
-type AddLoginValues = z.infer<typeof addLoginSchema>
 
 export function AddLoginModal({
   vendor,
@@ -39,10 +41,12 @@ export function AddLoginModal({
     defaultValues: { email: "", password: "" },
   })
 
+  const addLoginMutation = useAdminAddLogin()
+
   const onSubmit = async (values: AddLoginValues) => {
     setSubmitting(true)
     try {
-      await apiClient.post(`/admin/vendors/${vendor.id}/account`, values)
+      await addLoginMutation.mutateAsync({ vendorId: vendor.id, data: values })
       toast.success(`Login account created for ${vendor.name}`)
       onSuccess()
       onClose()
@@ -162,18 +166,6 @@ export function AddLoginModal({
 
 // ─── Add Vendor Modal ─────────────────────────────────────────────────────────
 
-const addVendorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
-  email: z.string().email("Invalid email"),
-  password: strongPasswordSchema,
-  image: z
-    .object({ url: z.string().min(1), publicId: z.string().min(1) })
-    .optional()
-    .refine((val) => !!val, { message: "Image is required" }),
-})
-type AddVendorValues = z.infer<typeof addVendorSchema>
-
 export function AddVendorModal({
   onClose,
   onSuccess,
@@ -183,17 +175,19 @@ export function AddVendorModal({
 }) {
   const [submitting, setSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const form = useForm<AddVendorValues>({
-    resolver: zodResolver(addVendorSchema as never),
+  const form = useForm<QuickAddVendorValues>({
+    resolver: zodResolver(quickAddVendorSchema as never),
     defaultValues: { name: "", whatsappNumber: "", email: "", password: "" },
   })
 
-  const onSubmit = async (values: AddVendorValues) => {
+  const addVendorMutation = useAdminAddVendor()
+
+  const onSubmit = async (values: QuickAddVendorValues) => {
     setSubmitting(true)
     try {
       let wa = values.whatsappNumber.trim()
       if (wa.startsWith("0")) wa = "234" + wa.slice(1)
-      await apiClient.post("/admin/vendors", { ...values, whatsappNumber: wa })
+      await addVendorMutation.mutateAsync({ ...values, whatsappNumber: wa })
       toast.success(`Vendor ${values.name} created successfully`)
       onSuccess()
       onClose()

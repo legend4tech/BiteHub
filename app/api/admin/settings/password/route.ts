@@ -3,13 +3,10 @@ import dbConnect from "@/lib/db"
 import AdminUser from "@/models/AdminUser"
 import { auth } from "@/auth"
 import bcrypt from "bcryptjs"
-import { z } from "zod"
+import { adminPasswordSchema } from "@/lib/schemas"
 import { sendAdminPasswordChangedEmail } from "@/lib/mail"
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "New password must be at least 6 characters"),
-})
+const changePasswordSchema = adminPasswordSchema.omit({ confirmPassword: true })
 
 export async function POST(request: Request) {
   try {

@@ -84,7 +84,7 @@ export default AdminPasswordChangedEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f9fafb",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -93,8 +93,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "#ffffff",
-  border: "1px solid #e5e7eb",
+  backgroundColor: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -116,11 +116,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "#111827",
+  color: "var(--foreground)",
 }
 
 const logoHighlight = {
-  color: "#ff6b00",
+  color: "var(--primary)",
 }
 
 const subHeader = {
@@ -129,11 +129,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "#6b7280",
+  color: "var(--muted-foreground)",
 }
 
 const divider = {
-  borderColor: "#e5e7eb",
+  borderColor: "var(--border)",
   margin: "20px 0",
 }
 
@@ -144,7 +144,7 @@ const contentSection = {
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
-  color: "#111827",
+  color: "var(--foreground)",
   marginBottom: "16px",
 }
 
@@ -158,12 +158,12 @@ const text = {
 const warningText = {
   fontSize: "13px",
   lineHeight: "20px",
-  color: "#991b1b",
-  backgroundColor: "#fef2f2",
+  color: "var(--status-cancelled-foreground)",
+  backgroundColor: "var(--status-cancelled)",
   padding: "16px",
   borderRadius: "8px",
   margin: "20px 0",
-  border: "1px solid #fecaca",
+  border: "1px solid var(--status-cancelled-foreground)",
 }
 
 const footerSection = {
@@ -174,6 +174,6 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "#9ca3af",
+  color: "var(--muted-foreground)",
   margin: "0 0 6px 0",
 }

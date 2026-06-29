@@ -49,6 +49,17 @@ export interface Vendor {
   ratingCount?: number
 }
 
+/**
+ * Lightweight vendor shape returned by GET /api/vendors/public.
+ * Used by VendorFilter to populate the filter popover.
+ */
+export interface VendorFilterItem {
+  id: string
+  name: string
+  slug: string
+  image?: { url: string; publicId: string }
+}
+
 // ─── Menu ─────────────────────────────────────────────────────────────────────
 
 export interface MenuItem {
@@ -74,6 +85,7 @@ export interface MenuItem {
   isAvailableNow?: boolean
   vendorName?: string
   vendorSlug?: string
+  vendorIsActive?: boolean // Carried from vendor so cards can check availability
   vendorWhatsappNumber?: string // Carried from vendor so the cart can send it with the order
   vendorDeliveryFee?: number
   vendorPrepTime?: string
@@ -102,6 +114,9 @@ export interface CartState {
   vendorId: string | null
   vendorName: string | null
   vendorWhatsappNumber: string | null
+  vendorDeliveryFee: number
+  vendorPrepTime: string | null
+  vendorMonnifySubaccountCode: string | null
 }
 
 // ─── Order ───────────────────────────────────────────────────────────────────

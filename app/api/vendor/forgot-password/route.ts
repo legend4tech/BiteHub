@@ -4,11 +4,7 @@ import dbConnect from "@/lib/db"
 import VendorUserModel from "@/models/VendorUser"
 import VendorModel from "@/models/Vendor"
 import { sendPasswordResetEmail } from "@/lib/mail"
-import { z } from "zod"
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email(),
-})
+import { forgotPasswordSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {
   try {

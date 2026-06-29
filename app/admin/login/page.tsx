@@ -26,11 +26,10 @@ import Image from "next/image"
 import { AuthPanel } from "@/components/shared/AuthPanel"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
-const loginSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-})
-type LoginValues = z.infer<typeof loginSchema>
+import {
+  adminLoginSchema as loginSchema,
+  type AdminLoginValues as LoginValues,
+} from "@/lib/schemas"
 
 export default function AdminLoginPage() {
   const router = useRouter()

@@ -1,3 +1,4 @@
+ 
 "use client"
 
 import { useState } from "react"
@@ -8,36 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
-import axios from "axios"
+import {
+  useVendorChangePassword,
+  useVendorForgotPassword,
+  useVendorChangeEmail,
+} from "@/hooks/mutations/useVendorMutations"
 import { signOut } from "next-auth/react"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 
-import { strongPasswordSchema } from "@/lib/schemas"
-
-// --- Schemas ---
-
-const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: strongPasswordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your new password"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
-
-type ChangePasswordValues = z.infer<typeof changePasswordSchema>
-
-const changeEmailSchema = z.object({
-  newEmail: z
-    .string()
-    .email("Please enter a valid email address")
-    .toLowerCase(),
-})
-
-type ChangeEmailValues = z.infer<typeof changeEmailSchema>
+import { changePasswordSchema, changeEmailSchema } from "@/lib/schemas"
+import type { ChangePasswordValues, ChangeEmailValues } from "@/lib/schemas"
 
 export function VendorSecurityForms({
   currentEmail,
@@ -65,33 +47,48 @@ export function VendorSecurityForms({
     mode: "onTouched",
   })
 
-  const onPasswordSubmit = async (values: ChangePasswordValues) => {
+  const changePasswordMutation = useVendorChangePassword()
+
+  const onPasswordSubmit = (values: ChangePasswordValues) => {
     setPasswordLoading(true)
-    try {
-      await axios.post("/api/vendor/account/change-password", values)
-      toast.success("Password changed. Please log in again.")
-      setTimeout(() => {
-        signOut({ callbackUrl: "/vendor/login" })
-      }, 2000)
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || "Failed to change password")
-    } finally {
-      setPasswordLoading(false)
-    }
+    changePasswordMutation.mutate(values, {
+      onSuccess: () => {
+        toast.success("Password changed. Please log in again.")
+        setTimeout(() => {
+          signOut({ callbackUrl: "/vendor/login" })
+        }, 2000)
+      },
+      onError: (error: unknown) => {
+        const err = error as { response?: { data?: { message?: string } } }
+        toast.error(err.response?.data?.message || "Failed to change password")
+      },
+      onSettled: () => {
+        setPasswordLoading(false)
+      },
+    })
   }
 
-  const handleForgotPassword = async () => {
+  const forgotPasswordMutation = useVendorForgotPassword()
+
+  const handleForgotPassword = () => {
     setForgotPasswordLoading(true)
-    try {
-      await axios.post("/api/vendor/forgot-password", { email: currentEmail })
-      toast.success("A password reset link has been sent to your email.")
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || "Failed to send reset link")
-    } finally {
-      setForgotPasswordLoading(false)
-    }
+    forgotPasswordMutation.mutate(
+      { email: currentEmail },
+      {
+        onSuccess: () => {
+          toast.success("A password reset link has been sent to your email.")
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(
+            err.response?.data?.message || "Failed to send reset link"
+          )
+        },
+        onSettled: () => {
+          setForgotPasswordLoading(false)
+        },
+      }
+    )
   }
 
   const emailForm = useForm<ChangeEmailValues>({
@@ -105,25 +102,27 @@ export function VendorSecurityForms({
     mode: "onTouched",
   })
 
-  const onEmailSubmit = async (values: ChangeEmailValues) => {
+  const changeEmailMutation = useVendorChangeEmail()
+
+  const onEmailSubmit = (values: ChangeEmailValues) => {
     setEmailLoading(true)
-    try {
-      const response = await axios.post(
-        "/api/vendor/account/change-email",
-        values
-      )
-      toast.success(
-        response.data.message || "Confirmation link sent to your new email."
-      )
-      emailForm.reset()
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(
-        err.response?.data?.message || "Failed to initiate email change"
-      )
-    } finally {
-      setEmailLoading(false)
-    }
+    changeEmailMutation.mutate(values, {
+      onSuccess: (data: { message?: string }) => {
+        toast.success(
+          data.message || "Confirmation link sent to your new email."
+        )
+        emailForm.reset()
+      },
+      onError: (error: unknown) => {
+        const err = error as { response?: { data?: { message?: string } } }
+        toast.error(
+          err.response?.data?.message || "Failed to initiate email change"
+        )
+      },
+      onSettled: () => {
+        setEmailLoading(false)
+      },
+    })
   }
 
   return (

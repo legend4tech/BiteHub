@@ -210,12 +210,12 @@ export default VendorNewOrderEmail
 // ─── Styles ─────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f6f9fc",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 const container = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "var(--card)",
   margin: "40px auto",
   padding: "0",
   borderRadius: "16px",
@@ -224,7 +224,7 @@ const container = {
   overflow: "hidden",
 }
 const headerSection = {
-  backgroundColor: "#fff5f2",
+  backgroundColor: "var(--primary-foreground)",
   padding: "32px 40px",
   textAlign: "center" as const,
 }
@@ -234,33 +234,33 @@ const logoText = {
   fontWeight: "800",
   letterSpacing: "-0.5px",
   margin: "12px 0 4px",
-  color: "#18181b",
+  color: "var(--foreground)",
 }
-const logoHighlight = { color: "#FF5B22" }
+const logoHighlight = { color: "var(--primary)" }
 const subHeader = {
   fontSize: "14px",
   fontWeight: "600",
-  color: "#FF5B22",
+  color: "var(--primary)",
   margin: "0",
   textTransform: "uppercase" as const,
   letterSpacing: "1px",
 }
-const divider = { borderTop: "1px solid #f1f5f9", margin: "0" }
+const divider = { borderTop: "1px solid var(--border)", margin: "0" }
 const contentSection = { padding: "40px" }
 const heading = {
   fontSize: "24px",
   fontWeight: "700",
-  color: "#18181b",
+  color: "var(--foreground)",
   margin: "0 0 16px",
 }
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "#475569",
+  color: "var(--muted-foreground)",
   margin: "0 0 16px",
 }
 const orderIdSection = {
-  backgroundColor: "#fff5f2",
+  backgroundColor: "var(--primary-foreground)",
   borderRadius: "10px",
   padding: "16px 20px",
   margin: "0 0 24px",
@@ -268,7 +268,7 @@ const orderIdSection = {
 const orderIdLabel = {
   fontSize: "11px",
   fontWeight: "700",
-  color: "#FF5B22",
+  color: "var(--primary)",
   textTransform: "uppercase" as const,
   letterSpacing: "1px",
   margin: "0 0 4px",
@@ -276,12 +276,12 @@ const orderIdLabel = {
 const orderIdValue = {
   fontSize: "20px",
   fontWeight: "800",
-  color: "#18181b",
+  color: "var(--foreground)",
   fontFamily: "monospace",
   margin: "0",
 }
 const detailsSection = {
-  backgroundColor: "#f8fafc",
+  backgroundColor: "var(--muted)",
   padding: "20px 24px",
   borderRadius: "12px",
   margin: "0 0 20px",
@@ -289,7 +289,7 @@ const detailsSection = {
 const sectionTitle = {
   fontSize: "12px",
   fontWeight: "700",
-  color: "#64748b",
+  color: "var(--muted-foreground)",
   textTransform: "uppercase" as const,
   letterSpacing: "1px",
   margin: "0 0 14px",
@@ -298,14 +298,14 @@ const infoRow = { display: "table", width: "100%", marginBottom: "8px" }
 const infoLabel = {
   display: "table-cell",
   fontSize: "14px",
-  color: "#94a3b8",
+  color: "var(--muted-foreground)",
   width: "110px",
   margin: "0",
 }
 const infoValue = {
   display: "table-cell",
   fontSize: "14px",
-  color: "#18181b",
+  color: "var(--foreground)",
   fontWeight: "600",
   margin: "0",
 }
@@ -313,30 +313,37 @@ const itemRow = { display: "table", width: "100%", marginBottom: "10px" }
 const itemText = {
   display: "table-cell",
   fontSize: "15px",
-  color: "#18181b",
+  color: "var(--foreground)",
   margin: "0",
 }
-const itemQty = { color: "#FF5B22", fontWeight: "700", marginRight: "4px" }
+const itemQty = {
+  color: "var(--primary)",
+  fontWeight: "700",
+  marginRight: "4px",
+}
 const itemPrice = {
   display: "table-cell",
   fontSize: "15px",
-  color: "#18181b",
+  color: "var(--foreground)",
   fontWeight: "600",
   textAlign: "right" as const,
   margin: "0",
 }
-const summaryDivider = { borderTop: "1px dashed #cbd5e1", margin: "16px 0" }
+const summaryDivider = {
+  borderTop: "1px dashed var(--border)",
+  margin: "16px 0",
+}
 const summaryRow = { display: "table", width: "100%", marginBottom: "8px" }
 const summaryLabel = {
   display: "table-cell",
   fontSize: "13px",
-  color: "#64748b",
+  color: "var(--muted-foreground)",
   margin: "0",
 }
 const summaryValue = {
   display: "table-cell",
   fontSize: "13px",
-  color: "#475569",
+  color: "var(--muted-foreground)",
   textAlign: "right" as const,
   margin: "0",
 }
@@ -345,36 +352,40 @@ const earningsRow = {
   width: "100%",
   marginTop: "12px",
   paddingTop: "14px",
-  borderTop: "2px solid #FF5B22",
+  borderTop: "2px solid var(--primary)",
 }
 const earningsLabel = {
   display: "table-cell",
   fontSize: "16px",
   fontWeight: "700",
-  color: "#18181b",
+  color: "var(--foreground)",
   margin: "0",
 }
 const earningsValue = {
   display: "table-cell",
   fontSize: "20px",
   fontWeight: "800",
-  color: "#FF5B22",
+  color: "var(--primary)",
   textAlign: "right" as const,
   margin: "0",
 }
 const notesSection = {
-  backgroundColor: "#fffbeb",
-  border: "1px solid #fde68a",
+  backgroundColor: "var(--status-pending)",
+  border: "1px solid var(--status-pending-foreground)",
   borderRadius: "10px",
   padding: "16px 20px",
   margin: "0 0 20px",
 }
-const notesText = { fontSize: "14px", color: "#92400e", margin: "0" }
+const notesText = {
+  fontSize: "14px",
+  color: "var(--status-pending-foreground)",
+  margin: "0",
+}
 const buttonContainer = { textAlign: "center" as const, margin: "28px 0" }
 const button = {
-  backgroundColor: "#FF5B22",
+  backgroundColor: "var(--primary)",
   borderRadius: "8px",
-  color: "#fff",
+  color: "var(--primary-foreground)",
   fontSize: "16px",
   fontWeight: "600",
   textDecoration: "none",
@@ -383,8 +394,12 @@ const button = {
   padding: "14px 28px",
 }
 const footerSection = {
-  backgroundColor: "#f8fafc",
+  backgroundColor: "var(--muted)",
   padding: "28px 40px",
   textAlign: "center" as const,
 }
-const footerText = { fontSize: "13px", color: "#64748b", margin: "0 0 6px" }
+const footerText = {
+  fontSize: "13px",
+  color: "var(--muted-foreground)",
+  margin: "0 0 6px",
+}

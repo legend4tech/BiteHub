@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Loader2, CheckCircle2, XCircle, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import axios from "axios"
+import { useConfirmEmail } from "@/hooks/mutations/usePublicMutations"
 import { useSession, signOut } from "next-auth/react"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -23,6 +23,8 @@ function ConfirmEmailContent() {
   const [errorMessage, setErrorMessage] = useState("")
   const hasAttempted = useRef(false)
 
+  const confirmEmailMutation = useConfirmEmail()
+
   useEffect(() => {
     if (!token || !email) {
       setTimeout(() => {
@@ -35,28 +37,27 @@ function ConfirmEmailContent() {
     if (hasAttempted.current) return
     hasAttempted.current = true
 
-    const confirmEmail = async () => {
-      try {
-        await axios.get(
-          `/api/vendor/account/confirm-email?token=${token}&email=${encodeURIComponent(email)}`
-        )
-        setStatus("success")
-        toast.success("Email updated. Please log in with your new email.")
-        setTimeout(() => {
-          signOut({ callbackUrl: "/vendor/login" })
-        }, 4000)
-      } catch (error: unknown) {
-        const err = error as { response?: { data?: { message?: string } } }
-        setStatus("error")
-        setErrorMessage(
-          err.response?.data?.message ||
-            "Verification failed. The link might be expired."
-        )
+    confirmEmailMutation.mutate(
+      { token, email },
+      {
+        onSuccess: () => {
+          setStatus("success")
+          toast.success("Email updated. Please log in with your new email.")
+          setTimeout(() => {
+            signOut({ callbackUrl: "/vendor/login" })
+          }, 4000)
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          setStatus("error")
+          setErrorMessage(
+            err.response?.data?.message ||
+              "Verification failed. The link might be expired."
+          )
+        },
       }
-    }
-
-    confirmEmail()
-  }, [token, email])
+    )
+  }, [token, email, confirmEmailMutation])
 
   const isLoggedIn = !!session?.user
 
@@ -80,7 +81,7 @@ function ConfirmEmailContent() {
 
       {status === "success" && (
         <div className="space-y-6">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-green-500/10 text-green-500">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-success/10 text-success">
             <CheckCircle2 className="size-8" />
           </div>
           <h1 className="font-heading text-2xl font-bold">Email Verified!</h1>

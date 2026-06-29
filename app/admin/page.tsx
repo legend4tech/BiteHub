@@ -2,9 +2,15 @@
 
 import { useState, useTransition, useOptimistic } from "react"
 import Link from "next/link"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
+import { useAdminStats } from "@/hooks/queries/useAdminStats"
+import { useAdminVendors } from "@/hooks/queries/useAdminVendors"
+import { useAdminFeedback } from "@/hooks/queries/useAdminFeedback"
 import { toast } from "sonner"
-import apiClient from "@/lib/axios"
+import {
+  useAdminToggleVendorActive,
+  useAdminToggleVendorFeatured,
+} from "@/hooks/mutations/useAdminMutations"
 import Image from "next/image"
 import { APP_LOGO_URL, APP_NAME } from "@/lib/constants"
 import {
@@ -38,30 +44,21 @@ export default function AdminPage() {
     isLoading: loadingStats,
     isError: isStatsError,
     refetch: refetchStats,
-  } = useQuery<AdminStats>({
-    queryKey: ["admin-stats"],
-    queryFn: async () => (await apiClient.get("/admin/stats")).data,
-  })
+  } = useAdminStats()
 
   const {
     data: vendorsData,
     isLoading: loadingVendors,
     isError: isVendorsError,
     refetch: refetchVendors,
-  } = useQuery<AdminVendor[]>({
-    queryKey: ["admin-vendors"],
-    queryFn: async () => (await apiClient.get("/admin/vendors")).data,
-  })
+  } = useAdminVendors()
 
   const {
     data: feedbacks,
     isLoading: loadingFeedback,
     isError: isFeedbackError,
     refetch: refetchFeedback,
-  } = useQuery<Feedback[]>({
-    queryKey: ["admin-feedback"],
-    queryFn: async () => (await apiClient.get("/admin/feedback")).data,
-  })
+  } = useAdminFeedback()
 
   const vendors = vendorsData ?? []
 
@@ -74,46 +71,55 @@ export default function AdminPage() {
 
   const noAccountVendors = optimisticVendors.filter((v) => !v.account)
 
+  const toggleActiveMutation = useAdminToggleVendorActive()
+  const toggleFeaturedMutation = useAdminToggleVendorFeatured()
+
   const toggleVendorActive = (vendor: AdminVendor) => {
     setTogglingId(vendor.id)
     addOptimisticVendor({ ...vendor, isActive: !vendor.isActive })
-    startTransition(async () => {
-      try {
-        await apiClient.patch(`/admin/vendors/${vendor.id}`, {
-          isActive: !vendor.isActive,
-        })
-        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
-        toast.success(
-          `Vendor ${!vendor.isActive ? "activated" : "deactivated"}`
-        )
-      } catch (error: unknown) {
-        const err = error as { response?: { data?: { error?: string } } }
-        toast.error(err.response?.data?.error || "An error occurred")
-      } finally {
-        setTogglingId(null)
+
+    toggleActiveMutation.mutate(
+      { vendorId: vendor.id, isActive: !vendor.isActive },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+          toast.success(
+            `Vendor ${!vendor.isActive ? "activated" : "deactivated"}`
+          )
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          toast.error(err.response?.data?.error || "An error occurred")
+        },
+        onSettled: () => {
+          setTogglingId(null)
+        },
       }
-    })
+    )
   }
 
   const toggleVendorFeatured = (vendor: AdminVendor) => {
     setTogglingFeaturedId(vendor.id)
     addOptimisticVendor({ ...vendor, isFeatured: !vendor.isFeatured })
-    startTransition(async () => {
-      try {
-        await apiClient.patch(`/admin/vendors/${vendor.id}`, {
-          isFeatured: !vendor.isFeatured,
-        })
-        await queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
-        toast.success(
-          `${vendor.name} is ${!vendor.isFeatured ? "now featured" : "no longer featured"}`
-        )
-      } catch (error: unknown) {
-        const err = error as { response?: { data?: { error?: string } } }
-        toast.error(err.response?.data?.error || "An error occurred")
-      } finally {
-        setTogglingFeaturedId(null)
+
+    toggleFeaturedMutation.mutate(
+      { vendorId: vendor.id, isFeatured: !vendor.isFeatured },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+          toast.success(
+            `${vendor.name} is ${!vendor.isFeatured ? "now featured" : "no longer featured"}`
+          )
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          toast.error(err.response?.data?.error || "An error occurred")
+        },
+        onSettled: () => {
+          setTogglingFeaturedId(null)
+        },
       }
-    })
+    )
   }
 
   return (

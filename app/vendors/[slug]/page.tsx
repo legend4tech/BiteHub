@@ -230,7 +230,7 @@ export default async function VendorDetailPage({
                     {vendor.name}
                   </h1>
                   {vendor.isActive ? (
-                    <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold tracking-wide text-green-600 uppercase dark:bg-green-900/30 dark:text-green-400">
+                    <span className="flex items-center gap-1.5 rounded-full bg-success/20 px-3 py-1.5 text-xs font-bold tracking-wide text-success uppercase">
                       <Circle className="size-2 fill-current" /> Open
                     </span>
                   ) : (

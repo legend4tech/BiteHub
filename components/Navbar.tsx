@@ -142,7 +142,7 @@ export function Navbar() {
               {/* Decorative Background Orbs */}
               <div className="pointer-events-none absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
                 <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/20 blur-[80px]" />
-                <div className="absolute top-1/2 -left-20 h-48 w-48 rounded-full bg-blue-500/10 blur-[60px]" />
+                <div className="absolute top-1/2 -left-20 h-48 w-48 rounded-full bg-status-confirmed/10 blur-[60px]" />
                 <div className="absolute right-0 -bottom-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
               </div>
 

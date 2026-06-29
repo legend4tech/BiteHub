@@ -16,9 +16,14 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vendor } from "@/lib/types"
-import apiClient from "@/lib/axios"
+import {
+  useVendorAddMonnify,
+  useVendorRequestMonnifyChange,
+  useVendorVerifyMonnifyChange,
+} from "@/hooks/mutations/useVendorMutations"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+import { useBanksQuery } from "@/hooks/queries/useBanksQuery"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   vendorPaymentSettingsSchema,
@@ -57,8 +62,7 @@ interface VendorPaymentFormProps {
 
 export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
   const [saving, setSaving] = useState(false)
-  const [banks, setBanks] = useState<Bank[]>([])
-  const [loadingBanks, setLoadingBanks] = useState(true)
+  const { data: banks = [], isLoading: loadingBanks } = useBanksQuery()
   const [openBankList, setOpenBankList] = useState(false)
   const router = useRouter()
 
@@ -88,22 +92,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       )
     : 0
 
-  useEffect(() => {
-    async function fetchBanks() {
-      try {
-        const response = await axios.get("/api/banks")
-        if (response.data?.status && response.data?.data) {
-          setBanks(response.data.data)
-        }
-      } catch (error) {
-        console.error("Failed to fetch banks", error)
-      } finally {
-        setLoadingBanks(false)
-      }
-    }
-    fetchBanks()
-  }, [])
-
   const form = useForm<VendorPaymentSettingsValues>({
     resolver: zodResolver(
       vendorPaymentSettingsSchema as never
@@ -124,8 +112,10 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
     }
   }
 
+  const addMonnifyMutation = useVendorAddMonnify()
+
   // Final Setup Confirm
-  const handleSetupConfirm = async () => {
+  const handleSetupConfirm = () => {
     if (
       setupConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
       "add account"
@@ -133,51 +123,67 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       return
 
     setSaving(true)
-    try {
-      const values = form.getValues()
-      const bankName = banks.find((b) => b.code === values.bankCode)?.name
-      await apiClient.post(`/vendors/${initial.id}/monnify`, {
-        bankCode: values.bankCode,
-        accountNumber: values.accountNumber,
-        bankName,
-      })
+    const values = form.getValues()
+    const bankName = banks.find((b) => b.code === values.bankCode)?.name
 
-      toast.success(
-        "Monnify connected successfully! Check your email for confirmation."
-      )
-      setShowSetupModal(false)
-      setSetupConfirmText("")
-      router.refresh()
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } }
-      console.error("Save settings error:", err)
-      toast.error(
-        err.response?.data?.error ||
-          "Couldn't connect to Monnify. Please try again."
-      )
-    } finally {
-      setSaving(false)
-    }
+    addMonnifyMutation.mutate(
+      {
+        vendorId: initial.id,
+        data: {
+          bankCode: values.bankCode,
+          accountNumber: values.accountNumber,
+          bankName,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            "Monnify connected successfully! Check your email for confirmation."
+          )
+          setShowSetupModal(false)
+          setSetupConfirmText("")
+          router.refresh()
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          console.error("Save settings error:", err)
+          toast.error(
+            err.response?.data?.error ||
+              "Couldn't connect to Monnify. Please try again."
+          )
+        },
+        onSettled: () => {
+          setSaving(false)
+        },
+      }
+    )
   }
+
+  const requestMonnifyChangeMutation = useVendorRequestMonnifyChange()
 
   // Step 1: Request OTP
-  const handleRequestOtp = async () => {
+  const handleRequestOtp = () => {
     setRequestingOtp(true)
-    try {
-      await apiClient.post(`/vendors/${initial.id}/monnify/request-change`)
-      toast.success("OTP sent to your registered email!")
-      setShowOtpRequestModal(false)
-      setShowVerifyModal(true)
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } }
-      toast.error(err.response?.data?.error || "Failed to request OTP.")
-    } finally {
-      setRequestingOtp(false)
-    }
+    requestMonnifyChangeMutation.mutate(initial.id, {
+      onSuccess: () => {
+        toast.success("OTP sent to your registered email!")
+        setShowOtpRequestModal(false)
+        setShowVerifyModal(true)
+      },
+      onError: (error: unknown) => {
+        const err = error as { response?: { data?: { error?: string } } }
+        toast.error(err.response?.data?.error || "Failed to request OTP.")
+      },
+      onSettled: () => {
+        setRequestingOtp(false)
+      },
+    })
   }
 
+  const verifyMonnifyChangeMutation = useVendorVerifyMonnifyChange()
+
   // Step 2: Verify OTP
-  const handleVerifyConfirm = async () => {
+  const handleVerifyConfirm = () => {
     if (
       changeConfirmText.trim().toLowerCase().replace(/\s+/g, " ") !==
         "change account" ||
@@ -186,30 +192,40 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       return
 
     setSaving(true)
-    try {
-      const values = form.getValues()
-      const bankName = banks.find((b) => b.code === values.bankCode)?.name
-      await apiClient.post(`/vendors/${initial.id}/monnify/verify-change`, {
-        bankCode: values.bankCode,
-        bankName,
-        accountNumber: values.accountNumber,
-        otp: otpValue,
-      })
+    const values = form.getValues()
+    const bankName = banks.find((b) => b.code === values.bankCode)?.name
 
-      toast.success("Bank details updated successfully!")
-      setShowVerifyModal(false)
-      setOtpValue("")
-      setChangeConfirmText("")
-      router.refresh()
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } }
-      console.error("Verify OTP error:", err)
-      toast.error(
-        err.response?.data?.error || "Failed to update details. Invalid OTP."
-      )
-    } finally {
-      setSaving(false)
-    }
+    verifyMonnifyChangeMutation.mutate(
+      {
+        vendorId: initial.id,
+        data: {
+          bankCode: values.bankCode,
+          bankName,
+          accountNumber: values.accountNumber,
+          otp: otpValue,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Bank details updated successfully!")
+          setShowVerifyModal(false)
+          setOtpValue("")
+          setChangeConfirmText("")
+          router.refresh()
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          console.error("Verify OTP error:", err)
+          toast.error(
+            err.response?.data?.error ||
+              "Failed to update details. Invalid OTP."
+          )
+        },
+        onSettled: () => {
+          setSaving(false)
+        },
+      }
+    )
   }
 
   return (

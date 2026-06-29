@@ -49,13 +49,13 @@ export function DashboardStats(props: DashboardStatsProps) {
         {/* Pending Orders */}
         <div className="col-span-1 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
-              <Clock className="size-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Clock className="h-5 w-5" />
             </div>
             {props.pending > 0 && (
-              <span className="relative flex size-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-500 opacity-75"></span>
-                <span className="relative inline-flex size-3 rounded-full bg-orange-500"></span>
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex size-3 rounded-full bg-primary"></span>
               </span>
             )}
           </div>
@@ -76,7 +76,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         {/* In Progress */}
         <div className="col-span-1 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-confirmed/10 text-status-confirmed">
               <Zap className="size-5" />
             </div>
           </div>

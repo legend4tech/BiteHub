@@ -137,7 +137,7 @@ export default async function SingleMenuPage({ params }: Props) {
                           {mainItem.category}
                         </span>
                         {vendor.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold tracking-wide text-green-700 uppercase dark:bg-green-900/30 dark:text-green-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-success/20 px-2.5 py-1 text-xs font-bold tracking-wide text-success uppercase">
                             Vendor Open
                           </span>
                         ) : (

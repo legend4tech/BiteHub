@@ -108,13 +108,13 @@ export default OrderCompletedEmail
 // ─── Styles ─────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "#f6f9fc",
+  backgroundColor: "var(--background)",
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "var(--card)",
   margin: "40px auto",
   padding: "0",
   borderRadius: "16px",
@@ -139,11 +139,11 @@ const logoText = {
   fontWeight: "800",
   letterSpacing: "-0.5px",
   margin: "12px 0 4px",
-  color: "#18181b", // foreground
+  color: "var(--foreground)", // foreground
 }
 
 const logoHighlight = {
-  color: "#FF5B22", // primary
+  color: "var(--primary)", // primary
 }
 
 const subHeader = {
@@ -156,7 +156,7 @@ const subHeader = {
 }
 
 const divider = {
-  borderTop: "1px solid #f1f5f9",
+  borderTop: "1px solid var(--border)",
   margin: "0",
 }
 
@@ -167,14 +167,14 @@ const contentSection = {
 const heading = {
   fontSize: "24px",
   fontWeight: "700",
-  color: "#18181b",
+  color: "var(--foreground)",
   margin: "0 0 24px",
 }
 
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "#475569",
+  color: "var(--muted-foreground)",
   margin: "0 0 16px",
 }
 
@@ -184,9 +184,9 @@ const buttonContainer = {
 }
 
 const button = {
-  backgroundColor: "#FF5B22",
+  backgroundColor: "var(--primary)",
   borderRadius: "8px",
-  color: "#fff",
+  color: "var(--primary-foreground)",
   fontSize: "16px",
   fontWeight: "600",
   textDecoration: "none",
@@ -196,23 +196,23 @@ const button = {
 }
 
 const link = {
-  color: "#FF5B22",
+  color: "var(--primary)",
   textDecoration: "underline",
 }
 
 const footerSection = {
-  backgroundColor: "#f8fafc",
+  backgroundColor: "var(--muted)",
   padding: "32px 40px",
   textAlign: "center" as const,
 }
 
 const footerText = {
   fontSize: "13px",
-  color: "#64748b",
+  color: "var(--muted-foreground)",
   margin: "0 0 8px",
 }
 
 const footerLink = {
-  color: "#94a3b8",
+  color: "var(--muted-foreground)",
   textDecoration: "underline",
 }

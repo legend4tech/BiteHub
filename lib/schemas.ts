@@ -230,8 +230,8 @@ export const vendorUpdateSchema = vendorSettingsSchema
 // ─── Vendor Login Schema ──────────────────────────────────────────────────────
 
 export const vendorLoginSchema = z.object({
-  phone: z.string().trim().min(1, "Phone number or ID is required."),
-  password: z.string().min(1, "Password is required."),
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 })
 
 export type VendorLoginValues = z.infer<typeof vendorLoginSchema>
@@ -315,3 +315,137 @@ export const adminSubLandmarkSchema = z.object({
 })
 
 export type AdminSubLandmarkValues = z.infer<typeof adminSubLandmarkSchema>
+
+export const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  subject: z.string().min(2, "Subject is required"),
+  message: z.string().min(3, "Message is required"),
+})
+export type ContactValues = z.infer<typeof contactSchema>
+
+export const orderItemSchema = z.object({
+  menuItemId: z.string().min(1, "Menu item ID is required"),
+  name: z.string().min(1, "Name is required"),
+  price: z.number().min(0, "Price must be non-negative"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1"),
+})
+export type OrderItemValues = z.infer<typeof orderItemSchema>
+
+export const createOrderSchema = z.object({
+  vendorId: z.string().min(1, "Vendor ID is required"),
+  vendorName: z.string().min(1, "Vendor name is required"),
+  vendorWhatsappNumber: z.string().optional(),
+  vendorPhone: z.string().optional(),
+  items: z.array(orderItemSchema).min(1, "At least one item is required"),
+  customerName: z.string().min(1, "Customer name is required"),
+  customerEmail: z.string().email("Valid email is required"),
+  customerPhone: z.string().min(1, "Customer phone is required"),
+  location: z.string().min(1, "Location is required"),
+  exactLocation: z.string().min(1, "Exact location is required"),
+  notes: z.string().optional(),
+  paymentMethod: z.enum(["monnify"]).default("monnify"),
+  total: z.number().optional(), // We accept it but ignore it for calculation
+})
+export type CreateOrderValues = z.infer<typeof createOrderSchema>
+
+export const addLoginSchema = z.object({
+  email: z.string().trim().email("Enter a valid email"),
+  password: strongPasswordSchema,
+})
+export type AddLoginValues = z.infer<typeof addLoginSchema>
+
+export const quickAddVendorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
+  email: z.string().email("Invalid email"),
+  password: strongPasswordSchema,
+  image: z
+    .object({ url: z.string().min(1), publicId: z.string().min(1) })
+    .optional()
+    .refine((val) => !!val, { message: "Image is required" }),
+})
+export type QuickAddVendorValues = z.infer<typeof quickAddVendorSchema>
+
+export const vendorCreationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  whatsappNumber: whatsappInputSchema,
+  email: z.string().email("Invalid email"),
+  password: strongPasswordSchema,
+  description: z.string().min(1, "Description is required"),
+  category: z.string().min(1, "Category is required"),
+  tags: z.array(z.string()).min(1, "At least one tag is required"),
+  prepTime: z.string().optional(),
+  school: z.string().min(1, "School is required"),
+  campus: z.string().min(1, "Campus is required"),
+  image: z
+    .object({
+      url: z.string().min(1, "Image is required"),
+      publicId: z.string(),
+      file: z.instanceof(File).optional(),
+    })
+    .nullable()
+    .optional()
+    .refine((val) => val !== null && val !== undefined && val.url.length > 0, {
+      message: "Image is required",
+    }),
+})
+export type VendorCreationValues = z.infer<typeof vendorCreationSchema>
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: strongPasswordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
+
+export const changeEmailSchema = z.object({
+  newEmail: z
+    .string()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
+})
+export type ChangeEmailValues = z.infer<typeof changeEmailSchema>
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+})
+export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>
+
+export const adminLoginSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+})
+export type AdminLoginValues = z.infer<typeof adminLoginSchema>
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  token: z.string().min(1),
+  password: strongPasswordSchema,
+})
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>
+
+export const statusUpdateSchema = z.object({
+  status: z.enum([
+    "pending",
+    "confirmed",
+    "preparing",
+    "ready",
+    "completed",
+    "cancelled",
+  ]),
+})
+export type StatusUpdateValues = z.infer<typeof statusUpdateSchema>
+
+export const vendorsPublicQuerySchema = z.object({
+  school: z.string().optional(),
+  campus: z.string().optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+})
+export type VendorsPublicQueryValues = z.infer<typeof vendorsPublicQuerySchema>

@@ -7,12 +7,7 @@ import { CONTACT_EMAIL } from "@/lib/constants"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  subject: z.string().min(2, "Subject is required"),
-  message: z.string().min(3, "Message is required"),
-})
+import { contactSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {
   try {

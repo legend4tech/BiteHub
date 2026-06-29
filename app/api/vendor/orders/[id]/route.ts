@@ -11,9 +11,7 @@ import {
 } from "@/lib/constants"
 import { z } from "zod"
 
-const statusUpdateSchema = z.object({
-  status: z.enum(VALID_ORDER_STATUSES),
-})
+import { statusUpdateSchema } from "@/lib/schemas"
 
 /**
  * PATCH /api/vendor/orders/[id]

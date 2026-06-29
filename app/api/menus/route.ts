@@ -11,7 +11,10 @@ export async function GET(request: Request) {
       school: searchParams.get("school") || undefined,
       campus: searchParams.get("campus") || undefined,
       page: parseInt(searchParams.get("page") || "1", 10),
-      limit: parseInt(searchParams.get("limit") || "20", 10),
+      limit: parseInt(searchParams.get("limit") || "30", 10),
+      sortBy: searchParams.get("sortBy") || undefined,
+      vendorId: searchParams.get("vendorId") || undefined,
+      availableOnly: searchParams.get("availableOnly") === "true",
     })
 
     return NextResponse.json(result.items)

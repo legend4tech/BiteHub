@@ -12,12 +12,7 @@ import VendorModel from "@/models/Vendor"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const changeEmailSchema = z.object({
-  newEmail: z
-    .string()
-    .email("Please enter a valid email address")
-    .toLowerCase(),
-})
+import { changeEmailSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {
   try {

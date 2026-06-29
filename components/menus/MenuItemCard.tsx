@@ -46,7 +46,11 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
     item.quantityAvailable <= 0
 
   const isCurrentlyAvailable =
-    item.isAvailable && isAvailableToday && !isSoldOut && !isOffSchedule
+    item.isAvailable &&
+    isAvailableToday &&
+    !isSoldOut &&
+    !isOffSchedule &&
+    item.vendorIsActive !== false // false = explicitly closed; undefined = assume active
 
   const handleAdd = () => {
     if (!isCurrentlyAvailable) return
@@ -128,11 +132,13 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
               <span className="text-xs font-black tracking-widest text-white uppercase drop-shadow-md">
                 {!item.isAvailable
                   ? "Unlisted"
-                  : !isAvailableToday
-                    ? "Unavailable"
-                    : isSoldOut
-                      ? "Sold Out"
-                      : "Closed"}
+                  : item.vendorIsActive === false
+                    ? "Vendor Closed"
+                    : !isAvailableToday
+                      ? "Unavailable"
+                      : isSoldOut
+                        ? "Sold Out"
+                        : "Closed"}
               </span>
               {(!isAvailableToday || isSoldOut || isOffSchedule) &&
                 item.isAvailable && (
@@ -151,7 +157,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           item.quantityAvailable !== undefined &&
           item.quantityAvailable <= 5 &&
           item.quantityAvailable > 0 && (
-            <span className="absolute bottom-2.5 left-2.5 z-10 rounded-full border border-border bg-orange-100 px-2.5 py-0.5 text-[10px] font-semibold text-orange-700 shadow-sm dark:bg-orange-900/30 dark:text-orange-400">
+            <span className="bg-warning/10 text-warning absolute bottom-2.5 left-2.5 z-10 rounded-full border border-border px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
               Limited: {item.quantityAvailable} left
             </span>
           )}

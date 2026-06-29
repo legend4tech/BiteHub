@@ -11,6 +11,27 @@ export const CONTACT_EMAIL = "contact@bitehubapp.com"
 export const NO_REPLY_EMAIL = "no-reply@bitehubapp.com"
 export const LOW_STOCK_THRESHOLD = 5
 
+// ─── Discovery Score Weights ───────────────────────────────────────────────────
+// Used by menuService.ts to rank items on the /menus page (Recommended sort).
+// Adjust here only — never hardcode these values inline.
+
+export const DISCOVERY_SCORE = {
+  /** Featured vendor override — always floats above unrated/new items */
+  FEATURED_BOOST: 1000,
+  /** Multiplied by vendor star rating (0–5) → up to +100 pts */
+  RATING_MULTIPLIER: 20,
+  /** Multiplied by log(ratingCount + 1) — diminishing returns on review count */
+  REVIEW_COUNT_MULTIPLIER: 5,
+  /** Flat bonus when the item is orderable right now */
+  AVAILABILITY_BOOST: 50,
+  /** Maximum recency bonus (decays linearly to 0 over RECENCY_DECAY_DAYS) */
+  RECENCY_MAX: 30,
+  /** Days over which the recency bonus decays to zero */
+  RECENCY_DECAY_DAYS: 30,
+  /** Maximum consecutive slots a single vendor may occupy in ranked results */
+  MAX_CONSECUTIVE_VENDOR_SLOTS: 4,
+} as const
+
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 
 export const LS_CART = "cb_cart"

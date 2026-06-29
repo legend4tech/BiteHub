@@ -15,7 +15,9 @@ export function RatingBadge({
   className = "",
   showCount = false,
 }: RatingBadgeProps) {
-  const isNew = !rating || rating === 0
+  const hasRating = !!rating && rating > 0
+
+  if (!hasRating) return null
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -24,10 +26,10 @@ export function RatingBadge({
           className={`${size === "sm" ? "size-3.5" : "size-4"} fill-rating text-rating`}
         />
         <span className={size === "sm" ? "text-xs" : "text-sm"}>
-          {isNew ? "New" : rating.toFixed(1)}
+          {rating!.toFixed(1)}
         </span>
       </span>
-      {showCount && !isNew && count !== undefined && count !== null && (
+      {showCount && count !== undefined && count !== null && (
         <span className="text-sm text-muted-foreground underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
           ({count} reviews)
         </span>

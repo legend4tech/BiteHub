@@ -11,7 +11,7 @@ import {
   Store,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useQuery } from "@tanstack/react-query"
+import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
 import apiClient from "@/lib/axios"
 import { formatPrice } from "@/lib/format"
 import type { AdminStats, AdminVendor, AdminOrder } from "./types"
@@ -77,14 +77,13 @@ export function AdminOverview({
   onRefresh,
 }: AdminOverviewProps) {
   // Fetch the 5 most recent orders for the quick feed
-  const { data: recentOrdersData, isLoading: loadingOrders } = useQuery<{
-    orders: AdminOrder[]
-  }>({
-    queryKey: ["admin-recent-orders"],
-    queryFn: async () =>
-      (await apiClient.get("/admin/orders?page=1&limit=5")).data,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-  })
+  const { data: recentOrdersData, isLoading: loadingOrders } = useAdminOrders(
+    1,
+    5,
+    {
+      refetchInterval: 30000, // Auto-refresh every 30 seconds
+    }
+  )
 
   const getStatusColor = (status: string) => {
     switch (status) {
