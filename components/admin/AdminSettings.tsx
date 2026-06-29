@@ -4,12 +4,17 @@ import { useState } from "react"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useGlobalSettings } from "@/hooks/queries/useGlobalSettings"
 import { Settings, Shield, Search, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError } from "@/components/ui/field"
-import apiClient from "@/lib/axios"
+import {
+  useAdminUpdatePassword,
+  useAdminUpdateGlobalSettings,
+  useAdminVerifyOrder,
+} from "@/hooks/mutations/useAdminMutations"
 import {
   adminPasswordSchema,
   type AdminPasswordValues,
@@ -35,87 +40,83 @@ export function AdminSettings() {
     },
   })
 
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const updatePasswordMutation = useAdminUpdatePassword()
 
-  const onPasswordSubmit = async (values: AdminPasswordValues) => {
-    // Cross-field validation: password match check done here rather than in schema
-    // to avoid ZodEffects input-type mismatch with zodResolver
+  const onPasswordSubmit = (values: AdminPasswordValues) => {
     if (values.newPassword !== values.confirmPassword) {
       passwordForm.setError("confirmPassword", {
         message: "Passwords don't match",
       })
       return
     }
-    setIsChangingPassword(true)
-    try {
-      await apiClient.post("/admin/settings/password", {
+
+    updatePasswordMutation.mutate(
+      {
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
-      })
-      toast.success(
-        "Password changed successfully! A confirmation email has been sent."
-      )
-      passwordForm.reset()
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } }
-      toast.error(err.response?.data?.error || "Failed to change password")
-    } finally {
-      setIsChangingPassword(false)
-    }
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            "Password changed successfully! A confirmation email has been sent."
+          )
+          passwordForm.reset()
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          toast.error(err.response?.data?.error || "Failed to change password")
+        },
+      }
+    )
   }
 
   // ── Global Settings Form ──
-  const { data: settingsData, isLoading: loadingSettings } =
-    useQuery<GlobalSettingsValues>({
-      queryKey: ["admin-global-settings"],
-      queryFn: async () => (await apiClient.get("/admin/settings/global")).data,
-    })
+  const { data: currentSettings, isLoading } = useGlobalSettings()
 
   const settingsForm = useForm<GlobalSettingsValues>({
     // Zod v4.4.x vs @hookform/resolvers version mismatch — same pattern as VendorPaymentForm.tsx
     resolver: zodResolver(
       globalSettingsSchema as never
     ) as unknown as Resolver<GlobalSettingsValues>,
-    values: settingsData,
+    values: currentSettings,
   })
 
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (values: GlobalSettingsValues) => {
-      await apiClient.patch("/admin/settings/global", values)
-    },
-    onSuccess: () => {
-      toast.success("Global settings updated")
-      queryClient.invalidateQueries({ queryKey: ["admin-global-settings"] })
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { error?: string } } }
-      toast.error(err.response?.data?.error || "Failed to update settings")
-    },
-  })
+  const updateSettingsMutation = useAdminUpdateGlobalSettings()
+
+  const handleSettingsSubmit = (values: GlobalSettingsValues) => {
+    updateSettingsMutation.mutate(values, {
+      onSuccess: () => {
+        toast.success("Global settings updated")
+        queryClient.invalidateQueries({ queryKey: ["admin-global-settings"] })
+      },
+      onError: (error: unknown) => {
+        const err = error as { response?: { data?: { error?: string } } }
+        toast.error(err.response?.data?.error || "Failed to update settings")
+      },
+    })
+  }
 
   const onSettingsSubmit = (values: GlobalSettingsValues) => {
-    updateSettingsMutation.mutate(values)
+    handleSettingsSubmit(values)
   }
 
   // ── Manual Order Verification ──
   const [orderIdToVerify, setOrderIdToVerify] = useState("")
-  const [isVerifyingOrder, setIsVerifyingOrder] = useState(false)
+  const verifyOrderMutation = useAdminVerifyOrder()
 
-  const handleVerifyOrder = async () => {
+  const handleVerifyOrder = () => {
     if (!orderIdToVerify.trim()) return
-    setIsVerifyingOrder(true)
-    try {
-      const res = await apiClient.post(
-        `/orders/${orderIdToVerify.trim()}/verify`
-      )
-      toast.success(res.data.message || "Order verified successfully")
-      setOrderIdToVerify("")
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } }
-      toast.error(err.response?.data?.error || "Verification failed")
-    } finally {
-      setIsVerifyingOrder(false)
-    }
+
+    verifyOrderMutation.mutate(orderIdToVerify.trim(), {
+      onSuccess: (data) => {
+        toast.success(data?.message || "Order verified successfully")
+        setOrderIdToVerify("")
+      },
+      onError: (error: unknown) => {
+        const err = error as { response?: { data?: { error?: string } } }
+        toast.error(err.response?.data?.error || "Verification failed")
+      },
+    })
   }
 
   return (
@@ -194,9 +195,9 @@ export function AdminSettings() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isChangingPassword}
+                disabled={updatePasswordMutation.isPending}
               >
-                {isChangingPassword ? (
+                {updatePasswordMutation.isPending ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : null}
                 Update Password
@@ -232,9 +233,11 @@ export function AdminSettings() {
                   <Button
                     variant="outline"
                     onClick={handleVerifyOrder}
-                    disabled={!orderIdToVerify.trim() || isVerifyingOrder}
+                    disabled={
+                      !orderIdToVerify.trim() || verifyOrderMutation.isPending
+                    }
                   >
-                    {isVerifyingOrder ? (
+                    {verifyOrderMutation.isPending ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
                       "Verify"
@@ -269,7 +272,7 @@ export function AdminSettings() {
               </div>
             </div>
 
-            {loadingSettings ? (
+            {isLoading ? (
               <div className="animate-pulse space-y-4">
                 <div className="h-10 rounded-xl bg-muted" />
                 <div className="h-10 rounded-xl bg-muted" />
@@ -319,7 +322,7 @@ export function AdminSettings() {
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+                      className="h-5 w-5 rounded border-border text-primary focus:ring-primary"
                       {...settingsForm.register("maintenanceMode")}
                     />
                   </div>

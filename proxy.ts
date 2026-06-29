@@ -40,7 +40,8 @@ export default auth(async (req) => {
     isNewDevice = true
   }
 
-  // 1. Rate Limiting Logic
+  // 1. Rate Limiting Logic (TEMPORARILY DISABLED)
+  /*
   if (isRateLimitingEnabled) {
     const ip =
       (req as { ip?: string }).ip ??
@@ -50,7 +51,7 @@ export default auth(async (req) => {
 
     // Strict Rate Limiting for Auth Login & Sensitive routes
     const isLoginAttempt =
-      req.method === "POST" && path === "/api/auth/callback/credentials"
+      req.method === "POST" && path.startsWith("/api/auth/callback/")
     const isOrderRoute = path.startsWith("/api/orders")
 
     if (isLoginAttempt || isOrderRoute) {
@@ -97,6 +98,7 @@ export default auth(async (req) => {
       }
     }
   }
+  */
 
   // 2. Auth guard — enforce role-based access at the edge to prevent flash-of-protected-content
   const { pathname } = req.nextUrl

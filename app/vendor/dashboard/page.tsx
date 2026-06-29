@@ -10,27 +10,25 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { AlertBanner } from "@/components/shared/AlertBanner"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { FetchError } from "@/components/shared/FetchError"
-import apiClient from "@/lib/axios"
+import {
+  useVendorAcceptTerms,
+  useVendorUpdateOrderStatus,
+  useVendorUpdateOrderPayment,
+} from "@/hooks/mutations/useVendorMutations"
 import { toast } from "sonner"
 import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
-import { useVendorStats } from "@/hooks/queries/useVendorStats"
+import {
+  useVendorStats,
+  type VendorStats,
+} from "@/hooks/queries/useVendorStats"
 import { TermsAcceptanceModal } from "@/components/vendor-dashboard/TermsAcceptanceModal"
+import { PlatformFeedbackModal } from "@/components/vendor-dashboard/PlatformFeedbackModal"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog"
 
 export default function VendorDashboardPage() {
   const { data: session, status } = useSession()
@@ -39,9 +37,6 @@ export default function VendorDashboardPage() {
 
   const [showPlatformFeedbackModal, setShowPlatformFeedbackModal] =
     useState(false)
-  const [platformRating, setPlatformRating] = useState(0)
-  const [platformComments, setPlatformComments] = useState("")
-  const [hoveredRating, setHoveredRating] = useState(0)
 
   const [acceptingTerms, setAcceptingTerms] = useState(false)
   const [hasAcceptedLocally, setHasAcceptedLocally] = useState(false)
@@ -80,18 +75,23 @@ export default function VendorDashboardPage() {
     stats.acceptedTermsVersion !== CURRENT_TERMS_VERSION &&
     !hasAcceptedLocally
 
-  const handleAcceptTerms = async () => {
+  const acceptTermsMutation = useVendorAcceptTerms()
+
+  const handleAcceptTerms = async (): Promise<void> => {
     setAcceptingTerms(true)
-    try {
-      await apiClient.post("/vendor/accept-terms")
-      toast.success("Thank you! You have accepted the updated terms.")
-      setHasAcceptedLocally(true)
-      await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
-    } catch {
-      toast.error("Couldn't record terms acceptance. Please try again.")
-    } finally {
-      setAcceptingTerms(false)
-    }
+    acceptTermsMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("Thank you! You have accepted the updated terms.")
+        setHasAcceptedLocally(true)
+        queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+      },
+      onError: () => {
+        toast.error("Couldn't record terms acceptance. Please try again.")
+      },
+      onSettled: () => {
+        setAcceptingTerms(false)
+      },
+    })
   }
 
   // ── Recent orders: only the 10 most recent for the table ──────────────────
@@ -103,32 +103,43 @@ export default function VendorDashboardPage() {
     refetch: refetchOrders,
   } = useVendorOrders({ limit: 10, enabled: isReady })
 
-  const handleStatusChange = async (
-    orderId: string,
-    newStatus: OrderStatus
-  ) => {
-    try {
-      await apiClient.patch(`/vendor/orders/${orderId}`, { status: newStatus })
-      toast.success("Order status updated successfully!")
-      // Invalidate both — stats counts change when a status changes
-      await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
-      await queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
-    } catch {
-      toast.error("Couldn't update order status. Please check your connection.")
-    }
+  const updateOrderStatusMutation = useVendorUpdateOrderStatus()
+
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    updateOrderStatusMutation.mutate(
+      { orderId, newStatus },
+      {
+        onSuccess: () => {
+          toast.success("Order status updated successfully!")
+          // Invalidate both — stats counts change when a status changes
+          queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+          queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+        },
+        onError: () => {
+          toast.error(
+            "Couldn't update order status. Please check your connection."
+          )
+        },
+      }
+    )
   }
 
-  const handlePaymentConfirm = async (orderId: string) => {
-    try {
-      await apiClient.patch(`/vendor/orders/${orderId}/payment`, {
-        paymentStatus: "confirmed",
-      })
-      toast.success("Payment confirmed successfully!")
-      await queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
-      await queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
-    } catch {
-      toast.error("Couldn't confirm payment. Please check your connection.")
-    }
+  const updateOrderPaymentMutation = useVendorUpdateOrderPayment()
+
+  const handlePaymentConfirm = (orderId: string) => {
+    updateOrderPaymentMutation.mutate(
+      { orderId, isPaid: true },
+      {
+        onSuccess: () => {
+          toast.success("Payment confirmed successfully!")
+          queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+          queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+        },
+        onError: () => {
+          toast.error("Couldn't confirm payment. Please check your connection.")
+        },
+      }
+    )
   }
 
   const handleShareProfile = async () => {
@@ -329,122 +340,16 @@ export default function VendorDashboardPage() {
       </div>
 
       {/* ── Platform Feedback Modal for Vendors ────────────────── */}
-      <AlertDialog
+      <PlatformFeedbackModal
         open={showPlatformFeedbackModal}
         onOpenChange={setShowPlatformFeedbackModal}
-      >
-        <AlertDialogContent className="sm:max-w-[425px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-heading text-xl font-bold">
-              Rate the Platform
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground">
-              How was your experience using {APP_NAME} as a vendor? We&apos;d
-              love to hear your thoughts!
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold">
-                Rating
-              </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setPlatformRating(star)}
-                    onMouseEnter={() => setHoveredRating(star)}
-                    onMouseLeave={() => setHoveredRating(0)}
-                    className="p-1 transition-transform hover:scale-110"
-                  >
-                    <Star
-                      className={`size-6 transition-colors ${
-                        (hoveredRating || platformRating) >= star
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold">
-                Comments <span className="text-destructive">*</span>
-              </label>
-              <textarea
-                value={platformComments}
-                onChange={(e) => setPlatformComments(e.target.value)}
-                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                rows={4}
-                placeholder="Tell us what you liked or what we can improve (required, min 3 chars)..."
-              />
-            </div>
-          </div>
-
-          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">
-            <AlertDialogCancel
-              onClick={() => {
-                const snoozeTime =
-                  new Date().getTime() + 5 * 24 * 60 * 60 * 1000 // 5 days
-                localStorage.setItem(
-                  "vendor_feedback_snoozed",
-                  snoozeTime.toString()
-                )
-                setShowPlatformFeedbackModal(false)
-              }}
-              className="w-full sm:w-auto"
-            >
-              Maybe later
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/feedback", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      vendorId: session?.user?.vendorId,
-                      platform: {
-                        rating: platformRating,
-                        comments: platformComments,
-                      },
-                    }),
-                  })
-
-                  if (response.ok) {
-                    toast.success("Feedback submitted! Thank you.")
-                    localStorage.setItem("vendor_feedback_submitted", "true")
-                    setShowPlatformFeedbackModal(false)
-                    setPlatformRating(0)
-                    setPlatformComments("")
-                  } else {
-                    toast.error(
-                      "Couldn't submit your feedback. Please try again."
-                    )
-                  }
-                } catch {
-                  toast.error("Something went wrong. Please try again.")
-                }
-              }}
-              disabled={
-                platformRating === 0 || platformComments.trim().length < 3
-              }
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
-            >
-              Submit
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        vendorId={session?.user?.vendorId}
+      />
 
       {/* ── Terms & Privacy Acceptance Compliance Modal ────────────────── */}
       <TermsAcceptanceModal
         open={!!needsTermsAcceptance}
-        isNewcomer={!!stats?.isNewcomer}
+        isNewcomer={!!(stats as VendorStats)?.isNewcomer}
         acceptingTerms={acceptingTerms}
         onAccept={handleAcceptTerms}
       />
