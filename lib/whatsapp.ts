@@ -41,16 +41,29 @@ export async function sendVendorOrderNotification(
             parameters: [
               {
                 type: "text",
-                text: orderId,
+                parameter_name: "order_id",
+                text: orderId || "N/A",
               },
             ],
           },
           {
             type: "body",
             parameters: [
-              { type: "text", text: orderId },
-              { type: "text", text: customerName || "Customer" },
-              { type: "text", text: `NGN ${totalAmount.toLocaleString()}` },
+              {
+                type: "text",
+                parameter_name: "order_id",
+                text: orderId || "N/A",
+              },
+              {
+                type: "text",
+                parameter_name: "customer_name",
+                text: customerName || "Customer",
+              },
+              {
+                type: "text",
+                parameter_name: "total_amount",
+                text: `NGN ${(totalAmount || 0).toLocaleString()}`,
+              },
             ],
           },
         ],
