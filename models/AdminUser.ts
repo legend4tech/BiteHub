@@ -4,7 +4,7 @@ export interface IAdminUser extends Document {
   name: string
   email: string
   password: string
-  role: "superadmin" | "admin"
+  role: "superadmin" | "admin" | "vendor_manager"
   isActive: boolean
   lastLoginAt?: Date
 }
@@ -26,7 +26,7 @@ const AdminUserSchema = new Schema<IAdminUser>(
     },
     role: {
       type: String,
-      enum: ["superadmin", "admin"],
+      enum: ["superadmin", "admin", "vendor_manager"],
       default: "admin",
     },
     isActive: {

@@ -8,7 +8,9 @@ export async function GET(request: Request) {
     const session = await auth()
     if (
       !session ||
-      !["admin", "superadmin"].includes(session.user?.role || "")
+      !["admin", "superadmin", "vendor_manager"].includes(
+        session.user?.role || ""
+      )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -18,11 +20,23 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "20", 10)
     const skip = (page - 1) * limit
 
+    const excludeStatus = searchParams.get("excludeStatus")
+    const statusParam = searchParams.get("status")
+    const query: {
+      status?: { $ne: string } | { $in: string[] }
+    } = {}
+    if (excludeStatus) {
+      query.status = { $ne: excludeStatus }
+    } else if (statusParam) {
+      const statuses = statusParam.split(",")
+      query.status = { $in: statuses }
+    }
+
     await dbConnect()
 
     const [orders, total] = await Promise.all([
-      Order.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      Order.countDocuments({}),
+      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Order.countDocuments(query),
     ])
 
     const totalPages = Math.ceil(total / limit)

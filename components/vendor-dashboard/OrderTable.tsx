@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import type { Order } from "@/lib/types"
 import {
@@ -298,7 +300,7 @@ export function OrderTable({
               {order.paymentMethod === "monnify" && (
                 <>
                   {order.paymentStatus === "paid" && (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-[#09A5DB]/10 py-2 text-sm font-semibold text-[#09A5DB]">
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-info/10 py-2 text-sm font-semibold text-info">
                       <Check className="size-4" /> Paid securely via Monnify
                     </div>
                   )}

@@ -1,4 +1,3 @@
- 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import axios from "axios"
@@ -13,6 +12,7 @@ export function useVendorAcceptTerms() {
 }
 
 export function useVendorUpdateOrderStatus() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({
       orderId,
@@ -26,10 +26,15 @@ export function useVendorUpdateOrderStatus() {
       })
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+      queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+    },
   })
 }
 
 export function useVendorUpdateOrderPayment() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({
       orderId,
@@ -43,46 +48,67 @@ export function useVendorUpdateOrderPayment() {
       })
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+    },
   })
 }
 
 export function useVendorVerifyOrder() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (orderId: string) => {
       const res = await apiClient.post(`/vendor/orders/${orderId}/verify`)
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendor-orders"] })
+      queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
+    },
   })
 }
 
 export function useVendorCreateMenu() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: unknown) => {
       const res = await apiClient.post("/vendor/menu", data)
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] })
+    },
   })
 }
 
 export function useVendorUpdateMenu() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: unknown }) => {
       const res = await apiClient.patch(`/vendor/menu/${id}`, data)
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] })
+    },
   })
 }
 
 export function useVendorDeleteMenu() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await apiClient.delete(`/vendor/menu/${id}`)
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] })
+    },
   })
 }
 
 export function useVendorUpdateMenuAvailability() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({
       id,
@@ -94,14 +120,22 @@ export function useVendorUpdateMenuAvailability() {
       const res = await apiClient.patch(`/vendor/menu/${id}`, { isAvailable })
       return res.data
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menu-items"] })
+    },
   })
 }
 
 export function useVendorUpdateSettings() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: unknown) => {
       const res = await apiClient.patch("/vendor/settings", data)
       return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendor-delivery-settings"] })
+      queryClient.invalidateQueries({ queryKey: ["vendor-stats"] })
     },
   })
 }

@@ -18,6 +18,13 @@ import {
 
 import { AuthSkeleton } from "./skeletons/AuthSkeletons"
 
+import {
+  AdminListSkeleton,
+  AdminOrdersSkeleton,
+  AdminOverviewStatsSkeleton,
+  AdminFeedbackSkeleton,
+} from "./skeletons/AdminSkeletons"
+
 // ─── PageSkeleton ─────────────────────────────────────────────────────────────
 // A reusable skeleton component. Pass a variant to imitate the matching page
 // layout. Optionally pass `count` to repeat card skeletons.
@@ -43,6 +50,10 @@ type SkeletonVariant =
   | "payment-details"
   | "vendor-settings"
   | "menu-item-detail"
+  | "admin-list"
+  | "admin-orders"
+  | "admin-overview-stats"
+  | "admin-feedback"
 
 interface PageSkeletonProps {
   variant: SkeletonVariant
@@ -77,6 +88,14 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <VendorSettingsSkeleton />
     case "menu-item-detail":
       return <MenuItemDetailSkeleton />
+    case "admin-list":
+      return <AdminListSkeleton count={count} />
+    case "admin-orders":
+      return <AdminOrdersSkeleton count={count} />
+    case "admin-overview-stats":
+      return <AdminOverviewStatsSkeleton count={count} />
+    case "admin-feedback":
+      return <AdminFeedbackSkeleton count={count} />
     default:
       return null
   }

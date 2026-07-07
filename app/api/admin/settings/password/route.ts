@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     const session = await auth()
     if (
       !session ||
-      (session.user?.role !== "admin" && session.user?.role !== "superadmin")
+      !["admin", "superadmin", "vendor_manager"].includes(
+        session.user?.role || ""
+      )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

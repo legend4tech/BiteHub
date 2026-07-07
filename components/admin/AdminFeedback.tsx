@@ -3,6 +3,7 @@
 import { Star } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
 
 export interface Feedback {
   _id: string
@@ -33,14 +34,7 @@ export function AdminFeedback({
 
       <div className="rounded-[28px] border border-border bg-card p-6 shadow-sm">
         {loadingFeedback ? (
-          <div className="space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-20 animate-pulse rounded-xl bg-muted/50"
-              />
-            ))}
-          </div>
+          <PageSkeleton variant="admin-feedback" count={6} />
         ) : feedbacks?.length === 0 ? (
           <EmptyState
             size="sm"

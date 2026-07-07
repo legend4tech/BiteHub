@@ -11,11 +11,13 @@ import {
   Store,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { FetchError } from "@/components/shared/FetchError"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
 import apiClient from "@/lib/axios"
 import { formatPrice } from "@/lib/format"
 import type { AdminStats, AdminVendor, AdminOrder } from "./types"
-import type { AdminSection } from "./AdminSidebar"
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -80,6 +82,8 @@ export function AdminOverview({
   const { data: recentOrdersData, isLoading: loadingOrders } = useAdminOrders(
     1,
     5,
+    undefined,
+    undefined,
     {
       refetchInterval: 30000, // Auto-refresh every 30 seconds
     }
@@ -123,14 +127,7 @@ export function AdminOverview({
       </div>
 
       {loadingStats ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-28 animate-pulse rounded-2xl border border-border bg-card p-5"
-            />
-          ))}
-        </div>
+        <PageSkeleton variant="admin-overview-stats" count={8} />
       ) : stats ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -294,14 +291,16 @@ export function AdminOverview({
                 ))}
               </div>
             ) : (
-              <div className="p-6 text-center text-sm text-muted-foreground">
-                No recent orders found.
-              </div>
+              <EmptyState
+                title="No recent orders"
+                description="Live orders will appear here as they come in."
+                size="sm"
+              />
             )}
           </div>
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">Failed to load stats.</p>
+        <FetchError message="Failed to load stats." onRetry={onRefresh} />
       )}
     </div>
   )

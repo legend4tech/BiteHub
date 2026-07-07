@@ -3,9 +3,12 @@
 export interface AdminStats {
   totalVendors: number
   activeVendors: number
+  vendorsWithoutMenus: number
   totalOrders: number
   todayOrders: number
   pendingOrders: number
+  confirmedOrders: number
+  preparingOrders: number
   completedOrders: number
   cancelledOrders: number
   grossVolume: number
@@ -30,9 +33,12 @@ export interface AdminVendor {
   campus: string
   isActive: boolean
   isFeatured: boolean
+  hasMenu: boolean
   createdAt: string
   image?: { url: string; publicId: string }
   account: VendorAccount | null
+  monnifyIntegrationStatus?: "pending" | "active" | "failed" | string
+  onboardedByName?: string
 }
 
 export interface AdminOrder {

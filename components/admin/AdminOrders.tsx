@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
 import {
   ShoppingCart,
@@ -12,13 +13,24 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { ORDER_STATUS } from "@/lib/constants"
+import Link from "next/link"
 import { formatPrice } from "@/lib/format"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { FetchError } from "@/components/shared/FetchError"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 export function AdminOrders() {
+  const { data: session } = useSession()
+  const role = session?.user?.role
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const { data, isLoading, isError, refetch } = useAdminOrders(page, limit)
+  const excludeStatus = role === "vendor_manager" ? "completed" : undefined
+  const { data, isLoading, isError, refetch } = useAdminOrders(
+    page,
+    limit,
+    excludeStatus
+  )
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -63,37 +75,18 @@ export function AdminOrders() {
         </div>
 
         {isError ? (
-          <div className="px-6 py-8 text-center text-destructive">
-            <p>Failed to load orders.</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="mt-4"
-            >
-              Try Again
-            </Button>
-          </div>
+          <FetchError
+            message="Failed to load orders."
+            onRetry={() => refetch()}
+          />
         ) : isLoading ? (
-          <div className="divide-y divide-border">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex animate-pulse flex-col gap-4 px-6 py-4"
-              >
-                <div className="h-4 w-1/3 rounded bg-muted" />
-                <div className="h-10 w-full rounded bg-muted" />
-              </div>
-            ))}
-          </div>
+          <PageSkeleton variant="admin-orders" count={5} />
         ) : data?.orders.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <ShoppingCart className="mx-auto mb-3 size-10 text-muted-foreground" />
-            <p className="font-semibold">No orders yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Orders placed by customers will appear here.
-            </p>
-          </div>
+          <EmptyState
+            title="No orders yet"
+            description="Orders placed by customers will appear here."
+            icon={<ShoppingCart className="text-muted-foreground" />}
+          />
         ) : (
           <>
             <div className="divide-y divide-border">
@@ -104,9 +97,13 @@ export function AdminOrders() {
                 >
                   <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-mono text-sm font-bold text-foreground">
+                      <Link
+                        href={`/order/${order.orderId}`}
+                        className="font-mono text-sm font-bold text-foreground transition-colors hover:text-primary hover:underline"
+                        target="_blank"
+                      >
                         {order.orderId}
-                      </p>
+                      </Link>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
                       >

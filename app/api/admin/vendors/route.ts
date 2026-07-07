@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
 import VendorUserModel from "@/models/VendorUser"
+import AdminUserModel from "@/models/AdminUser"
+import MenuItemModel from "@/models/MenuItem"
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
@@ -13,7 +15,9 @@ export async function GET() {
     const session = await auth()
     if (
       !session ||
-      !["admin", "superadmin"].includes(session.user?.role || "")
+      !["admin", "superadmin", "vendor_manager"].includes(
+        session.user?.role || ""
+      )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -30,9 +34,30 @@ export async function GET() {
 
     const userMap = new Map(users.map((u) => [u.vendorId.toString(), u]))
 
+    // Fetch AdminUsers for onboardedBy tracking
+    const adminUserIds = vendors
+      .map((v) => v.onboardedBy)
+      .filter((id) => id != null)
+    const adminUsers = await AdminUserModel.find({ _id: { $in: adminUserIds } })
+      .select("_id name")
+      .lean()
+    const adminMap = new Map(adminUsers.map((a) => [a._id.toString(), a.name]))
+
+    // Fetch MenuItem counts per vendor
+    const menuCounts = await MenuItemModel.aggregate([
+      { $match: { vendorId: { $in: vendorIds } } },
+      { $group: { _id: "$vendorId", count: { $sum: 1 } } },
+    ])
+    const menuMap = new Map(menuCounts.map((m) => [m._id.toString(), m.count]))
+
     const result = vendors.map((v) => {
       const id = String(v._id)
       const user = userMap.get(id)
+      const onboardedByName = v.onboardedBy
+        ? adminMap.get(v.onboardedBy.toString())
+        : undefined
+      const hasMenu = (menuMap.get(id) || 0) > 0
+
       return {
         id,
         name: v.name,
@@ -45,6 +70,7 @@ export async function GET() {
         school: v.school,
         isActive: v.isActive,
         isFeatured: v.isFeatured || false,
+        hasMenu,
         image: v.image,
         createdAt: (v as { createdAt: string }).createdAt,
         // Login account info (may be null if not yet created)
@@ -56,6 +82,7 @@ export async function GET() {
               createdAt: (user as { createdAt: string }).createdAt,
             }
           : null,
+        onboardedByName,
       }
     })
 
@@ -75,7 +102,9 @@ export async function POST(request: Request) {
     const session = await auth()
     if (
       !session ||
-      !["admin", "superadmin"].includes(session.user?.role || "")
+      !["admin", "superadmin", "vendor_manager"].includes(
+        session.user?.role || ""
+      )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -144,6 +173,7 @@ export async function POST(request: Request) {
       prepTime: prepTime?.trim() || "",
       image: image,
       isActive: true,
+      onboardedBy: session.user.id,
     })
 
     // Hash password and create login account

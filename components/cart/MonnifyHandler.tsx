@@ -52,18 +52,12 @@ export default function MonnifyHandler({
         paymentDescription: config.paymentDescription,
         incomeSplitConfig: config.incomeSplitConfig,
         metadata: config.metadata,
-        onLoadStart: () => {
-          console.log("Monnify loading has started")
-        },
-        onLoadComplete: () => {
-          console.log("Monnify SDK is UP")
-        },
+        onLoadStart: () => {},
+        onLoadComplete: () => {},
         onComplete: function (response: { paymentReference?: string }) {
-          console.log("Monnify payment complete", response)
           onSuccess(response.paymentReference || config.reference)
         },
         onClose: function (data: unknown) {
-          console.log("Monnify payment closed", data)
           onClose()
         },
       })

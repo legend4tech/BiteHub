@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
   LayoutDashboard,
@@ -15,6 +16,7 @@ import {
   Settings,
   MapPin,
   ShoppingCart,
+  Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -36,25 +38,14 @@ import {
 } from "@/components/ui/sheet"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export type AdminSection =
-  | "overview"
-  | "orders"
-  | "vendors"
-  | "feedback"
-  | "delivery-zones"
-  | "settings"
-
 interface AdminSidebarProps {
-  activeSection: AdminSection
-  onSectionChange: (section: AdminSection) => void
+  role?: string
 }
 
 // ─── Nav Items ────────────────────────────────────────────────────────────────
 
 const navItems: {
-  section: AdminSection
+  section: string
   label: string
   icon: React.ElementType
 }[] = [
@@ -62,6 +53,7 @@ const navItems: {
   { section: "orders", label: "Orders", icon: ShoppingCart },
   { section: "vendors", label: "Vendors", icon: Store },
   { section: "feedback", label: "Feedback", icon: Star },
+  { section: "staff", label: "Staff", icon: Users },
   { section: "delivery-zones", label: "Delivery Zones", icon: MapPin },
   { section: "settings", label: "Settings", icon: Settings },
 ]
@@ -69,29 +61,38 @@ const navItems: {
 // ─── Nav Links ────────────────────────────────────────────────────────────────
 
 function NavLinks({
-  activeSection,
   collapsed = false,
-  onSectionChange,
+  role,
   onNavigate,
 }: {
-  activeSection: AdminSection
   collapsed?: boolean
-  onSectionChange: (s: AdminSection) => void
+  role?: string
   onNavigate?: () => void
 }) {
+  const pathname = usePathname()
+  const filteredNavItems = navItems.filter((item) => {
+    if (role === "vendor_manager") {
+      return ["vendors", "orders", "feedback"].includes(item.section)
+    }
+    return true
+  })
+
   return (
     <TooltipProvider delayDuration={0}>
       <nav className="flex-1 space-y-1.5 px-3 py-6">
-        {navItems.map((item) => {
-          const active = activeSection === item.section
+        {filteredNavItems.map((item) => {
+          const href =
+            item.section === "overview" ? "/admin" : `/admin/${item.section}`
+          const active =
+            pathname === href ||
+            (item.section !== "overview" && pathname.startsWith(href))
+
           return (
             <Tooltip key={item.section}>
               <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    onSectionChange(item.section)
-                    onNavigate?.()
-                  }}
+                <Link
+                  href={href}
+                  onClick={onNavigate}
                   className={cn(
                     "group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
                     collapsed ? "justify-center px-0" : "px-4",
@@ -112,7 +113,7 @@ function NavLinks({
                   {active && !collapsed && (
                     <span className="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white" />
                   )}
-                </button>
+                </Link>
               </TooltipTrigger>
               {collapsed && (
                 <TooltipContent side="right" className="font-medium">
@@ -130,22 +131,20 @@ function NavLinks({
 // ─── Sidebar Content ──────────────────────────────────────────────────────────
 
 function SidebarContent({
-  activeSection,
   collapsed,
+  role,
   setCollapsed,
-  onSectionChange,
   onNavigate,
 }: {
-  activeSection: AdminSection
   collapsed: boolean
+  role?: string
   setCollapsed?: (v: boolean) => void
-  onSectionChange: (s: AdminSection) => void
   onNavigate?: () => void
 }) {
   return (
     <div className="flex h-full flex-col">
       {/* ── Brand + Collapse toggle ── */}
-      <div className="relative flex min-h-[76px] items-center justify-center border-b border-border/50 px-4 py-5">
+      <div className="relative flex min-h-[76px] shrink-0 items-center justify-center border-b border-border/50 px-4 py-5">
         {!collapsed && (
           <Link href="/" className="group flex items-center gap-2.5">
             <img
@@ -192,35 +191,39 @@ function SidebarContent({
         )}
       </div>
 
-      {/* ── Admin role badge ── */}
-      {!collapsed && (
-        <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
-          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10">
-            <ShieldCheck className="size-4 text-primary" />
+      {/* ── Scrollable middle: role badge + nav ── */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {/* ── Admin role badge ── */}
+        {!collapsed && (
+          <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
+            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10">
+              <ShieldCheck className="size-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-foreground">
+                {role === "superadmin"
+                  ? "Super Admin"
+                  : role === "vendor_manager"
+                    ? "Vendor Manager"
+                    : "Admin"}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {role === "vendor_manager"
+                  ? "Vendor management access"
+                  : "Full platform access"}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-bold text-foreground">
-              Super Admin
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              Full platform access
-            </p>
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Nav ── */}
-      <NavLinks
-        activeSection={activeSection}
-        collapsed={collapsed}
-        onSectionChange={onSectionChange}
-        onNavigate={onNavigate}
-      />
+        {/* ── Nav ── */}
+        <NavLinks collapsed={collapsed} role={role} onNavigate={onNavigate} />
+      </div>
 
-      {/* ── Bottom bar ── */}
+      {/* ── Bottom bar (always visible) ── */}
       <div
         className={cn(
-          "space-y-2 border-t border-border/50 pt-4 pb-5",
+          "shrink-0 space-y-2 border-t border-border/50 pt-4 pb-5",
           collapsed ? "px-2" : "px-3"
         )}
       >
@@ -302,10 +305,7 @@ function SidebarContent({
 
 // ─── Desktop Sidebar ──────────────────────────────────────────────────────────
 
-export function AdminSidebar({
-  activeSection,
-  onSectionChange,
-}: AdminSidebarProps) {
+export function AdminSidebar({ role }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
@@ -316,10 +316,9 @@ export function AdminSidebar({
       )}
     >
       <SidebarContent
-        activeSection={activeSection}
         collapsed={collapsed}
+        role={role}
         setCollapsed={setCollapsed}
-        onSectionChange={onSectionChange}
       />
     </aside>
   )
@@ -327,10 +326,7 @@ export function AdminSidebar({
 
 // ─── Mobile Trigger ────────────────────────────────────────────────────────────
 
-export function AdminMobileTrigger({
-  activeSection,
-  onSectionChange,
-}: AdminSidebarProps) {
+export function AdminMobileTrigger({ role }: AdminSidebarProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -348,9 +344,8 @@ export function AdminMobileTrigger({
           <SheetTitle>Admin Navigation</SheetTitle>
         </SheetHeader>
         <SidebarContent
-          activeSection={activeSection}
           collapsed={false}
-          onSectionChange={onSectionChange}
+          role={role}
           onNavigate={() => setOpen(false)}
         />
       </SheetContent>

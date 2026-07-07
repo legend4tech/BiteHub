@@ -42,6 +42,8 @@ export interface IVendor extends Document {
   initials: string
   tagline: string
   location: string
+
+  onboardedBy?: mongoose.Types.ObjectId
 }
 
 const VendorSchema: Schema = new Schema(
@@ -99,6 +101,10 @@ const VendorSchema: Schema = new Schema(
         _id: false,
       },
     ],
+    onboardedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "AdminUser",
+    },
   },
   {
     timestamps: true,

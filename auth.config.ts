@@ -31,30 +31,77 @@ export const authConfig: NextAuthConfig = {
 
       // Redirect logged-in users away from vendor auth pages
       if ((isVendorLoginPage || isVendorPublicPage) && isLoggedIn) {
-        return Response.redirect(
-          new URL(role === "vendor" ? "/vendor/dashboard" : "/admin", nextUrl)
-        )
+        if (role === "vendor")
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        if (role === "vendor_manager")
+          return Response.redirect(new URL("/vendor-manager", nextUrl))
+        return Response.redirect(new URL("/admin", nextUrl))
       }
       // Redirect unauthenticated users to vendor login
       if (isVendorProtected && !isLoggedIn) {
         return Response.redirect(new URL("/vendor/login", nextUrl))
       }
+      // Only vendors can access /vendor/* protected pages
+      if (isVendorProtected && isLoggedIn && role !== "vendor") {
+        return Response.redirect(new URL("/", nextUrl))
+      }
 
-      // ── Admin section ────────────────────────────────────────────────────────
+      // ── Admin login page ─────────────────────────────────────────────────────
       const isAdminLoginPage = pathname === "/admin/login"
+
+      if (isAdminLoginPage && isLoggedIn) {
+        // Smart redirect based on role after login
+        if (role === "vendor_manager")
+          return Response.redirect(new URL("/vendor-manager", nextUrl))
+        if (role === "vendor")
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        return Response.redirect(new URL("/admin", nextUrl))
+      }
+
+      // ── Admin dashboard section (admin & superadmin only) ────────────────────
       const isAdminProtected =
         pathname.startsWith("/admin") && !isAdminLoginPage
 
-      // Redirect logged-in users away from admin login
-      if (isAdminLoginPage && isLoggedIn) {
-        return Response.redirect(
-          new URL(role === "vendor" ? "/vendor/dashboard" : "/admin", nextUrl)
-        )
-      }
-      // Unauthenticated on admin → NextAuth redirects to /admin/login
-      if (isAdminProtected && !isLoggedIn) return false
+      if (isAdminProtected && !isLoggedIn) return false // → redirects to /admin/login
 
-      // Public routes and authenticated users → pass through; proxy.ts handles role redirects
+      if (isAdminProtected && isLoggedIn) {
+        // vendor_manager accidentally hitting /admin → send to their dashboard
+        if (role === "vendor_manager")
+          return Response.redirect(new URL("/vendor-manager", nextUrl))
+        // vendors have no business here
+        if (role === "vendor")
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+      }
+
+      // ── Vendor-manager dashboard section (vendor_manager only) ───────────────
+      const isVendorManagerLoginPage = pathname === "/vendor-manager/login"
+      const isVendorManagerProtected =
+        pathname.startsWith("/vendor-manager") && !isVendorManagerLoginPage
+
+      if (isVendorManagerLoginPage && isLoggedIn) {
+        if (role === "vendor_manager")
+          return Response.redirect(new URL("/vendor-manager", nextUrl))
+        if (role === "vendor")
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        return Response.redirect(new URL("/admin", nextUrl))
+      }
+
+      if (isVendorManagerProtected && !isLoggedIn) {
+        return Response.redirect(new URL("/vendor-manager/login", nextUrl))
+      }
+
+      if (isVendorManagerProtected && isLoggedIn) {
+        // Admin/superadmin accidentally hitting /vendor-manager → send to /admin
+        if (role === "admin" || role === "superadmin") {
+          return Response.redirect(new URL("/admin", nextUrl))
+        }
+        // Regular vendors have no business here
+        if (role === "vendor") {
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        }
+      }
+
+      // Public routes and valid authenticated users → pass through
       return true
     },
     jwt({ token, user, trigger, session }) {

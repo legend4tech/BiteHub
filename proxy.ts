@@ -108,6 +108,8 @@ export default auth(async (req) => {
 
   const isOnAdmin = pathname.startsWith("/admin")
   const isAdminLoginRoute = pathname === "/admin/login"
+  const isOnVendorManager = pathname.startsWith("/vendor-manager")
+  const isVendorManagerLoginRoute = pathname === "/vendor-manager/login"
   const isOnVendorProtected =
     pathname.startsWith("/vendor/") &&
     pathname !== "/vendor/login" &&
@@ -122,7 +124,24 @@ export default auth(async (req) => {
     if (!isLoggedIn) {
       res = NextResponse.redirect(new URL("/admin/login", req.nextUrl))
     } else if (role !== "admin" && role !== "superadmin") {
-      res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      if (role === "vendor_manager") {
+        res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      }
+    }
+  }
+
+  // Vendor Manager section guard
+  else if (isOnVendorManager && !isVendorManagerLoginRoute) {
+    if (!isLoggedIn) {
+      res = NextResponse.redirect(new URL("/vendor-manager/login", req.nextUrl))
+    } else if (role !== "vendor_manager") {
+      if (role === "admin" || role === "superadmin") {
+        res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      }
     }
   }
 
@@ -131,7 +150,11 @@ export default auth(async (req) => {
     if (!isLoggedIn) {
       res = NextResponse.redirect(new URL("/vendor/login", req.nextUrl))
     } else if (role !== "vendor") {
-      res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+      if (role === "vendor_manager") {
+        res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+      }
     }
   }
 

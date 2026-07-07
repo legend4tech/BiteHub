@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
 import OrderModel from "@/models/Order"
+import MenuItemModel from "@/models/MenuItem"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 import { getMonnifyWalletBalance } from "@/lib/monnify"
@@ -11,7 +12,9 @@ export async function GET() {
     const session = await auth()
     if (
       !session ||
-      !["admin", "superadmin"].includes(session.user?.role || "")
+      !["admin", "superadmin", "vendor_manager"].includes(
+        session.user?.role || ""
+      )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -41,6 +44,7 @@ export async function GET() {
       todayOrders,
       statusCounts,
       monnifyBalance,
+      vendorIdsWithMenus,
     ] = await Promise.all([
       VendorModel.countDocuments({}),
       VendorModel.countDocuments({ isActive: true }),
@@ -50,7 +54,13 @@ export async function GET() {
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ]),
       getMonnifyWalletBalance(),
+      MenuItemModel.distinct("vendorId"),
     ])
+
+    const vendorsWithoutMenus = await VendorModel.countDocuments({
+      _id: { $nin: vendorIdsWithMenus },
+      isActive: true,
+    })
 
     // Build a status → count map
     const byStatus: Record<string, number> = {}
@@ -82,6 +92,7 @@ export async function GET() {
       preparingOrders: byStatus[ORDER_STATUS.PREPARING] ?? 0,
       completedOrders: byStatus[ORDER_STATUS.COMPLETED] ?? 0,
       cancelledOrders: byStatus[ORDER_STATUS.CANCELLED] ?? 0,
+      vendorsWithoutMenus,
       grossVolume,
       platformProfit,
       monnifyBalance,

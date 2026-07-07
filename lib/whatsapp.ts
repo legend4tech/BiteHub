@@ -83,10 +83,6 @@ export async function sendVendorOrderNotification(
     )
 
     const data = response.data
-
-    console.log(
-      `WhatsApp notification sent to ${cleanPhone} for order ${orderId}`
-    )
     return data
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -143,7 +139,6 @@ export async function sendWhatsappText(toPhone: string, text: string) {
       }
     )
 
-    console.log(`WhatsApp text sent to ${toPhone}`)
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {

@@ -1,12 +1,12 @@
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary"
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+})
 
-export default cloudinary;
+export default cloudinary
 
 /**
  * Uploads a file buffer to Cloudinary.
@@ -19,27 +19,26 @@ export async function uploadStream(
     const stream = cloudinary.uploader.upload_stream(
       { folder },
       (error, result) => {
-        if (error) return reject(error);
-        if (!result) return reject(new Error("Upload failed, no result."));
+        if (error) return reject(error)
+        if (!result) return reject(new Error("Upload failed, no result."))
         resolve({
           secure_url: result.secure_url,
           public_id: result.public_id,
-        });
+        })
       }
-    );
-    stream.end(buffer);
-  });
+    )
+    stream.end(buffer)
+  })
 }
 
 /**
  * Deletes a file from Cloudinary using its public ID.
  */
 export async function deleteFromCloudinary(publicId: string): Promise<void> {
-  if (!publicId) return;
+  if (!publicId) return
   try {
-    const result = await cloudinary.uploader.destroy(publicId);
-    console.log(`[Cloudinary] Deleted asset: ${publicId}`, result);
+    await cloudinary.uploader.destroy(publicId)
   } catch (error) {
-    console.error(`[Cloudinary] Failed to delete asset: ${publicId}`, error);
+    console.error(`[Cloudinary] Failed to delete asset: ${publicId}`, error)
   }
 }

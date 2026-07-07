@@ -39,17 +39,30 @@ export interface OrdersResponse {
 export function useAdminOrders(
   page: number,
   limit: number,
+  excludeStatus?: string,
+  status?: string,
   options?: Omit<
-    UseQueryOptions<OrdersResponse, Error, OrdersResponse, (string | number)[]>,
+    UseQueryOptions<
+      OrdersResponse,
+      Error,
+      OrdersResponse,
+      (string | number | undefined)[]
+    >,
     "queryKey" | "queryFn"
   >
 ) {
-  return useQuery<OrdersResponse, Error, OrdersResponse, (string | number)[]>({
-    queryKey: ["admin-orders", page, limit],
+  return useQuery<
+    OrdersResponse,
+    Error,
+    OrdersResponse,
+    (string | number | undefined)[]
+  >({
+    queryKey: ["admin-orders", page, limit, excludeStatus, status],
     queryFn: async () => {
-      const res = await apiClient.get(
-        `/admin/orders?page=${page}&limit=${limit}`
-      )
+      let url = `/admin/orders?page=${page}&limit=${limit}`
+      if (excludeStatus) url += `&excludeStatus=${excludeStatus}`
+      if (status) url += `&status=${status}`
+      const res = await apiClient.get(url)
       return res.data
     },
     ...options,

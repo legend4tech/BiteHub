@@ -67,6 +67,8 @@
     --color-rating: var(--rating);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-whatsapp: var(--whatsapp);
+    --color-info: var(--info);
 }
 
 /* Light theme — Primary: #FF6B00, Background: #FFF4EC, Text: #1A1A1A */
@@ -118,6 +120,8 @@
     --rating: #f59e0b;
     --success: oklch(0.723 0.149 161.761);
     --success-foreground: oklch(0.978 0.012 60);
+    --whatsapp: #25D366;
+    --info: #09A5DB;
 }
 
 /* Dark theme — warm brown-black surfaces, orange primary glows */
@@ -168,6 +172,8 @@
     --rating: #fbbf24;
     --success: oklch(0.723 0.149 161.761);
     --success-foreground: oklch(0.148 0.022 42);
+    --whatsapp: #25D366;
+    --info: #09A5DB;
 }
 
 @layer base {

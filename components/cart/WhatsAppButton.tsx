@@ -58,7 +58,7 @@ export function WhatsAppButton({
     <Button
       onClick={handleClick}
       size={size}
-      className={`border-0 bg-[#25D366] text-white hover:bg-[#1ebe5d] ${className ?? ""}`}
+      className={`border-0 bg-whatsapp text-white hover:bg-whatsapp/90 ${className ?? ""}`}
     >
       <MessageCircle className="size-5" />
       {status === ORDER_STATUS.PENDING

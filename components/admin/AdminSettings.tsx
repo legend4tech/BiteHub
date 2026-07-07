@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useGlobalSettings } from "@/hooks/queries/useGlobalSettings"
-import { Settings, Shield, Search, Loader2 } from "lucide-react"
+import { Settings, Shield, Search, Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError } from "@/components/ui/field"
@@ -21,11 +21,16 @@ import {
   globalSettingsSchema,
   type GlobalSettingsValues,
 } from "@/lib/schemas"
+import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 
 // ─── Admin Settings Component ─────────────────────────────────────────────────
 
 export function AdminSettings() {
   const queryClient = useQueryClient()
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // ── Password Form ──
   const passwordForm = useForm<AdminPasswordValues>({
@@ -158,10 +163,23 @@ export function AdminSettings() {
                     errors={[passwordForm.formState.errors.currentPassword]}
                   />
                 </div>
-                <Input
-                  type="password"
-                  {...passwordForm.register("currentPassword")}
-                />
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...passwordForm.register("currentPassword")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
               </Field>
 
               <Field>
@@ -171,9 +189,25 @@ export function AdminSettings() {
                     errors={[passwordForm.formState.errors.newPassword]}
                   />
                 </div>
-                <Input
-                  type="password"
-                  {...passwordForm.register("newPassword")}
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    {...passwordForm.register("newPassword")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
+                <PasswordStrengthMeter
+                  password={passwordForm.watch("newPassword") || ""}
                 />
               </Field>
 
@@ -186,10 +220,23 @@ export function AdminSettings() {
                     errors={[passwordForm.formState.errors.confirmPassword]}
                   />
                 </div>
-                <Input
-                  type="password"
-                  {...passwordForm.register("confirmPassword")}
-                />
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...passwordForm.register("confirmPassword")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
               </Field>
 
               <Button

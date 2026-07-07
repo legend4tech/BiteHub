@@ -1,9 +1,22 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { Store, Plus, Power, ChevronRight, KeyRound, Star } from "lucide-react"
+import { usePathname } from "next/navigation"
+import {
+  Store,
+  Plus,
+  Power,
+  ChevronRight,
+  KeyRound,
+  Star,
+  Filter,
+  UtensilsCrossed,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import type { AdminVendor } from "./types"
 
 interface AdminVendorsProps {
@@ -29,6 +42,25 @@ export function AdminVendors({
   onToggleFeatured,
   onAddLogin,
 }: AdminVendorsProps) {
+  const pathname = usePathname()
+  const basePath = pathname.startsWith("/vendor-manager")
+    ? "/vendor-manager"
+    : "/admin"
+
+  const [filter, setFilter] = useState<
+    "all" | "active" | "inactive" | "no_login" | "pending_monnify" | "no_menu"
+  >("all")
+
+  const filteredVendors = optimisticVendors.filter((v) => {
+    if (filter === "active") return v.isActive
+    if (filter === "inactive") return !v.isActive
+    if (filter === "no_login") return !v.account
+    if (filter === "pending_monnify")
+      return v.monnifyIntegrationStatus === "pending"
+    if (filter === "no_menu") return !v.hasMenu
+    return true
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -38,11 +70,42 @@ export function AdminVendors({
             Manage vendor profiles and login accounts
           </p>
         </div>
-        <Button variant="hero" asChild className="gap-2">
-          <Link href="/admin/vendors/new">
-            <Plus className="size-4" /> Add Vendor
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <select
+              value={filter}
+              onChange={(e) =>
+                setFilter(
+                  e.target.value as
+                    | "all"
+                    | "active"
+                    | "inactive"
+                    | "no_login"
+                    | "pending_monnify"
+                )
+              }
+              className="h-10 appearance-none rounded-xl border border-border bg-card pr-8 pl-10 text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+            >
+              <option value="all">All Vendors</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="no_login">No Login Setup</option>
+              <option value="pending_monnify">Pending Bank Setup</option>
+              <option value="no_menu">Empty Menu</option>
+            </select>
+            <Filter className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+              <svg className="size-4 fill-current" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              </svg>
+            </div>
+          </div>
+          <Button variant="hero" asChild className="gap-2">
+            <Link href={`${basePath}/vendors/new`}>
+              <Plus className="size-4" /> Add Vendor
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-3xl border border-border bg-card">
@@ -58,36 +121,31 @@ export function AdminVendors({
         </div>
 
         {loadingVendors ? (
-          <div className="divide-y divide-border">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex animate-pulse items-center gap-4 px-6 py-4"
-              >
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-muted" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 w-1/3 rounded bg-muted" />
-                  <div className="h-2 w-1/2 rounded bg-muted" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <PageSkeleton variant="admin-list" count={4} />
         ) : vendors.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <Store className="mx-auto mb-3 size-10 text-muted-foreground" />
-            <p className="font-semibold">No vendors yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              <Link
-                href="/admin/vendors/new"
-                className="text-primary hover:underline"
-              >
-                Create your first vendor
-              </Link>
-            </p>
-          </div>
+          <EmptyState
+            icon={<Store className="size-12 text-muted-foreground" />}
+            title="No vendors yet"
+            description="Get started by adding your first vendor."
+            action={{
+              label: "Add Vendor",
+              href: `${basePath}/vendors/new`,
+              icon: <Plus className="size-4" />,
+            }}
+          />
+        ) : filteredVendors.length === 0 ? (
+          <EmptyState
+            icon={<Filter className="size-12 text-muted-foreground" />}
+            title="No vendors found"
+            description="Try changing your filter to see more vendors."
+            action={{
+              label: "Clear filter",
+              onClick: () => setFilter("all"),
+            }}
+          />
         ) : (
           <div className="divide-y divide-border">
-            {optimisticVendors.map((vendor) => {
+            {filteredVendors.map((vendor) => {
               const initials = vendor.name
                 .split(" ")
                 .map((w) => w[0])
@@ -123,6 +181,14 @@ export function AdminVendors({
                       >
                         {vendor.isActive ? "Active" : "Inactive"}
                       </span>
+                      {vendor.onboardedByName && (
+                        <span
+                          className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
+                          title={`Onboarded by ${vendor.onboardedByName}`}
+                        >
+                          By {vendor.onboardedByName.split(" ")[0]}
+                        </span>
+                      )}
                       {vendor.account ? (
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.account.isActive ? "bg-status-confirmed/20 text-status-confirmed-foreground" : "bg-muted text-muted-foreground"}`}
@@ -133,6 +199,14 @@ export function AdminVendors({
                       ) : (
                         <span className="shrink-0 rounded-full bg-status-pending/20 px-2 py-0.5 text-[10px] font-bold text-status-pending-foreground">
                           No login
+                        </span>
+                      )}
+                      {!vendor.hasMenu && (
+                        <span
+                          className="flex shrink-0 items-center gap-1 rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive"
+                          title="This vendor has not added any menu items yet."
+                        >
+                          <UtensilsCrossed className="size-3" /> No Menu
                         </span>
                       )}
                     </div>
