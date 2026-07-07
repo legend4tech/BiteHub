@@ -295,7 +295,7 @@ export function MobileSidebarTrigger() {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-72 border-r border-border bg-card p-0"
+        className="w-[280px] border-r border-border bg-card p-0 data-[side=left]:w-[280px]"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Navigation</SheetTitle>

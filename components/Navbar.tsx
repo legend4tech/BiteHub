@@ -137,7 +137,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex h-full w-[85vw] max-w-[350px] flex-col overflow-hidden border-l border-white/10 bg-background/90 p-0 shadow-2xl backdrop-blur-2xl"
+              className="flex h-full w-[85vw] max-w-[350px] flex-col overflow-hidden border-l border-white/10 bg-background/90 p-0 shadow-2xl backdrop-blur-2xl data-[side=right]:w-[85vw] data-[side=right]:max-w-[350px]"
             >
               {/* Decorative Background Orbs */}
               <div className="pointer-events-none absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
