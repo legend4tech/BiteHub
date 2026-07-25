@@ -37,8 +37,10 @@ async function dbConnect() {
     const opts = {
       bufferCommands: false,
       dbName: MONGODB_DB,
-      maxPoolSize: 5, // Limit connections per serverless instance to prevent exhausting M0 quota
-      minPoolSize: 1,
+      maxPoolSize: 2, // Keep low for serverless environments to prevent connection pool exhaustion
+      minPoolSize: 0, // Allow idle serverless containers to drop down to 0 open connections
+      maxIdleTimeMS: 10000, // Automatically close any pooled connection idle for >10 seconds
+      maxConnecting: 2, // Limit simultaneous connection handshakes
       serverSelectionTimeoutMS: 5000, // Fail fast if connections are exhausted
       socketTimeoutMS: 45000, // Prevent timeouts during heavy aggregations
     }
