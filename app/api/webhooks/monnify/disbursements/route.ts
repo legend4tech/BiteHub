@@ -68,14 +68,6 @@ export async function POST(request: Request) {
       eventType === "SUCCESSFUL_DISBURSEMENT" ||
       eventType === "FAILED_DISBURSEMENT"
     ) {
-      // TEMPORARILY DISABLED:
-      // Monnify is currently failing to trigger this reliably. We are using a daily cron job
-      // (/api/cron/disburse-funds) to handle this safely.
-      // Until Monnify confirms the webhook fix, we ignore this to prevent double-counting.
-      console.log(
-        `[Disbursement Webhook] Ignored ${eventType} due to manual cron override.`
-      )
-      /*
       const amount = Number(eventData?.amount ?? 0)
       // Per Monnify docs: the field is "destinationAccountNumber"
       const accountNumber =
@@ -97,7 +89,6 @@ export async function POST(request: Request) {
 
       // ✅ Awaited — ensures DB update completes before Vercel terminates
       await processDisbursement(amount, accountNumber, reference, status)
-      */
     } else {
       console.warn(
         `[Disbursement Webhook] Unexpected eventType: ${eventType} — ignoring`
