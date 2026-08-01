@@ -37,7 +37,7 @@ export interface Vendor {
   // Monnify integration fields
   monnifySubAccountCode?: string
   monnifyBankCode?: string
-  accountNumber?: string
+  monnifyAccountNumber?: string
   monnifyIntegrationStatus?: "pending" | "active"
   lastBankUpdateAt?: string // ISO string
 

@@ -121,12 +121,62 @@ export async function getFeaturedVendors(
 
 // ─── Vendor Profile (Dashboard) ────────────────────────────────────────────────
 
+import { getSubaccounts } from "@/lib/monnify"
+
 export async function getVendorProfile(
   vendorId: string | mongoose.Types.ObjectId
 ) {
   await dbConnect()
-  const vendor = await VendorModel.findById(vendorId).lean()
+  let vendor = await VendorModel.findById(vendorId).lean()
   if (!vendor) return null
+
+  // Programmatic auto-fix: If they have a subaccount code but no account number
+  const rawVendor = vendor as unknown as LeanVendor & {
+    paymentDetails?: { accountNumber?: string }
+  }
+  if (rawVendor.monnifySubAccountCode && !rawVendor.monnifyAccountNumber) {
+    let syncedAccountNumber = ""
+    let syncedBankCode = ""
+
+    // 1. First try to salvage from legacy paymentDetails (if it exists in DB)
+    if (rawVendor.paymentDetails?.accountNumber) {
+      syncedAccountNumber = rawVendor.paymentDetails.accountNumber
+      // We assume bankCode is correct or we fetch it below if needed
+    } else {
+      // 2. Fallback: Dynamically pull from Monnify using the subaccount code!
+      try {
+        const subaccounts = await getSubaccounts()
+        const target = subaccounts.find(
+          (s: {
+            subAccountCode: string
+            accountNumber: string
+            bankCode: string
+          }) => s.subAccountCode === rawVendor.monnifySubAccountCode
+        )
+        if (target) {
+          syncedAccountNumber = target.accountNumber
+          syncedBankCode = target.bankCode
+        }
+      } catch (err) {
+        console.error("Failed to sync subaccount from Monnify", err)
+      }
+    }
+
+    // If we found the missing details, save them to the DB permanently
+    if (syncedAccountNumber) {
+      const updateData: Record<string, string> = {
+        monnifyAccountNumber: syncedAccountNumber,
+      }
+      if (syncedBankCode) updateData.monnifyBankCode = syncedBankCode
+
+      vendor = await VendorModel.findByIdAndUpdate(
+        vendorId,
+        { $set: updateData },
+        { new: true, strict: false }
+      ).lean()
+    }
+  }
+
   return serializeVendor(vendor as LeanVendor)
 }
 

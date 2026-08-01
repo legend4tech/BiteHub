@@ -50,6 +50,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { VendorPaymentModals } from "./VendorPaymentModals"
+import { useMonnifyAccountValidation } from "@/hooks/useMonnifyAccountValidation"
+import { VendorPaymentInfoCard } from "./VendorPaymentInfoCard"
 
 interface Bank {
   name: string
@@ -99,9 +101,15 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
     mode: "onChange",
     defaultValues: {
       bankCode: initial.monnifyBankCode ?? "",
-      accountNumber: initial.accountNumber ?? "",
+      accountNumber: initial.monnifyAccountNumber ?? "", // Bug fix: previously used initial.accountNumber
     },
   })
+
+  const watchedBankCode = form.watch("bankCode")
+  const watchedAccountNumber = form.watch("accountNumber")
+
+  const { accountName, isFetchingName, isNameValid, nameError } =
+    useMonnifyAccountValidation(watchedAccountNumber, watchedBankCode)
 
   // Start the flow — values are not used here; they're read via form.getValues() in the confirm handlers
   const onSubmit = async (_values: VendorPaymentSettingsValues) => {
@@ -230,54 +238,15 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
-        <h3 className="font-heading text-lg font-bold">Monnify Integration</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {initial.monnifyIntegrationStatus === "active"
-            ? "Your account is successfully connected to Monnify! Customers can pay you securely."
-            : "Connect your bank account to start receiving automated payments."}
-        </p>
-
-        <div className="mt-4 rounded-xl border border-border/50 bg-background/50 p-4 text-sm text-muted-foreground shadow-sm">
-          <p className="flex items-center font-semibold text-foreground">
-            <CalendarClock className="mr-2 size-4 text-primary" />
-            Payout Schedule
-          </p>
-          <ul className="mt-2 list-outside list-disc space-y-1 pl-4">
-            <li>
-              Funds are settled into your bank account{" "}
-              <strong>every single day</strong>.
-            </li>
-            <li>This includes weekends and public holidays.</li>
-            <li>
-              Settlements usually run around <strong>10:00 PM daily</strong>.
-            </li>
-          </ul>
-        </div>
-
-        {initial.monnifyIntegrationStatus === "active" && (
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <CheckCircle className="size-3.5" /> Active Subaccount:{" "}
-              {initial.monnifySubAccountCode}
-            </span>
-          </div>
-        )}
-
-        {isLocked && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-            <Lock className="mt-0.5 size-4 shrink-0 text-primary" />
-            <p>
-              For your security, your payout details are protected and cannot be
-              changed for{" "}
-              <strong>
-                {daysLeft} more day{daysLeft !== 1 ? "s" : ""}
-              </strong>
-              . You can safely update them once this period ends.
-            </p>
-          </div>
-        )}
-      </div>
+      <VendorPaymentInfoCard
+        integrationStatus={initial.monnifyIntegrationStatus}
+        subAccountCode={initial.monnifySubAccountCode}
+        isLocked={isLocked}
+        daysLeft={daysLeft}
+        configuredBankCode={initial.monnifyBankCode}
+        configuredAccountNumber={initial.monnifyAccountNumber}
+        banks={banks}
+      />
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
@@ -358,9 +327,40 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                 maxLength={10}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                disabled={isLocked}
+                disabled={isLocked || isFetchingName}
                 aria-invalid={!!form.formState.errors.accountNumber}
               />
+            </Field>
+
+            <Field className="md:col-span-2" data-invalid={!!nameError}>
+              <label className="text-sm font-medium" htmlFor="accountName">
+                Account Name
+              </label>
+              <div className="relative">
+                <Input
+                  id="accountName"
+                  value={
+                    isFetchingName ? "Verifying account..." : accountName || ""
+                  }
+                  readOnly
+                  disabled
+                  placeholder="Auto-filled after verifying"
+                  className={cn(
+                    isNameValid &&
+                      "border-green-500/50 bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+                    nameError && "border-destructive ring-3 ring-destructive/20"
+                  )}
+                />
+                {isFetchingName && (
+                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                )}
+                {isNameValid && !isFetchingName && (
+                  <CheckCircle className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-green-600 dark:text-green-400" />
+                )}
+              </div>
+              {nameError && (
+                <p className="mt-1.5 text-xs text-destructive">{nameError}</p>
+              )}
             </Field>
           </div>
         </div>
@@ -370,7 +370,12 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
             type="submit"
             variant="hero"
             disabled={
-              !form.formState.isDirty || !form.formState.isValid || isLocked
+              !form.formState.isDirty ||
+              !form.formState.isValid ||
+              isLocked ||
+              !isNameValid ||
+              isFetchingName ||
+              saving
             }
           >
             {isLocked

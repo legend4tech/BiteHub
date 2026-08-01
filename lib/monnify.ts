@@ -287,3 +287,36 @@ export async function getMonnifyWalletBalance() {
     return null
   }
 }
+
+export async function validateMonnifyBankAccount(
+  accountNumber: string,
+  bankCode: string
+) {
+  const token = await getMonnifyToken()
+  try {
+    const response = await axiosInstance.get(
+      `${MONNIFY_API_URL}/api/v1/disbursements/account/validate`,
+      {
+        params: { accountNumber, bankCode },
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+
+    if (response.data.requestSuccessful) {
+      return response.data.responseBody as {
+        accountName: string
+        accountNumber: string
+        bankCode: string
+      }
+    }
+    throw new Error(
+      response.data.responseMessage || "Failed to validate account"
+    )
+  } catch (err: unknown) {
+    console.error(
+      "[validateMonnifyBankAccount] Error validating account:",
+      axios.isAxiosError(err) ? err.response?.data : (err as Error).message
+    )
+    throw new Error("Invalid bank account details")
+  }
+}

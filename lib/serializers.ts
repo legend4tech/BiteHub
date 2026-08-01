@@ -72,6 +72,7 @@ export function serializeVendor(doc: LeanVendor | null) {
     // Monnify integration fields
     monnifySubAccountCode: doc.monnifySubAccountCode ?? null,
     monnifyBankCode: doc.monnifyBankCode ?? null,
+    monnifyAccountNumber: doc.monnifyAccountNumber ?? null,
     monnifyIntegrationStatus: doc.monnifyIntegrationStatus ?? "pending",
     lastBankUpdateAt: doc.lastBankUpdateAt
       ? safeDate(doc.lastBankUpdateAt)
