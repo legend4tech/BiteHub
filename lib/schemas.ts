@@ -177,7 +177,12 @@ export const menuItemFormSchema = z
         "Friday",
         "Saturday",
       ]),
-    dietaryTags: z.array(z.string()).optional().default([]),
+    isPreorder: z.boolean().default(false),
+    preorderEndDate: z.string().optional(),
+    preorderDeliveryInfo: z
+      .string()
+      .max(100, "Keep delivery info under 100 characters")
+      .optional(),
   })
   .refine(
     (data) => {

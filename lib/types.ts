@@ -77,7 +77,9 @@ export interface MenuItem {
   prepTimeUnit: "minutes" | "hours" | "days" | null
   quantityAvailable: number | null
   availableDays: string[]
-  dietaryTags?: string[]
+  isPreorder?: boolean
+  preorderEndDate?: string | Date
+  preorderDeliveryInfo?: string
   createdAt: string
   updatedAt: string
 

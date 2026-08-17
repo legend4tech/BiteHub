@@ -11,17 +11,11 @@ export default function NewMenuItemPage() {
 
   const createMenuMutation = useVendorCreateMenu()
 
-  const handleSave = (data: MenuItemPayload) => {
-    createMenuMutation.mutate(data, {
-      onSuccess: () => {
-        toast.success("Menu item created")
-        router.push("/vendor/menu")
-        router.refresh()
-      },
-      onError: () => {
-        toast.error("Couldn't add this menu item. Please try again.")
-      },
-    })
+  const handleSave = async (data: MenuItemPayload) => {
+    await createMenuMutation.mutateAsync(data)
+    toast.success("Menu item created")
+    router.push("/vendor/menu")
+    router.refresh()
   }
 
   return (

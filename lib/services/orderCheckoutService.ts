@@ -4,7 +4,6 @@ import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
 import {
   getPrepTimeInHours,
-  isPreorderPrepTime,
   formatPrepTime,
   isItemAvailableToday,
 } from "@/lib/format"
@@ -122,7 +121,7 @@ export async function validateOrderItemsAndCalculateTotal(
       )
     }
 
-    if (!isItemAvailableToday(dbItem.availableDays)) {
+    if (!dbItem.isPreorder && !isItemAvailableToday(dbItem.availableDays)) {
       throw new Error(`Sorry, ${dbItem.name} is not available today.`)
     }
 
@@ -137,18 +136,35 @@ export async function validateOrderItemsAndCalculateTotal(
       }
     }
 
-    if (dbItem.availableFrom && currentTimeStr < dbItem.availableFrom) {
-      throw new Error(
-        `Sorry, ${dbItem.name} is only available starting from ${dbItem.availableFrom}.`
-      )
-    }
-    if (dbItem.availableTo && currentTimeStr > dbItem.availableTo) {
-      throw new Error(
-        `Sorry, ${dbItem.name} is no longer available (ended at ${dbItem.availableTo}).`
-      )
+    if (dbItem.isPreorder) {
+      if (dbItem.preorderEndDate) {
+        const endDate = new Date(dbItem.preorderEndDate)
+        if (lagosDate > endDate) {
+          throw new Error(`Sorry, pre-orders for ${dbItem.name} have closed.`)
+        }
+      }
+    } else {
+      if (dbItem.availableFrom && currentTimeStr < dbItem.availableFrom) {
+        throw new Error(
+          `Sorry, ${dbItem.name} is only available starting from ${dbItem.availableFrom}.`
+        )
+      }
+      if (dbItem.availableTo && currentTimeStr > dbItem.availableTo) {
+        throw new Error(
+          `Sorry, ${dbItem.name} is no longer available (ended at ${dbItem.availableTo}).`
+        )
+      }
     }
 
-    if (dbItem.prepTimeValue && dbItem.prepTimeUnit) {
+    if (dbItem.isPreorder) {
+      // Use a very large number so pre-orders take precedence for the overall prep time string
+      if (999999 > maxHours) {
+        maxHours = 999999
+        maxItemPrepTime = dbItem.preorderDeliveryInfo
+          ? `Delivery: ${dbItem.preorderDeliveryInfo}`
+          : "Pre-order"
+      }
+    } else if (dbItem.prepTimeValue && dbItem.prepTimeUnit) {
       const hours = getPrepTimeInHours(
         dbItem.prepTimeValue,
         dbItem.prepTimeUnit
@@ -156,13 +172,7 @@ export async function validateOrderItemsAndCalculateTotal(
 
       if (hours > maxHours) {
         maxHours = hours
-        const isPreorder = isPreorderPrepTime(
-          dbItem.prepTimeValue,
-          dbItem.prepTimeUnit
-        )
-        maxItemPrepTime = isPreorder
-          ? `Pre-order: ${formatPrepTime(dbItem.prepTimeValue, dbItem.prepTimeUnit)}`
-          : `${formatPrepTime(dbItem.prepTimeValue, dbItem.prepTimeUnit)}`
+        maxItemPrepTime = `${formatPrepTime(dbItem.prepTimeValue, dbItem.prepTimeUnit)}`
       }
     }
 

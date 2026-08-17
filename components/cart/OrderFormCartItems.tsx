@@ -26,12 +26,22 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
       {cart.items.map((ci) => {
         const now = new Date()
         const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-        const isAvailableToday = isItemAvailableToday(ci.menuItem.availableDays)
-        const isScheduled = ci.menuItem.availableFrom && ci.menuItem.availableTo
+        const isAvailableToday = ci.menuItem.isPreorder
+          ? true
+          : isItemAvailableToday(ci.menuItem.availableDays)
+        const isScheduled =
+          !ci.menuItem.isPreorder &&
+          ci.menuItem.availableFrom &&
+          ci.menuItem.availableTo
         const isOffSchedule =
           isScheduled &&
           (currentTime < ci.menuItem.availableFrom! ||
             currentTime > ci.menuItem.availableTo!)
+        const isPreorderClosed = Boolean(
+          ci.menuItem.isPreorder &&
+          ci.menuItem.preorderEndDate &&
+          now > new Date(ci.menuItem.preorderEndDate)
+        )
         const isSoldOut =
           ci.menuItem.quantityAvailable !== null &&
           ci.menuItem.quantityAvailable !== undefined &&
@@ -40,7 +50,8 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
           ci.menuItem.isAvailable &&
           isAvailableToday &&
           !isSoldOut &&
-          !isOffSchedule
+          !isOffSchedule &&
+          !isPreorderClosed
 
         const reachedMax =
           ci.menuItem.quantityAvailable !== null &&
@@ -108,21 +119,15 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
           <div className="flex items-center gap-2 font-bold">
             <Clock className="size-4" />
             <span className="capitalize">
-              Pre-order:{" "}
-              {formatPrepTime(
-                maxPrepItem.prepTimeValue,
-                maxPrepItem.prepTimeUnit
-              )}
+              {maxPrepItem.preorderDeliveryInfo ||
+                (maxPrepItem.preorderEndDate
+                  ? `Delivery on ${new Date(maxPrepItem.preorderEndDate).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+                  : "Delivery as scheduled by vendor")}
             </span>
           </div>
           <p className="text-xs font-medium text-primary/80">
-            Your order contains pre-order items. The estimated readiness time
-            for this entire order is{" "}
-            {formatPrepTime(
-              maxPrepItem.prepTimeValue,
-              maxPrepItem.prepTimeUnit
-            )}
-            .
+            This cart contains pre-order items. Your entire order will be
+            fulfilled based on the pre-order schedule above.
           </p>
         </div>
       ) : maxPrepItem ? (

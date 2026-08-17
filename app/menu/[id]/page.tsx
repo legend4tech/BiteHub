@@ -13,7 +13,7 @@ import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { getMenuItemById } from "@/lib/services/menuService"
 import { formatPrice } from "@/lib/format"
-import { isPreorderPrepTime, formatPrepTime } from "@/lib/format"
+import { formatPrepTime } from "@/lib/format"
 import { SingleItemCartControls } from "@/components/menus/SingleItemCartControls"
 import { MenuItemCard } from "@/components/menus/MenuItemCard"
 import { FadeIn } from "@/components/FadeIn"
@@ -145,38 +145,35 @@ export default async function SingleMenuPage({ params }: Props) {
                             Vendor Closed
                           </span>
                         )}
-                        {((mainItem.prepTimeValue && mainItem.prepTimeUnit) ||
-                          vendor.prepTime) && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold tracking-wide text-muted-foreground">
+                        {mainItem.isPreorder &&
+                        (mainItem.preorderDeliveryInfo ||
+                          mainItem.preorderEndDate) ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold tracking-wide text-primary">
                             <Clock className="size-3" />
-                            <span
-                              className={
-                                mainItem.prepTimeValue ? "capitalize" : ""
-                              }
-                            >
-                              {mainItem.prepTimeValue &&
-                              mainItem.prepTimeUnit ? (
-                                <>
-                                  {isPreorderPrepTime(
-                                    mainItem.prepTimeValue,
-                                    mainItem.prepTimeUnit
-                                  ) ? (
-                                    <span className="font-bold text-primary">
-                                      Pre-order:{" "}
-                                    </span>
-                                  ) : (
-                                    "Prep time: "
-                                  )}
-                                  {formatPrepTime(
-                                    mainItem.prepTimeValue,
-                                    mainItem.prepTimeUnit
-                                  )}
-                                </>
-                              ) : (
-                                `Prep time: ${vendor.prepTime}`
-                              )}
+                            <span>
+                              {mainItem.preorderDeliveryInfo ||
+                                `Delivery on ${new Date(mainItem.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
                             </span>
                           </span>
+                        ) : (
+                          ((mainItem.prepTimeValue && mainItem.prepTimeUnit) ||
+                            vendor.prepTime) && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold tracking-wide text-muted-foreground">
+                              <Clock className="size-3" />
+                              <span
+                                className={
+                                  mainItem.prepTimeValue ? "capitalize" : ""
+                                }
+                              >
+                                {mainItem.prepTimeValue && mainItem.prepTimeUnit
+                                  ? `Prep time: ${formatPrepTime(
+                                      mainItem.prepTimeValue,
+                                      mainItem.prepTimeUnit
+                                    )}`
+                                  : `Prep time: ${vendor.prepTime}`}
+                              </span>
+                            </span>
+                          )
                         )}
                       </div>
 

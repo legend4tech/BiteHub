@@ -37,13 +37,22 @@ export function MenuItemRow({
 
   const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-  const isScheduled = item.availableFrom && item.availableTo
+  const isScheduled = !item.isPreorder && item.availableFrom && item.availableTo
   const isOffSchedule =
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
   const imageUrl = typeof item.image === "string" ? item.image : item.image?.url
 
-  const isAvailableToday = isItemAvailableToday(item.availableDays)
+  const isAvailableToday = item.isPreorder
+    ? true
+    : isItemAvailableToday(item.availableDays)
+
+  const isPreorderClosed = Boolean(
+    item.isPreorder &&
+    item.preorderEndDate &&
+    now > new Date(item.preorderEndDate)
+  )
+
   const isSoldOut =
     item.quantityAvailable !== null &&
     item.quantityAvailable !== undefined &&
@@ -87,6 +96,16 @@ export function MenuItemRow({
           {!localAvailable && (
             <span className="inline-flex items-center rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-destructive uppercase">
               Unlisted
+            </span>
+          )}
+          {item.isPreorder && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase">
+              Pre-order
+            </span>
+          )}
+          {item.isPreorder && isPreorderClosed && (
+            <span className="inline-flex items-center rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-destructive uppercase">
+              Closed
             </span>
           )}
           {localAvailable && !isAvailableToday && (

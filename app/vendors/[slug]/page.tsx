@@ -58,6 +58,9 @@ interface RawMenuItem {
   availableFrom?: string
   availableTo?: string
   tag?: string
+  isPreorder?: boolean
+  preorderEndDate?: string
+  preorderDeliveryInfo?: string
 }
 
 async function getVendorData(slug: string, category?: string, q?: string) {
@@ -178,6 +181,9 @@ export default async function VendorDetailPage({
     availableFrom: item.availableFrom,
     availableTo: item.availableTo,
     tag: item.tag,
+    isPreorder: item.isPreorder,
+    preorderEndDate: item.preorderEndDate,
+    preorderDeliveryInfo: item.preorderDeliveryInfo,
   }))
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A"

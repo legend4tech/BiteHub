@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       order.notes =
         (order.notes ? order.notes + " | " : "") +
         "Cancelled due to checkout timeout."
-      await order.save()
+      await order.save({ validateModifiedOnly: true })
     }
 
     return NextResponse.json({

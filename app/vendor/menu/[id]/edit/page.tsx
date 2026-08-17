@@ -23,21 +23,12 @@ export default function EditMenuItemPage() {
 
   const updateMenuMutation = useVendorUpdateMenu()
 
-  const handleSave = (data: MenuItemPayload) => {
-    updateMenuMutation.mutate(
-      { id, data },
-      {
-        onSuccess: () => {
-          toast.success("Menu item updated")
-          queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
-          router.push("/vendor/menu")
-          router.refresh()
-        },
-        onError: () => {
-          toast.error("Couldn't update this menu item. Please try again.")
-        },
-      }
-    )
+  const handleSave = async (data: MenuItemPayload) => {
+    await updateMenuMutation.mutateAsync({ id, data })
+    toast.success("Menu item updated")
+    queryClient.invalidateQueries({ queryKey: ["menu-item", id] })
+    router.push("/vendor/menu")
+    router.refresh()
   }
 
   if (isPending) {

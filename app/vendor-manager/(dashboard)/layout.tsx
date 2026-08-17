@@ -19,11 +19,11 @@ export default async function VendorManagerLayout({
 
   return (
     <SessionProvider session={session}>
-      <div className="fixed inset-0 flex bg-background text-foreground">
+      <div className="flex min-h-screen bg-background text-foreground">
         {/* Desktop sidebar */}
         <VendorManagerSidebar role={role} />
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col">
           {/* Mobile top-bar */}
           <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-md md:hidden">
             <VendorManagerMobileTrigger role={role} />
@@ -43,7 +43,7 @@ export default async function VendorManagerLayout({
           </header>
 
           {/* Scrollable content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1">
             <SectionErrorBoundary title="Couldn't load vendor manager dashboard">
               <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
             </SectionErrorBoundary>

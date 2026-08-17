@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { QueryProvider } from "@/components/providers/QueryProvider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CampusProvider } from "@/components/providers/CampusProvider"
+import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider"
 import { Suspense } from "react"
 import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
 import { CookieBanner } from "@/components/CookieBanner"
@@ -93,21 +94,28 @@ export default function RootLayout({
       )}
     >
       <body suppressHydrationWarning>
-        <QueryProvider>
-          <ThemeProvider>
-            <Suspense fallback={null}>
-              <CampusProvider>
-                <MaintenanceGuard>
-                  {children}
-                  <CookieBanner />
-                  <PWAInstallBanner />
-                  <TawkToChat />
-                  <Toaster position="top-right" richColors closeButton expand />
-                </MaintenanceGuard>
-              </CampusProvider>
-            </Suspense>
-          </ThemeProvider>
-        </QueryProvider>
+        <SmoothScrollProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              <Suspense fallback={null}>
+                <CampusProvider>
+                  <MaintenanceGuard>
+                    {children}
+                    <CookieBanner />
+                    <PWAInstallBanner />
+                    <TawkToChat />
+                    <Toaster
+                      position="top-right"
+                      richColors
+                      closeButton
+                      expand
+                    />
+                  </MaintenanceGuard>
+                </CampusProvider>
+              </Suspense>
+            </ThemeProvider>
+          </QueryProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   )

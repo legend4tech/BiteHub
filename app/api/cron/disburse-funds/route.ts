@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       order.isDisbursed = true
 
       await vendor.save()
-      await order.save()
+      await order.save({ validateModifiedOnly: true })
 
       console.log(
         `[Cron Disbursement] ✅ Disbursed ₦${amountToDisburse} to Vendor: "${vendor.slug}" for Order: ${order.orderId}`

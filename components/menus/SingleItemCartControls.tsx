@@ -29,12 +29,20 @@ export function SingleItemCartControls({
     now.getMinutes()
   ).padStart(2, "0")}`
 
-  const isAvailableToday = isItemAvailableToday(item.availableDays)
+  const isAvailableToday = item.isPreorder
+    ? true
+    : isItemAvailableToday(item.availableDays)
 
-  const isScheduled = item.availableFrom && item.availableTo
+  const isScheduled = !item.isPreorder && item.availableFrom && item.availableTo
   const isOffSchedule =
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
+
+  const isPreorderClosed = Boolean(
+    item.isPreorder &&
+    item.preorderEndDate &&
+    now > new Date(item.preorderEndDate)
+  )
 
   const isSoldOut =
     item.quantityAvailable !== null &&
@@ -46,6 +54,7 @@ export function SingleItemCartControls({
     isAvailableToday &&
     !isSoldOut &&
     !isOffSchedule &&
+    !isPreorderClosed &&
     vendorIsActive
 
   let disabledReason = "Unavailable"
@@ -53,6 +62,7 @@ export function SingleItemCartControls({
   else if (!item.isAvailable) disabledReason = "Unlisted"
   else if (!isAvailableToday) disabledReason = "Unavailable Today"
   else if (isSoldOut) disabledReason = "Sold Out"
+  else if (isPreorderClosed) disabledReason = "Preorder Closed"
   else if (isOffSchedule) disabledReason = "Closed for now"
 
   const disabled = !isCurrentlyAvailable

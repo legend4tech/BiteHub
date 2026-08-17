@@ -110,7 +110,11 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
       "Friday",
       "Saturday",
     ],
-    dietaryTags: doc.dietaryTags ?? [],
+    isPreorder: doc.isPreorder ?? false,
+    preorderEndDate: doc.preorderEndDate
+      ? safeDate(doc.preorderEndDate)
+      : undefined,
+    preorderDeliveryInfo: doc.preorderDeliveryInfo ?? undefined,
     isAvailableNow: isItemAvailableNow(
       doc.isAvailable,
       doc.availableFrom,

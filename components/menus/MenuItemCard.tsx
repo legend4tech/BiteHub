@@ -9,7 +9,6 @@ import { useState } from "react"
 import {
   formatPrice,
   formatTime,
-  isPreorderPrepTime,
   formatPrepTime,
   isItemAvailableToday,
 } from "@/lib/format"
@@ -33,12 +32,20 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
     now.getMinutes()
   ).padStart(2, "0")}`
 
-  const isAvailableToday = isItemAvailableToday(item.availableDays)
+  const isAvailableToday = item.isPreorder
+    ? true
+    : isItemAvailableToday(item.availableDays)
 
-  const isScheduled = item.availableFrom && item.availableTo
+  const isScheduled = !item.isPreorder && item.availableFrom && item.availableTo
   const isOffSchedule =
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
+
+  const isPreorderClosed = Boolean(
+    item.isPreorder &&
+    item.preorderEndDate &&
+    now > new Date(item.preorderEndDate)
+  )
 
   const isSoldOut =
     item.quantityAvailable !== null &&
@@ -50,6 +57,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
     isAvailableToday &&
     !isSoldOut &&
     !isOffSchedule &&
+    !isPreorderClosed &&
     item.vendorIsActive !== false // false = explicitly closed; undefined = assume active
 
   const handleAdd = () => {
@@ -113,16 +121,23 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           </span>
         )}
 
-        {item.dietaryTags && item.dietaryTags.length > 0 && (
-          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1">
-            {item.dietaryTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-border bg-background/95 px-2 py-0.5 text-[9px] font-bold text-foreground uppercase shadow-sm"
-              >
-                {tag}
+        {item.isPreorder && (
+          <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
+            <span className="rounded-full border border-primary bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary shadow-sm backdrop-blur-md">
+              Pre-order
+            </span>
+            {item.preorderEndDate && (
+              <span className="rounded-md bg-black/75 px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-sm backdrop-blur-md">
+                Closes:{" "}
+                {new Date(item.preorderEndDate).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
               </span>
-            ))}
+            )}
           </div>
         )}
 
@@ -138,7 +153,9 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
                       ? "Unavailable"
                       : isSoldOut
                         ? "Sold Out"
-                        : "Closed"}
+                        : isPreorderClosed
+                          ? "Closed"
+                          : "Closed"}
               </span>
               {(!isAvailableToday || isSoldOut || isOffSchedule) &&
                 item.isAvailable && (
@@ -192,22 +209,22 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           </h3>
         </Link>
 
-        {(item.prepTimeValue && item.prepTimeUnit) || item.vendorPrepTime ? (
+        {item.isPreorder &&
+        (item.preorderDeliveryInfo || item.preorderEndDate) ? (
+          <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+            <Clock className="size-3 text-primary" />
+            <span className="font-semibold text-primary capitalize">
+              {item.preorderDeliveryInfo ||
+                `Delivery on ${new Date(item.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
+            </span>
+          </div>
+        ) : (item.prepTimeValue && item.prepTimeUnit) || item.vendorPrepTime ? (
           <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
             <Clock className="size-3" />
             <span className="capitalize">
-              {item.prepTimeValue && item.prepTimeUnit ? (
-                <>
-                  {isPreorderPrepTime(item.prepTimeValue, item.prepTimeUnit) ? (
-                    <span className="font-bold text-primary">Pre-order: </span>
-                  ) : (
-                    "Prep time: "
-                  )}
-                  {formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}
-                </>
-              ) : (
-                `Prep time: ${item.vendorPrepTime}`
-              )}
+              {item.prepTimeValue && item.prepTimeUnit
+                ? `Prep time: ${formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}`
+                : `Prep time: ${item.vendorPrepTime}`}
             </span>
           </div>
         ) : null}

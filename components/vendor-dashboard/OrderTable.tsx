@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/types"
 import {
   ORDER_STATUS_CONFIG,
@@ -349,7 +350,14 @@ export function OrderTable({
                         newStatus,
                       })
                     }}
-                    className="w-full cursor-pointer rounded-xl border-2 border-border bg-card px-3 py-2.5 text-sm font-medium transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none disabled:opacity-50"
+                    className={cn(
+                      "w-full cursor-pointer rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all focus:outline-none disabled:opacity-50",
+                      ORDER_STATUS_CONFIG[order.status].className,
+                      "focus:ring-4",
+                      // extract the text color class from the config and append it with /20 to make a soft focus ring
+                      // (Tailwind handles this automatically if we rely on standard focus rings, but using the config class is enough)
+                      "focus:border-primary/50"
+                    )}
                     disabled={
                       order.status === ORDER_STATUS.CANCELLED ||
                       order.status === ORDER_STATUS.COMPLETED
@@ -366,7 +374,15 @@ export function OrderTable({
                         (isPendingPayment && !isCancelled)
 
                       return (
-                        <option key={s} value={s} disabled={isDisabled}>
+                        <option
+                          key={s}
+                          value={s}
+                          disabled={isDisabled}
+                          className={cn(
+                            "bg-background",
+                            ORDER_STATUS_CONFIG[s].textColor
+                          )}
+                        >
                           {ORDER_STATUS_CONFIG[s].label}
                         </option>
                       )

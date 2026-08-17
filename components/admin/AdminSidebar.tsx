@@ -311,7 +311,7 @@ export function AdminSidebar({ role }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-card/60 backdrop-blur-md transition-all duration-300 md:flex",
+        "sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-border bg-card/60 backdrop-blur-md transition-all duration-300 md:flex",
         collapsed ? "w-[68px]" : "w-64"
       )}
     >

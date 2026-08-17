@@ -49,14 +49,14 @@ function VendorLayoutContent({ children }: { children: React.ReactNode }) {
     "Vendor Dashboard"
 
   return (
-    <div className="fixed inset-0 flex bg-background">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* Desktop sidebar */}
       <VendorSidebar />
 
       {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar (mobile only) */}
-        <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-40 flex shrink-0 items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
           <div className="flex items-center gap-3">
             <MobileSidebarTrigger />
             <span className="font-heading text-base font-bold">
@@ -67,7 +67,7 @@ function VendorLayoutContent({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1">
           <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
         </main>
       </div>

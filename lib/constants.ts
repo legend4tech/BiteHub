@@ -66,40 +66,46 @@ export const ORDER_STATUS_STEPS: OrderStatus[] = [
 
 export const ORDER_STATUS_CONFIG: Record<
   OrderStatus,
-  { label: string; className: string; description: string }
+  { label: string; className: string; textColor: string; description: string }
 > = {
   [ORDER_STATUS.PENDING]: {
     label: "Pending",
     className: "border-primary/20 bg-primary/10 text-primary",
+    textColor: "text-primary",
     description: "Waiting for vendor to confirm",
   },
   [ORDER_STATUS.CONFIRMED]: {
     label: "Payment Confirmed",
     className:
       "border-status-confirmed/20 bg-status-confirmed/10 text-status-confirmed",
+    textColor: "text-status-confirmed",
     description: "Payment for order confirmed",
   },
   [ORDER_STATUS.PREPARING]: {
     label: "Preparing",
     className:
       "border-status-preparing/20 bg-status-preparing/10 text-status-preparing",
+    textColor: "text-status-preparing",
     description: "Your food is being prepared",
   },
   [ORDER_STATUS.READY]: {
     label: "Out for delivery",
     className: "border-status-ready/20 bg-status-ready/10 text-status-ready",
+    textColor: "text-status-ready",
     description: "Your order is on the way!",
   },
   [ORDER_STATUS.COMPLETED]: {
     label: "Completed",
     className:
       "border-status-completed/20 bg-status-completed/10 text-status-completed",
+    textColor: "text-status-completed",
     description: "Order completed successfully",
   },
   [ORDER_STATUS.CANCELLED]: {
     label: "Cancelled",
     className:
       "border-status-cancelled/20 bg-status-cancelled/10 text-status-cancelled",
+    textColor: "text-status-cancelled",
     description: "Order was cancelled",
   },
 }

@@ -4,12 +4,10 @@ import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
 import {
-  VALID_ORDER_STATUSES,
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
   OrderStatusType,
 } from "@/lib/constants"
-import { z } from "zod"
 
 import { statusUpdateSchema } from "@/lib/schemas"
 
@@ -66,7 +64,7 @@ export async function PATCH(
     const wasCancelled = order.status === ORDER_STATUS.CANCELLED
     const oldStatus = order.status
     order.status = status
-    await order.save()
+    await order.save({ validateModifiedOnly: true })
 
     // Send customer email if email exists and status changed
     if (order.customerEmail && status !== oldStatus) {

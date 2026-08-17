@@ -49,40 +49,6 @@ export function MenuItemChecklists({ control }: MenuItemChecklistsProps) {
           </Field>
         )}
       />
-
-      <Controller
-        name="dietaryTags"
-        control={control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel>Dietary Tags</FieldLabel>
-            <div className="mt-2 flex flex-wrap gap-4">
-              {["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Spicy"].map(
-                (tag) => (
-                  <label key={tag} className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={field.value?.includes(tag)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          field.onChange([...(field.value || []), tag])
-                        } else {
-                          field.onChange(
-                            (field.value || []).filter((d) => d !== tag)
-                          )
-                        }
-                      }}
-                    />
-                    <span className="text-sm leading-none font-medium">
-                      {tag}
-                    </span>
-                  </label>
-                )
-              )}
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
     </>
   )
 }

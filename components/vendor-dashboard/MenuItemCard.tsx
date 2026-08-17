@@ -7,12 +7,7 @@ import type { MenuItem } from "@/lib/types"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import {
-  formatPrice,
-  formatTime,
-  isPreorderPrepTime,
-  formatPrepTime,
-} from "@/lib/format"
+import { formatPrice, formatTime, formatPrepTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
 
@@ -41,7 +36,11 @@ export function MenuItemCard({
   const cat = MENU_CATEGORIES.find((c) => c.value === item.category)
   const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
-  const isScheduled = !!(item.availableFrom && item.availableTo)
+  const isScheduled = !!(
+    !item.isPreorder &&
+    item.availableFrom &&
+    item.availableTo
+  )
   const isOffSchedule =
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
@@ -96,6 +95,11 @@ export function MenuItemCard({
         )}
 
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
+          {item.isPreorder && (
+            <span className="rounded-full bg-primary/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
+              Pre-order
+            </span>
+          )}
           {cat && (
             <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
               {cat.label}
@@ -149,16 +153,26 @@ export function MenuItemCard({
           </div>
         )}
 
-        {item.prepTimeValue && item.prepTimeUnit && (
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        {item.isPreorder &&
+        (item.preorderDeliveryInfo || item.preorderEndDate) ? (
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-primary">
             <Clock className="size-3 shrink-0" />
-            <span className="capitalize">
-              {isPreorderPrepTime(item.prepTimeValue, item.prepTimeUnit)
-                ? "Pre-order: "
-                : "Prep time: "}
-              {formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}
+            <span className="font-semibold capitalize">
+              {item.preorderDeliveryInfo ||
+                `Delivery on ${new Date(item.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
             </span>
           </div>
+        ) : (
+          item.prepTimeValue &&
+          item.prepTimeUnit && (
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <Clock className="size-3 shrink-0" />
+              <span className="capitalize">
+                Prep time:{" "}
+                {formatPrepTime(item.prepTimeValue, item.prepTimeUnit)}
+              </span>
+            </div>
+          )
         )}
       </div>
 

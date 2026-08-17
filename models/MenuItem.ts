@@ -17,7 +17,9 @@ export interface IMenuItem extends Document {
   prepTimeUnit?: "minutes" | "hours" | "days"
   quantityAvailable?: number | null
   availableDays: string[]
-  dietaryTags?: string[]
+  isPreorder: boolean
+  preorderEndDate?: Date
+  preorderDeliveryInfo?: string
   lowStockAlertSent?: boolean
 }
 
@@ -54,9 +56,15 @@ const MenuItemSchema: Schema = new Schema(
         "Saturday",
       ],
     },
-    dietaryTags: {
-      type: [String],
-      default: [],
+    isPreorder: {
+      type: Boolean,
+      default: false,
+    },
+    preorderEndDate: {
+      type: Date,
+    },
+    preorderDeliveryInfo: {
+      type: String,
     },
     lowStockAlertSent: {
       type: Boolean,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, startTransition } from "react"
 import type { CartItem, MenuItem } from "@/lib/types"
 import { LS_CART } from "@/lib/constants"
-import { isPreorderPrepTime, getPrepTimeInHours } from "@/lib/format"
+import { getPrepTimeInHours } from "@/lib/format"
 
 // Added vendorWhatsappNumber to CartState so OrderForm can pass it to the API
 // without needing to look up the vendor separately.
@@ -92,17 +92,11 @@ export function useCart() {
       }
 
       // Pre-order constraint
-      const isIncomingPreorder = isPreorderPrepTime(
-        menuItem.prepTimeValue,
-        menuItem.prepTimeUnit
-      )
+      const isIncomingPreorder = menuItem.isPreorder || false
 
       if (current.items.length > 0) {
         const existingItem = current.items[0].menuItem
-        const existingIsPreorder = isPreorderPrepTime(
-          existingItem.prepTimeValue,
-          existingItem.prepTimeUnit
-        )
+        const existingIsPreorder = existingItem.isPreorder || false
 
         if (isIncomingPreorder !== existingIsPreorder) {
           return {
@@ -133,7 +127,7 @@ export function useCart() {
       const items: CartItem[] = existing
         ? current.items.map((ci) =>
             ci.menuItem.id === menuItem.id
-              ? { ...ci, quantity: ci.quantity + quantity }
+              ? { ...ci, menuItem, quantity: ci.quantity + quantity }
               : ci
           )
         : [...current.items, { menuItem, quantity }]
@@ -256,20 +250,18 @@ export function useCart() {
 
   for (const ci of cart.items) {
     const item = ci.menuItem
-    if (item.prepTimeValue && item.prepTimeUnit) {
+    if (item.isPreorder) {
+      isPreorderCart = true
+      // Preorders take precedence over prep times
+      maxHours = 999999
+      maxPrepItem = item
+    } else if (item.prepTimeValue && item.prepTimeUnit) {
       const hours = getPrepTimeInHours(item.prepTimeValue, item.prepTimeUnit)
       if (hours > maxHours) {
         maxHours = hours
         maxPrepItem = item
       }
     }
-  }
-
-  if (maxPrepItem) {
-    isPreorderCart = isPreorderPrepTime(
-      maxPrepItem.prepTimeValue,
-      maxPrepItem.prepTimeUnit
-    )
   }
 
   return {

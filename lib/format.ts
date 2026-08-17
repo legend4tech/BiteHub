@@ -74,14 +74,6 @@ export function getPrepTimeInHours(value: number, unit: string): number {
   return value / 60
 }
 
-export function isPreorderPrepTime(
-  value?: number | null,
-  unit?: string | null
-): boolean {
-  if (!value || !unit) return false
-  return getPrepTimeInHours(value, unit) >= PREORDER_MIN_HOURS
-}
-
 export function formatPrepTime(
   value?: number | null,
   unit?: string | null
