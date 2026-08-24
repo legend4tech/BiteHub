@@ -293,7 +293,7 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="gsap-hero-item mt-8 flex items-center gap-2 opacity-0">
+          <div className="gsap-hero-item relative z-10 mt-8 flex items-center gap-2 opacity-0">
             <span className="text-xs text-muted-foreground">Browsing for:</span>
             <CampusSelector />
           </div>
