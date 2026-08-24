@@ -41,10 +41,17 @@ export function Footer() {
               discovery and ordering. Built for the modern Nigerian campus life.
             </p>
             <div className="flex items-center gap-4">
-              <SocialLink href="#" alt="Twitter" />
-              <SocialLink href="#" alt="Instagram" />
-              <SocialLink href="#" alt="Facebook" />
-              <SocialLink href="#" alt="Github" />
+              <SocialLink href="https://x.com" alt="X" src="/x-icon.png" />
+              <SocialLink
+                href="https://tiktok.com"
+                alt="TikTok"
+                src="/tiktok-icon.png"
+              />
+              <SocialLink
+                href="https://linkedin.com"
+                alt="LinkedIn"
+                src="/linkedin-icon.png"
+              />
             </div>
           </div>
 
@@ -176,20 +183,20 @@ function SocialLink({
   return (
     <a
       href={href}
-      className="grid h-9 w-9 place-items-center overflow-hidden rounded-xl bg-accent text-muted-foreground transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:text-primary"
+      className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-accent text-muted-foreground transition-all duration-300 hover:-translate-y-1 hover:bg-primary/10 hover:text-primary"
     >
       {src ? (
         <>
           <Image
             src={src}
             alt={alt}
-            width={20}
-            height={20}
-            className="size-5 object-contain"
+            width={40}
+            height={40}
+            className="size-full object-cover"
           />
         </>
       ) : (
-        <div className="size-4 rounded-sm bg-muted-foreground/30" title={alt} />
+        <div className="size-5 rounded-sm bg-muted-foreground/30" title={alt} />
       )}
     </a>
   )
