@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Star, UserCircle2, ArrowRight } from "lucide-react"
-import type { VendorReview } from "@/lib/types"
+import type { VendorReview } from "@/types/vendor"
 
 interface VendorRecentReviewsProps {
   reviews: VendorReview[]

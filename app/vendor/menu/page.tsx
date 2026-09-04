@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>

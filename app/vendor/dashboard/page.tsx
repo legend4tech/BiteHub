@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { DashboardStats } from "@/components/vendor-dashboard/DashboardStats"
 import { OrderTable } from "@/components/vendor-dashboard/OrderTable"
-import type { OrderStatus } from "@/lib/types"
+import type { OrderStatus } from "@/types/shared"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { AlertBanner } from "@/components/shared/AlertBanner"
@@ -14,17 +14,14 @@ import {
   useVendorAcceptTerms,
   useVendorUpdateOrderStatus,
   useVendorUpdateOrderPayment,
-} from "@/hooks/mutations/useVendorMutations"
+} from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
 import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
-import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
-import {
-  useVendorStats,
-  type VendorStats,
-} from "@/hooks/queries/useVendorStats"
+import { useVendorOrders } from "@/hooks/vendor/useVendorOrders"
+import { useVendorStats, type VendorStats } from "@/hooks/vendor/useVendorStats"
 import { TermsAcceptanceModal } from "@/components/vendor-dashboard/TermsAcceptanceModal"
 import { PlatformFeedbackModal } from "@/components/vendor-dashboard/PlatformFeedbackModal"
 import { useState, useEffect } from "react"

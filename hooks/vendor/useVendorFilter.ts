@@ -12,7 +12,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { VendorFilterItem } from "@/lib/types"
+import type { VendorFilterItem } from "@/types/vendor"
 
 interface UseVendorFilterOptions {
   school: string

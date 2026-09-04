@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { formatTime } from "@/lib/format"
 import { StatusBadge } from "@/components/vendor-dashboard/StatusBadge"
-import { type Order } from "@/lib/types"
+import { type Order } from "@/types/shared"
 
 interface OrderHeroCardProps {
   order: Order

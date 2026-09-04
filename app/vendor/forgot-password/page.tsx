@@ -12,7 +12,7 @@ import { useForm, Controller, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-import { useVendorForgotPassword } from "@/hooks/mutations/useVendorMutations"
+import { useVendorForgotPassword } from "@/hooks/vendor/useVendorMutations"
 import Image from "next/image"
 
 import { forgotPasswordSchema, type ForgotPasswordValues } from "@/lib/schemas"

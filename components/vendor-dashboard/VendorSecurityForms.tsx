@@ -1,4 +1,3 @@
- 
 "use client"
 
 import { useState } from "react"
@@ -13,7 +12,7 @@ import {
   useVendorChangePassword,
   useVendorForgotPassword,
   useVendorChangeEmail,
-} from "@/hooks/mutations/useVendorMutations"
+} from "@/hooks/vendor/useVendorMutations"
 import { signOut } from "next-auth/react"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import { Loader2, Eye, EyeOff } from "lucide-react"

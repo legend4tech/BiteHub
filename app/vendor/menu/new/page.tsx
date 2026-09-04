@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation"
 import { MenuItemForm } from "@/components/vendor-dashboard/MenuItemForm"
-import { useVendorCreateMenu } from "@/hooks/mutations/useVendorMutations"
+import { useVendorCreateMenu } from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
-import type { MenuItemPayload } from "@/lib/types"
+import type { MenuItemPayload } from "@/types/vendor"
 
 export default function NewMenuItemPage() {
   const router = useRouter()

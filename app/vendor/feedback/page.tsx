@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react"
 import {
   useVendorFeedback,
   type Feedback,
-} from "@/hooks/queries/useVendorFeedback"
+} from "@/hooks/vendor/useVendorFeedback"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"

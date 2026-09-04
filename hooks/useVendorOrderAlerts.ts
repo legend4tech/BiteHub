@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useVendorOrders } from "@/hooks/queries/useVendorOrders"
+import { useVendorOrders } from "@/hooks/vendor/useVendorOrders"
 import { toast } from "sonner"
 
 // Auto-unlock helper to satisfy strict browser autoplay policies

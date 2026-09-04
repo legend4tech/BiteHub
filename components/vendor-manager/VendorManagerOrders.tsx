@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
+import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
 import {
   ShoppingCart,
   Copy,

@@ -4,7 +4,7 @@ import { useState } from "react"
 import {
   useAdminDeliveryZones,
   Landmark,
-} from "@/hooks/queries/useAdminDeliveryZones"
+} from "@/hooks/admin/useAdminDeliveryZones"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

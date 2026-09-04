@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Pencil, Trash2, Link as LinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"

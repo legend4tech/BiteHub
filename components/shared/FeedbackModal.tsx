@@ -16,7 +16,7 @@ import { Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { APP_NAME } from "@/lib/constants"
 import { toast } from "sonner"
-import { useSubmitFeedback } from "@/hooks/mutations/useSubmitFeedback"
+import { useSubmitFeedback } from "@/hooks/shared/useSubmitFeedback"
 
 export const FEEDBACK_SNOOZE_DURATION = 24 * 60 * 60 * 1000 // 24 hours (easily editable)
 

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { MenuItemCard } from "@/components/menus/MenuItemCard"
 import { useCart } from "@/hooks/useCart"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 
 export function RelatedItemsGrid({ items }: { items: MenuItem[] }) {
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)

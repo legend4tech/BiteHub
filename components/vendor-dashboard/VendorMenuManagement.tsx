@@ -3,13 +3,13 @@
 import { useState, useEffect, useTransition, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { MenuItemCard } from "@/components/vendor-dashboard/MenuItemCard"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import {
   useVendorDeleteMenu,
   useVendorUpdateMenuAvailability,
-} from "@/hooks/mutations/useVendorMutations"
+} from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import { Search } from "lucide-react"

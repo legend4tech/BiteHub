@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { activateWallet } from "@/lib/actions/wallet"
-import type { Transaction } from "@/lib/types"
+import type { Transaction } from "@/types/customer"
 
 export default async function CustomerWalletPage() {
   const session = await auth()

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { MapPin, ArrowUpRight, Circle, Clock } from "lucide-react"
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 import { RatingBadge } from "@/components/shared/RatingBadge"
 
 interface VendorCardProps {

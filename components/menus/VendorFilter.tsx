@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useState } from "react"
-import { useVendorFilter } from "@/hooks/queries/useVendorFilter"
+import { useVendorFilter } from "@/hooks/vendor/useVendorFilter"
 
 interface VendorFilterProps {
   school: string

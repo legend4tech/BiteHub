@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
-import { useCustomerProfile } from "@/hooks/queries/useCustomerProfile"
-import { useUpdateCustomerProfile } from "@/hooks/mutations/useCustomerMutations"
+import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
+import { useUpdateCustomerProfile } from "@/hooks/customer/useCustomerMutations"
 import { Loader2, User, MapPin } from "lucide-react"
 
 export default function CustomerSettingsPage() {

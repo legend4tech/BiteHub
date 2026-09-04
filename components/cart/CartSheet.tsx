@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useCart } from "@/hooks/useCart"
-import { useCustomerProfile } from "@/hooks/queries/useCustomerProfile"
+import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 import { formatPriceExact } from "@/lib/format"
 import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
 import { Button } from "@/components/ui/button"

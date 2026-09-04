@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import {
   useAdminAddLogin,
   useAdminAddVendor,
-} from "@/hooks/mutations/useAdminMutations"
+} from "@/hooks/admin/useAdminMutations"
 import type { AdminVendor } from "./types"
 import {
   strongPasswordSchema,

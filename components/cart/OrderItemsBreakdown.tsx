@@ -1,6 +1,6 @@
 import { Receipt, StickyNote } from "lucide-react"
 import { formatPrice, formatPriceExact } from "@/lib/format"
-import { type Order } from "@/lib/types"
+import { type Order } from "@/types/shared"
 
 interface OrderItemsBreakdownProps {
   order: Order

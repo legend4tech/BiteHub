@@ -28,7 +28,7 @@ import {
   customerSignupFormSchema,
   type CustomerSignupFormValues,
 } from "@/lib/schemas"
-import { useCustomerSignup } from "@/hooks/mutations/usePublicMutations"
+import { useCustomerSignup } from "@/hooks/shared/usePublicMutations"
 
 export default function CustomerSignupForm() {
   const router = useRouter()

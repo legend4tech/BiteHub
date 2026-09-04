@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { FadeIn } from "@/components/FadeIn";
-import { MenuItemCard } from "@/components/menus/MenuItemCard";
-import type { MenuItem } from "@/lib/types";
+import { FadeIn } from "@/components/FadeIn"
+import { MenuItemCard } from "@/components/menus/MenuItemCard"
+import type { MenuItem } from "@/types/vendor"
 
 interface MenuItemGridProps {
-  items: MenuItem[];
-  onDifferentVendor: (item: MenuItem) => void;
+  items: MenuItem[]
+  onDifferentVendor: (item: MenuItem) => void
   /** Optional prefix so keys are unique across multiple grid instances */
-  keyPrefix?: string;
+  keyPrefix?: string
 }
 
 /**
@@ -27,7 +27,6 @@ export function MenuItemGrid({
   onDifferentVendor,
   keyPrefix = "",
 }: MenuItemGridProps) {
-
   return (
     <>
       {/* ── Mobile staggered layout (CSS Grid = guaranteed equal widths) ── */}
@@ -42,10 +41,7 @@ export function MenuItemGrid({
        */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:hidden">
         {items.map((item, i) => (
-          <FadeIn
-            key={`${keyPrefix}${item.id}`}
-            delay={0.04 * Math.min(i, 16)}
-          >
+          <FadeIn key={`${keyPrefix}${item.id}`} delay={0.04 * Math.min(i, 16)}>
             {/* even index = left column → push down; odd = right column → stays top */}
             <div className={i % 2 === 0 ? "mt-6" : ""}>
               <MenuItemCard item={item} onDifferentVendor={onDifferentVendor} />
@@ -55,13 +51,16 @@ export function MenuItemGrid({
       </div>
 
       {/* ── sm+ standard grid ───────────────────────────────── */}
-      <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="hidden gap-4 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {items.map((item, i) => (
-          <FadeIn key={`${keyPrefix}${item.id}-d`} delay={0.04 * Math.min(i, 16)}>
+          <FadeIn
+            key={`${keyPrefix}${item.id}-d`}
+            delay={0.04 * Math.min(i, 16)}
+          >
             <MenuItemCard item={item} onDifferentVendor={onDifferentVendor} />
           </FadeIn>
         ))}
       </div>
     </>
-  );
+  )
 }

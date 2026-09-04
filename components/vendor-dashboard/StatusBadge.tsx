@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import { ORDER_STATUS_CONFIG } from "@/lib/constants"
-import type { OrderStatus } from "@/lib/types"
+import type { OrderStatus } from "@/types/shared"
 
 interface StatusBadgeProps {
   status: OrderStatus

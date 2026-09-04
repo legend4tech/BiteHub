@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import {
   useVendorDeliverySettings,
   DeliverySettingsResponse,
-} from "@/hooks/queries/useVendorDeliverySettings"
+} from "@/hooks/vendor/useVendorDeliverySettings"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, MapPin, Save, Undo } from "lucide-react"

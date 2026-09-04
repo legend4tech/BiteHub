@@ -7,7 +7,7 @@ import {
   buildOrderWhatsAppMessage,
   ORDER_STATUS,
 } from "@/lib/constants"
-import type { OrderStatus } from "@/lib/types"
+import type { OrderStatus } from "@/types/shared"
 
 interface WhatsAppButtonProps {
   vendorPhone: string

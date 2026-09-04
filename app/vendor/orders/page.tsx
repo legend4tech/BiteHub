@@ -3,7 +3,7 @@ import { getVendorOrdersPaginated } from "@/lib/services/orderService"
 import { VendorOrders } from "@/components/vendor-dashboard/VendorOrders"
 import { Types } from "mongoose"
 import { redirect } from "next/navigation"
-import type { Order as OrderType } from "@/lib/types"
+import type { Order as OrderType } from "@/types/shared"
 
 export default async function VendorOrdersPage({
   searchParams,

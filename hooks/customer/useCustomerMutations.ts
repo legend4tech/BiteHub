@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { CustomerProfile } from "../queries/useCustomerProfile"
+import type { CustomerProfile } from "./useCustomerProfile"
 
 export function useUpdateCustomerProfile() {
   const queryClient = useQueryClient()

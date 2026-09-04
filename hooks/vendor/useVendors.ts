@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 
 interface UseVendorsOptions {
   q?: string
@@ -19,7 +19,14 @@ export interface VendorWithMenu extends Vendor {
 }
 
 export function useVendors(options?: UseVendorsOptions) {
-  const { q = "", school, campus, limit = 12, initialPage = 1, enabled = true } = options || {}
+  const {
+    q = "",
+    school,
+    campus,
+    limit = 12,
+    initialPage = 1,
+    enabled = true,
+  } = options || {}
 
   return useInfiniteQuery({
     queryKey: ["vendors", q, school, campus],

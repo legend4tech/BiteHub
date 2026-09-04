@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { useGlobalSettings } from "@/hooks/queries/useGlobalSettings"
+import { useGlobalSettings } from "@/hooks/shared/useGlobalSettings"
 import { Wrench } from "lucide-react"
 
 export function MaintenanceGuard({ children }: { children: React.ReactNode }) {

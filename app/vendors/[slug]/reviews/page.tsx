@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { useVendorReviews } from "@/hooks/queries/useVendorReviews"
+import { useVendorReviews } from "@/hooks/vendor/useVendorReviews"
 import { useInView } from "react-intersection-observer"
 import { useEffect, useState } from "react"
 import { ArrowLeft, Star, Loader2, UserCircle2, X } from "lucide-react"

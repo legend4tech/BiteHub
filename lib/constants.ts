@@ -1,5 +1,5 @@
 import { formatPrice } from "./format"
-import type { MenuCategory, OrderStatus } from "./types"
+import type { MenuCategory, OrderStatus } from "@/types/shared"
 
 // ─── App Constants ────────────────────────────────────────────────────────────
 

@@ -21,7 +21,7 @@ import Image from "next/image"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-import { useVendorResetPassword } from "@/hooks/mutations/useVendorMutations"
+import { useVendorResetPassword } from "@/hooks/vendor/useVendorMutations"
 import { strongPasswordSchema } from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 

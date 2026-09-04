@@ -6,7 +6,7 @@ import { VendorPaymentForm } from "@/components/vendor-dashboard/VendorPaymentFo
 import { Settings, Shield, CreditCard } from "lucide-react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 
 export function VendorSettingsTabs({
   serializedVendor,

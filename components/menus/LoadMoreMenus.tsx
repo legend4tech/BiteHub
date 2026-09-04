@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useInView } from "react-intersection-observer"
-import { useMenuItems } from "@/hooks/queries/useMenuItems"
+import { useMenuItems } from "@/hooks/shared/useMenuItems"
 import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 import { useCart } from "@/hooks/useCart"
 
 interface LoadMoreMenusProps {

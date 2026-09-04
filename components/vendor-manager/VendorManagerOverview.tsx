@@ -2,8 +2,8 @@
 
 import { ShoppingBag, Clock, Users, Store, UtensilsCrossed } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useAdminOrders } from "@/hooks/queries/useAdminOrders"
-import { useAdminStats } from "@/hooks/queries/useAdminStats"
+import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
+import { useAdminStats } from "@/hooks/admin/useAdminStats"
 import { ORDER_STATUS } from "@/lib/constants"
 import type { AdminStats } from "@/components/admin/types"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"

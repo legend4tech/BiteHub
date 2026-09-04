@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, startTransition } from "react"
-import type { CartItem, MenuItem } from "@/lib/types"
+import type { CartItem } from "@/types/customer"
+import type { MenuItem } from "@/types/vendor"
 import { LS_CART } from "@/lib/constants"
 import { getPrepTimeInHours } from "@/lib/format"
 

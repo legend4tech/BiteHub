@@ -15,15 +15,15 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 import {
   useVendorAddMonnify,
   useVendorRequestMonnifyChange,
   useVendorVerifyMonnifyChange,
-} from "@/hooks/mutations/useVendorMutations"
+} from "@/hooks/vendor/useVendorMutations"
 import axios from "axios"
 import { useRouter } from "next/navigation"
-import { useBanksQuery } from "@/hooks/queries/useBanksQuery"
+import { useBanksQuery } from "@/hooks/shared/useBanksQuery"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   vendorPaymentSettingsSchema,

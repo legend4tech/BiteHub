@@ -2,11 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { Order } from "@/lib/types"
+import type { Order } from "@/types/shared"
 
 interface UseVendorOrdersOptions {
   status?: string
-  limit?: number  
+  limit?: number
   enabled?: boolean
   refetchInterval?: number
   refetchIntervalInBackground?: boolean
@@ -14,13 +14,13 @@ interface UseVendorOrdersOptions {
 }
 
 export function useVendorOrders(options?: UseVendorOrdersOptions) {
-  const { 
-    status, 
-    limit, 
+  const {
+    status,
+    limit,
     enabled = true,
     refetchInterval,
     refetchIntervalInBackground,
-    staleTime = 1000 * 30
+    staleTime = 1000 * 30,
   } = options || {}
 
   return useQuery({

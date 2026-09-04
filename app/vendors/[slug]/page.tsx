@@ -109,7 +109,7 @@ export default async function VendorDetailPage({
   const { vendor, menuItems: rawMenuItems, allCategories } = data
 
   const menuItems = rawMenuItems.map(
-    (item: Partial<import("@/lib/types").MenuItem>) => ({
+    (item: Partial<import("@/types/vendor").MenuItem>) => ({
       ...item,
       vendorName: vendor.name,
       vendorSlug: vendor.slug,
@@ -117,7 +117,7 @@ export default async function VendorDetailPage({
       vendorDeliveryFee: vendor.deliveryFee ?? 0,
       vendorPrepTime: vendor.prepTime ?? "",
     })
-  ) as unknown as import("@/lib/types").MenuItem[]
+  ) as unknown as import("@/types/vendor").MenuItem[]
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString("en-US", {

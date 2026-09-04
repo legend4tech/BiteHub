@@ -4,7 +4,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Plus, Minus, ShoppingBag } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 import { Button } from "@/components/ui/button"
 import { isItemAvailableToday } from "@/lib/format"
 

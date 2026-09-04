@@ -22,11 +22,11 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useOrder } from "@/hooks/queries/useOrder"
+import { useOrder } from "@/hooks/shared/useOrder"
 import {
   usePayOrder,
   useVerifyOrderPayment,
-} from "@/hooks/mutations/usePublicMutations"
+} from "@/hooks/shared/usePublicMutations"
 import { toast } from "sonner"
 import {
   FeedbackModal,

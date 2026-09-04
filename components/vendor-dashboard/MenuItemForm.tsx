@@ -16,7 +16,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
-import type { MenuItem, MenuItemPayload } from "@/lib/types"
+import type { MenuItem, MenuItemPayload } from "@/types/vendor"
 import { menuItemFormSchema, type MenuItemFormValues } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller } from "react-hook-form"

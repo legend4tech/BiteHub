@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 
 export function useMenuItemDetail(itemId: string | undefined) {
   return useQuery({

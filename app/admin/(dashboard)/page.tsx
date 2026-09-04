@@ -1,8 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useAdminStats } from "@/hooks/queries/useAdminStats"
-import { useAdminVendors } from "@/hooks/queries/useAdminVendors"
+import { useAdminStats } from "@/hooks/admin/useAdminStats"
+import { useAdminVendors } from "@/hooks/admin/useAdminVendors"
 import { AdminOverview } from "@/components/admin/AdminOverview"
 import { FetchError } from "@/components/shared/FetchError"
 

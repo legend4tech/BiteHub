@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminFeedback } from "@/hooks/queries/useAdminFeedback"
+import { useAdminFeedback } from "@/hooks/admin/useAdminFeedback"
 import { VendorManagerFeedback } from "@/components/vendor-manager/VendorManagerFeedback"
 import { FetchError } from "@/components/shared/FetchError"
 

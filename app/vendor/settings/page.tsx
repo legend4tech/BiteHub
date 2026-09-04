@@ -2,7 +2,7 @@ import { auth } from "@/auth"
 import { getVendorProfile } from "@/lib/services/vendorService"
 import { VendorSettingsTabs } from "@/components/vendor-dashboard/VendorSettingsTabs"
 import { redirect, notFound } from "next/navigation"
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 
 export default async function VendorSettingsPage() {
   const session = await auth()

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useInView } from "react-intersection-observer"
-import { useVendors } from "@/hooks/queries/useVendors"
+import { useVendors } from "@/hooks/vendor/useVendors"
 import { VendorCard } from "@/components/public-vendors/VendorCard"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"

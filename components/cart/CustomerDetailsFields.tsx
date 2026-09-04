@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { type OrderFormInputValues } from "@/lib/schemas"
-import type { DeliveryZone } from "@/lib/types"
-import type { CustomerProfile } from "@/hooks/queries/useCustomerProfile"
+import type { DeliveryZone } from "@/types/vendor"
+import type { CustomerProfile } from "@/hooks/customer/useCustomerProfile"
 
 interface CustomerDetailsFieldsProps {
   control: Control<OrderFormInputValues>

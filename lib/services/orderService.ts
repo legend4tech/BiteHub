@@ -12,7 +12,7 @@ import Order from "@/models/Order"
 import { serializeOrder, type LeanOrder } from "@/lib/serializers"
 import { Types } from "mongoose"
 import type mongoose from "mongoose"
-import type { Order as OrderType } from "@/lib/types"
+import type { Order as OrderType } from "@/types/shared"
 
 export interface GetVendorOrdersOptions {
   vendorId: string | mongoose.Types.ObjectId

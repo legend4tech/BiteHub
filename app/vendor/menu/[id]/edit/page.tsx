@@ -6,10 +6,10 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { useVendorUpdateMenu } from "@/hooks/mutations/useVendorMutations"
+import { useVendorUpdateMenu } from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
-import type { MenuItemPayload } from "@/lib/types"
-import { useMenuItemDetail } from "@/hooks/queries/useMenuItemDetail"
+import type { MenuItemPayload } from "@/types/vendor"
+import { useMenuItemDetail } from "@/hooks/shared/useMenuItemDetail"
 import { useQueryClient } from "@tanstack/react-query"
 
 export default function EditMenuItemPage() {

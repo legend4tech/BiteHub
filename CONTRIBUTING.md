@@ -168,14 +168,17 @@ if (!parsed.success) return NextResponse.json({ error: "Invalid data", details: 
 
 ### Shared types
 
-All shared types live in `lib/types.ts`. Never redefine an interface that already exists.
+Types must be organized by domain in the `/types` directory (e.g., `types/vendor.ts`, `types/customer.ts`). Never dump generic types into a massive monolithic file. Keep domains isolated.
 
 ```ts
 // ❌ BAD — redefining MenuItem locally
 interface MenuItemLocal { id: string; name: string; ... }
 
-// ✅ GOOD
+// ❌ BAD — dumping into a generic types file
 import type { MenuItem } from "@/lib/types";
+
+// ✅ GOOD — importing from the specific domain
+import type { MenuItem } from "@/types/vendor";
 ```
 
 ### Shared payload types
@@ -209,7 +212,23 @@ if (order.status === ORDER_STATUS.PENDING) { ... }
 
 ---
 
-## 6. TypeScript Rules
+## 6. Domain-Driven Organization
+
+### Hooks (React Query)
+Hooks must be grouped by domain, not by technical concern (e.g., separating queries and mutations is an anti-pattern). Place queries and mutations related to the same data in the same file to reduce context switching and ensure cache invalidation logic is colocated with the query.
+
+```ts
+// ❌ BAD — grouping by technical concern
+/hooks/queries/useVendorOrders.ts
+/hooks/mutations/useVendorMutations.ts
+
+// ✅ GOOD — grouping by domain
+/hooks/vendor/useVendorOrders.ts (contains both queries and mutations)
+```
+
+---
+
+## 7. TypeScript Rules
 
 - **Strict mode is on.** Do not suppress errors with `// @ts-ignore` or `as any` without a documented reason.
 - **Never use `any`** as a return type or parameter. Use `unknown` and narrow it.
@@ -230,7 +249,7 @@ export type MyValues = z.infer<typeof mySchema>;
 
 ---
 
-## 7. API Route Patterns
+## 8. API Route Patterns
 
 Every file in `app/api/` must follow this structure:
 

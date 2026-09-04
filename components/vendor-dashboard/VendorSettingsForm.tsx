@@ -8,8 +8,8 @@ import { Field, FieldError } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { toast } from "sonner"
-import type { Vendor } from "@/lib/types"
-import { useVendorUpdateSettings } from "@/hooks/mutations/useVendorMutations"
+import type { Vendor } from "@/types/vendor"
+import { useVendorUpdateSettings } from "@/hooks/vendor/useVendorMutations"
 import { useRouter } from "next/navigation"
 import {
   vendorSettingsSchema,

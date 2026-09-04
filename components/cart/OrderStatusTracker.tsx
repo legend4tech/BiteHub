@@ -4,7 +4,7 @@ import {
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
 } from "@/lib/constants"
-import type { OrderStatus } from "@/lib/types"
+import type { OrderStatus } from "@/types/shared"
 import { cn } from "@/lib/utils"
 
 const statusColorMap: Record<

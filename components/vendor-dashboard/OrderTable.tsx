@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import type { Order } from "@/lib/types"
+import type { Order } from "@/types/shared"
 import {
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
   VALID_ORDER_STATUSES,
 } from "@/lib/constants"
-import type { OrderStatus } from "@/lib/types"
+import type { OrderStatus } from "@/types/shared"
 import { StatusBadge } from "@/components/vendor-dashboard/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -30,7 +30,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react"
-import { useVendorVerifyOrder } from "@/hooks/mutations/useVendorMutations"
+import { useVendorVerifyOrder } from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
 
 function CopyableText({

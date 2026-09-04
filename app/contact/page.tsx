@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import { useForm, Controller, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useContactSubmit } from "@/hooks/mutations/usePublicMutations"
+import { useContactSubmit } from "@/hooks/shared/usePublicMutations"
 import { CONTACT_EMAIL } from "@/lib/constants"
 
 import { contactSchema, type ContactValues } from "@/lib/schemas"

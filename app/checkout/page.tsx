@@ -15,16 +15,16 @@ import { formatPrice, formatPriceExact } from "@/lib/format"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import apiClient from "@/lib/axios"
 import { AxiosError } from "axios"
-import { useCreateOrder } from "@/hooks/mutations/usePublicMutations"
+import { useCreateOrder } from "@/hooks/shared/usePublicMutations"
 import { CustomerDetailsFields } from "@/components/cart/CustomerDetailsFields"
 import {
   useCustomerProfile,
   type CustomerProfile,
-} from "@/hooks/queries/useCustomerProfile"
-import { useVendorFee } from "@/hooks/queries/useVendorFee"
-import { useVendorDeliveryZones } from "@/hooks/queries/useVendorDeliveryZones"
+} from "@/hooks/customer/useCustomerProfile"
+import { useVendorFee } from "@/hooks/vendor/useVendorFee"
+import { useVendorDeliveryZones } from "@/hooks/vendor/useVendorDeliveryZones"
 import Link from "next/link"
-import type { DeliveryZone } from "@/lib/types"
+import type { DeliveryZone } from "@/types/vendor"
 
 export default function CheckoutPage() {
   const { cart, clearCart, syncVendorDetails, total } = useCart()

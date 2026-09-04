@@ -7,7 +7,7 @@ interface FeaturedVendorsProps {
   campus?: string
 }
 
-import type { Vendor } from "@/lib/types"
+import type { Vendor } from "@/types/vendor"
 
 export async function FeaturedVendors({
   school = DEFAULT_SCHOOL_ID,

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Star } from "lucide-react"
 import { toast } from "sonner"
 import { APP_NAME } from "@/lib/constants"
-import { useSubmitFeedback } from "@/hooks/mutations/useSubmitFeedback"
+import { useSubmitFeedback } from "@/hooks/shared/useSubmitFeedback"
 import {
   AlertDialog,
   AlertDialogContent,

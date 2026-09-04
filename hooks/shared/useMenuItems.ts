@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 
 interface UseMenuItemsOptions {
   q?: string

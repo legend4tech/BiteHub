@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Plus, Minus, ExternalLink, UtensilsCrossed, Clock } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
-import type { MenuItem } from "@/lib/types"
+import type { MenuItem } from "@/types/vendor"
 import { useState } from "react"
 import {
   formatPrice,

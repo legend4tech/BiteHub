@@ -12,7 +12,7 @@ import { Field, FieldError } from "@/components/ui/field"
 import {
   useAdminUpdatePassword,
   useAdminUpdateProfile,
-} from "@/hooks/mutations/useAdminMutations"
+} from "@/hooks/admin/useAdminMutations"
 import {
   adminPasswordSchema,
   updateAdminProfileSchema,

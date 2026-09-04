@@ -17,7 +17,7 @@ import {
 } from "@/lib/serializers"
 import { getItemTag } from "@/lib/services/menuService"
 import { getSubaccounts } from "@/lib/monnify"
-import type { VendorFilterItem } from "@/lib/types"
+import type { VendorFilterItem } from "@/types/vendor"
 import type mongoose from "mongoose"
 
 export interface GetVendorsOptions {
@@ -338,7 +338,7 @@ export async function getVendorReviews(
       id: r.id.toString(),
       createdAt: r.createdAt?.toISOString() || null,
     })
-  ) as unknown as import("@/lib/types").VendorReview[]
+  ) as unknown as import("@/types/vendor").VendorReview[]
 
   return {
     reviews: serializedReviews,

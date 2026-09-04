@@ -1,5 +1,5 @@
 import { Star } from "lucide-react"
-import type { RatingStatisticsData } from "@/hooks/queries/useVendorReviews"
+import type { RatingStatisticsData } from "@/hooks/vendor/useVendorReviews"
 
 interface RatingStatisticsProps {
   statistics: RatingStatisticsData | undefined

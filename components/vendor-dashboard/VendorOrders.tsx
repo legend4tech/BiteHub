@@ -3,11 +3,11 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { OrderTable } from "@/components/vendor-dashboard/OrderTable"
-import type { Order, OrderStatus } from "@/lib/types"
+import type { Order, OrderStatus } from "@/types/shared"
 import {
   useVendorUpdateOrderStatus,
   useVendorUpdateOrderPayment,
-} from "@/hooks/mutations/useVendorMutations"
+} from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"

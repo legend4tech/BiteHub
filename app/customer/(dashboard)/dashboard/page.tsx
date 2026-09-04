@@ -8,7 +8,7 @@ import { Wallet as WalletIcon, ShoppingBag, Gift } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import type { OrderRecord } from "@/lib/types"
+import type { OrderRecord } from "@/types/customer"
 
 export default async function CustomerDashboardPage() {
   const session = await auth()

@@ -2,12 +2,12 @@
 
 import { useState, useTransition, useOptimistic } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useAdminVendors } from "@/hooks/queries/useAdminVendors"
+import { useAdminVendors } from "@/hooks/admin/useAdminVendors"
 import { toast } from "sonner"
 import {
   useAdminToggleVendorActive,
   useAdminToggleVendorFeatured,
-} from "@/hooks/mutations/useAdminMutations"
+} from "@/hooks/admin/useAdminMutations"
 import { AdminVendors } from "@/components/admin/AdminVendors"
 import { AddLoginModal } from "@/components/admin/AdminModals"
 import type { AdminVendor } from "@/components/admin/types"
