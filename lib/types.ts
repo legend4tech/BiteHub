@@ -162,6 +162,27 @@ export interface Order {
   isRated?: boolean
 }
 
+export interface OrderRecord {
+  _id: { toString: () => string }
+  orderId: string
+  vendorName: string
+  totalAmount: number
+  status: string
+  location: string
+  createdAt: string | Date
+  items: Array<{ name: string; quantity: number; price: number }>
+}
+
+export interface Transaction {
+  _id: { toString: () => string }
+  type: string
+  amount: number
+  description?: string
+  status: string
+  reference: string
+  createdAt: string | Date
+}
+
 // ─── Vendor Auth Session ──────────────────────────────────────────────────────
 
 export interface VendorSession {

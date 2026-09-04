@@ -6,17 +6,7 @@ import { formatPrice } from "@/lib/format"
 import { ShoppingBag } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-
-interface OrderRecord {
-  _id: { toString: () => string }
-  orderId: string
-  vendorName: string
-  totalAmount: number
-  status: string
-  location: string
-  createdAt: string | Date
-  items: Array<{ name: string; quantity: number; price: number }>
-}
+import type { OrderRecord } from "@/lib/types"
 
 export default async function CustomerOrdersPage() {
   const session = await auth()

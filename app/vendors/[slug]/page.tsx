@@ -28,45 +28,6 @@ interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-interface RawVendor {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  tagline?: string
-  category: string
-  tags?: string[]
-  whatsappNumber?: string
-  phone?: string
-  school: string
-  campus: string
-  isActive: boolean
-  deliveryFee?: number
-  prepTime?: string
-  image?: { url: string }
-  initials?: string
-  createdAt: string
-  rating?: number
-  ratingCount?: number
-}
-
-interface RawMenuItem {
-  id: string
-  vendorId: string
-  name: string
-  description?: string
-  price: number
-  image?: { url: string }
-  category: string
-  isAvailable: boolean
-  availableFrom?: string
-  availableTo?: string
-  tag?: string
-  isPreorder?: boolean
-  preorderEndDate?: string
-  preorderDeliveryInfo?: string
-}
-
 async function getVendorData(slug: string, category?: string, q?: string) {
   try {
     return await getVendorDataBySlug(slug, { category, q })
