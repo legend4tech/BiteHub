@@ -18,6 +18,10 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import Image from "next/image"
+import {
+  getVendorDataBySlug,
+  getVendorReviews,
+} from "@/lib/services/vendorService"
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -64,37 +68,16 @@ interface RawMenuItem {
 }
 
 async function getVendorData(slug: string, category?: string, q?: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-
-  let url = `${baseUrl}/api/vendors/${slug}`
-
-  const params = new URLSearchParams()
-  if (category && category !== "all") params.set("category", category)
-  if (q) params.set("q", q)
-
-  const queryString = params.toString()
-  if (queryString) url += `?${queryString}`
-
-  const res = await fetch(url, {
-    cache: "no-store",
-  })
-
-  if (!res.ok) {
-    if (res.status === 404) return null
-    throw new Error("Failed to fetch vendor")
+  try {
+    return await getVendorDataBySlug(slug, { category, q })
+  } catch (error) {
+    return null
   }
-
-  return res.json()
 }
 
-async function getVendorRecentReviews(slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  const url = `${baseUrl}/api/vendors/${slug}/reviews?limit=5`
-
+async function getVendorRecentReviewsData(slug: string) {
   try {
-    const res = await fetch(url, { cache: "no-store" })
-    if (!res.ok) return { reviews: [] }
-    return await res.json()
+    return await getVendorReviews(slug, { limit: 5 })
   } catch (error) {
     console.error("Failed to fetch recent reviews:", error)
     return { reviews: [] }
@@ -157,34 +140,23 @@ export default async function VendorDetailPage({
 
   const [data, reviewsData] = await Promise.all([
     getVendorData(slug, category, q),
-    getVendorRecentReviews(slug),
+    getVendorRecentReviewsData(slug),
   ])
 
   if (!data || !data.vendor) notFound()
 
   const { vendor, menuItems: rawMenuItems, allCategories } = data
 
-  const menuItems = rawMenuItems.map((item: RawMenuItem) => ({
-    id: item.id,
-    vendorId: item.vendorId,
-    vendorName: vendor.name,
-    vendorSlug: vendor.slug,
-    vendorWhatsappNumber: vendor.whatsappNumber ?? "",
-    vendorDeliveryFee: vendor.deliveryFee ?? 0,
-    vendorPrepTime: vendor.prepTime ?? "",
-    name: item.name,
-    description: item.description ?? "",
-    price: item.price,
-    image: item.image ?? null,
-    category: item.category,
-    isAvailable: item.isAvailable,
-    availableFrom: item.availableFrom,
-    availableTo: item.availableTo,
-    tag: item.tag,
-    isPreorder: item.isPreorder,
-    preorderEndDate: item.preorderEndDate,
-    preorderDeliveryInfo: item.preorderDeliveryInfo,
-  }))
+  const menuItems = rawMenuItems.map(
+    (item: Partial<import("@/lib/types").MenuItem>) => ({
+      ...item,
+      vendorName: vendor.name,
+      vendorSlug: vendor.slug,
+      vendorWhatsappNumber: vendor.whatsappNumber ?? "",
+      vendorDeliveryFee: vendor.deliveryFee ?? 0,
+      vendorPrepTime: vendor.prepTime ?? "",
+    })
+  ) as unknown as import("@/lib/types").MenuItem[]
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -215,7 +187,7 @@ export default async function VendorDetailPage({
 
           <div className="relative z-10 flex flex-col gap-8 md:flex-row">
             {/* Logo/Initials */}
-            <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-orange-600 text-4xl font-bold text-primary-foreground shadow-xl shadow-primary/20">
+            <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/80 text-4xl font-bold text-primary-foreground shadow-xl shadow-primary/20">
               {vendor.image?.url ? (
                 <Image
                   src={vendor.image.url}
@@ -318,14 +290,14 @@ export default async function VendorDetailPage({
                       </span>
                     </div>
                   )}
-                  {vendor.phone && (
+                  {vendor.whatsappNumber && (
                     <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                       <Phone className="size-4 text-primary" />
                       <span>
                         <strong className="font-medium text-foreground">
                           Phone:
                         </strong>{" "}
-                        {vendor.phone}
+                        {vendor.whatsappNumber}
                       </span>
                     </div>
                   )}

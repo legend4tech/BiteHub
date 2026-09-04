@@ -219,13 +219,13 @@ export default function OrderPage() {
         {/* ── Payment verification banner ─────────────────────────── */}
         {order.paymentStatus === "pending" &&
           (!isStalePayment || isVerifyingDirectly) && (
-            <div className="flex items-center gap-3 rounded-[20px] border border-amber-500/20 bg-amber-500/10 px-5 py-4">
-              <Loader2 className="size-4 shrink-0 animate-spin text-amber-600" />
+            <div className="border-warning/20 bg-warning/10 flex items-center gap-3 rounded-[20px] border px-5 py-4">
+              <Loader2 className="text-warning size-4 shrink-0 animate-spin" />
               <div>
-                <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                <p className="text-warning-foreground dark:text-warning text-sm font-semibold">
                   Verifying your payment…
                 </p>
-                <p className="text-xs text-amber-600/80 dark:text-amber-500/80">
+                <p className="text-warning/80 dark:text-warning/80 text-xs">
                   Contacting Monnify securely to confirm your transaction
                   status.
                 </p>

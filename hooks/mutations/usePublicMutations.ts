@@ -1,4 +1,3 @@
- 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import axios from "axios"
@@ -58,5 +57,15 @@ export function useBanksQuery() {
       return res.data?.data || []
     },
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  })
+}
+
+export function useCustomerSignup() {
+  return useMutation({
+    mutationFn: async (data: unknown) => {
+      // Need to handle 409 locally or let axios throw it
+      const res = await axios.post("/api/auth/customer/signup", data)
+      return res.data
+    },
   })
 }

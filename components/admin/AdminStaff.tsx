@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { Shield, Plus, Loader2, Users, Eye, EyeOff } from "lucide-react"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError } from "@/components/ui/field"
@@ -17,20 +16,15 @@ import { useAdminStaff } from "@/hooks/queries/useAdminStaff"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
 import {
+  createStaffFormSchema,
+  type CreateStaffFormValues,
+} from "@/lib/schemas"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-
-const createStaffSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["vendor_manager", "admin"]),
-})
-
-type CreateStaffValues = z.infer<typeof createStaffSchema>
 
 export function AdminStaff() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -46,10 +40,10 @@ export function AdminStaff() {
 
   const createStaffMutation = useAdminCreateStaff()
 
-  const form = useForm<CreateStaffValues>({
+  const form = useForm<CreateStaffFormValues>({
     resolver: zodResolver(
-      createStaffSchema as never
-    ) as unknown as Resolver<CreateStaffValues>,
+      createStaffFormSchema as never
+    ) as unknown as Resolver<CreateStaffFormValues>,
     defaultValues: {
       name: "",
       email: "",
@@ -61,7 +55,7 @@ export function AdminStaff() {
   const passwordValue =
     useWatch({ control: form.control, name: "password" }) ?? ""
 
-  const onSubmit = (values: CreateStaffValues) => {
+  const onSubmit = (values: CreateStaffFormValues) => {
     createStaffMutation.mutate(values, {
       onSuccess: () => {
         toast.success("Staff account created successfully")

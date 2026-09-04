@@ -3,15 +3,7 @@ import dbConnect from "@/lib/db"
 import AdminUserModel from "@/models/AdminUser"
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
-import { z } from "zod"
-import { strongPasswordSchema } from "@/lib/schemas"
-
-const createStaffSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: strongPasswordSchema,
-  role: z.enum(["vendor_manager", "admin"]),
-})
+import { createStaffSchema } from "@/lib/schemas"
 
 // GET — List all staff
 export async function GET() {

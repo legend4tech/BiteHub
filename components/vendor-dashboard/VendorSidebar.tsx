@@ -172,7 +172,7 @@ function SidebarContent({
       {/* User badge */}
       {!collapsed && session?.user && (
         <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-border/30 bg-accent/40 px-3 py-2.5">
-          <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-orange-500/80 text-xs font-bold text-white">
+          <div className="to-primary/70/80 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 text-xs font-bold text-white">
             {session.user.image ? (
               <Image
                 src={session.user.image}

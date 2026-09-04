@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components"
 import * as React from "react"
+import { EMAIL_THEME } from "../lib/email-theme"
 
 interface VendorLowStockAlertEmailProps {
   vendorName: string
@@ -64,13 +65,12 @@ export const VendorLowStockAlertEmail = ({
 }
 
 const main = {
-  backgroundColor: "var(--background)",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  backgroundColor: EMAIL_THEME.colors.background,
+  fontFamily: EMAIL_THEME.fonts.sans,
 }
 
 const container = {
-  backgroundColor: "var(--card)",
+  backgroundColor: EMAIL_THEME.colors.background,
   margin: "0 auto",
   padding: "20px 0 48px",
   marginBottom: "64px",
@@ -83,11 +83,11 @@ const heading = {
   fontWeight: "600",
   textAlign: "center" as const,
   padding: "0 48px",
-  color: "#484848",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const text = {
-  color: "#525f7f",
+  color: EMAIL_THEME.colors.textMuted,
   fontSize: "16px",
   lineHeight: "24px",
   textAlign: "left" as const,
@@ -96,14 +96,14 @@ const text = {
 
 const alertSection = {
   padding: "24px",
-  backgroundColor: "var(--status-pending)",
+  backgroundColor: EMAIL_THEME.colors.warningBackground,
   borderRadius: "8px",
   margin: "24px 48px",
-  borderLeft: "4px solid #f59e0b",
+  borderLeft: `4px solid ${EMAIL_THEME.colors.warning}`,
 }
 
 const alertText = {
-  color: "var(--status-pending-foreground)",
+  color: EMAIL_THEME.colors.warning,
   fontSize: "16px",
   lineHeight: "24px",
   margin: "0",
@@ -116,9 +116,9 @@ const buttonContainer = {
 }
 
 const button = {
-  backgroundColor: "#f97316", // Brand primary color
+  backgroundColor: EMAIL_THEME.colors.primary,
   borderRadius: "8px",
-  color: "var(--primary-foreground)",
+  color: EMAIL_THEME.colors.background,
   fontSize: "16px",
   fontWeight: "bold",
   textDecoration: "none",
@@ -128,12 +128,12 @@ const button = {
 }
 
 const hr = {
-  borderColor: "#e6ebf1",
+  borderColor: EMAIL_THEME.colors.border,
   margin: "20px 0",
 }
 
 const footer = {
-  color: "#8898aa",
+  color: EMAIL_THEME.colors.textLight,
   fontSize: "12px",
   textAlign: "center" as const,
 }

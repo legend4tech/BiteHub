@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react"
 import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
+import { CartSheet } from "@/components/cart/CartSheet"
 import { CartSummary } from "@/components/cart/CartSummary"
-import { OrderForm } from "@/components/cart/OrderForm"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/lib/types"
@@ -239,8 +239,8 @@ export function AllProducts({
       {/* Floating cart */}
       <CartSummary onCheckout={() => setOrderFormOpen(true)} />
 
-      {/* Order form */}
-      <OrderForm open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
+      {/* Cart Sheet */}
+      <CartSheet open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
 
       {/* Cross-vendor conflict dialog */}
       {conflictItem && (

@@ -14,6 +14,7 @@ import {
 } from "@react-email/components"
 import * as React from "react"
 import { CONTACT_EMAIL } from "@/lib/constants"
+import { EMAIL_THEME } from "@/lib/email-theme"
 
 interface ContactAutoReplyProps {
   senderName: string
@@ -120,7 +121,7 @@ export default ContactAutoReply
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "var(--background)",
+  backgroundColor: EMAIL_THEME.colors.background,
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -129,8 +130,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "var(--card)",
-  border: "1px solid var(--border)",
+  backgroundColor: EMAIL_THEME.colors.background,
+  border: `1px solid ${EMAIL_THEME.colors.border}`,
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -152,11 +153,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const logoHighlight = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
 }
 
 const subHeader = {
@@ -165,11 +166,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
 }
 
 const divider = {
-  borderColor: "var(--border)",
+  borderColor: EMAIL_THEME.colors.border,
   margin: "20px 0",
 }
 
@@ -180,29 +181,29 @@ const contentSection = {
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   marginBottom: "16px",
 }
 
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "#374151",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 16px 0",
 }
 
 const sectionLabel = {
   fontSize: "13px",
   fontWeight: "700",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   textTransform: "uppercase" as const,
   letterSpacing: "0.05em",
   margin: "0 0 8px 0",
 }
 
 const summaryBox = {
-  backgroundColor: "var(--background)",
-  border: "1px solid var(--border)",
+  backgroundColor: EMAIL_THEME.colors.background,
+  border: `1px solid ${EMAIL_THEME.colors.border}`,
   borderRadius: "8px",
   padding: "16px",
   marginBottom: "20px",
@@ -210,24 +211,24 @@ const summaryBox = {
 
 const summaryRow = {
   fontSize: "14px",
-  color: "#374151",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 8px 0",
 }
 
 const summaryLabel = {
   fontWeight: "700",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const summaryDivider = {
-  borderColor: "var(--border)",
+  borderColor: EMAIL_THEME.colors.border,
   margin: "8px 0",
 }
 
 const summaryMessage = {
   fontSize: "14px",
   lineHeight: "22px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0",
   whiteSpace: "pre-wrap" as const,
 }
@@ -238,9 +239,9 @@ const buttonRow = {
 }
 
 const primaryButton = {
-  backgroundColor: "var(--primary)",
+  backgroundColor: EMAIL_THEME.colors.primary,
   borderRadius: "8px",
-  color: "var(--card)",
+  color: EMAIL_THEME.colors.background,
   fontSize: "15px",
   fontWeight: "600",
   textDecoration: "none",
@@ -252,8 +253,8 @@ const primaryButton = {
 const warningText = {
   fontSize: "13px",
   lineHeight: "20px",
-  color: "var(--muted-foreground)",
-  backgroundColor: "var(--muted)",
+  color: EMAIL_THEME.colors.textMuted,
+  backgroundColor: EMAIL_THEME.colors.primaryLight,
   padding: "12px 16px",
   borderRadius: "8px",
   margin: "0 0 20px 0",
@@ -267,22 +268,22 @@ const footerSection = {
 const footerBrand = {
   fontSize: "16px",
   fontWeight: "900",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 8px 0",
 }
 
 const footerOrange = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
 }
 
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0 0 6px 0",
 }
 
 const footerLink = {
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   textDecoration: "underline",
 }

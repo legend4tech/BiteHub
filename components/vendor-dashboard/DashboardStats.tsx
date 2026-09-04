@@ -67,7 +67,7 @@ export function DashboardStats(props: DashboardStatsProps) {
               {props.pending}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Ready to prep</p>
-            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            <p className="text-warning dark:text-warning mt-2 text-xs">
               Unpaid orders auto-cancel after 30 mins
             </p>
           </div>
@@ -132,7 +132,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         </div>
 
         <div className="flex items-center gap-5 rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-amber-500/10 text-amber-500">
+          <div className="bg-warning/10 text-warning flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem]">
             <Wallet className="size-8" />
           </div>
           <div>
@@ -142,7 +142,7 @@ export function DashboardStats(props: DashboardStatsProps) {
             <p className="mt-1 font-heading text-3xl font-bold text-foreground">
               {formatPriceExact(props.monnifyPending || 0)}
             </p>
-            <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+            <p className="text-warning dark:text-warning mt-1 text-xs font-medium">
               Arriving 10pm today
             </p>
           </div>

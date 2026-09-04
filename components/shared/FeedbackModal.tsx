@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { type AxiosError } from "axios"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,6 +16,7 @@ import { Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { APP_NAME } from "@/lib/constants"
 import { toast } from "sonner"
+import { useSubmitFeedback } from "@/hooks/mutations/useSubmitFeedback"
 
 export const FEEDBACK_SNOOZE_DURATION = 24 * 60 * 60 * 1000 // 24 hours (easily editable)
 
@@ -40,6 +42,7 @@ export function FeedbackModal({
   const [hoveredRating, setHoveredRating] = useState(0)
   const [feedbackStep, setFeedbackStep] = useState(1)
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const submitFeedback = useSubmitFeedback()
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -175,43 +178,46 @@ export function FeedbackModal({
             </Button>
           ) : (
             <AlertDialogAction
-              onClick={async () => {
-                try {
-                  const response = await fetch("/api/feedback", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      orderId,
-                      platform: {
-                        rating: platformRating,
-                        comments: platformComments,
-                      },
-                      vendor: {
-                        vendorId: vendorId,
-                        rating: vendorRating,
-                        comments: vendorComments,
-                        isAnonymous,
-                      },
-                    }),
-                  })
-
-                  if (response.ok) {
-                    toast.success("Feedback submitted! Thank you.")
-                    localStorage.setItem(`feedback_handled_${orderId}`, "true")
-                    onOpenChange(false)
-                    window.location.reload()
-                  } else {
-                    const data = await response.json()
-                    toast.error(
-                      data.error ||
-                        "Couldn't submit your feedback. Please try again."
-                    )
+              onClick={() => {
+                submitFeedback.mutate(
+                  {
+                    orderId,
+                    platform: {
+                      rating: platformRating,
+                      comments: platformComments,
+                    },
+                    vendor: {
+                      vendorId,
+                      rating: vendorRating,
+                      comments: vendorComments,
+                      isAnonymous,
+                    },
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success("Feedback submitted! Thank you.")
+                      localStorage.setItem(
+                        `feedback_handled_${orderId}`,
+                        "true"
+                      )
+                      onOpenChange(false)
+                      window.location.reload()
+                    },
+                    onError: (error) => {
+                      const err = error as AxiosError<{ error?: string }>
+                      toast.error(
+                        err?.response?.data?.error ||
+                          "Couldn't submit your feedback. Please try again."
+                      )
+                    },
                   }
-                } catch {
-                  toast.error("Something went wrong. Please try again.")
-                }
+                )
               }}
-              disabled={vendorRating === 0 || vendorComments.trim().length < 3}
+              disabled={
+                vendorRating === 0 ||
+                vendorComments.trim().length < 3 ||
+                submitFeedback.isPending
+              }
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
               Submit Feedback

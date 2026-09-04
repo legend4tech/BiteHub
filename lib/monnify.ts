@@ -320,3 +320,49 @@ export async function validateMonnifyBankAccount(
     throw new Error("Invalid bank account details")
   }
 }
+
+export async function createMonnifyReservedAccount({
+  accountReference,
+  accountName,
+  customerEmail,
+  customerName,
+}: {
+  accountReference: string
+  accountName: string
+  customerEmail: string
+  customerName: string
+}) {
+  const token = await getMonnifyToken()
+  try {
+    const response = await axiosInstance.post(
+      `${MONNIFY_API_URL}/api/v2/bank-transfer/reserved-accounts`,
+      {
+        accountReference,
+        accountName,
+        currencyCode: "NGN",
+        contractCode: MONNIFY_CONTRACT_CODE,
+        customerEmail,
+        customerName,
+        getAllAvailableBanks: false,
+        preferredBanks: ["035"], // Wema Bank is reliable for virtual accounts
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+
+    if (response.data.requestSuccessful) {
+      return response.data.responseBody
+    }
+    throw new Error(
+      response.data.responseMessage || "Failed to create reserved account"
+    )
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error"
+    console.error(
+      "[createMonnifyReservedAccount] Error:",
+      axios.isAxiosError(err) ? err.response?.data : errorMsg
+    )
+    throw err
+  }
+}

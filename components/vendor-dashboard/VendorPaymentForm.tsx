@@ -347,7 +347,7 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                   placeholder="Auto-filled after verifying"
                   className={cn(
                     isNameValid &&
-                      "border-green-500/50 bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+                      "border-success/50 bg-success/10 text-success dark:bg-success/20 dark:text-success",
                     nameError && "border-destructive ring-3 ring-destructive/20"
                   )}
                 />
@@ -355,7 +355,7 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                   <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
                 )}
                 {isNameValid && !isFetchingName && (
-                  <CheckCircle className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-green-600 dark:text-green-400" />
+                  <CheckCircle className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-success dark:text-success" />
                 )}
               </div>
               {nameError && (

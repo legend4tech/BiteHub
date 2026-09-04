@@ -169,3 +169,29 @@ export interface VendorSession {
   vendorName: string
   vendorPhone: string
 }
+
+// ─── Delivery ─────────────────────────────────────────────────────────────────
+
+export interface SubLandmark {
+  id: string
+  name: string
+  fee: number
+}
+
+export interface DeliveryZone {
+  id: string
+  name: string
+  fee: number
+  subLandmarks: SubLandmark[]
+}
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+export interface VendorReview {
+  id: string
+  rating: number
+  comments?: string
+  customerName: string
+  createdAt: string | null
+  isAnonymous: boolean
+}

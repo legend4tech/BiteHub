@@ -120,6 +120,8 @@
     --rating: #f59e0b;
     --success: oklch(0.723 0.149 161.761);
     --success-foreground: oklch(0.978 0.012 60);
+    --warning: oklch(0.769 0.163 70.08);     /* amber-500 equivalent */
+    --warning-foreground: oklch(0.398 0.082 58.6); /* amber-900 equivalent */
     --whatsapp: #25D366;
     --info: #09A5DB;
 }
@@ -172,6 +174,8 @@
     --rating: #fbbf24;
     --success: oklch(0.723 0.149 161.761);
     --success-foreground: oklch(0.148 0.022 42);
+    --warning: oklch(0.828 0.148 70.08);     /* amber-400 equivalent for dark mode */
+    --warning-foreground: oklch(0.21 0.045 58.6); /* amber-950 equivalent */
     --whatsapp: #25D366;
     --info: #09A5DB;
 }

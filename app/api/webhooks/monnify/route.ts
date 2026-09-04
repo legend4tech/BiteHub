@@ -6,6 +6,8 @@ import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
 import { ORDER_STATUS } from "@/lib/constants"
+import Wallet from "@/models/Wallet"
+import WalletTransaction from "@/models/WalletTransaction"
 
 async function processSuccessfulTransaction(paymentReference: string) {
   const monnifyData = await verifyMonnifyTransaction(paymentReference)
@@ -19,6 +21,54 @@ async function processSuccessfulTransaction(paymentReference: string) {
 
   await dbConnect()
 
+  // 1. Handle Wallet Funding (Reserved Account Deposit)
+  if (
+    monnifyData.product?.type === "RESERVED_ACCOUNT" ||
+    monnifyData.product?.reference?.startsWith("WALLET-")
+  ) {
+    const accountRef = monnifyData.product.reference
+    const wallet = await Wallet.findOne({
+      monnifyReservedAccountRef: accountRef,
+    })
+
+    if (wallet) {
+      const existingTx = await WalletTransaction.findOne({
+        reference: paymentReference,
+      })
+      if (!existingTx) {
+        // Use settlementAmount if available, otherwise amountPaid
+        const amount =
+          monnifyData.settlementAmount ||
+          monnifyData.amountPaid ||
+          monnifyData.amount
+
+        await WalletTransaction.create({
+          customerId: wallet.customerId,
+          type: "fiat_deposit",
+          amount: amount,
+          reference: paymentReference,
+          description: "Bank Transfer Deposit",
+        })
+
+        wallet.balance += amount
+        await wallet.save()
+        console.log(
+          `[Collection Webhook] ✅ Wallet funded for customer ${wallet.customerId}. Amount: ₦${amount}`
+        )
+      } else {
+        console.log(
+          `[Collection Webhook] Wallet transaction ${paymentReference} already processed`
+        )
+      }
+    } else {
+      console.error(
+        `[Collection Webhook] Wallet not found for account ref: ${accountRef}`
+      )
+    }
+    return
+  }
+
+  // 2. Handle Order Payments
   let order = await Order.findOne({ monnifyReference: paymentReference })
 
   if (!order) {

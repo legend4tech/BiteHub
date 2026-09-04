@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Star } from "lucide-react"
 import { toast } from "sonner"
 import { APP_NAME } from "@/lib/constants"
+import { useSubmitFeedback } from "@/hooks/mutations/useSubmitFeedback"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -29,6 +30,7 @@ export function PlatformFeedbackModal({
   const [platformRating, setPlatformRating] = useState(0)
   const [platformComments, setPlatformComments] = useState("")
   const [hoveredRating, setHoveredRating] = useState(0)
+  const submitFeedback = useSubmitFeedback()
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -59,7 +61,7 @@ export function PlatformFeedbackModal({
                   <Star
                     className={`size-6 transition-colors ${
                       (hoveredRating || platformRating) >= star
-                        ? "fill-amber-400 text-amber-400"
+                        ? "text-warning fill-rating"
                         : "text-muted-foreground"
                     }`}
                   />
@@ -97,37 +99,35 @@ export function PlatformFeedbackModal({
             Maybe later
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={async () => {
-              try {
-                const response = await fetch("/api/feedback", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    vendorId,
-                    platform: {
-                      rating: platformRating,
-                      comments: platformComments,
-                    },
-                  }),
-                })
-
-                if (response.ok) {
-                  toast.success("Feedback submitted! Thank you.")
-                  localStorage.setItem("vendor_feedback_submitted", "true")
-                  onOpenChange(false)
-                  setPlatformRating(0)
-                  setPlatformComments("")
-                } else {
-                  toast.error(
-                    "Couldn't submit your feedback. Please try again."
-                  )
+            onClick={() => {
+              submitFeedback.mutate(
+                {
+                  vendorId,
+                  platform: {
+                    rating: platformRating,
+                    comments: platformComments,
+                  },
+                },
+                {
+                  onSuccess: () => {
+                    toast.success("Feedback submitted! Thank you.")
+                    localStorage.setItem("vendor_feedback_submitted", "true")
+                    onOpenChange(false)
+                    setPlatformRating(0)
+                    setPlatformComments("")
+                  },
+                  onError: () => {
+                    toast.error(
+                      "Couldn't submit your feedback. Please try again."
+                    )
+                  },
                 }
-              } catch {
-                toast.error("Something went wrong. Please try again.")
-              }
+              )
             }}
             disabled={
-              platformRating === 0 || platformComments.trim().length < 3
+              platformRating === 0 ||
+              platformComments.trim().length < 3 ||
+              submitFeedback.isPending
             }
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
           >

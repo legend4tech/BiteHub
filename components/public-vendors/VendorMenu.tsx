@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useTransition } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { MenuItemCard } from "@/components/menus/MenuItemCard"
 import { CartSummary } from "@/components/cart/CartSummary"
-import { OrderForm } from "@/components/cart/OrderForm"
+import { CartSheet } from "@/components/cart/CartSheet"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/lib/types"
@@ -254,7 +254,7 @@ export function VendorMenu({
 
       {/* Floating cart */}
       <CartSummary onCheckout={() => setOrderFormOpen(true)} />
-      <OrderForm open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
+      <CartSheet open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
 
       {/* Cross-vendor conflict dialog */}
       {conflictItem && (

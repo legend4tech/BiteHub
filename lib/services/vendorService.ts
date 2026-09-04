@@ -8,8 +8,15 @@
 
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
+import VendorFeedback from "@/models/VendorFeedback"
 import MenuItem from "@/models/MenuItem"
-import { serializeVendor, type LeanVendor } from "@/lib/serializers"
+import {
+  serializeVendor,
+  serializeMenuItem,
+  type LeanVendor,
+} from "@/lib/serializers"
+import { getItemTag } from "@/lib/services/menuService"
+import { getSubaccounts } from "@/lib/monnify"
 import type { VendorFilterItem } from "@/lib/types"
 import type mongoose from "mongoose"
 
@@ -121,8 +128,6 @@ export async function getFeaturedVendors(
 
 // ─── Vendor Profile (Dashboard) ────────────────────────────────────────────────
 
-import { getSubaccounts } from "@/lib/monnify"
-
 export async function getVendorProfile(
   vendorId: string | mongoose.Types.ObjectId
 ) {
@@ -230,4 +235,162 @@ export async function getVendorsForFilter(
   }))
 
   return { items, total, hasMore: skip + limit < total }
+}
+
+export async function getVendorReviews(
+  slug: string,
+  options: { page?: number; limit?: number; rating?: number } = {}
+) {
+  await dbConnect()
+
+  const page = Math.max(1, options.page || 1)
+  const limit = Math.max(1, Math.min(50, options.limit || 10))
+  const skip = (page - 1) * limit
+
+  const vendor = await VendorModel.findOne({ slug }).lean()
+  if (!vendor) {
+    throw new Error("Vendor not found")
+  }
+
+  const matchQuery: Record<string, unknown> = { vendorId: vendor._id }
+  if (options.rating) {
+    matchQuery.rating = options.rating
+  }
+
+  const reviews = await VendorFeedback.aggregate([
+    { $match: matchQuery },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: "orders",
+        localField: "orderId",
+        foreignField: "orderId",
+        as: "orderData",
+      },
+    },
+    {
+      $unwind: {
+        path: "$orderData",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        id: "$_id",
+        _id: 0,
+        rating: 1,
+        comments: 1,
+        createdAt: 1,
+        isAnonymous: 1,
+        customerName: {
+          $cond: {
+            if: { $eq: ["$isAnonymous", true] },
+            then: "Anonymous",
+            else: { $ifNull: ["$orderData.customerName", "Verified Buyer"] },
+          },
+        },
+      },
+    },
+  ])
+
+  let statistics = null
+  if (page === 1) {
+    const distributionAgg = await VendorFeedback.aggregate([
+      { $match: { vendorId: vendor._id } },
+      {
+        $group: {
+          _id: "$rating",
+          count: { $sum: 1 },
+        },
+      },
+    ])
+
+    let calculatedTotal = 0
+    let calculatedStars = 0
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+
+    distributionAgg.forEach((d) => {
+      if (d._id >= 1 && d._id <= 5) {
+        distribution[d._id as keyof typeof distribution] = d.count
+        calculatedTotal += d.count
+        calculatedStars += d._id * d.count
+      }
+    })
+
+    statistics = {
+      averageRating:
+        calculatedTotal > 0 ? calculatedStars / calculatedTotal : 0,
+      totalReviews: calculatedTotal,
+      distribution,
+    }
+  }
+
+  // Convert Date objects to strings since we are returning to the client/server component
+  const serializedReviews = reviews.map(
+    (r: {
+      id: { toString: () => string }
+      createdAt?: Date
+      [key: string]: unknown
+    }) => ({
+      ...r,
+      id: r.id.toString(),
+      createdAt: r.createdAt?.toISOString() || null,
+    })
+  ) as unknown as import("@/lib/types").VendorReview[]
+
+  return {
+    reviews: serializedReviews,
+    page,
+    hasMore: reviews.length === limit,
+    ...(statistics && { statistics }),
+  }
+}
+
+export async function getVendorDataBySlug(
+  slug: string,
+  options: { category?: string; q?: string } = {}
+) {
+  await dbConnect()
+
+  const vendor = await VendorModel.findOne({
+    slug,
+    isActive: true,
+    monnifyIntegrationStatus: "active",
+  }).lean()
+
+  if (!vendor) return null
+
+  const menuQuery: Record<string, unknown> = {
+    vendorId: vendor._id,
+    isAvailable: true,
+  }
+
+  if (options.category && options.category !== "all") {
+    menuQuery.category = options.category
+  }
+
+  if (options.q) {
+    menuQuery.$or = [
+      { name: { $regex: options.q, $options: "i" } },
+      { description: { $regex: options.q, $options: "i" } },
+    ]
+  }
+
+  const [menuItems, allCategoryDocs] = await Promise.all([
+    MenuItem.find(menuQuery).sort({ createdAt: -1 }).lean(),
+    MenuItem.distinct("category", { vendorId: vendor._id }),
+  ])
+
+  const mappedItems = menuItems.map((item) => ({
+    ...serializeMenuItem(item),
+    tag: getItemTag(item.price),
+  }))
+
+  return {
+    vendor: serializeVendor(vendor as LeanVendor),
+    menuItems: mappedItems,
+    allCategories: allCategoryDocs,
+  }
 }

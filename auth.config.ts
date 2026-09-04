@@ -18,6 +18,30 @@ export const authConfig: NextAuthConfig = {
       // API routes always pass through to the route handler
       if (pathname.startsWith("/api")) return true
 
+      // ── Customer section ───────────────────────────────────────────────────────
+      const isCustomerLoginPage = pathname === "/customer/login"
+      const isCustomerProtected =
+        pathname.startsWith("/customer/") && !isCustomerLoginPage
+
+      // Redirect logged-in customers away from login page
+      if (isCustomerLoginPage && isLoggedIn) {
+        if (role === "customer")
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
+        if (role === "vendor")
+          return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        if (role === "vendor_manager")
+          return Response.redirect(new URL("/vendor-manager", nextUrl))
+        return Response.redirect(new URL("/admin", nextUrl))
+      }
+      // Redirect unauthenticated users trying to access protected customer pages
+      if (isCustomerProtected && !isLoggedIn) {
+        return Response.redirect(new URL("/customer/login", nextUrl))
+      }
+      // Only customers can access /customer/* protected pages
+      if (isCustomerProtected && isLoggedIn && role !== "customer") {
+        return Response.redirect(new URL("/", nextUrl))
+      }
+
       // ── Vendor section ───────────────────────────────────────────────────────
       const isVendorLoginPage = pathname === "/vendor/login"
       const isVendorPublicPage =
@@ -31,6 +55,8 @@ export const authConfig: NextAuthConfig = {
 
       // Redirect logged-in users away from vendor auth pages
       if ((isVendorLoginPage || isVendorPublicPage) && isLoggedIn) {
+        if (role === "customer")
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
         if (role === "vendor")
           return Response.redirect(new URL("/vendor/dashboard", nextUrl))
         if (role === "vendor_manager")
@@ -51,6 +77,8 @@ export const authConfig: NextAuthConfig = {
 
       if (isAdminLoginPage && isLoggedIn) {
         // Smart redirect based on role after login
+        if (role === "customer")
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
         if (role === "vendor_manager")
           return Response.redirect(new URL("/vendor-manager", nextUrl))
         if (role === "vendor")
@@ -71,6 +99,9 @@ export const authConfig: NextAuthConfig = {
         // vendors have no business here
         if (role === "vendor")
           return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        // customers have no business here
+        if (role === "customer")
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
       }
 
       // ── Vendor-manager dashboard section (vendor_manager only) ───────────────
@@ -79,6 +110,8 @@ export const authConfig: NextAuthConfig = {
         pathname.startsWith("/vendor-manager") && !isVendorManagerLoginPage
 
       if (isVendorManagerLoginPage && isLoggedIn) {
+        if (role === "customer")
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
         if (role === "vendor_manager")
           return Response.redirect(new URL("/vendor-manager", nextUrl))
         if (role === "vendor")
@@ -98,6 +131,10 @@ export const authConfig: NextAuthConfig = {
         // Regular vendors have no business here
         if (role === "vendor") {
           return Response.redirect(new URL("/vendor/dashboard", nextUrl))
+        }
+        // Customers have no business here
+        if (role === "customer") {
+          return Response.redirect(new URL("/customer/dashboard", nextUrl))
         }
       }
 

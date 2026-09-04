@@ -17,13 +17,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import type { MenuItem, MenuItemPayload } from "@/lib/types"
-import { MENU_CATEGORIES } from "@/lib/constants"
 import { menuItemFormSchema, type MenuItemFormValues } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller } from "react-hook-form"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { formatInputNumber, parseInputNumber } from "@/lib/format"
 import { MenuItemChecklists } from "./MenuItemChecklists"
+import { MenuItemBasicFields } from "./MenuItemBasicFields"
+import { MenuItemPreorderFields } from "./MenuItemPreorderFields"
 
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>
@@ -140,223 +141,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
     }
   }
 
-  const categories = MENU_CATEGORIES.filter((c) => c.value !== "all") as {
-    value: string
-    label: string
-    image: string
-  }[]
-
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <Controller
-        name="name"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Item name *</FieldLabel>
-            <Input
-              {...field}
-              id={field.name}
-              placeholder="e.g. Jollof Rice & Chicken"
-              aria-invalid={fieldState.invalid}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <Controller
-        name="description"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Description</FieldLabel>
-            <Textarea
-              {...field}
-              id={field.name}
-              placeholder="Short description of the item"
-              className="resize-none"
-              aria-invalid={fieldState.invalid}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-4">
-        <Controller
-          name="price"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Price (₦) *</FieldLabel>
-              <Input
-                {...field}
-                id={field.name}
-                type="text"
-                inputMode="numeric"
-                placeholder="e.g. 1,200"
-                aria-invalid={fieldState.invalid}
-                onChange={(e) => {
-                  const formatted = formatInputNumber(e.target.value)
-                  field.onChange(formatted)
-                }}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="category"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Category *</FieldLabel>
-              <Select
-                name={field.name}
-                value={field.value}
-                onValueChange={field.onChange}
-              >
-                <SelectTrigger
-                  id={field.name}
-                  aria-invalid={fieldState.invalid}
-                  className="h-11 w-full rounded-xl"
-                >
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Controller
-          name="availableFrom"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Available From</FieldLabel>
-              <Input
-                {...field}
-                id={field.name}
-                type="time"
-                aria-invalid={fieldState.invalid}
-                onClick={(e) => {
-                  try {
-                    e.currentTarget.showPicker()
-                  } catch {}
-                }}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="availableTo"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Available To</FieldLabel>
-              <Input
-                {...field}
-                id={field.name}
-                type="time"
-                aria-invalid={fieldState.invalid}
-                onClick={(e) => {
-                  try {
-                    e.currentTarget.showPicker()
-                  } catch {}
-                }}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Controller
-          name="quantityAvailable"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Quantity Available</FieldLabel>
-              <Input
-                {...field}
-                id={field.name}
-                type="number"
-                min="0"
-                placeholder="Unlimited if blank"
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-      </div>
-
+      <MenuItemBasicFields control={form.control} />
       <MenuItemChecklists control={form.control} />
-
-      <div className="grid grid-cols-2 gap-4">
-        <Controller
-          name="prepTimeValue"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Prep Time (Optional)</FieldLabel>
-              <Input
-                {...field}
-                id={field.name}
-                type="number"
-                min="1"
-                placeholder="e.g. 45"
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="prepTimeUnit"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Unit</FieldLabel>
-              <Select
-                name={field.name}
-                value={field.value}
-                onValueChange={field.onChange}
-              >
-                <SelectTrigger
-                  id={field.name}
-                  aria-invalid={fieldState.invalid}
-                  className="h-11 w-full rounded-xl"
-                >
-                  <SelectValue placeholder="Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="minutes">Minutes</SelectItem>
-                  <SelectItem value="hours">Hours</SelectItem>
-                  <SelectItem value="days">Days</SelectItem>
-                </SelectContent>
-              </Select>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-      </div>
 
       <Controller
         name="image"
@@ -374,87 +162,7 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         )}
       />
 
-      <div className="space-y-4 rounded-xl border bg-muted/10 p-4">
-        <Controller
-          name="isPreorder"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field orientation="horizontal" data-invalid={fieldState.invalid}>
-              <Switch
-                id={field.name}
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                aria-invalid={fieldState.invalid}
-              />
-              <div className="flex flex-col">
-                <FieldLabel htmlFor={field.name} className="cursor-pointer">
-                  Pre-order Item
-                </FieldLabel>
-                <span className="mt-1 text-xs text-muted-foreground">
-                  Tip: If this meal takes 2 or more hours to prepare, it is
-                  highly recommended to mark it as a Pre-order.
-                </span>
-              </div>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        {form.watch("isPreorder") && (
-          <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
-            <Controller
-              name="preorderEndDate"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>
-                    Closing Date & Time
-                  </FieldLabel>
-                  <Input
-                    {...field}
-                    id={field.name}
-                    type="datetime-local"
-                    aria-invalid={fieldState.invalid}
-                    onClick={(e) => {
-                      try {
-                        e.currentTarget.showPicker()
-                      } catch {}
-                    }}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="preorderDeliveryInfo"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={field.name}>
-                    Delivery Schedule
-                  </FieldLabel>
-                  <Input
-                    {...field}
-                    id={field.name}
-                    type="text"
-                    placeholder="e.g. Delivery on Tuesday"
-                    aria-invalid={fieldState.invalid}
-                  />
-                  <span className="text-[11px] text-muted-foreground">
-                    Optional: Leave blank to use the closing date automatically.
-                  </span>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </div>
-        )}
-      </div>
+      <MenuItemPreorderFields control={form.control} watch={form.watch} />
 
       <Controller
         name="isAvailable"

@@ -2,11 +2,7 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import AdminUserModel from "@/models/AdminUser"
 import { auth } from "@/auth"
-import { z } from "zod"
-
-const updateProfileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50),
-})
+import { updateAdminProfileSchema } from "@/lib/schemas"
 
 export async function PATCH(request: Request) {
   try {
@@ -21,7 +17,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const parsed = updateProfileSchema.safeParse(body)
+    const parsed = updateAdminProfileSchema.safeParse(body)
 
     if (!parsed.success) {
       return NextResponse.json(

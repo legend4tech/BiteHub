@@ -150,7 +150,7 @@ export default function ContactPage() {
               </div>
 
               {/* Quick Support Card */}
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 to-orange-600/5 p-6 backdrop-blur-xl">
+              <div className="to-primary/80/5 rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 p-6 backdrop-blur-xl">
                 <h3 className="mb-2 text-lg font-bold">Fastest Support</h3>
                 <p className="mb-4 text-sm text-muted-foreground">
                   Are you a vendor looking to join or having issues with an

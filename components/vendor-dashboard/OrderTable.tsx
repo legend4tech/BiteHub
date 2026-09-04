@@ -272,9 +272,9 @@ export function OrderTable({
               </div>
               {order.notes && (
                 <div className="mt-1 flex items-start gap-2.5 border-t border-border/50 pt-2">
-                  <MessageSquare className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                  <MessageSquare className="text-warning mt-0.5 size-4 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold tracking-wider text-amber-600 uppercase dark:text-amber-500">
+                    <p className="text-warning dark:text-warning text-[10px] font-bold tracking-wider uppercase">
                       Customer Note
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed font-medium text-foreground italic">
@@ -307,7 +307,7 @@ export function OrderTable({
                   )}
                   {order.paymentStatus === "pending" && (
                     <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 py-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                      <div className="bg-warning/10 text-warning dark:text-warning flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold">
                         <Clock className="size-4" /> Payment Pending
                       </div>
                       <button

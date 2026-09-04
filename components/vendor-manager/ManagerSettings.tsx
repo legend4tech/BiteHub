@@ -6,7 +6,6 @@ import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Shield, Loader2, User, Eye, EyeOff } from "lucide-react"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError } from "@/components/ui/field"
@@ -14,14 +13,13 @@ import {
   useAdminUpdatePassword,
   useAdminUpdateProfile,
 } from "@/hooks/mutations/useAdminMutations"
-import { adminPasswordSchema, type AdminPasswordValues } from "@/lib/schemas"
+import {
+  adminPasswordSchema,
+  updateAdminProfileSchema,
+  type AdminPasswordValues,
+  type UpdateAdminProfileValues,
+} from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
-
-const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50),
-})
-
-type ProfileValues = z.infer<typeof profileSchema>
 
 export function ManagerSettings() {
   const { update } = useSession()
@@ -41,8 +39,8 @@ export function ManagerSettings() {
     },
   })
 
-  const profileForm = useForm<ProfileValues>({
-    resolver: zodResolver(profileSchema),
+  const profileForm = useForm<UpdateAdminProfileValues>({
+    resolver: zodResolver(updateAdminProfileSchema),
     defaultValues: {
       name: "",
     },
@@ -77,7 +75,7 @@ export function ManagerSettings() {
     )
   }
 
-  const onProfileSubmit = (values: ProfileValues) => {
+  const onProfileSubmit = (values: UpdateAdminProfileValues) => {
     updateProfileMutation.mutate(
       { name: values.name },
       {

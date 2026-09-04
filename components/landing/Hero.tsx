@@ -209,7 +209,7 @@ export function Hero() {
             <div className="overflow-hidden pb-2">
               <div className="gsap-hero-title invisible">
                 campus meals on{" "}
-                <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   {APP_NAME}
                 </span>
                 ,
@@ -270,7 +270,7 @@ export function Hero() {
               ))}
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center gap-1 text-amber-500">
+              <div className="text-warning flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}

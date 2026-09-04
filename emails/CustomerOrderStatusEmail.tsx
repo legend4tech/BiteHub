@@ -12,6 +12,7 @@ import {
   Img,
 } from "@react-email/components"
 import * as React from "react"
+import { EMAIL_THEME } from "@/lib/email-theme"
 
 interface CustomerOrderStatusEmailProps {
   customerName: string
@@ -91,7 +92,7 @@ export default CustomerOrderStatusEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "var(--background)",
+  backgroundColor: EMAIL_THEME.colors.background,
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -100,8 +101,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "var(--card)",
-  border: "1px solid var(--border)",
+  backgroundColor: EMAIL_THEME.colors.background,
+  border: `1px solid ${EMAIL_THEME.colors.border}`,
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -123,11 +124,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const logoHighlight = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
 }
 
 const subHeader = {
@@ -136,11 +137,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
 }
 
 const divider = {
-  borderColor: "var(--border)",
+  borderColor: EMAIL_THEME.colors.border,
   margin: "20px 0",
 }
 
@@ -151,12 +152,12 @@ const contentSection = {
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "#374151",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 16px 0",
 }
 
 const statusBox = {
-  backgroundColor: "var(--muted)",
+  backgroundColor: EMAIL_THEME.colors.primaryLight,
   borderRadius: "8px",
   padding: "16px",
   margin: "20px 0",
@@ -167,18 +168,18 @@ const statusHeading = {
   margin: "0 0 8px 0",
   fontSize: "18px",
   fontWeight: "bold",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const statusDesc = {
   margin: "0",
   fontSize: "14px",
-  color: "#4b5563",
+  color: EMAIL_THEME.colors.textMuted,
 }
 
 const button = {
-  backgroundColor: "var(--primary)",
-  color: "var(--primary-foreground)",
+  backgroundColor: EMAIL_THEME.colors.primary,
+  color: EMAIL_THEME.colors.background,
   padding: "12px 24px",
   borderRadius: "8px",
   textDecoration: "none",
@@ -197,6 +198,6 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0 0 6px 0",
 }

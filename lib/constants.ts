@@ -53,6 +53,15 @@ export const VALID_ORDER_STATUSES = Object.values(
   ORDER_STATUS
 ) as OrderStatusType[]
 
+export const PAYMENT_STATUS = {
+  PENDING: "pending",
+  PAID: "paid",
+  FAILED: "failed",
+  REFUNDED: "refunded",
+} as const
+export type PaymentStatusType =
+  (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS]
+
 // Maintain backward compatibility with existing type
 export const ORDER_STATUS_STEPS: OrderStatus[] = [
   ORDER_STATUS.PENDING,

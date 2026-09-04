@@ -28,7 +28,7 @@ export function NotFoundState({
       >
         <div className="relative mb-6 flex justify-center">
           <div className="absolute inset-0 rounded-full bg-primary/10 blur-[80px]" />
-          <h1 className="relative z-10 bg-gradient-to-br from-primary to-orange-500 bg-clip-text text-8xl font-black text-transparent select-none md:text-9xl">
+          <h1 className="relative z-10 bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-8xl font-black text-transparent select-none md:text-9xl">
             404
           </h1>
         </div>

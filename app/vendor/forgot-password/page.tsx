@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
       {/* Background decorations */}
       <div className="pointer-events-none absolute top-0 left-0 -mt-20 -ml-20 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 bottom-0 -mr-20 -mb-20 h-96 w-96 rounded-full bg-orange-600/5 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 bottom-0 -mr-20 -mb-20 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
 
       <div className="z-10 w-full max-w-[440px]">
         {/* Brand Header */}

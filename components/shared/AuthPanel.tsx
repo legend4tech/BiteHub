@@ -74,7 +74,7 @@ export function AuthPanel({
           />
           {/* Accent lines */}
           <div className="absolute top-1/3 left-1/4 z-0 h-48 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
-          <div className="absolute top-1/2 right-1/4 z-0 h-32 w-px bg-gradient-to-b from-transparent via-orange-500/20 to-transparent" />
+          <div className="absolute top-1/2 right-1/4 z-0 h-32 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
         </>
       )}
       {!bgImage && !isAdmin && (

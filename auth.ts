@@ -6,6 +6,7 @@ import dbConnect from "@/lib/db"
 import AdminUser from "@/models/AdminUser"
 import VendorUserModel from "@/models/VendorUser"
 import VendorModel from "@/models/Vendor"
+import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
@@ -64,6 +65,11 @@ async function validateSession(token: JWT): Promise<JWT | null> {
       }
     } else if (token.role === "admin" || token.role === "superadmin") {
       const dbUser = await AdminUser.findById(token.id)
+        .select("isActive")
+        .lean()
+      if (!dbUser || !dbUser.isActive) return null
+    } else if (token.role === "customer") {
+      const dbUser = await CustomerModel.findById(token.id)
         .select("isActive")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
@@ -176,6 +182,56 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error
           console.error("[admin-login authorize]", error)
+          throw new CustomAuthError(
+            "Database or network error during authentication."
+          )
+        }
+      },
+    }),
+
+    // ── Customer Login ─────────────────────────────────────────────────────────
+    CredentialsProvider({
+      id: "customer-login",
+      name: "Customer",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        try {
+          const parsed = credentialsSchema.safeParse(credentials)
+          if (!parsed.success) throw new CustomAuthError("Invalid inputs")
+
+          const { email, password } = parsed.data
+          await checkRateLimit(email)
+          await dbConnect()
+
+          const user = await CustomerModel.findOne({
+            email: email.toLowerCase(),
+          })
+          if (!user || !user.isActive || !user.password) {
+            throw new CustomAuthError("Invalid credentials")
+          }
+
+          const passwordsMatch = await bcrypt.compare(password, user.password)
+          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials")
+
+          // Update last login (fire and forget — non-blocking)
+          CustomerModel.findByIdAndUpdate(user._id, {
+            lastLoginAt: new Date(),
+          }).exec()
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: "customer",
+            vendorId: undefined,
+            image: undefined,
+          }
+        } catch (error) {
+          if (error instanceof CredentialsSignin) throw error
+          console.error("[customer-login authorize]", error)
           throw new CustomAuthError(
             "Database or network error during authentication."
           )

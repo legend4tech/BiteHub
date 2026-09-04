@@ -31,7 +31,7 @@ export interface IOrder extends Document {
     | "ready"
     | "completed"
     | "cancelled"
-  paymentMethod: "monnify"
+  paymentMethod: "monnify" | "wallet"
   paymentStatus: "pending" | "paid" | "failed"
   monnifyReference?: string
   isDisbursed?: boolean
@@ -85,7 +85,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentMethod: {
       type: String,
-      enum: ["monnify"],
+      enum: ["monnify", "wallet"],
       default: "monnify",
     },
     paymentStatus: {

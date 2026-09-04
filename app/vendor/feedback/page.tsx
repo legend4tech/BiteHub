@@ -90,7 +90,7 @@ export default function VendorFeedbackPage() {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`size-3.5 ${feedback.rating >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
+                            className={`size-3.5 ${feedback.rating >= star ? "text-warning fill-rating" : "text-muted-foreground"}`}
                           />
                         ))}
                       </div>

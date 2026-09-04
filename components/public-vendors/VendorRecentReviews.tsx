@@ -1,17 +1,9 @@
 import Link from "next/link"
 import { Star, UserCircle2, ArrowRight } from "lucide-react"
-
-interface RecentReview {
-  id: string
-  rating: number
-  comments?: string
-  createdAt: string
-  isAnonymous: boolean
-  customerName: string
-}
+import type { VendorReview } from "@/lib/types"
 
 interface VendorRecentReviewsProps {
-  reviews: RecentReview[]
+  reviews: VendorReview[]
   vendorSlug: string
   totalReviews?: number
 }
@@ -60,7 +52,7 @@ export function VendorRecentReviews({
                       {review.customerName}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(review.createdAt)}
+                      {review.createdAt ? formatDate(review.createdAt) : "—"}
                     </p>
                   </div>
                 </div>

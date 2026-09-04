@@ -14,6 +14,7 @@ import {
 } from "@react-email/components"
 import * as React from "react"
 import { SUPPORT_EMAIL } from "@/lib/constants"
+import { EMAIL_THEME } from "@/lib/email-theme"
 
 interface OrderItem {
   name: string
@@ -169,13 +170,13 @@ export default OrderReceiptEmail
 // ─── Styles ─────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "var(--background)",
+  backgroundColor: EMAIL_THEME.colors.background,
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
-  backgroundColor: "var(--card)",
+  backgroundColor: EMAIL_THEME.colors.background,
   margin: "40px auto",
   padding: "0",
   borderRadius: "16px",
@@ -185,7 +186,7 @@ const container = {
 }
 
 const headerSection = {
-  backgroundColor: "var(--primary-foreground)",
+  backgroundColor: EMAIL_THEME.colors.background,
   padding: "32px 40px",
   textAlign: "center" as const,
 }
@@ -200,24 +201,24 @@ const logoText = {
   fontWeight: "800",
   letterSpacing: "-0.5px",
   margin: "12px 0 4px",
-  color: "var(--foreground)", // foreground
+  color: EMAIL_THEME.colors.foreground, // foreground
 }
 
 const logoHighlight = {
-  color: "var(--primary)", // primary
+  color: EMAIL_THEME.colors.primary, // primary
 }
 
 const subHeader = {
   fontSize: "14px",
   fontWeight: "600",
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
   margin: "0",
   textTransform: "uppercase" as const,
   letterSpacing: "1px",
 }
 
 const divider = {
-  borderTop: "1px solid var(--border)",
+  borderTop: `1px solid ${EMAIL_THEME.colors.border}`,
   margin: "0",
 }
 
@@ -228,19 +229,19 @@ const contentSection = {
 const heading = {
   fontSize: "24px",
   fontWeight: "700",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 24px",
 }
 
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0 0 16px",
 }
 
 const detailsSection = {
-  backgroundColor: "var(--muted)",
+  backgroundColor: EMAIL_THEME.colors.primaryLight,
   padding: "24px",
   borderRadius: "12px",
   margin: "32px 0",
@@ -249,7 +250,7 @@ const detailsSection = {
 const sectionTitle = {
   fontSize: "13px",
   fontWeight: "700",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   textTransform: "uppercase" as const,
   letterSpacing: "1px",
   margin: "0 0 16px",
@@ -264,12 +265,12 @@ const itemRow = {
 const itemText = {
   display: "table-cell",
   fontSize: "15px",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0",
 }
 
 const itemQty = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
   fontWeight: "600",
   marginRight: "6px",
 }
@@ -277,14 +278,14 @@ const itemQty = {
 const itemPrice = {
   display: "table-cell",
   fontSize: "15px",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   fontWeight: "600",
   textAlign: "right" as const,
   margin: "0",
 }
 
 const summaryDivider = {
-  borderTop: "1px dashed var(--border)",
+  borderTop: `1px dashed ${EMAIL_THEME.colors.border}`,
   margin: "16px 0",
 }
 
@@ -297,14 +298,14 @@ const summaryRow = {
 const summaryLabel = {
   display: "table-cell",
   fontSize: "14px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0",
 }
 
 const summaryValue = {
   display: "table-cell",
   fontSize: "14px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   textAlign: "right" as const,
   margin: "0",
 }
@@ -314,14 +315,14 @@ const totalRow = {
   width: "100%",
   marginTop: "16px",
   paddingTop: "16px",
-  borderTop: "1px solid var(--border)",
+  borderTop: `1px solid ${EMAIL_THEME.colors.border}`,
 }
 
 const totalLabel = {
   display: "table-cell",
   fontSize: "16px",
   fontWeight: "700",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0",
 }
 
@@ -329,7 +330,7 @@ const totalValue = {
   display: "table-cell",
   fontSize: "18px",
   fontWeight: "800",
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
   textAlign: "right" as const,
   margin: "0",
 }
@@ -340,9 +341,9 @@ const buttonContainer = {
 }
 
 const button = {
-  backgroundColor: "var(--primary)",
+  backgroundColor: EMAIL_THEME.colors.primary,
   borderRadius: "8px",
-  color: "var(--primary-foreground)",
+  color: EMAIL_THEME.colors.background,
   fontSize: "16px",
   fontWeight: "600",
   textDecoration: "none",
@@ -352,23 +353,23 @@ const button = {
 }
 
 const link = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
   textDecoration: "underline",
 }
 
 const footerSection = {
-  backgroundColor: "var(--muted)",
+  backgroundColor: EMAIL_THEME.colors.primaryLight,
   padding: "32px 40px",
   textAlign: "center" as const,
 }
 
 const footerText = {
   fontSize: "13px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0 0 8px",
 }
 
 const footerLink = {
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   textDecoration: "underline",
 }

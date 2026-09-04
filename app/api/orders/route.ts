@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
+import Customer from "@/models/Customer"
+import { auth } from "@/auth"
 import MenuItem from "@/models/MenuItem"
 import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
@@ -17,6 +20,7 @@ import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
 import { sendOrderInitiatedEmail } from "@/lib/mail"
 import { sendVendorLowStockAlertEmail } from "@/lib/vendorAlertMail"
+import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import {
   resolveDeliveryFee,
   validateOrderItemsAndCalculateTotal,
@@ -80,7 +84,46 @@ export async function POST(request: Request) {
       location,
       exactLocation,
       notes,
+      paymentMethod,
     } = parsedBody.data
+
+    const session = await auth()
+
+    // Fetch existing customer record (if any)
+    const existingCustomer = await Customer.findOne({
+      email: customerEmail.toLowerCase(),
+    }).lean()
+
+    if (existingCustomer) {
+      // Any existing customer — with or without a password — must be logged in to order again.
+      // First order is allowed as a guest; every subsequent order requires an account.
+      if (
+        !session ||
+        session.user?.email?.toLowerCase() !== customerEmail.toLowerCase()
+      ) {
+        const hasPassword = !!existingCustomer.password
+        return NextResponse.json(
+          {
+            error: hasPassword
+              ? "An account with this email exists. Please log in to continue."
+              : "Please create a free BiteHub account to continue ordering.",
+            requiresLogin: true,
+            requiresSignup: !hasPassword,
+          },
+          { status: 401 }
+        )
+      }
+    } else {
+      // First-time buyer: silently create a passwordless guest account
+      const randomReferral = crypto.randomBytes(4).toString("hex")
+      await Customer.create({
+        name: customerName,
+        email: customerEmail.toLowerCase(),
+        phone: customerPhone,
+        referralCode: `REF-${randomReferral.toUpperCase()}`,
+        isActive: true,
+      })
+    }
 
     // Verify vendor exists and is active before accepting the order
     const vendor = await Vendor.findById(vendorId).lean()
@@ -138,7 +181,9 @@ export async function POST(request: Request) {
     // Gross-up formula: collect exactly enough from the customer so that after Monnify
     // takes their 1.5% cut of the total, the vendor absorbs zero processing fee.
     // See lib/fees.ts for the full derivation.
-    const serviceFee = computeMonnifyServiceFee(calculatedTotal)
+    // Note: No service fee applies for wallet payments.
+    const serviceFee =
+      paymentMethod === "wallet" ? 0 : computeMonnifyServiceFee(calculatedTotal)
     const finalTotal = calculatedTotal + serviceFee
 
     // Calculate exact revenue split
@@ -157,57 +202,91 @@ export async function POST(request: Request) {
     const orderId = generateOrderId()
     const paymentReference = `BH-PAY-${orderId}`
 
-    if (!vendor.monnifySubAccountCode) {
-      return NextResponse.json(
-        {
-          error:
-            "This vendor is not connected to Monnify. Cannot process payment.",
-        },
-        { status: 400 }
-      )
-    }
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"
     const redirectUrl = `${appUrl}/order/${orderId}`
 
-    // Use splitAmount (exact NGN) instead of splitPercentage.
-    // vendorRevenue = calculatedTotal × (1 - platformFee%) — the vendor's clean share of
-    // the base subtotal (food + delivery), before the service fee.
-    //
-    // Why splitAmount and NOT splitPercentage:
-    //   - The customer pays a gross-up service fee on top of the base total.
-    //   - That service fee is sized to exactly cover Monnify's 1.5% processing charge.
-    //   - With splitPercentage, the service fee gets split 98/2 between vendor and platform,
-    //     so the platform's 2% commission is nearly wiped out by Monnify's charge.
-    //   - With splitAmount, the vendor receives exactly their base share. The remaining
-    //     balance (service fee + platform commission) stays with the merchant contract, and
-    //     Monnify deducts its fee from that remainder — leaving the platform with a clean
-    //     net commission ≈ platformFee% × base.
-    const vendorSplitAmount = Math.round(vendorRevenue * 100) / 100
+    let checkoutUrl = redirectUrl
+    let transactionReference = ""
+    let orderStatus: string = ORDER_STATUS.PENDING
+    let paymentStatus: string = "pending"
 
-    let checkoutUrl: string
-    let transactionReference: string
-    try {
-      const monnifyInit = await initMonnifyTransaction({
+    if (paymentMethod === "wallet") {
+      if (!session?.user?.email) {
+        return NextResponse.json(
+          { error: "Please log in to pay with wallet" },
+          { status: 401 }
+        )
+      }
+      const customer = await Customer.findOne({
+        email: session.user.email,
+      }).lean()
+      if (!customer) {
+        return NextResponse.json(
+          { error: "Customer not found" },
+          { status: 404 }
+        )
+      }
+
+      const Wallet = (await import("@/models/Wallet")).default
+      const wallet = await Wallet.findOne({ customerId: customer._id })
+
+      if (!wallet || wallet.balance < finalTotal) {
+        return NextResponse.json(
+          { error: "Insufficient wallet balance" },
+          { status: 400 }
+        )
+      }
+
+      wallet.balance -= finalTotal
+      await wallet.save()
+
+      const WalletTransaction = (await import("@/models/WalletTransaction"))
+        .default
+      await WalletTransaction.create({
+        customerId: customer._id,
+        type: "order_payment",
         amount: finalTotal,
-        paymentReference,
-        customerName,
-        customerEmail,
-        paymentDescription: `BiteHub Order ${orderId} from ${finalVendorName}`,
-        vendorSubAccountCode: vendor.monnifySubAccountCode,
-        vendorSplitAmount,
-        redirectUrl,
+        reference: `ORD-${orderId}`,
+        description: `Payment for order ${orderId}`,
       })
-      checkoutUrl = monnifyInit.checkoutUrl
-      transactionReference = monnifyInit.transactionReference
-    } catch (monnifyError: unknown) {
-      const errMsg =
-        monnifyError instanceof Error ? monnifyError.message : "Unknown error"
-      console.error("[POST /api/orders] Monnify init failed:", errMsg)
-      return NextResponse.json(
-        { error: "Failed to initialize payment. Please try again." },
-        { status: 502 }
-      )
+
+      orderStatus = ORDER_STATUS.CONFIRMED
+      paymentStatus = "paid"
+    } else {
+      if (!vendor.monnifySubAccountCode) {
+        return NextResponse.json(
+          {
+            error:
+              "This vendor is not connected to Monnify. Cannot process payment.",
+          },
+          { status: 400 }
+        )
+      }
+
+      const vendorSplitAmount = Math.round(vendorRevenue * 100) / 100
+
+      try {
+        const monnifyInit = await initMonnifyTransaction({
+          amount: finalTotal,
+          paymentReference,
+          customerName,
+          customerEmail,
+          paymentDescription: `BiteHub Order ${orderId} from ${finalVendorName}`,
+          vendorSubAccountCode: vendor.monnifySubAccountCode,
+          vendorSplitAmount,
+          redirectUrl,
+        })
+        checkoutUrl = monnifyInit.checkoutUrl
+        transactionReference = monnifyInit.transactionReference
+      } catch (monnifyError: unknown) {
+        const errMsg =
+          monnifyError instanceof Error ? monnifyError.message : "Unknown error"
+        console.error("[POST /api/orders] Monnify init failed:", errMsg)
+        return NextResponse.json(
+          { error: "Failed to initialize payment. Please try again." },
+          { status: 502 }
+        )
+      }
     }
 
     // Reserve quantity by decrementing immediately
@@ -268,22 +347,66 @@ export async function POST(request: Request) {
       platformCommission,
       vendorRevenue,
       totalAmount: finalTotal,
-      status: ORDER_STATUS.PENDING,
-      paymentMethod: "monnify",
-      paymentStatus: "pending",
-      monnifyReference: paymentReference,
+      status: orderStatus,
+      paymentMethod,
+      paymentStatus,
+      monnifyReference:
+        paymentMethod === "monnify" ? paymentReference : undefined,
       expiresAt: new Date(Date.now() + 30 * 60000), // 30 minutes from now
     })
 
-    // Float the promise so it sends asynchronously without blocking the checkout redirect
-    sendOrderInitiatedEmail(
-      customerEmail,
-      customerName,
-      order.orderId,
-      finalVendorName,
-      finalTotal,
-      redirectUrl
-    ).catch(console.error)
+    if (paymentMethod === "wallet") {
+      // For wallet, it is paid instantly. Fire all completion hooks now.
+      const { sendOrderReceiptEmail, sendVendorNewOrderEmail } =
+        await import("@/lib/mail")
+
+      sendOrderReceiptEmail(
+        customerEmail,
+        customerName,
+        orderId,
+        finalVendorName,
+        finalTotal,
+        deliveryFee,
+        serviceFee,
+        items,
+        redirectUrl
+      ).catch(console.error)
+
+      if (finalWhatsapp) {
+        sendVendorOrderNotification(
+          finalWhatsapp,
+          customerName,
+          orderId,
+          vendorRevenue
+        ).catch(console.error)
+      }
+
+      sendVendorNewOrderEmail(
+        String(vendorId),
+        finalVendorName,
+        orderId,
+        customerName,
+        customerPhone,
+        location,
+        items,
+        deliveryFee,
+        serviceFee,
+        finalTotal,
+        vendorRevenue,
+        platformCommission,
+        notes || undefined
+      ).catch(console.error)
+    } else {
+      // Float the promise so it sends asynchronously without blocking the checkout redirect
+      sendOrderInitiatedEmail(
+        customerEmail,
+        customerName,
+        order.orderId,
+        finalVendorName,
+        finalTotal,
+        redirectUrl
+      ).catch(console.error)
+    }
 
     return NextResponse.json(
       { orderId: order.orderId, checkoutUrl, transactionReference },

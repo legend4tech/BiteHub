@@ -11,6 +11,7 @@ import {
   Img,
 } from "@react-email/components"
 import * as React from "react"
+import { EMAIL_THEME } from "@/lib/email-theme"
 
 interface AdminOrderCancelledEmailProps {
   orderId: string
@@ -74,7 +75,7 @@ export const AdminOrderCancelledEmail = ({
                   display: "block",
                   marginTop: "8px",
                   marginBottom: "8px",
-                  color: "var(--foreground)",
+                  color: EMAIL_THEME.colors.foreground,
                 }}
               >
                 {monnifyReference || "N/A (Check BiteHub Admin Dashboard)"}
@@ -104,7 +105,7 @@ export default AdminOrderCancelledEmail
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const main = {
-  backgroundColor: "var(--background)",
+  backgroundColor: EMAIL_THEME.colors.background,
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 }
@@ -113,8 +114,8 @@ const container = {
   margin: "0 auto",
   padding: "20px 0 48px",
   maxWidth: "580px",
-  backgroundColor: "var(--card)",
-  border: "1px solid var(--border)",
+  backgroundColor: EMAIL_THEME.colors.background,
+  border: `1px solid ${EMAIL_THEME.colors.border}`,
   borderRadius: "16px",
   marginTop: "40px",
   overflow: "hidden",
@@ -136,11 +137,11 @@ const logoText = {
   fontSize: "28px",
   fontWeight: "900",
   letterSpacing: "-0.05em",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
 }
 
 const logoHighlight = {
-  color: "var(--primary)",
+  color: EMAIL_THEME.colors.primary,
 }
 
 const subHeader = {
@@ -149,11 +150,11 @@ const subHeader = {
   fontWeight: "600",
   textTransform: "uppercase" as const,
   letterSpacing: "0.08em",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
 }
 
 const divider = {
-  borderColor: "var(--border)",
+  borderColor: EMAIL_THEME.colors.border,
   margin: "20px 0",
 }
 
@@ -164,26 +165,26 @@ const contentSection = {
 const heading = {
   fontSize: "20px",
   fontWeight: "700",
-  color: "var(--foreground)",
+  color: EMAIL_THEME.colors.foreground,
   marginBottom: "16px",
 }
 
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
-  color: "#374151",
+  color: EMAIL_THEME.colors.foreground,
   margin: "0 0 16px 0",
 }
 
 const warningText = {
   fontSize: "14px",
   lineHeight: "20px",
-  color: "var(--status-cancelled-foreground)",
-  backgroundColor: "var(--status-cancelled)",
+  color: `${EMAIL_THEME.colors.destructive}`,
+  backgroundColor: `${EMAIL_THEME.colors.destructiveBackground}`,
   padding: "20px",
   borderRadius: "8px",
   margin: "24px 0",
-  border: "1px solid var(--status-cancelled-foreground)",
+  border: `1px solid ${EMAIL_THEME.colors.destructive}`,
 }
 
 const footerSection = {
@@ -194,6 +195,6 @@ const footerSection = {
 const footerText = {
   fontSize: "12px",
   lineHeight: "18px",
-  color: "var(--muted-foreground)",
+  color: EMAIL_THEME.colors.textMuted,
   margin: "0 0 6px 0",
 }
