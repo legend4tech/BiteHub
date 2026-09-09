@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Plus, Minus, ExternalLink, UtensilsCrossed, Clock } from "lucide-react"
+import { Plus, Minus, ExternalLink, UtensilsCrossed, Clock, Trash2 } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/types/vendor"
 import { useState } from "react"
@@ -242,22 +242,18 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           </p>
 
           {qty > 0 && !isCurrentlyAvailable ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="text-[10px] font-bold text-destructive">
-                Unavailable
-              </span>
-              <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  updateQuantity(item.id, 0)
-                }}
-                aria-label="Remove from cart"
-                className="rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-destructive uppercase transition-colors hover:bg-destructive/20 active:scale-95"
-              >
-                Remove
-              </button>
-            </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                updateQuantity(item.id, 0)
+              }}
+              aria-label="Remove from cart"
+              className="group flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-[10px] font-bold tracking-wider text-destructive uppercase transition-all duration-300 hover:bg-destructive/20 dark:hover:bg-destructive/30 active:scale-95"
+            >
+              <Trash2 className="size-3.5 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+              <span>Remove</span>
+            </button>
           ) : qty === 0 ? (
             <button
               onClick={handleAdd}

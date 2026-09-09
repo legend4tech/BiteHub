@@ -46,7 +46,7 @@ export function CartSummary({ onCheckout }: CartSummaryProps) {
           <div className="flex items-center gap-2">
             <Button
               onClick={onCheckout}
-              className="h-9 rounded-xl border-0 bg-white px-4 font-semibold text-primary shadow-none hover:bg-white/90"
+              className="h-9 rounded-xl border-0 bg-white px-4 font-semibold text-primary shadow-none transition-transform hover:bg-white/90 active:scale-95"
             >
               <ShoppingBag className="mr-2 size-4" />
               Place Order

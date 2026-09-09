@@ -8,31 +8,53 @@ import { Field, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 import { useUpdateCustomerProfile } from "@/hooks/customer/useCustomerMutations"
-import { Loader2, User, MapPin } from "lucide-react"
+import { Loader2, User, MapPin, GraduationCap } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { getSchoolOptions, getCampusOptions } from "@/lib/config/campus"
+import { useCart } from "@/hooks/useCart"
+import { useSystemLandmarks } from "@/hooks/shared/useLandmarks"
 
 export default function CustomerSettingsPage() {
   const { data: profile, isLoading, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
+  const { clearCart } = useCart()
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { isDirty },
   } = useForm({
     defaultValues: {
       name: "",
       phone: "",
+      school: "",
+      campus: "",
       preferredLandmark: "",
       preferredExactLocation: "",
     },
   })
+
+  const currentSchool = watch("school")
+  const currentCampus = watch("campus")
+  const { data: systemLandmarks = [], isLoading: loadingLandmarks } =
+    useSystemLandmarks(currentSchool, currentCampus)
 
   useEffect(() => {
     if (profile) {
       reset({
         name: profile.name || "",
         phone: profile.phone || "",
+        school: profile.school || "",
+        campus: profile.campus || "",
         preferredLandmark:
           profile.preferredLocation || profile.preferredLandmark || "",
         preferredExactLocation: profile.preferredExactLocation || "",
@@ -50,20 +72,34 @@ export default function CustomerSettingsPage() {
   const onSubmit = async (values: {
     name: string
     phone: string
+    school: string
+    campus: string
     preferredLandmark: string
     preferredExactLocation: string
   }) => {
+    // If campus or school changed, clear the cart to prevent checkout bugs
+    const locationChanged =
+      profile &&
+      (profile.school !== values.school || profile.campus !== values.campus)
+
     updateProfile.mutate(
       {
         name: values.name,
         phone: values.phone,
+        school: values.school,
+        campus: values.campus,
         preferredLocation: values.preferredLandmark, // Using preferredLocation for display compatibility
         preferredLandmark: values.preferredLandmark,
         preferredExactLocation: values.preferredExactLocation,
       },
       {
         onSuccess: () => {
-          toast.success("Profile updated successfully")
+          if (locationChanged) {
+            clearCart()
+            toast.success("Profile updated and cart cleared due to campus change.")
+          } else {
+            toast.success("Profile updated successfully")
+          }
           reset(values) // Reset to new values to clear isDirty state
         },
         onError: (error) => {
@@ -144,6 +180,92 @@ export default function CustomerSettingsPage() {
           </div>
         </div>
 
+        {/* School & Campus Preferences */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-6 py-4">
+            <GraduationCap className="size-5 text-primary" />
+            <h2 className="font-semibold">School & Campus</h2>
+          </div>
+          <div className="space-y-4 p-6">
+            <p className="text-sm text-muted-foreground mb-2">
+              Note: Changing your school or campus will automatically clear your current cart.
+            </p>
+            <Controller
+              name="school"
+              control={control}
+              rules={{ required: "School is required" }}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    School
+                  </label>
+                  <Select
+                    onValueChange={(val) => {
+                      field.onChange(val)
+                      setValue("campus", "", { shouldDirty: true })
+                      setValue("preferredLandmark", "", { shouldDirty: true })
+                      setValue("preferredExactLocation", "", { shouldDirty: true })
+                      toast.info("Please reconfigure your Default Delivery Location")
+                    }}
+                    value={field.value}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Select your school" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getSchoolOptions().map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="campus"
+              control={control}
+              rules={{ required: "Campus is required" }}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <label className="text-sm font-medium" htmlFor={field.name}>
+                    Campus
+                  </label>
+                  <Select
+                    onValueChange={(val) => {
+                      field.onChange(val)
+                      setValue("preferredLandmark", "", { shouldDirty: true })
+                      setValue("preferredExactLocation", "", { shouldDirty: true })
+                      toast.info("Please reconfigure your Default Delivery Location")
+                    }}
+                    value={field.value}
+                    disabled={!currentSchool}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue placeholder="Select your campus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCampusOptions(control._formValues.school).map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </div>
+        </div>
+
         {/* Delivery Preferences */}
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-6 py-4">
@@ -159,12 +281,32 @@ export default function CustomerSettingsPage() {
                   <label className="text-sm font-medium" htmlFor={field.name}>
                     Nearest Landmark (Delivery Zone)
                   </label>
-                  <Input
-                    {...field}
-                    id={field.name}
-                    placeholder="e.g. Gate 1"
-                    aria-invalid={fieldState.invalid}
-                  />
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!currentSchool || !currentCampus || loadingLandmarks}
+                  >
+                    <SelectTrigger id={field.name}>
+                      <SelectValue
+                        placeholder={
+                          loadingLandmarks
+                            ? "Loading landmarks..."
+                            : !currentSchool || !currentCampus
+                              ? "Select school and campus first"
+                              : systemLandmarks.length === 0
+                                ? "No landmarks available"
+                                : "Select a landmark"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {systemLandmarks.map((landmark) => (
+                        <SelectItem key={landmark.id} value={landmark.name}>
+                          {landmark.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

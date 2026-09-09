@@ -272,9 +272,14 @@ function SidebarContent({
                   description="This will log you out of the secure admin dashboard. You will need to re-authenticate to access it again."
                   confirmText="Yes, log out"
                   isDestructive
-                  onConfirm={() => {
-                    toast.success("Successfully logged out")
-                    signOut({ callbackUrl: "/vendor-manager/login" })
+                  onConfirm={async () => {
+                    try {
+                      await signOut({ redirect: false })
+                      toast.success("Successfully logged out")
+                      window.location.href = "/vendor-manager/login"
+                    } catch (error) {
+                      toast.error("Network error. Could not log out.")
+                    }
                   }}
                 />
               </span>

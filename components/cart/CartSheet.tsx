@@ -28,11 +28,22 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
   // State for the Auth Intercept view
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+  const [prevOpen, setPrevOpen] = useState(open)
 
-  // Reset auth prompt when sheet closes
-  const handleClose = () => {
-    setShowAuthPrompt(false)
+  // Reset auth prompt state cleanly when the sheet opens (without causing an extra useEffect re-render)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setShowAuthPrompt(false)
+    }
+  }
+
+  // Smooth navigation: close the drawer, wait for animation, then navigate
+  const handleNavigate = (path: string) => {
     onClose()
+    setTimeout(() => {
+      router.push(path)
+    }, 300)
   }
 
   const handleCheckoutClick = () => {
@@ -40,8 +51,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
     if (isCustomer) {
       // Logged in — go straight to checkout
-      handleClose()
-      router.push("/checkout")
+      handleNavigate("/checkout")
     } else {
       // Guest — show auth prompt
       setShowAuthPrompt(true)
@@ -49,7 +59,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent
         side="right"
         className="flex w-full flex-col p-0 sm:max-w-md"
@@ -60,7 +70,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
             <ShoppingBag className="size-5" />
             {showAuthPrompt ? "Almost there" : "Your Cart"}
           </SheetTitle>
-          <Button variant="ghost" size="icon-sm" onClick={handleClose}>
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <span className="sr-only">Close</span>
             <svg
               width="15"
@@ -90,7 +100,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
               <p className="text-sm text-muted-foreground">
                 Looks like you haven&apos;t added anything yet.
               </p>
-              <Button variant="outline" className="mt-4" onClick={handleClose}>
+              <Button variant="outline" className="mt-4" onClick={onClose}>
                 Continue Browsing
               </Button>
             </div>
@@ -111,8 +121,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                   variant="hero"
                   size="xl"
                   onClick={() => {
-                    handleClose()
-                    router.push("/customer/signup")
+                    handleNavigate("/customer/signup?redirect=/checkout")
                   }}
                 >
                   Create Free Account
@@ -121,8 +130,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                   variant="outline"
                   size="xl"
                   onClick={() => {
-                    handleClose()
-                    router.push("/customer/login")
+                    handleNavigate("/customer/login?redirect=/checkout")
                   }}
                 >
                   Log In
@@ -144,8 +152,7 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                 variant="ghost"
                 size="xl"
                 onClick={() => {
-                  handleClose()
-                  router.push("/checkout")
+                  handleNavigate("/checkout")
                 }}
                 className="text-muted-foreground"
               >

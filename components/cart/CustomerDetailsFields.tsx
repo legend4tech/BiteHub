@@ -118,37 +118,7 @@ export function CustomerDetailsFields({
           />
         </div>
 
-        <Controller
-          name="notes"
-          control={control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <Textarea
-                {...field}
-                id={field.name}
-                placeholder="Notes for vendor (optional)"
-                rows={2}
-                className="resize-none"
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
 
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-semibold">Pay with Monnify</h4>
-              <p className="text-xs text-muted-foreground">
-                Secure, automated payments
-              </p>
-            </div>
-            <div className="flex h-8 items-center rounded bg-white px-2 shadow-sm">
-              <span className="font-bold text-primary">monnify</span>
-            </div>
-          </div>
-        </div>
       </div>
     )
   }
@@ -301,37 +271,7 @@ export function CustomerDetailsFields({
         )}
       />
 
-      <Controller
-        name="notes"
-        control={control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <Textarea
-              {...field}
-              id={field.name}
-              placeholder="Notes for vendor (optional)"
-              rows={2}
-              className="resize-none"
-              aria-invalid={fieldState.invalid}
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
 
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-semibold">Pay with Monnify</h4>
-            <p className="text-xs text-muted-foreground">
-              Secure, automated payments
-            </p>
-          </div>
-          <div className="flex h-8 items-center rounded bg-white px-2 shadow-sm">
-            <span className="font-bold text-primary">monnify</span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

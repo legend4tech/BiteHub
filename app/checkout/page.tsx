@@ -25,9 +25,11 @@ import { useVendorFee } from "@/hooks/vendor/useVendorFee"
 import { useVendorDeliveryZones } from "@/hooks/vendor/useVendorDeliveryZones"
 import Link from "next/link"
 import type { DeliveryZone } from "@/types/vendor"
+import { CheckoutSkeleton } from "@/components/shared/skeletons/PublicSkeletons"
+import { OrderSummaryCard } from "@/components/cart/OrderSummaryCard"
 
 export default function CheckoutPage() {
-  const { cart, clearCart, syncVendorDetails, total } = useCart()
+  const { cart, clearCart, syncVendorDetails, total, isHydrated } = useCart()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -104,15 +106,23 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (deliveryZones.length > 0 && selectedLocation && cart.vendorId) {
       let fee = 0
+      let isValid = false
       deliveryZones.forEach((z) => {
-        if (z.name === selectedLocation) fee = z.fee
+        if (z.name === selectedLocation) { fee = z.fee; isValid = true }
         z.subLandmarks.forEach((s) => {
-          if (`${z.name} - ${s.name}` === selectedLocation) fee = s.fee
+          if (`${z.name} - ${s.name}` === selectedLocation) { fee = s.fee; isValid = true }
         })
       })
 
-      if (cart.vendorDeliveryFee !== fee) {
-        syncVendorDetails(cart.vendorId, fee)
+      if (isValid) {
+        if (cart.vendorDeliveryFee !== fee) {
+          syncVendorDetails(cart.vendorId, fee)
+        }
+      } else {
+        // Saved location is invalid for this vendor! Reset it.
+        form.setValue("location", "", { shouldValidate: true })
+        syncVendorDetails(cart.vendorId, 0)
+        toast.error("Your saved delivery zone is not supported by this vendor. Please select a valid zone.")
       }
     }
   }, [
@@ -121,11 +131,13 @@ export default function CheckoutPage() {
     cart.vendorId,
     cart.vendorDeliveryFee,
     syncVendorDetails,
+    form,
   ])
 
   const paymentMethod = form.watch("paymentMethod")
-  const serviceFee =
-    paymentMethod === "wallet" ? 0 : computeMonnifyServiceFee(total)
+  const PLATFORM_FLAT_FEE = 150
+  const monnifyFee = paymentMethod === "wallet" ? 0 : computeMonnifyServiceFee(total)
+  const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
   const finalTotal = total + serviceFee + cart.vendorDeliveryFee
 
   const createOrderMutation = useCreateOrder()
@@ -177,6 +189,14 @@ export default function CheckoutPage() {
         onSuccess: (data: { checkoutUrl: string }) => {
           const { checkoutUrl } = data
 
+          if (isCustomer) {
+            // Fire and forget to save their latest delivery preferences
+            apiClient.patch("/api/customer/me", {
+              preferredLocation: values.location,
+              preferredExactLocation: values.exactLocation,
+            }).catch(console.error)
+          }
+
           toast.success("Redirecting to secure payment...")
           clearCart()
           window.location.href = checkoutUrl
@@ -204,8 +224,13 @@ export default function CheckoutPage() {
     )
   }
 
+  // Handle unmounted or unhydrated state
+  if (!mounted || !isHydrated) {
+    return <CheckoutSkeleton />
+  }
+
   // Handle empty cart state
-  if (mounted && cart.items.length === 0) {
+  if (cart.items.length === 0) {
     return (
       <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center p-4 text-center">
         <h1 className="mb-4 font-heading text-3xl font-bold">
@@ -220,8 +245,6 @@ export default function CheckoutPage() {
       </div>
     )
   }
-
-  if (!mounted) return null
 
   return (
     <main className="container mx-auto min-h-screen max-w-6xl p-4 py-8 md:p-8">
@@ -298,12 +321,14 @@ export default function CheckoutPage() {
                         : "border-border hover:bg-muted"
                     }`}
                   >
-                    <span className="font-bold">Card / Transfer</span>
+                    <div className="mb-2 flex h-8 items-center rounded bg-white px-2 shadow-sm border border-border">
+                      <span className="font-bold text-primary">monnify</span>
+                    </div>
+                    <span className="font-bold">Pay with Monnify</span>
                     <span className="mt-1 text-center text-sm text-muted-foreground">
-                      Via Monnify{" "}
                       {field.value === "monnify"
                         ? `(+${formatPriceExact(serviceFee)} fee)`
-                        : ""}
+                        : "Secure, automated"}
                     </span>
                   </button>
                   {isCustomer && (
@@ -318,7 +343,10 @@ export default function CheckoutPage() {
                     >
                       <span className="font-bold">BiteHub Wallet</span>
                       <span className="mt-1 text-center text-sm text-muted-foreground">
-                        Zero Fees
+                        Instant Checkout{" "}
+                        {field.value === "wallet"
+                          ? `(+${formatPriceExact(serviceFee)} fee)`
+                          : ""}
                       </span>
                     </button>
                   )}
@@ -336,7 +364,7 @@ export default function CheckoutPage() {
                     <Button
                       type="button"
                       variant="hero"
-                      onClick={() => router.push("/customer/signup")}
+                      onClick={() => router.push("/customer/signup?redirect=/checkout")}
                     >
                       Create Free Account
                     </Button>
@@ -344,7 +372,7 @@ export default function CheckoutPage() {
                     <Button
                       type="button"
                       variant="default"
-                      onClick={() => router.push("/customer/login")}
+                      onClick={() => router.push("/customer/login?redirect=/checkout")}
                     >
                       Log in to continue
                     </Button>
@@ -357,75 +385,15 @@ export default function CheckoutPage() {
 
         {/* Right Column: Order Summary */}
         <div className="lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="mb-6 font-heading text-xl font-semibold">
-              Order Summary
-            </h2>
-
-            <div className="mb-6 space-y-4">
-              {cart.items.map((ci) => (
-                <div
-                  key={ci.menuItem.id}
-                  className="flex justify-between gap-4 text-sm"
-                >
-                  <div className="flex gap-2">
-                    <span className="font-medium text-muted-foreground">
-                      {ci.quantity}x
-                    </span>
-                    <span className="font-medium">{ci.menuItem.name}</span>
-                  </div>
-                  <span className="font-bold">
-                    {formatPrice(ci.menuItem.price * ci.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mb-6 space-y-3 border-t border-border pt-6 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Items Subtotal</span>
-                <span>{formatPriceExact(total)}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Delivery Fee</span>
-                <span>
-                  {cart.vendorDeliveryFee > 0
-                    ? formatPriceExact(cart.vendorDeliveryFee)
-                    : "Select location"}
-                </span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Service Fee</span>
-                <span>{formatPriceExact(serviceFee)}</span>
-              </div>
-            </div>
-
-            <div className="mb-6 flex justify-between border-t border-border pt-6 font-heading text-xl font-bold">
-              <span>Total</span>
-              <span className="text-primary">
-                {formatPriceExact(finalTotal)}
-              </span>
-            </div>
-
-            <Button
-              type="submit"
-              variant="hero"
-              size="xl"
-              className="w-full text-lg"
-              disabled={
-                loading ||
-                isSyncing ||
-                cart.items.length === 0 ||
-                !selectedLocation
-              }
-            >
-              {loading || isSyncing ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                `Pay ${formatPriceExact(finalTotal)}`
-              )}
-            </Button>
-          </div>
+          <OrderSummaryCard
+            cart={cart}
+            total={total}
+            serviceFee={serviceFee}
+            finalTotal={finalTotal}
+            loading={loading}
+            isSyncing={isSyncing}
+            selectedLocation={selectedLocation}
+          />
         </div>
       </form>
     </main>

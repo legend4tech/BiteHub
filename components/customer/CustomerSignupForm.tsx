@@ -25,6 +25,14 @@ import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 import Image from "next/image"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { getSchoolOptions, getCampusOptions } from "@/lib/config/campus"
+import {
   customerSignupFormSchema,
   type CustomerSignupFormValues,
 } from "@/lib/schemas"
@@ -42,8 +50,10 @@ export default function CustomerSignupForm() {
     resolver: zodResolver(
       customerSignupFormSchema
     ) as unknown as Resolver<CustomerSignupFormValues>,
-    defaultValues: { name: "", email: "", phone: "", password: "" },
+    defaultValues: { name: "", email: "", phone: "", password: "", school: "", campus: "" },
   })
+
+  const selectedSchool = form.watch("school")
 
   const passwordValue = form.watch("password")
 
@@ -213,6 +223,66 @@ export default function CustomerSignupForm() {
                       aria-invalid={fieldState.invalid}
                       className="h-11"
                     />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="school"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>School</FieldLabel>
+                    <Select
+                      onValueChange={(val) => {
+                        field.onChange(val)
+                        form.setValue("campus", "")
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger id={field.name} className="h-11">
+                        <SelectValue placeholder="Select your school" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getSchoolOptions().map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="campus"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Campus</FieldLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!selectedSchool}
+                    >
+                      <SelectTrigger id={field.name} className="h-11">
+                        <SelectValue placeholder="Select your campus" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getCampusOptions(selectedSchool).map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}

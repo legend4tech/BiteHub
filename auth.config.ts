@@ -20,11 +20,12 @@ export const authConfig: NextAuthConfig = {
 
       // ── Customer section ───────────────────────────────────────────────────────
       const isCustomerLoginPage = pathname === "/customer/login"
+      const isCustomerSignupPage = pathname === "/customer/signup"
       const isCustomerProtected =
-        pathname.startsWith("/customer/") && !isCustomerLoginPage
+        pathname.startsWith("/customer/") && !isCustomerLoginPage && !isCustomerSignupPage
 
-      // Redirect logged-in customers away from login page
-      if (isCustomerLoginPage && isLoggedIn) {
+      // Redirect logged-in customers away from login and signup pages
+      if ((isCustomerLoginPage || isCustomerSignupPage) && isLoggedIn) {
         if (role === "customer")
           return Response.redirect(new URL("/customer/dashboard", nextUrl))
         if (role === "vendor")

@@ -11,6 +11,7 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { Suspense } from "react"
 import { getMenus } from "@/lib/services/menuService"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
+import { cookies } from "next/headers"
 
 export const metadata: Metadata = {
   title: "BiteHub — Campus food, ordered fast",
@@ -59,14 +60,29 @@ export default async function Page({
     typeof resolvedSearchParams.category === "string"
       ? resolvedSearchParams.category
       : "all"
+      
+  // Read fallback from cookie if URL search params are missing
+  const cookieStore = await cookies()
+  const campusCookie = cookieStore.get("bitehub_campus_preference")
+  let cookieSchool = DEFAULT_SCHOOL_ID
+  let cookieCampus = DEFAULT_CAMPUS_ID
+  
+  if (campusCookie?.value) {
+    try {
+      const parsed = JSON.parse(campusCookie.value)
+      if (parsed.schoolId) cookieSchool = parsed.schoolId
+      if (parsed.campusId) cookieCampus = parsed.campusId
+    } catch (e) {}
+  }
+
   const school =
     typeof resolvedSearchParams.school === "string"
       ? resolvedSearchParams.school
-      : DEFAULT_SCHOOL_ID
+      : cookieSchool
   const campus =
     typeof resolvedSearchParams.campus === "string"
       ? resolvedSearchParams.campus
-      : DEFAULT_CAMPUS_ID
+      : cookieCampus
 
   return (
     <>

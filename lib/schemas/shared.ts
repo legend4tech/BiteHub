@@ -39,14 +39,16 @@ export function formatFromWhatsapp(raw: string): string {
   return raw
 }
 
-export const whatsappInputSchema = z
+export const phoneInputSchema = z
   .string()
   .trim()
-  .min(1, "WhatsApp number is required.")
+  .min(1, "Phone number is required.")
   .regex(
     /^0\d{10}$/,
     "Must be exactly 11 digits starting with 0 (e.g. 08012345678)"
   )
+
+export const whatsappInputSchema = phoneInputSchema
 
 export const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),

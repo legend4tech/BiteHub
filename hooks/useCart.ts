@@ -54,9 +54,13 @@ function writeCart(state: CartState) {
 
 export function useCart() {
   const [cart, setCart] = useState<CartState>(EMPTY_CART)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setCart(readCart()), 0)
+    const timer = setTimeout(() => {
+      setCart(readCart())
+      setIsHydrated(true)
+    }, 0)
     const handler = () => {
       startTransition(() => {
         setCart(readCart())
@@ -279,5 +283,6 @@ export function useCart() {
     isEmpty: cart.items.length === 0,
     maxPrepItem,
     isPreorderCart,
+    isHydrated,
   }
 }

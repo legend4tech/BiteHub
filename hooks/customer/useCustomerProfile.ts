@@ -16,6 +16,8 @@ export interface CustomerProfile {
   name: string
   email: string
   phone: string
+  school?: string
+  campus?: string
   preferredLandmark?: string
   preferredSubLandmark?: string
   preferredLocation?: string

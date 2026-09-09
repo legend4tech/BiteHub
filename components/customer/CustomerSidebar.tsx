@@ -243,9 +243,14 @@ function SidebarContent({
                   description="This will log you out of your account."
                   confirmText="Yes, log out"
                   isDestructive
-                  onConfirm={() => {
-                    toast.success("Successfully logged out")
-                    signOut({ callbackUrl: "/" })
+                  onConfirm={async () => {
+                    try {
+                      await signOut({ redirect: false })
+                      toast.success("Successfully logged out")
+                      window.location.href = "/customer/login"
+                    } catch (error) {
+                      toast.error("Network error. Could not log out.")
+                    }
                   }}
                 />
               </span>

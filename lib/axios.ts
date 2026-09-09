@@ -12,7 +12,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     // 1. Session expiration handling
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.response?.data?.requiresLogin) {
       if (typeof window !== "undefined") {
         const { toast } = await import("sonner")
         const { signOut } = await import("next-auth/react")

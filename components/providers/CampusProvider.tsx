@@ -13,6 +13,7 @@ import {
   DEFAULT_CAMPUS_ID,
   SCHOOL_CAMPUS_CONFIG,
 } from "@/lib/config/campus"
+import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 
 interface CampusContextType {
   schoolId: string
@@ -56,6 +57,8 @@ function loadFromLocalStorage(): { schoolId: string; campusId: string } | null {
 function saveToLocalStorage(schoolId: string, campusId: string) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({ schoolId, campusId }))
+    // Also save to cookie so server components can read it without URL params
+    document.cookie = `bitehub_campus_preference=${JSON.stringify({ schoolId, campusId })}; path=/; max-age=31536000`
   } catch {}
 }
 
@@ -76,34 +79,40 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
   const pathnameRef = useRef(pathname)
   const searchParamsRef = useRef(searchParams)
 
+  const { data: profile, isCustomer } = useCustomerProfile()
+
   useEffect(() => {
     const sp = searchParamsRef.current
     const urlSchool = sp.get("school")
     const urlCampus = sp.get("campus")
 
+    // 1. URL search params take highest priority (e.g. sharing links)
     if (urlSchool && urlCampus) {
       const validated = validateCampus(urlSchool, urlCampus)
       setSchoolId(validated.schoolId)
       setCampusId(validated.campusId)
       saveToLocalStorage(validated.schoolId, validated.campusId)
-    } else {
+    } 
+    // 2. If logged in and profile has preferences, they take precedence over local storage
+    else if (isCustomer && profile?.school && profile?.campus) {
+      const validated = validateCampus(profile.school, profile.campus)
+      setSchoolId(validated.schoolId)
+      setCampusId(validated.campusId)
+      saveToLocalStorage(validated.schoolId, validated.campusId)
+    } 
+    // 3. Fallback to Local Storage or Defaults
+    else {
       const stored = loadFromLocalStorage()
       const pref = stored ?? {
         schoolId: DEFAULT_SCHOOL_ID,
         campusId: DEFAULT_CAMPUS_ID,
       }
-
       setSchoolId(pref.schoolId)
       setCampusId(pref.campusId)
-
-      const params = new URLSearchParams(sp.toString())
-      params.set("school", pref.schoolId)
-      params.set("campus", pref.campusId)
-      routerRef.current.replace(`${pathnameRef.current}?${params.toString()}`)
     }
 
     setIsLoaded(true)
-  }, []) // Empty deps intentional — refs capture mount-time values, preventing re-runs on navigation
+  }, [profile, isCustomer]) // Re-run if profile loads/changes
 
   const setSchoolAndCampus = (newSchoolId: string, newCampusId: string) => {
     const validated = validateCampus(newSchoolId, newCampusId)

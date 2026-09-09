@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 
 export async function registerOrClaimCustomer(data: CustomerSignupValues) {
-  const { name, email, phone, password } = data
+  const { name, email, phone, password, school, campus } = data
 
   const hashedPassword = await bcrypt.hash(password, 12)
 
@@ -29,6 +29,8 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
             phone,
             password: hashedPassword,
             isActive: true,
+            school,
+            campus,
           },
         }
       )
@@ -47,6 +49,8 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
     password: hashedPassword,
     referralCode,
     isActive: true,
+    school,
+    campus,
   })
 
   return { claimed: false }

@@ -247,9 +247,14 @@ function SidebarContent({
                   description="This will log you out of your vendor dashboard. You will need to sign in again to manage your store."
                   confirmText="Yes, log out"
                   isDestructive
-                  onConfirm={() => {
-                    toast.success("Successfully logged out")
-                    signOut({ callbackUrl: "/vendor/login" })
+                  onConfirm={async () => {
+                    try {
+                      await signOut({ redirect: false })
+                      toast.success("Successfully logged out")
+                      window.location.href = "/vendor/login"
+                    } catch (error) {
+                      toast.error("Network error. Could not log out.")
+                    }
                   }}
                 />
               </span>

@@ -217,3 +217,66 @@ export function MenuItemDetailSkeleton() {
     </div>
   )
 }
+
+export function CheckoutSkeleton() {
+  return (
+    <div className="container mx-auto min-h-screen max-w-6xl p-4 py-8 md:p-8">
+      {/* Header */}
+      <div className="mb-8 flex items-center gap-4">
+        <Skeleton className="size-10 rounded-md" />
+        <div>
+          <Skeleton className="mb-2 h-8 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+
+      <div className="grid gap-8 align-top lg:grid-cols-12">
+        {/* Left Column */}
+        <div className="space-y-8 lg:col-span-7 xl:col-span-8">
+          {/* Delivery Details */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <Skeleton className="mb-6 h-7 w-48" />
+            <div className="space-y-5">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+          {/* Order Notes */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <Skeleton className="mb-6 h-7 w-32" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          {/* Payment Method */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <Skeleton className="mb-6 h-7 w-40" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-28 w-full rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Order Summary */}
+        <div className="lg:col-span-5 xl:col-span-4">
+          <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <Skeleton className="mb-6 h-7 w-40" />
+            <div className="mb-6 space-y-4">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-3/4" />
+            </div>
+            <div className="mb-6 space-y-4 border-t border-border pt-6">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+            </div>
+            <div className="mb-6 border-t border-border pt-6">
+              <Skeleton className="h-8 w-full" />
+            </div>
+            <Skeleton className="h-14 w-full rounded-xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

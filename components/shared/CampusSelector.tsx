@@ -18,6 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
 
 export function CampusSelector() {
   const { schoolId, campusId, setSchoolAndCampus, isLoaded } = useCampus()
@@ -29,11 +39,38 @@ export function CampusSelector() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Local state for the dropdown form
   const [localSchool, setLocalSchool] = useState(schoolId)
   const [localCampus, setLocalCampus] = useState(campusId)
   const [prevGlobalSchoolId, setPrevGlobalSchoolId] = useState(schoolId)
   const [prevGlobalCampusId, setPrevGlobalCampusId] = useState(campusId)
+
+  const { data: profileData, isCustomer } = useCustomerProfile()
+  const [showDirectLinkModal, setShowDirectLinkModal] = useState(false)
+
+  // Check for cross-campus direct links for logged-in users
+  useEffect(() => {
+    if (isCustomer && profileData && isLoaded) {
+      const urlSchool = searchParams.get("school")
+      const urlCampus = searchParams.get("campus")
+
+      // If URL has explicitly set a campus/school that differs from profile
+      if (
+        (urlSchool && urlSchool !== profileData.school) ||
+        (urlCampus && urlCampus !== profileData.campus)
+      ) {
+        setShowDirectLinkModal(true)
+      } else {
+        // Automatically sync CampusProvider to profile if URL doesn't specify otherwise
+        if (
+          profileData.school &&
+          profileData.campus &&
+          (schoolId !== profileData.school || campusId !== profileData.campus)
+        ) {
+          setSchoolAndCampus(profileData.school, profileData.campus)
+        }
+      }
+    }
+  }, [isCustomer, profileData, isLoaded, searchParams, schoolId, campusId, setSchoolAndCampus])
 
   // Sync local state when global state loads
   if (schoolId !== prevGlobalSchoolId || campusId !== prevGlobalCampusId) {
@@ -95,29 +132,104 @@ export function CampusSelector() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-9 gap-2 rounded-xl"
-      >
-        <MapPin className="size-4" />
-        <span className="hidden text-sm font-medium sm:inline">
-          <span className="mr-1 text-xs font-normal text-muted-foreground">
-            Showing:
+      {isCustomer ? (
+        <div className="flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm">
+          <MapPin className="size-4 text-primary" />
+          <span className="hidden font-medium sm:inline">
+            <span className="mr-1 text-xs font-normal text-muted-foreground">
+              Campus:
+            </span>
+            {getSchoolName(schoolId)}{" "}
+            <span className="font-normal text-muted-foreground">
+              ({getCampusName(schoolId, campusId)})
+            </span>
           </span>
-          {getSchoolName(schoolId)}{" "}
-          <span className="font-normal text-muted-foreground">
-            ({getCampusName(schoolId, campusId)})
+          <span className="font-medium sm:hidden">
+            {getCampusName(schoolId, campusId)}
           </span>
-        </span>
-        <span className="text-sm font-medium sm:hidden">
-          {getCampusName(schoolId, campusId)}
-        </span>
-        <ChevronDown className="size-3 text-muted-foreground" />
-      </Button>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsOpen(!isOpen)}
+          className="h-9 gap-2 rounded-xl"
+        >
+          <MapPin className="size-4" />
+          <span className="hidden text-sm font-medium sm:inline">
+            <span className="mr-1 text-xs font-normal text-muted-foreground">
+              Showing:
+            </span>
+            {getSchoolName(schoolId)}{" "}
+            <span className="font-normal text-muted-foreground">
+              ({getCampusName(schoolId, campusId)})
+            </span>
+          </span>
+          <span className="text-sm font-medium sm:hidden">
+            {getCampusName(schoolId, campusId)}
+          </span>
+          <ChevronDown className="size-3 text-muted-foreground" />
+        </Button>
+      )}
 
-      {isOpen && (
+      {/* Cross-Campus Direct Link Modal */}
+      <Dialog open={showDirectLinkModal} onOpenChange={setShowDirectLinkModal}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>View Vendor Menu?</DialogTitle>
+            <DialogDescription>
+              Hey! This vendor is in{" "}
+              <strong className="text-foreground">
+                {getCampusName(searchParams.get("school") || "", searchParams.get("campus") || "")}
+              </strong>
+              , but your profile is set to{" "}
+              <strong className="text-foreground">
+                {getCampusName(profileData?.school || "", profileData?.campus || "")}
+              </strong>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Want to switch your campus temporarily to view this menu?
+          </p>
+          <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDirectLinkModal(false)
+                // Revert to their profile campus
+                if (profileData?.school && profileData?.campus) {
+                  setSchoolAndCampus(profileData.school, profileData.campus)
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.set("school", profileData.school)
+                  params.set("campus", profileData.campus)
+                  router.replace(`${pathname}?${params.toString()}`)
+                }
+              }}
+              className="rounded-xl"
+            >
+              Take me back
+            </Button>
+            <Button
+              type="button"
+              variant="hero"
+              onClick={() => {
+                setShowDirectLinkModal(false)
+                // Keep the URL campus, sync provider state
+                const urlSchool = searchParams.get("school") || DEFAULT_SCHOOL_ID
+                const urlCampus = searchParams.get("campus") || DEFAULT_CAMPUS_ID
+                setSchoolAndCampus(urlSchool, urlCampus)
+              }}
+              className="rounded-xl"
+            >
+              Yes, view menu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {!isCustomer && isOpen && (
         <div className="absolute top-full left-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] animate-in rounded-2xl border border-border bg-card p-4 shadow-xl fade-in slide-in-from-top-2 sm:right-0 sm:left-auto">
           <div className="space-y-4">
             <div>

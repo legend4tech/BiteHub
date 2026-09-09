@@ -1,5 +1,9 @@
 import { z } from "zod"
-import { normaliseNigerianPhone, strongPasswordSchema } from "./shared"
+import {
+  phoneInputSchema,
+  strongPasswordSchema,
+  normaliseNigerianPhone,
+} from "./shared"
 
 // ─── Order Form Schema ────────────────────────────────────────────────────────
 
@@ -97,15 +101,10 @@ export const customerSignupFormSchema = z.object({
     .trim()
     .email("Please enter a valid email address.")
     .toLowerCase(),
-  phone: z
-    .string()
-    .trim()
-    .min(1, "Please enter your phone number.")
-    .refine(
-      (v) => /^\+234[789]\d{9}$/.test(normaliseNigerianPhone(v)),
-      "Enter a valid Nigerian phone number (e.g. 08012345678)."
-    ),
+  phone: phoneInputSchema,
   password: strongPasswordSchema,
+  school: z.string().trim().min(1, "Please select your school."),
+  campus: z.string().trim().min(1, "Please select your campus."),
 })
 export type CustomerSignupFormValues = z.infer<typeof customerSignupFormSchema>
 
@@ -117,16 +116,10 @@ export const customerSignupSchema = z.object({
     .trim()
     .email("Please enter a valid email address.")
     .toLowerCase(),
-  phone: z
-    .string()
-    .trim()
-    .min(1, "Please enter your phone number.")
-    .transform(normaliseNigerianPhone)
-    .refine(
-      (v) => /^\+234[789]\d{9}$/.test(v),
-      "Enter a valid Nigerian phone number (e.g. 08012345678)."
-    ),
+  phone: phoneInputSchema.transform(normaliseNigerianPhone),
   password: strongPasswordSchema,
+  school: z.string().trim().min(1, "Please select your school."),
+  campus: z.string().trim().min(1, "Please select your campus."),
 })
 export type CustomerSignupValues = z.infer<typeof customerSignupSchema>
 
