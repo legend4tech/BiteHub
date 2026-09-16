@@ -25,9 +25,7 @@ async function processDisbursement(
     const currentDisbursed = vendor.monnifyTotalDisbursed || 0
     vendor.monnifyTotalDisbursed = currentDisbursed + amount
     await vendor.save()
-    console.log(
-      `[Disbursement Webhook] ✅ Updated vendor "${vendor.slug}" — added ₦${amount}. Total disbursed: ₦${vendor.monnifyTotalDisbursed}. Ref: ${reference}`
-    )
+    // Log removed for production
   } else {
     console.warn(
       `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}`
@@ -59,10 +57,7 @@ export async function POST(request: Request) {
     const event = JSON.parse(rawBody)
     const { eventType, eventData } = event
 
-    console.log(
-      `[Disbursement Webhook] Received event: ${eventType}`,
-      JSON.stringify(eventData, null, 2)
-    )
+    // Log removed for production
 
     if (
       eventType === "SUCCESSFUL_DISBURSEMENT" ||

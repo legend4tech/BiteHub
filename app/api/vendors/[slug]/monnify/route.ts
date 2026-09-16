@@ -7,6 +7,7 @@ import { auth } from "@/auth"
 import GlobalSettings from "@/models/GlobalSettings"
 import { createMonnifySubaccount, getSubaccounts } from "@/lib/monnify"
 import { sendBankSetupConfirmationEmail } from "@/lib/mail"
+import { monnifySubaccountRequestSchema } from "@/lib/schemas"
 
 const BANK_UPDATE_LOCK_DAYS = Number(process.env.BANK_UPDATE_LOCK_DAYS || 14)
 
@@ -15,8 +16,17 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const body = await request.json()
+    const parsed = monnifySubaccountRequestSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsed.error.format() },
+        { status: 400 }
+      )
+    }
+    const { accountNumber, bankCode, bankName } = parsed.data
+
     const { slug } = await params
-    await dbConnect()
 
     const session = await auth()
     if (
@@ -29,14 +39,6 @@ export async function POST(
 
     await dbConnect()
     const vendorId = new Types.ObjectId(slug)
-    const { accountNumber, bankCode, bankName } = await request.json()
-
-    if (!accountNumber || !bankCode) {
-      return NextResponse.json(
-        { error: "Account number and bank code are required" },
-        { status: 400 }
-      )
-    }
 
     const vendor = await Vendor.findById(vendorId)
     if (!vendor) {
@@ -44,16 +46,21 @@ export async function POST(
     }
 
     // Prevent multiple vendors from linking the exact same bank account
-    const existingBankUser = await Vendor.findOne({
-      monnifyAccountNumber: accountNumber,
-      _id: { $ne: vendorId },
-    })
+    // EXCEPT if the vendor is flagged as Managed Vendor by BiteHub
+    if (!vendor.isManagedByBiteHub) {
+      const existingBankUser = await Vendor.findOne({
+        monnifyAccountNumber: accountNumber,
+        _id: { $ne: vendorId },
+      })
 
-    if (existingBankUser) {
-      return NextResponse.json(
-        { error: "This bank account is already registered to another vendor." },
-        { status: 400 }
-      )
+      if (existingBankUser) {
+        return NextResponse.json(
+          {
+            error: "This bank account is already registered to another vendor.",
+          },
+          { status: 400 }
+        )
+      }
     }
 
     if (vendor.monnifySubAccountCode) {

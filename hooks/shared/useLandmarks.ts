@@ -1,13 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface SystemLandmark {
-  id: string
-  name: string
-  school: string
-  campus: string
-  defaultDeliveryFee: number
-}
+import type { SystemLandmark } from "@/types/shared"
 
 export function useSystemLandmarks(school: string, campus: string) {
   return useQuery<SystemLandmark[]>({

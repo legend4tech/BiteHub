@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
 import { strongPasswordSchema, formatToWhatsapp } from "@/lib/schemas"
+import { adminCreateVendorApiSchema } from "@/lib/schemas/admin"
 
 // GET — all vendors for admin (no isActive filter)
 export async function GET() {
@@ -72,6 +73,7 @@ export async function GET() {
         isFeatured: v.isFeatured || false,
         hasMenu,
         image: v.image,
+        isManagedByBiteHub: v.isManagedByBiteHub || false,
         createdAt: (v as { createdAt: string }).createdAt,
         // Login account info (may be null if not yet created)
         account: user
@@ -112,6 +114,14 @@ export async function POST(request: Request) {
     await dbConnect()
     const body = await request.json()
 
+    const parsedBody = adminCreateVendorApiSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: parsedBody.error.issues[0].message },
+        { status: 400 }
+      )
+    }
+
     const {
       name,
       whatsappNumber,
@@ -124,22 +134,8 @@ export async function POST(request: Request) {
       email,
       password,
       image,
-    } = body
-
-    if (!name || !whatsappNumber || !email || !password) {
-      return NextResponse.json(
-        { error: "name, whatsappNumber, email and password are required" },
-        { status: 400 }
-      )
-    }
-
-    const pwCheck = strongPasswordSchema.safeParse(password)
-    if (!pwCheck.success) {
-      return NextResponse.json(
-        { error: pwCheck.error.issues[0].message },
-        { status: 400 }
-      )
-    }
+      isManagedByBiteHub,
+    } = parsedBody.data
 
     // Uniqueness checks
     const existingEmail = await VendorUserModel.findOne({
@@ -174,6 +170,7 @@ export async function POST(request: Request) {
       image: image,
       isActive: true,
       onboardedBy: session.user.id,
+      isManagedByBiteHub: isManagedByBiteHub || false,
     })
 
     // Hash password and create login account

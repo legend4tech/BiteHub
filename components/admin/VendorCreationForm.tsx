@@ -45,6 +45,7 @@ export function VendorCreationForm() {
       prepTime: "",
       school: DEFAULT_SCHOOL_ID,
       campus: DEFAULT_CAMPUS_ID,
+      isManagedByBiteHub: false,
     },
     mode: "onChange",
   })
@@ -269,6 +270,38 @@ export function VendorCreationForm() {
             </Field>
           )}
         />
+
+        <div className="border-t border-border pt-6">
+          <Controller
+            name="isManagedByBiteHub"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <div className="flex items-start space-x-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <Checkbox
+                    id="isManagedByBiteHub"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="mt-1"
+                  />
+                  <div className="space-y-1 leading-none">
+                    <label
+                      htmlFor="isManagedByBiteHub"
+                      className="text-sm font-bold text-foreground"
+                    >
+                      Managed Vendor (Allow Shared Bank Account)
+                    </label>
+                    <p className="text-sm text-muted-foreground">
+                      Enable this if this vendor is managed by BiteHub. This
+                      allows them to safely share a central bank account with
+                      other managed vendors for payouts.
+                    </p>
+                  </div>
+                </div>
+              </Field>
+            )}
+          />
+        </div>
 
         <VendorAccountFields control={form.control} />
 

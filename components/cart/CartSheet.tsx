@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useCart } from "@/hooks/useCart"
 import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { formatPriceExact } from "@/lib/format"
 import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
 import { Button } from "@/components/ui/button"
@@ -92,18 +93,12 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
 
         <div className="flex-1 overflow-y-auto px-6 py-4" data-lenis-prevent>
           {cart.items.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-3 text-center">
-              <div className="rounded-full bg-muted p-4">
-                <ShoppingBag className="size-8 text-muted-foreground" />
-              </div>
-              <p className="font-semibold">Your cart is empty</p>
-              <p className="text-sm text-muted-foreground">
-                Looks like you haven&apos;t added anything yet.
-              </p>
-              <Button variant="outline" className="mt-4" onClick={onClose}>
-                Continue Browsing
-              </Button>
-            </div>
+            <EmptyState
+              title="Your cart is empty"
+              description="Looks like you haven't added anything yet."
+              action={{ label: "Continue Browsing", onClick: onClose }}
+              className="h-full justify-center"
+            />
           ) : showAuthPrompt ? (
             <div className="flex h-full flex-col justify-center space-y-6">
               <div className="space-y-2 text-center">

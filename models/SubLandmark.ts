@@ -34,5 +34,7 @@ const SubLandmarkSchema = new Schema<ISubLandmark>(
   }
 )
 
+SubLandmarkSchema.index({ landmarkId: 1, isActive: 1, name: 1 })
+
 export default mongoose.models.SubLandmark ||
   mongoose.model<ISubLandmark>("SubLandmark", SubLandmarkSchema)

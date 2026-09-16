@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useInView } from "react-intersection-observer"
+import { useState } from "react"
 import { useMenuItems } from "@/hooks/shared/useMenuItems"
 import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import type { MenuItem } from "@/types/vendor"
 import { useCart } from "@/hooks/useCart"
+import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger"
 
 interface LoadMoreMenusProps {
   initialPage: number
@@ -20,7 +20,6 @@ export function LoadMoreMenus({
 }: LoadMoreMenusProps) {
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
   const { clearAndAdd } = useCart()
-  const { ref, inView } = useInView()
 
   const handleDifferentVendor = (item: MenuItem) => setConflictItem(item)
 
@@ -56,12 +55,6 @@ export function LoadMoreMenus({
     enabled: true,
   })
 
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
-
   // Combine all pages of menus into a single array
   const items = data ? data.pages.flatMap((page) => page.items) : []
 
@@ -78,8 +71,16 @@ export function LoadMoreMenus({
       )}
 
       {(hasNextPage || isFetchingNextPage) && (
-        <div ref={ref} className="mt-8">
-          <PageSkeleton variant="menu-item-grid" count={5} />
+        <div className="mt-8">
+          <InfiniteScrollTrigger
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+            skeletonVariant="menu-item-grid"
+            skeletonCount={5}
+            loadingText="Loading more items..."
+            endText="You've reached the end of the menu items."
+          />
         </div>
       )}
 

@@ -10,7 +10,7 @@ import {
 } from "@/hooks/admin/useAdminMutations"
 import { VendorManagerVendors } from "@/components/vendor-manager/VendorManagerVendors"
 import { AddLoginModal } from "@/components/admin/AdminModals"
-import type { AdminVendor } from "@/components/admin/types"
+import type { AdminVendor } from "@/types/admin"
 import { FetchError } from "@/components/shared/FetchError"
 
 export default function VendorManagerVendorsPage() {

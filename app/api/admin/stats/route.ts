@@ -3,6 +3,8 @@ import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
 import OrderModel from "@/models/Order"
 import MenuItemModel from "@/models/MenuItem"
+import PlatformWithdrawal from "@/models/PlatformWithdrawal"
+import Wallet from "@/models/Wallet"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 import { getMonnifyWalletBalance } from "@/lib/monnify"
@@ -45,6 +47,8 @@ export async function GET() {
       statusCounts,
       monnifyBalance,
       vendorIdsWithMenus,
+      withdrawalAgg,
+      walletLiabilitiesAgg,
     ] = await Promise.all([
       VendorModel.countDocuments({}),
       VendorModel.countDocuments({ isActive: true }),
@@ -55,6 +59,12 @@ export async function GET() {
       ]),
       getMonnifyWalletBalance(),
       MenuItemModel.distinct("vendorId"),
+      PlatformWithdrawal.aggregate([
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      Wallet.aggregate([
+        { $group: { _id: null, total: { $sum: "$balance" } } },
+      ]),
     ])
 
     const vendorsWithoutMenus = await VendorModel.countDocuments({
@@ -82,6 +92,12 @@ export async function GET() {
     const grossVolume = revenueAgg[0]?.grossVolume ?? 0
     const platformProfit = revenueAgg[0]?.platformProfit ?? 0
 
+    // Financial Health
+    const allTimePlatformProfit = platformProfit
+    const totalWithdrawn = withdrawalAgg[0]?.total ?? 0
+    const remainingProfit = allTimePlatformProfit - totalWithdrawn
+    const totalCustomerWalletLiabilities = walletLiabilitiesAgg[0]?.total ?? 0
+
     return NextResponse.json({
       totalVendors,
       activeVendors,
@@ -96,6 +112,10 @@ export async function GET() {
       grossVolume,
       platformProfit,
       monnifyBalance,
+      allTimePlatformProfit,
+      totalWithdrawn,
+      remainingProfit,
+      totalCustomerWalletLiabilities,
     })
   } catch (error) {
     console.error("[admin/stats]", error)

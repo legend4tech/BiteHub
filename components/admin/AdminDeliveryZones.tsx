@@ -1,10 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import {
-  useAdminDeliveryZones,
-  Landmark,
-} from "@/hooks/admin/useAdminDeliveryZones"
+import { useAdminDeliveryZones } from "@/hooks/admin/useAdminDeliveryZones"
+import type { Landmark } from "@/types/admin"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +27,7 @@ import {
   getSchoolName,
   getCampusName,
 } from "@/lib/config/campus"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MapPin, Plus, Trash2, Edit2, Map } from "lucide-react"
@@ -173,14 +172,15 @@ export function AdminDeliveryZones() {
 
       <div className="grid gap-6">
         {landmarks.length === 0 ? (
-          <div className="rounded-xl border border-dashed py-12 text-center">
-            <Map className="mx-auto mb-4 size-10 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-medium">No Landmarks</h3>
-            <p className="mb-4 text-muted-foreground">
-              Add your first campus landmark to get started.
-            </p>
-            <Button onClick={() => handleOpenLandmark()}>Add Landmark</Button>
-          </div>
+          <EmptyState
+            title="No Landmarks"
+            description="Add your first campus landmark to get started."
+            action={{
+              label: "Add Landmark",
+              onClick: () => handleOpenLandmark(),
+            }}
+            className="rounded-xl border border-dashed py-12"
+          />
         ) : (
           landmarks.map((lm) => (
             <div key={lm.id} className="rounded-xl border bg-card p-5">

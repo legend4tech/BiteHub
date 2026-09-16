@@ -14,7 +14,7 @@ import {
   useAdminAddLogin,
   useAdminAddVendor,
 } from "@/hooks/admin/useAdminMutations"
-import type { AdminVendor } from "./types"
+import type { AdminVendor } from "@/types/admin"
 import {
   strongPasswordSchema,
   addLoginSchema,

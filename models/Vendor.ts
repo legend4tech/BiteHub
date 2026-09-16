@@ -10,6 +10,7 @@ export interface IVendor extends Document {
   school: string
   campus: string
   isActive: boolean
+  isOpen: boolean
   deliveryFee: number
   prepTime: string
   image?: {
@@ -44,6 +45,7 @@ export interface IVendor extends Document {
   location: string
 
   onboardedBy?: mongoose.Types.ObjectId
+  isManagedByBiteHub?: boolean
 }
 
 const VendorSchema: Schema = new Schema(
@@ -57,6 +59,7 @@ const VendorSchema: Schema = new Schema(
     school: { type: String, required: true },
     campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    isOpen: { type: Boolean, default: true },
     deliveryFee: { type: Number, default: 0 },
     prepTime: { type: String, default: "" },
     image: {
@@ -105,6 +108,7 @@ const VendorSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "AdminUser",
     },
+    isManagedByBiteHub: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -142,6 +146,8 @@ VendorSchema.virtual("location").get(function (this: IVendor) {
 // Indexes for high-performance querying
 VendorSchema.index({ school: 1, campus: 1, isActive: 1 })
 VendorSchema.index({ name: "text", category: "text" })
+// Analytics: new vendors count for a date range
+VendorSchema.index({ createdAt: -1 })
 
 export default mongoose.models.Vendor ||
   mongoose.model<IVendor>("Vendor", VendorSchema)

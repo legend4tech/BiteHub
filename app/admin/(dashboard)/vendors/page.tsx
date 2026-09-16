@@ -7,15 +7,19 @@ import { toast } from "sonner"
 import {
   useAdminToggleVendorActive,
   useAdminToggleVendorFeatured,
+  useAdminToggleVendorManaged,
 } from "@/hooks/admin/useAdminMutations"
 import { AdminVendors } from "@/components/admin/AdminVendors"
 import { AddLoginModal } from "@/components/admin/AdminModals"
-import type { AdminVendor } from "@/components/admin/types"
+import type { AdminVendor } from "@/types/admin"
 import { FetchError } from "@/components/shared/FetchError"
 
 export default function AdminVendorsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(
+    null
+  )
+  const [togglingManagedId, setTogglingManagedId] = useState<string | null>(
     null
   )
   const [addLoginFor, setAddLoginFor] = useState<AdminVendor | null>(null)
@@ -41,6 +45,7 @@ export default function AdminVendorsPage() {
 
   const toggleActiveMutation = useAdminToggleVendorActive()
   const toggleFeaturedMutation = useAdminToggleVendorFeatured()
+  const toggleManagedMutation = useAdminToggleVendorManaged()
 
   const toggleVendorActive = (vendor: AdminVendor) => {
     setTogglingId(vendor.id)
@@ -94,6 +99,32 @@ export default function AdminVendorsPage() {
     )
   }
 
+  const toggleVendorManaged = (vendor: AdminVendor, isManaged: boolean) => {
+    setTogglingManagedId(vendor.id)
+    startTransition(() => {
+      addOptimisticVendor({ ...vendor, isManagedByBiteHub: isManaged })
+    })
+
+    toggleManagedMutation.mutate(
+      { vendorId: vendor.id, isManagedByBiteHub: isManaged },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+          toast.success(
+            `${vendor.name} is ${isManaged ? "now managed by BiteHub" : "no longer managed by BiteHub"}`
+          )
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          toast.error(err.response?.data?.error || "An error occurred")
+        },
+        onSettled: () => {
+          setTogglingManagedId(null)
+        },
+      }
+    )
+  }
+
   if (isVendorsError) {
     return (
       <FetchError
@@ -112,8 +143,10 @@ export default function AdminVendorsPage() {
         noAccountVendors={noAccountVendors}
         togglingId={togglingId}
         togglingFeaturedId={togglingFeaturedId}
+        togglingManagedId={togglingManagedId}
         onToggleActive={toggleVendorActive}
         onToggleFeatured={toggleVendorFeatured}
+        onToggleManaged={toggleVendorManaged}
         onAddLogin={setAddLoginFor}
       />
       {addLoginFor && (

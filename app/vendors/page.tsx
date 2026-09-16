@@ -187,12 +187,7 @@ export default async function VendorsPage({
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex flex-col items-start gap-1">
-                  <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-                    Not your School or Campus? Change it here
-                  </p>
-                  <CampusSelector />
-                </div>
+                <CampusSelector />
                 <SearchInput placeholder="Search vendors by name, category..." />
               </div>
             </div>

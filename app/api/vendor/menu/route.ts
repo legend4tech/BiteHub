@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { Types } from "mongoose"
 import dbConnect from "@/lib/db"
 import MenuItem from "@/models/MenuItem"
+import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import { auth } from "@/auth"
 import { serializeMenuItem } from "@/lib/serializers"
 import { isItemAvailableNow } from "@/lib/timeUtils"
@@ -119,10 +120,14 @@ export async function POST(request: Request) {
       newItem.availableFrom,
       newItem.availableTo,
       newItem.availableDays,
-      newItem.quantityAvailable
+      newItem.quantityAvailable,
+      newItem.isPreorder,
+      newItem.preorderEndDate
     )
     newItem.computedIsAvailableNow = computedIsAvailableNow
     await newItem.save()
+
+    await syncVendorMenuScores(vendorId)
 
     return NextResponse.json(serializeMenuItem(newItem.toObject()), {
       status: 201,

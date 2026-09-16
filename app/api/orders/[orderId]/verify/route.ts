@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
+import Customer from "@/models/Customer"
+import crypto from "crypto"
 import { sendOrderReceiptEmail } from "@/lib/mail"
 import { sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
@@ -74,6 +76,26 @@ export async function POST(
       }
 
       await updatedOrder.save()
+
+      // Create guest customer profile if they don't have one, since payment is now complete
+      if (updatedOrder.customerEmail) {
+        const existingCustomer = await Customer.findOne({
+          email: updatedOrder.customerEmail.toLowerCase(),
+        }).lean()
+
+        if (!existingCustomer) {
+          const randomReferral = crypto.randomBytes(4).toString("hex")
+          await Customer.create({
+            name: updatedOrder.customerName,
+            email: updatedOrder.customerEmail.toLowerCase(),
+            phone: updatedOrder.customerPhone,
+            referralCode: `REF-${randomReferral.toUpperCase()}`,
+            isActive: true,
+          }).catch((err) =>
+            console.error("Failed to create guest customer:", err)
+          )
+        }
+      }
 
       // Send email if order wasn't previously paid and has an email
       if (wasPending && updatedOrder.customerEmail) {

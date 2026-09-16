@@ -295,7 +295,7 @@ export async function validateMonnifyBankAccount(
   const token = await getMonnifyToken()
   try {
     const response = await axiosInstance.get(
-      `${MONNIFY_API_URL}/api/v1/disbursements/account/validate`,
+      `${MONNIFY_API_URL}/api/v2/disbursements/account/validate`,
       {
         params: { accountNumber, bankCode },
         headers: { Authorization: `Bearer ${token}` },
@@ -326,11 +326,13 @@ export async function createMonnifyReservedAccount({
   accountName,
   customerEmail,
   customerName,
+  nin,
 }: {
   accountReference: string
   accountName: string
   customerEmail: string
   customerName: string
+  nin: string
 }) {
   const token = await getMonnifyToken()
   try {
@@ -343,6 +345,7 @@ export async function createMonnifyReservedAccount({
         contractCode: MONNIFY_CONTRACT_CODE,
         customerEmail,
         customerName,
+        nin,
         getAllAvailableBanks: false,
         preferredBanks: ["035"], // Wema Bank is reliable for virtual accounts
       },

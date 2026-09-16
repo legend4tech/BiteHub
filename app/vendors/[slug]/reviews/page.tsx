@@ -4,11 +4,12 @@ import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { useVendorReviews } from "@/hooks/vendor/useVendorReviews"
-import { useInView } from "react-intersection-observer"
 import { useEffect, useState } from "react"
 import { ArrowLeft, Star, Loader2, UserCircle2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { ReviewCardSkeleton } from "@/components/shared/skeletons/PublicSkeletons"
+import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { RatingStatistics } from "@/components/public-vendors/RatingStatistics"
@@ -16,8 +17,6 @@ import { RatingStatistics } from "@/components/public-vendors/RatingStatistics"
 export default function VendorReviewsPage() {
   const router = useRouter()
   const { slug } = useParams<{ slug: string }>()
-
-  const { ref, inView } = useInView()
 
   const [ratingFilter, setRatingFilter] = useState<number | null>(null)
 
@@ -29,12 +28,6 @@ export default function VendorReviewsPage() {
     status,
     refetch,
   } = useVendorReviews(slug, ratingFilter)
-
-  useEffect(() => {
-    if (inView && hasNextPage) {
-      fetchNextPage()
-    }
-  }, [inView, hasNextPage, fetchNextPage])
 
   const reviews = data?.pages.flatMap((page) => page.reviews) || []
 
@@ -127,7 +120,7 @@ export default function VendorReviewsPage() {
                         {review.customerName}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(review.createdAt)}
+                        {formatDate(review.createdAt || "")}
                       </p>
                     </div>
                   </div>
@@ -155,23 +148,21 @@ export default function VendorReviewsPage() {
             ))}
 
             {/* Infinite loading trigger */}
-            <div
-              ref={ref}
-              className="flex w-full items-center justify-center py-8"
-            >
-              {isFetchingNextPage ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin text-primary" />
-                  Loading more reviews...
-                </div>
-              ) : hasNextPage ? (
-                <div className="h-4 w-4" /> // Empty placeholder for intersection observer
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  You&apos;ve reached the end of the reviews.
-                </p>
-              )}
-            </div>
+            {(hasNextPage || isFetchingNextPage) && (
+              <InfiniteScrollTrigger
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                fetchNextPage={fetchNextPage}
+                loadingContent={
+                  <div className="space-y-6 pt-6">
+                    <ReviewCardSkeleton />
+                    <ReviewCardSkeleton />
+                  </div>
+                }
+                loadingText="Loading more reviews..."
+                endText="You've reached the end of the reviews."
+              />
+            )}
           </div>
         )}
       </div>

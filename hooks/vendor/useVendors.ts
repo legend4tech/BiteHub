@@ -3,6 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import type { Vendor } from "@/types/vendor"
+import type { VendorWithMenu } from "@/types/vendor"
 
 interface UseVendorsOptions {
   q?: string
@@ -11,11 +12,6 @@ interface UseVendorsOptions {
   limit?: number
   initialPage?: number
   enabled?: boolean
-}
-
-export interface VendorWithMenu extends Vendor {
-  itemCount?: number
-  avgRating?: number
 }
 
 export function useVendors(options?: UseVendorsOptions) {

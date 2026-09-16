@@ -280,3 +280,24 @@ export function CheckoutSkeleton() {
     </div>
   )
 }
+
+export function ReviewCardSkeleton() {
+  return (
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="flex items-center gap-4">
+          <Skeleton className="size-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-7 w-28 rounded-full" />
+      </div>
+      <div className="mt-5 space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
+  )
+}

@@ -111,6 +111,7 @@ export function VendorFilter({
         <div
           ref={scrollRef}
           className="max-h-72 overflow-y-auto overscroll-contain"
+          data-lenis-prevent
         >
           {/* All Vendors option */}
           <button

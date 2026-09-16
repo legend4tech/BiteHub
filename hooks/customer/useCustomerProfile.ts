@@ -11,18 +11,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface CustomerProfile {
-  name: string
-  email: string
-  phone: string
-  school?: string
-  campus?: string
-  preferredLandmark?: string
-  preferredSubLandmark?: string
-  preferredLocation?: string
-  preferredExactLocation?: string
-}
+import type { CustomerProfile } from "@/types/customer"
 
 interface NextAuthSession {
   user?: {
@@ -52,5 +41,9 @@ export function useCustomerProfile() {
     staleTime: 5 * 60 * 1000, // 5 minutes — profile rarely changes mid-session
   })
 
-  return { ...profileQuery, isCustomer }
+  const isSessionLoading = session === undefined
+  const isProfileLoading = isCustomer && profileQuery.isLoading
+  const isProfileLoading2 = isSessionLoading || isProfileLoading
+
+  return { ...profileQuery, isCustomer, isProfileLoading: isProfileLoading2 }
 }

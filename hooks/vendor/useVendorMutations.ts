@@ -1,6 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import axios from "axios"
+import type {
+  ForgotPasswordValues,
+  ResetPasswordFormValues,
+} from "@/lib/schemas"
 
 export function useVendorAcceptTerms() {
   return useMutation({
@@ -150,8 +154,8 @@ export function useVendorChangePassword() {
 }
 
 export function useVendorForgotPassword() {
-  return useMutation({
-    mutationFn: async (data: unknown) => {
+  return useMutation<unknown, Error, ForgotPasswordValues>({
+    mutationFn: async (data) => {
       const res = await axios.post("/api/vendor/forgot-password", data)
       return res.data
     },
@@ -159,8 +163,15 @@ export function useVendorForgotPassword() {
 }
 
 export function useVendorResetPassword() {
-  return useMutation({
-    mutationFn: async (data: unknown) => {
+  return useMutation<
+    unknown,
+    Error,
+    Omit<ResetPasswordFormValues, "confirmPassword"> & {
+      token: string
+      email: string
+    }
+  >({
+    mutationFn: async (data) => {
       const res = await axios.post("/api/vendor/reset-password", data)
       return res.data
     },

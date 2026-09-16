@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import crypto from "crypto"
 import Order from "@/models/Order"
+import Customer from "@/models/Customer"
 import dbConnect from "@/lib/db"
 import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
+import { sendWalletTopupEmail } from "@/lib/walletMail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
 import { ORDER_STATUS } from "@/lib/constants"
 import Wallet from "@/models/Wallet"
 import WalletTransaction from "@/models/WalletTransaction"
+import { eventBus } from "@/lib/events"
+import { formatPriceExact } from "@/lib/format"
 
 async function processSuccessfulTransaction(paymentReference: string) {
   const monnifyData = await verifyMonnifyTransaction(paymentReference)
@@ -37,28 +42,44 @@ async function processSuccessfulTransaction(paymentReference: string) {
       })
       if (!existingTx) {
         // Use settlementAmount if available, otherwise amountPaid
-        const amount =
+        const amount = Number(
           monnifyData.settlementAmount ||
-          monnifyData.amountPaid ||
-          monnifyData.amount
+            monnifyData.amountPaid ||
+            monnifyData.amount
+        )
 
         await WalletTransaction.create({
           customerId: wallet.customerId,
           type: "fiat_deposit",
           amount: amount,
+          balanceAfter: wallet.balance + amount,
+          direction: "credit",
           reference: paymentReference,
           description: "Bank Transfer Deposit",
         })
 
         wallet.balance += amount
         await wallet.save()
-        console.log(
-          `[Collection Webhook] ✅ Wallet funded for customer ${wallet.customerId}. Amount: ₦${amount}`
-        )
+        revalidatePath("/customer/wallet")
+
+        // Broadcast the real-time event so the browser auto-refreshes!
+        eventBus.emit("wallet_funded", wallet.customerId.toString())
+
+        // Send Email
+        const customer = await Customer.findById(wallet.customerId).lean()
+        if (customer && customer.email) {
+          sendWalletTopupEmail(
+            customer.email,
+            customer.name,
+            formatPriceExact(amount),
+            formatPriceExact(wallet.balance),
+            paymentReference
+          ).catch(console.error)
+        }
+
+        // Log removed for production
       } else {
-        console.log(
-          `[Collection Webhook] Wallet transaction ${paymentReference} already processed`
-        )
+        // Log removed for production
       }
     } else {
       console.error(
@@ -89,9 +110,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
   }
 
   if (order.paymentStatus === "paid") {
-    console.log(
-      `[Collection Webhook] Order ${order.orderId} already marked as paid — skipping`
-    )
+    // Log removed for production
     return
   }
 
@@ -123,9 +142,30 @@ async function processSuccessfulTransaction(paymentReference: string) {
   }
 
   await updatedOrder.save()
-  console.log(
-    `[Collection Webhook] ✅ Order ${updatedOrder.orderId} confirmed. Vendor revenue: ₦${updatedOrder.vendorRevenue}`
-  )
+  // Log removed for production
+
+  // Create guest customer profile if they don't have one, since payment is now complete
+  if (updatedOrder.customerEmail) {
+    const existingCustomer = await Customer.findOne({
+      email: updatedOrder.customerEmail.toLowerCase(),
+    }).lean()
+
+    if (!existingCustomer) {
+      const randomReferral = crypto.randomBytes(4).toString("hex")
+      await Customer.create({
+        name: updatedOrder.customerName,
+        email: updatedOrder.customerEmail.toLowerCase(),
+        phone: updatedOrder.customerPhone,
+        referralCode: `REF-${randomReferral.toUpperCase()}`,
+        isActive: true,
+      }).catch((err) =>
+        console.error(
+          "[Collection Webhook] Failed to create guest customer:",
+          err
+        )
+      )
+    }
+  }
 
   // Fire-and-forget notifications — these are non-critical
   const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/order/${updatedOrder.orderId}`
@@ -194,7 +234,7 @@ export async function POST(request: Request) {
     const event = JSON.parse(rawBody)
     const { eventType, eventData } = event
 
-    console.log(`[Collection Webhook] Received event: ${eventType}`)
+    // Log removed for production
 
     if (eventType === "SUCCESSFUL_TRANSACTION") {
       const paymentReference = eventData?.paymentReference
@@ -212,11 +252,18 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ status: "success" })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[Collection Webhook] Unhandled error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    status: "Monnify Webhook Endpoint Active",
+    message: "This endpoint is listening for POST requests from Monnify.",
+  })
 }

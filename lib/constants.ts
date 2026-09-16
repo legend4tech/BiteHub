@@ -10,6 +10,7 @@ export const SUPPORT_EMAIL = "contact@bitehubapp.com"
 export const CONTACT_EMAIL = "contact@bitehubapp.com"
 export const NO_REPLY_EMAIL = "no-reply@bitehubapp.com"
 export const LOW_STOCK_THRESHOLD = 5
+export const PLATFORM_FLAT_FEE = 150
 
 // ─── Discovery Score Weights ───────────────────────────────────────────────────
 // Used by menuService.ts to rank items on the /menus page (Recommended sort).
@@ -35,6 +36,7 @@ export const DISCOVERY_SCORE = {
 // ─── localStorage Keys ────────────────────────────────────────────────────────
 
 export const LS_CART = "cb_cart"
+export const SS_ACCEPTED_CROSS_CAMPUS = "accepted_cross_campus"
 
 // ─── Order Status Constants ───────────────────────────────────────────────────
 

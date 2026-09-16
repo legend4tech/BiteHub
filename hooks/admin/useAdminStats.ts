@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { AdminStats } from "@/components/admin/types"
+import type { AdminStats } from "@/types/admin"
 
 export function useAdminStats() {
   return useQuery<AdminStats>({

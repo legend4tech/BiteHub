@@ -11,8 +11,8 @@ export default async function VendorOrdersPage({
   searchParams: Promise<{ status?: string; page?: string; q?: string }>
 }) {
   const session = await auth()
-  if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
-    redirect("/vendor/login")
+  if (!session || !session.user?.vendorId) {
+    return null
   }
   const vendorId = session.user.vendorId
 

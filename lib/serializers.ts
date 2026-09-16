@@ -25,6 +25,14 @@ type LeanDoc<T> = Omit<T, keyof import("mongoose").Document> & {
 export type LeanVendor = LeanDoc<IVendor>
 export type LeanMenuItem = LeanDoc<IMenuItem>
 export type LeanOrder = LeanDoc<IOrder>
+export type LeanCustomer = LeanDoc<import("@/models/Customer").ICustomer>
+export type LeanWallet = LeanDoc<import("@/models/Wallet").IWallet>
+export type LeanWalletTransaction = LeanDoc<
+  import("@/models/WalletTransaction").IWalletTransaction
+>
+export type LeanPlatformWithdrawal = LeanDoc<
+  import("@/models/PlatformWithdrawal").IPlatformWithdrawal
+>
 
 // Safely parse dates which might come back as strings or be missing in raw DB docs
 const safeDate = (val: unknown): string => {
@@ -60,6 +68,7 @@ export function serializeVendor(doc: LeanVendor | null) {
     school: doc.school ?? null,
     campus: doc.campus ?? null,
     isActive: doc.isActive,
+    isOpen: doc.isOpen ?? true,
     deliveryFee: doc.deliveryFee ?? 0,
     prepTime: doc.prepTime ?? "",
     image: doc.image ?? null,
@@ -120,7 +129,9 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
       doc.availableFrom,
       doc.availableTo,
       doc.availableDays,
-      doc.quantityAvailable
+      doc.quantityAvailable,
+      doc.isPreorder,
+      doc.preorderEndDate
     ),
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
@@ -163,6 +174,85 @@ export function serializeOrder(doc: LeanOrder | null) {
     monnifyReference: doc.monnifyReference ?? null,
     isRated: doc.isRated ?? false,
     expiresAt: doc.expiresAt ? safeDate(doc.expiresAt) : null,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Customer ─────────────────────────────────────────────────────────────────
+
+export function serializeCustomer(doc: LeanCustomer | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    email: doc.email,
+    phone: doc.phone,
+    referralCode: doc.referralCode,
+    referredBy: doc.referredBy ?? null,
+    isActive: doc.isActive,
+    school: doc.school ?? null,
+    campus: doc.campus ?? null,
+    preferredLandmark: doc.preferredLandmark ?? null,
+    preferredSubLandmark: doc.preferredSubLandmark ?? null,
+    preferredExactLocation: doc.preferredExactLocation ?? null,
+    lastLoginAt: doc.lastLoginAt ? safeDate(doc.lastLoginAt) : null,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Wallet ───────────────────────────────────────────────────────────────────
+
+export function serializeWallet(doc: LeanWallet | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    customerId: doc.customerId.toString(),
+    balance: doc.balance,
+    monnifyReservedAccountRef: doc.monnifyReservedAccountRef ?? null,
+    accountName: doc.accountName ?? null,
+    accountNumber: doc.accountNumber ?? null,
+    bankName: doc.bankName ?? null,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Wallet Transaction ───────────────────────────────────────────────────────
+
+export function serializeWalletTransaction(doc: LeanWalletTransaction | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    customerId: doc.customerId.toString(),
+    type: doc.type,
+    amount: doc.amount,
+    balanceAfter: doc.balanceAfter,
+    direction: doc.direction,
+    reference: doc.reference,
+    description: doc.description,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Platform Withdrawal ──────────────────────────────────────────────────────
+
+export function serializePlatformWithdrawal(
+  doc: LeanPlatformWithdrawal | null
+) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    amount: doc.amount,
+    reference: doc.reference,
+    note: doc.note ?? null,
+    withdrawnBy: doc.withdrawnBy,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

@@ -107,3 +107,57 @@ export async function getVendorOrdersPaginated(
 
   return { orders, counts, totalPages }
 }
+
+/**
+ * Fetches recent orders for a customer (used for dashboard).
+ */
+export async function getRecentCustomerOrders(email: string, limit = 3) {
+  await dbConnect()
+  const ordersDocs = await Order.find({ customerEmail: email })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean()
+
+  return ordersDocs
+    .map((doc) => serializeOrder(doc as LeanOrder))
+    .filter(Boolean) as OrderType[]
+}
+
+/**
+ * Fetches total order count for a customer.
+ */
+export async function getCustomerOrdersCount(email: string) {
+  await dbConnect()
+  return Order.countDocuments({ customerEmail: email })
+}
+
+/**
+ * Fetches paginated orders for a customer.
+ */
+export async function getCustomerOrdersPaginated(
+  email: string,
+  page = 1,
+  limit = 20
+) {
+  await dbConnect()
+  const skip = (page - 1) * limit
+
+  const [ordersDocs, totalOrders] = await Promise.all([
+    Order.find({ customerEmail: email })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Order.countDocuments({ customerEmail: email }),
+  ])
+
+  const orders = ordersDocs
+    .map((doc) => serializeOrder(doc as LeanOrder))
+    .filter(Boolean) as OrderType[]
+
+  return {
+    orders,
+    totalOrders,
+    hasMore: skip + ordersDocs.length < totalOrders,
+  }
+}

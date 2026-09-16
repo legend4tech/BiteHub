@@ -18,6 +18,8 @@ import { formatPrice } from "@/lib/format"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { OrderStatus } from "@/types/shared"
 
 export function AdminOrders() {
   const { data: session } = useSession()
@@ -35,25 +37,6 @@ export function AdminOrders() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
     toast.success(`${label} copied to clipboard`)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case ORDER_STATUS.PENDING:
-        return "bg-status-pending/20 text-status-pending-foreground"
-      case ORDER_STATUS.CONFIRMED:
-        return "bg-status-confirmed/20 text-status-confirmed-foreground"
-      case ORDER_STATUS.PREPARING:
-        return "bg-status-preparing/20 text-status-preparing-foreground"
-      case ORDER_STATUS.READY:
-        return "bg-status-ready/20 text-status-ready-foreground"
-      case ORDER_STATUS.COMPLETED:
-        return "bg-status-completed/20 text-status-completed-foreground"
-      case ORDER_STATUS.CANCELLED:
-        return "bg-status-cancelled/20 text-status-cancelled-foreground"
-      default:
-        return "bg-muted text-muted-foreground"
-    }
   }
 
   return (
@@ -104,11 +87,10 @@ export function AdminOrders() {
                       >
                         {order.orderId}
                       </Link>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
-                      >
-                        {order.status}
-                      </span>
+                      <StatusBadge
+                        status={order.status as OrderStatus}
+                        paymentStatus={order.paymentStatus}
+                      />
                       <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                         {order.paymentStatus === "paid"
                           ? `Paid via ${order.paymentMethod}`

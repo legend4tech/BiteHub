@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
-import type { AdminVendor } from "@/components/admin/types"
+import type { AdminVendor } from "@/types/admin"
 
 interface VendorManagerVendorsProps {
   vendors: AdminVendor[]
@@ -148,7 +148,7 @@ export function VendorManagerVendors({
             {filteredVendors.map((vendor) => {
               const initials = vendor.name
                 .split(" ")
-                .map((w) => w[0])
+                .map((w: string) => w[0])
                 .slice(0, 2)
                 .join("")
                 .toUpperCase()

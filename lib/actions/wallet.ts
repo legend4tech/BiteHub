@@ -6,13 +6,29 @@ import { revalidatePath } from "next/cache"
 import dbConnect from "@/lib/db"
 import Customer from "@/models/Customer"
 import Wallet from "@/models/Wallet"
-import { createMonnifyReservedAccount } from "@/lib/monnify"
+import {
+  createMonnifyReservedAccount,
+  validateMonnifyBankAccount,
+} from "@/lib/monnify"
+
+import { walletActivationSchema } from "@/lib/schemas/customer"
+
+export type ActionState = { error?: string; success?: boolean } | undefined
 
 /**
  * Server Action: Activates a customer's wallet by creating a Monnify
  * reserved account tied to their customer ID.
  */
-export async function activateWallet() {
+export async function activateWallet(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const parsed = walletActivationSchema.safeParse({ nin: formData.get("nin") })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Invalid NIN" }
+  }
+  const { nin } = parsed.data
+
   const session = await auth()
 
   if (!session?.user?.email || session.user.role !== "customer") {
@@ -30,16 +46,31 @@ export async function activateWallet() {
     const accountReference = `WALLET-${customer._id.toString()}-${Date.now()}`
     const accountName = `BiteHub Wallet - ${customer.name}`
 
+    // In development, append a timestamp to bypass Monnify sandbox glitch (R42 limit)
+    const monnifyEmail =
+      process.env.NODE_ENV === "development"
+        ? customer.email.replace("@", `+${Date.now()}@`)
+        : customer.email
+
     const reservedAccount = await createMonnifyReservedAccount({
       accountReference,
       accountName,
-      customerEmail: customer.email,
+      customerEmail: monnifyEmail,
       customerName: customer.name,
+      nin,
     })
 
     // Monnify returns `accounts` array when getAllAvailableBanks is used,
     // or a single-item array when preferredBanks is set.
     const accountDetails = reservedAccount.accounts?.[0] ?? reservedAccount
+
+    // Resolve the true NIBSS-validated account name
+    const validatedAccount = await validateMonnifyBankAccount(
+      accountDetails.accountNumber,
+      accountDetails.bankCode
+    )
+    const trueAccountName =
+      validatedAccount.accountName || accountDetails.accountName
 
     const existingWallet = await Wallet.findOne({ customerId: customer._id })
 
@@ -48,7 +79,7 @@ export async function activateWallet() {
         customerId: customer._id,
         balance: 0,
         monnifyReservedAccountRef: accountReference,
-        accountName: accountDetails.accountName,
+        accountName: trueAccountName,
         accountNumber: accountDetails.accountNumber,
         bankName: accountDetails.bankName,
       })
@@ -58,7 +89,7 @@ export async function activateWallet() {
         {
           $set: {
             monnifyReservedAccountRef: accountReference,
-            accountName: accountDetails.accountName,
+            accountName: trueAccountName,
             accountNumber: accountDetails.accountNumber,
             bankName: accountDetails.bankName,
           },
@@ -71,8 +102,9 @@ export async function activateWallet() {
       err
     )
     // Re-throw so the UI can catch it (using useFormState or try/catch on the client)
-    throw new Error("Failed to activate wallet. Please try again.")
+    return { error: "Failed to activate wallet. Please try again." }
   }
 
   revalidatePath("/customer/dashboard/wallet")
+  return { success: true }
 }

@@ -19,17 +19,19 @@ interface ResetPasswordEmailProps {
   vendorName: string
   resetLink: string
   expiryMinutes: number
+  userType?: "vendor" | "customer"
 }
 
 export const ResetPasswordEmail = ({
   vendorName,
   resetLink,
   expiryMinutes,
+  userType = "vendor",
 }: ResetPasswordEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Reset your BiteHub vendor account password</Preview>
+      <Preview>Reset your BiteHub {userType} account password</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo / Header */}
@@ -45,7 +47,9 @@ export const ResetPasswordEmail = ({
             <Heading style={logoText}>
               Bite<span style={logoHighlight}>Hub</span>
             </Heading>
-            <Text style={subHeader}>Vendor Account</Text>
+            <Text style={subHeader}>
+              {userType === "customer" ? "Customer Account" : "Vendor Account"}
+            </Text>
           </Section>
 
           <Hr style={divider} />
@@ -53,10 +57,14 @@ export const ResetPasswordEmail = ({
           {/* Content */}
           <Section style={contentSection}>
             <Heading style={heading}>Password Reset Request</Heading>
-            <Text style={text}>Hello {vendorName || "Vendor"},</Text>
+            <Text style={text}>
+              Hello{" "}
+              {vendorName || (userType === "customer" ? "Customer" : "Vendor")},
+            </Text>
             <Text style={text}>
               We received a request to reset the password for your BiteHub
-              vendor account. Click the button below to create a new password:
+              {userType === "customer" ? " customer " : " vendor "} account.
+              Click the button below to create a new password:
             </Text>
 
             <Section style={buttonContainer}>

@@ -13,6 +13,9 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const body = await request.json()
+    const { accountNumber, bankCode, bankName, otp } = body
+
     const { slug } = await params
     const session = await auth()
     if (
@@ -25,7 +28,6 @@ export async function POST(
 
     await dbConnect()
     const vendorId = new Types.ObjectId(slug)
-    const { accountNumber, bankCode, bankName, otp } = await request.json()
 
     if (!accountNumber || !bankCode || !otp) {
       return NextResponse.json(
@@ -40,16 +42,21 @@ export async function POST(
     }
 
     // Prevent multiple vendors from linking the exact same bank account
-    const existingBankUser = await Vendor.findOne({
-      monnifyAccountNumber: accountNumber,
-      _id: { $ne: vendorId },
-    })
+    // EXCEPT if the vendor is flagged as Managed Vendor by BiteHub
+    if (!vendor.isManagedByBiteHub) {
+      const existingBankUser = await Vendor.findOne({
+        monnifyAccountNumber: accountNumber,
+        _id: { $ne: vendorId },
+      })
 
-    if (existingBankUser) {
-      return NextResponse.json(
-        { error: "This bank account is already registered to another vendor." },
-        { status: 400 }
-      )
+      if (existingBankUser) {
+        return NextResponse.json(
+          {
+            error: "This bank account is already registered to another vendor.",
+          },
+          { status: 400 }
+        )
+      }
     }
 
     if (!vendor.monnifySubAccountCode) {

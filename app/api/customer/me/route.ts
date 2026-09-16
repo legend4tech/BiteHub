@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import Customer from "@/models/Customer"
+import { customerProfileUpdateSchema } from "@/lib/schemas"
+import { deleteFromCloudinary } from "@/lib/cloudinary"
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,8 +29,9 @@ export async function GET(req: NextRequest) {
       campus: customer.campus,
       preferredLandmark: customer.preferredLandmark,
       preferredSubLandmark: customer.preferredSubLandmark,
-      preferredLocation: customer.preferredLocation,
       preferredExactLocation: customer.preferredExactLocation,
+      image: customer.image,
+      imagePublicId: customer.imagePublicId,
     })
   } catch (error) {
     console.error("[CUSTOMER_ME_GET]", error)
@@ -48,6 +51,15 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
+    const parsedBody = customerProfileUpdateSchema.safeParse(body)
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
     const {
       name,
       phone,
@@ -55,11 +67,34 @@ export async function PATCH(req: NextRequest) {
       campus,
       preferredLandmark,
       preferredSubLandmark,
-      preferredLocation,
       preferredExactLocation,
-    } = body
+      image,
+      imagePublicId,
+    } = parsedBody.data
 
     await dbConnect()
+
+    const existingCustomer = await Customer.findOne({
+      email: session.user.email,
+    })
+    if (!existingCustomer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+    }
+
+    if (
+      existingCustomer.imagePublicId &&
+      imagePublicId !== undefined &&
+      imagePublicId !== existingCustomer.imagePublicId
+    ) {
+      try {
+        await deleteFromCloudinary(existingCustomer.imagePublicId)
+      } catch (err) {
+        console.error(
+          "[PATCH /api/customer/me] Failed to delete old image",
+          err
+        )
+      }
+    }
 
     const updatedCustomer = await Customer.findOneAndUpdate(
       { email: session.user.email },
@@ -71,10 +106,11 @@ export async function PATCH(req: NextRequest) {
           ...(campus && { campus }),
           ...(preferredLandmark !== undefined && { preferredLandmark }),
           ...(preferredSubLandmark !== undefined && { preferredSubLandmark }),
-          ...(preferredLocation !== undefined && { preferredLocation }),
           ...(preferredExactLocation !== undefined && {
             preferredExactLocation,
           }),
+          ...(image !== undefined && { image }),
+          ...(imagePublicId !== undefined && { imagePublicId }),
         },
       },
       { new: true }
@@ -94,8 +130,9 @@ export async function PATCH(req: NextRequest) {
         campus: updatedCustomer.campus,
         preferredLandmark: updatedCustomer.preferredLandmark,
         preferredSubLandmark: updatedCustomer.preferredSubLandmark,
-        preferredLocation: updatedCustomer.preferredLocation,
         preferredExactLocation: updatedCustomer.preferredExactLocation,
+        image: updatedCustomer.image,
+        imagePublicId: updatedCustomer.imagePublicId,
       },
     })
   } catch (error) {

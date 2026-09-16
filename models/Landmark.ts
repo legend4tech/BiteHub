@@ -30,5 +30,7 @@ const LandmarkSchema = new Schema<ILandmark>(
   }
 )
 
+LandmarkSchema.index({ school: 1, campus: 1, isActive: 1, name: 1 })
+
 export default mongoose.models.Landmark ||
   mongoose.model<ILandmark>("Landmark", LandmarkSchema)

@@ -1,10 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface VendorFeeResponse {
-  prepTime: string
-  monnifySubaccountCode: string
-}
+import type { VendorFeeResponse } from "@/types/vendor"
 
 export function useVendorFee(vendorId: string | undefined | null) {
   return useQuery<VendorFeeResponse>({

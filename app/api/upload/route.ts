@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
     }
 
-    if (!type || !["vendor", "menu"].includes(type)) {
+    if (!type || !["vendor", "menu", "customer"].includes(type)) {
       return NextResponse.json(
         { error: "Invalid upload type" },
         { status: 400 }
@@ -23,7 +23,12 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes)
 
     // Determine folder
-    const folder = type === "vendor" ? "bitehub/vendorsimg" : "bitehub/menuimg"
+    const folder =
+      type === "vendor"
+        ? "bitehub/vendorsimg"
+        : type === "menu"
+          ? "bitehub/menuimg"
+          : "bitehub/customerimg"
 
     // Upload to Cloudinary
     const result = await uploadStream(buffer, folder)

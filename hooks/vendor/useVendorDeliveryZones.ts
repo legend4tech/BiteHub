@@ -1,15 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface DeliveryZone {
-  id: string
-  name: string
-  fee: number
-  subLandmarks: { id: string; name: string; fee: number }[]
-}
+import type { DeliveryZone, DeliveryZonesResponse } from "@/types/vendor"
 
 export function useVendorDeliveryZones(vendorId: string | undefined | null) {
-  return useQuery<DeliveryZone[]>({
+  const query = useQuery<DeliveryZonesResponse>({
     queryKey: ["vendor-delivery-zones", vendorId],
     queryFn: () =>
       apiClient
@@ -18,4 +12,10 @@ export function useVendorDeliveryZones(vendorId: string | undefined | null) {
     enabled: !!vendorId,
     staleTime: 5 * 60 * 1000,
   })
+
+  const zones: DeliveryZone[] = query.data?.zones ?? []
+  const vendorCampus: string = query.data?.vendorCampus ?? ""
+  const vendorSchool: string = query.data?.vendorSchool ?? ""
+
+  return { ...query, zones, vendorCampus, vendorSchool }
 }

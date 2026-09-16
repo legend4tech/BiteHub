@@ -10,10 +10,9 @@ import dbConnect from "@/lib/db"
 import MenuItem from "@/models/MenuItem"
 import Vendor from "@/models/Vendor"
 import { serializeMenuItem } from "@/lib/serializers"
-import { DISCOVERY_SCORE } from "@/lib/constants"
+import type { LeanVendor, LeanMenuItem } from "@/lib/serializers"
 import type mongoose from "mongoose"
 import type { SortOrder } from "mongoose"
-import { isItemAvailableNow } from "@/lib/timeUtils"
 
 // Tag logic — single definition for the entire codebase
 export function getItemTag(price: number): string | null {
@@ -50,7 +49,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
 
   await dbConnect()
 
-  let query: Record<string, unknown> = { isAvailable: true }
+  const baseQuery: Record<string, unknown> = { isAvailable: true }
 
   // ALWAYS filter to vendors that are active AND have payment details configured
   const vendorFilter: Record<string, unknown> = {
@@ -61,7 +60,6 @@ export async function getMenus(options: GetMenusOptions = {}) {
   if (school) vendorFilter.school = school
   if (campus) vendorFilter.campus = campus
 
-  // Hoisted here so the forEach below can populate them before the DB item query
   const vendorMap = new Map<
     string,
     {
@@ -76,34 +74,30 @@ export async function getMenus(options: GetMenusOptions = {}) {
   >()
   const vendorWhatsappMap = new Map<string, string>()
 
-  // When filtering by a specific vendor, we still need its details for the UI cards
+  const allValidVendorIds: string[] = []
+  const orderableVendorIds: string[] = []
+  let isSpecificVendorOrderable = false
+
   if (vendorId) {
-    // Fetch the vendor regardless of status so we have its actual name and isActive state
     const specificVendor = await Vendor.findOne({ _id: vendorId })
       .select(
-        "_id name slug whatsappNumber prepTime isActive monnifyIntegrationStatus isFeatured rating ratingCount"
+        "_id name slug whatsappNumber prepTime isActive isOpen monnifyIntegrationStatus isFeatured rating ratingCount"
       )
-      .lean<{
-        _id: unknown
-        name: string
-        slug: string
-        whatsappNumber?: string
-        prepTime?: string
-        isActive: boolean
-        monnifyIntegrationStatus?: string
-        isFeatured?: boolean
-        rating?: number
-        ratingCount?: number
-      }>()
+      .lean<LeanVendor>()
 
     if (specificVendor) {
+      // For frontend display, combine isActive and isOpen
+      const isVendorOrderable =
+        specificVendor.isActive &&
+        specificVendor.monnifyIntegrationStatus === "active" &&
+        specificVendor.isOpen !== false
+      isSpecificVendorOrderable = isVendorOrderable
+
       vendorMap.set(String(specificVendor._id), {
         name: specificVendor.name,
         slug: specificVendor.slug,
         prepTime: specificVendor.prepTime || "",
-        isActive:
-          specificVendor.isActive &&
-          specificVendor.monnifyIntegrationStatus === "active",
+        isActive: isVendorOrderable,
         isFeatured: specificVendor.isFeatured ?? false,
         rating: specificVendor.rating ?? 0,
         ratingCount: specificVendor.ratingCount ?? 0,
@@ -112,45 +106,26 @@ export async function getMenus(options: GetMenusOptions = {}) {
         String(specificVendor._id),
         specificVendor.whatsappNumber || ""
       )
-    }
-
-    // If we only want available items, but this specific vendor is closed,
-    // force the query to return zero results.
-    const isVendorOrderable =
-      specificVendor?.isActive &&
-      specificVendor?.monnifyIntegrationStatus === "active"
-    if (availableOnly && !isVendorOrderable) {
-      query.vendorId = "000000000000000000000000" // impossible ID
-    } else {
-      query.vendorId = vendorId
+      allValidVendorIds.push(String(specificVendor._id))
+      if (isVendorOrderable) orderableVendorIds.push(String(specificVendor._id))
     }
   } else {
     const validVendors = await Vendor.find(vendorFilter)
       .select(
-        "_id name slug whatsappNumber prepTime isActive isFeatured rating ratingCount"
+        "_id name slug whatsappNumber prepTime isActive isOpen isFeatured rating ratingCount"
       )
-      .lean<
-        Array<{
-          _id: unknown
-          name: string
-          slug: string
-          whatsappNumber?: string
-          prepTime?: string
-          isActive: boolean
-          isFeatured?: boolean
-          rating?: number
-          ratingCount?: number
-        }>
-      >()
-    query.vendorId = { $in: validVendors.map((v) => v._id) }
+      .lean<LeanVendor[]>()
 
-    // Populate vendor maps for use during item serialization
     validVendors.forEach((v) => {
+      const isVendorOrderable = v.isActive && v.isOpen !== false
+      allValidVendorIds.push(String(v._id))
+      if (isVendorOrderable) orderableVendorIds.push(String(v._id))
+
       vendorMap.set(String(v._id), {
         name: v.name,
         slug: v.slug,
         prepTime: v.prepTime || "",
-        isActive: v.isActive,
+        isActive: isVendorOrderable,
         isFeatured: v.isFeatured ?? false,
         rating: v.rating ?? 0,
         ratingCount: v.ratingCount ?? 0,
@@ -160,98 +135,185 @@ export async function getMenus(options: GetMenusOptions = {}) {
   }
 
   if (category && category !== "all") {
-    query.category = category
-  }
-
-  if (availableOnly) {
-    const now = new Date()
-    const options: Intl.DateTimeFormatOptions = { timeZone: "Africa/Lagos" }
-    const currentDayOfWeek = new Intl.DateTimeFormat("en-US", {
-      ...options,
-      weekday: "long",
-    }).format(now)
-    const timeString = new Intl.DateTimeFormat("en-US", {
-      ...options,
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(now)
-
-    query.$and = [
-      { isAvailable: true },
-      {
-        $or: [
-          { availableDays: { $size: 0 } },
-          { availableDays: { $exists: false } },
-          { availableDays: currentDayOfWeek },
-        ],
-      },
-      {
-        $or: [
-          // No schedule or quantity sold out (handled by quantityAvailable > 0 or null)
-          { availableFrom: null, availableTo: null },
-          { availableFrom: "", availableTo: "" },
-          {
-            availableFrom: { $exists: false },
-            availableTo: { $exists: false },
-          },
-          // Simple interval
-          {
-            $and: [
-              { $expr: { $lte: ["$availableFrom", "$availableTo"] } },
-              { availableFrom: { $lte: timeString } },
-              { availableTo: { $gte: timeString } },
-            ],
-          },
-          // Cross-midnight interval
-          {
-            $and: [
-              { $expr: { $gt: ["$availableFrom", "$availableTo"] } },
-              {
-                $or: [
-                  { availableFrom: { $lte: timeString } },
-                  { availableTo: { $gte: timeString } },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        $or: [
-          { quantityAvailable: null },
-          { quantityAvailable: { $exists: false } },
-          { quantityAvailable: { $gt: 0 } },
-        ],
-      },
-    ]
+    baseQuery.category = category
   }
 
   if (q) {
-    query = {
-      ...query,
-      $or: [
-        { name: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { category: { $regex: q, $options: "i" } },
-      ],
-    }
+    baseQuery.$or = [
+      { name: { $regex: q, $options: "i" } },
+      { description: { $regex: q, $options: "i" } },
+      { category: { $regex: q, $options: "i" } },
+    ]
   }
 
-  let sortQuery: Record<string, SortOrder> = { createdAt: -1, _id: -1 }
+  const now = new Date()
+  const dateOptions: Intl.DateTimeFormatOptions = { timeZone: "Africa/Lagos" }
+  const currentDayOfWeek = new Intl.DateTimeFormat("en-US", {
+    ...dateOptions,
+    weekday: "long",
+  }).format(now)
+  const timeString = new Intl.DateTimeFormat("en-US", {
+    ...dateOptions,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now)
+
+  const availCondition = [
+    { isAvailable: true },
+    {
+      $or: [
+        // 1. Pre-orders that haven't expired yet bypass the daily schedule
+        { isPreorder: true, preorderEndDate: { $gt: now } },
+        // 2. Regular items follow the daily/time schedule
+        {
+          $and: [
+            {
+              $or: [
+                { availableDays: { $size: 0 } },
+                { availableDays: { $exists: false } },
+                { availableDays: currentDayOfWeek },
+              ],
+            },
+            {
+              $or: [
+                // No schedule
+                { availableFrom: null, availableTo: null },
+                { availableFrom: "", availableTo: "" },
+                {
+                  availableFrom: { $exists: false },
+                  availableTo: { $exists: false },
+                },
+                // Simple interval
+                {
+                  $and: [
+                    { $expr: { $lte: ["$availableFrom", "$availableTo"] } },
+                    { availableFrom: { $lte: timeString } },
+                    { availableTo: { $gte: timeString } },
+                  ],
+                },
+                // Cross-midnight interval
+                {
+                  $and: [
+                    { $expr: { $gt: ["$availableFrom", "$availableTo"] } },
+                    {
+                      $or: [
+                        { availableFrom: { $lte: timeString } },
+                        { availableTo: { $gte: timeString } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      $or: [
+        { quantityAvailable: null },
+        { quantityAvailable: { $exists: false } },
+        { quantityAvailable: { $gt: 0 } },
+      ],
+    },
+  ]
+
+  let sortQuery: Record<string, SortOrder> = {
+    baseDiscoveryScore: -1,
+    createdAt: -1,
+    _id: -1,
+  }
   if (sortBy === "price_asc") sortQuery = { price: 1, _id: -1 }
   else if (sortBy === "price_desc") sortQuery = { price: -1, _id: -1 }
   else if (sortBy === "name_asc") sortQuery = { name: 1, _id: -1 }
 
-  const [items, totalItems] = await Promise.all([
-    MenuItem.find(query).sort(sortQuery).skip(skip).limit(limit).lean(),
-    MenuItem.countDocuments(query),
-  ])
+  let items: LeanMenuItem[] = []
+  let totalItems = 0
 
-  // vendorMap and vendorWhatsappMap are declared and populated above
+  if (availableOnly) {
+    const queryA = {
+      ...baseQuery,
+      vendorId: vendorId
+        ? isSpecificVendorOrderable
+          ? vendorId
+          : "000000000000000000000000"
+        : { $in: orderableVendorIds },
+      $and: availCondition,
+    }
+    const [fetchedItems, count] = await Promise.all([
+      MenuItem.find(queryA).sort(sortQuery).skip(skip).limit(limit).lean(),
+      MenuItem.countDocuments(queryA),
+    ])
+    items = fetchedItems
+    totalItems = count
+  } else {
+    // Two-Tier Fetch
+    const queryA = {
+      ...baseQuery,
+      vendorId: vendorId
+        ? isSpecificVendorOrderable
+          ? vendorId
+          : "000000000000000000000000"
+        : { $in: orderableVendorIds },
+      $and: availCondition,
+    }
+
+    const queryU: Record<string, unknown> = {
+      ...baseQuery,
+      vendorId: vendorId ? vendorId : { $in: allValidVendorIds },
+    }
+
+    if (vendorId) {
+      if (!isSpecificVendorOrderable) {
+        // Vendor is fully closed, all their items are unavailable
+        queryU.$or = [{}]
+      } else {
+        queryU.$or = [{ $nor: [{ $and: availCondition }] }]
+      }
+    } else {
+      queryU.$or = [
+        { vendorId: { $nin: orderableVendorIds } },
+        { $nor: [{ $and: availCondition }] },
+      ]
+    }
+
+    const [countA, countU] = await Promise.all([
+      MenuItem.countDocuments(queryA),
+      MenuItem.countDocuments(queryU),
+    ])
+    totalItems = countA + countU
+
+    if (skip < countA) {
+      const fetchedFromA = await MenuItem.find(queryA)
+        .sort(sortQuery)
+        .skip(skip)
+        .limit(limit)
+        .lean()
+      items = [...fetchedFromA]
+
+      if (items.length < limit) {
+        const remaining = limit - items.length
+        const fetchedFromU = await MenuItem.find(queryU)
+          .sort(sortQuery)
+          .skip(0)
+          .limit(remaining)
+          .lean()
+        items = [...items, ...fetchedFromU]
+      }
+    } else {
+      const skipU = skip - countA
+      const fetchedFromU = await MenuItem.find(queryU)
+        .sort(sortQuery)
+        .skip(skipU)
+        .limit(limit)
+        .lean()
+      items = [...fetchedFromU]
+    }
+  }
 
   const mappedItems = items
-    .map((item) => {
+    .map((item: LeanMenuItem) => {
       const base = serializeMenuItem(item)
       if (!base) return null
 
@@ -266,93 +328,11 @@ export async function getMenus(options: GetMenusOptions = {}) {
         vendorPrepTime: vendorData?.prepTime || "",
         tag: getItemTag(item.price),
         isAvailableNow: base.isAvailableNow,
-        // Attach vendor scoring data so discovery sort can use it
-        _vendorIsFeatured: vendorData?.isFeatured ?? false,
-        _vendorRating: vendorData?.rating ?? 0,
-        _vendorRatingCount: vendorData?.ratingCount ?? 0,
       }
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
 
-  // ── Discovery score re-ranking ──────────────────────────────────────────────
-  // Only applied when sortBy is "none" (Recommended) and not filtering by a
-  // specific vendor (vendor filter has its own natural order).
-  let finalItems = mappedItems as typeof mappedItems
-
-  if (!sortBy && !vendorId) {
-    const now = Date.now()
-
-    const scored = mappedItems.map((item) => {
-      const ageMs = now - new Date(item.createdAt).getTime()
-      const ageInDays = ageMs / (1000 * 60 * 60 * 24)
-      const recencyBoost = Math.max(0, DISCOVERY_SCORE.RECENCY_MAX - ageInDays) // decays to 0 over RECENCY_DECAY_DAYS
-      const featuredBoost = item._vendorIsFeatured
-        ? DISCOVERY_SCORE.FEATURED_BOOST
-        : 0
-      const ratingScore = item._vendorRating * DISCOVERY_SCORE.RATING_MULTIPLIER
-      const reviewCountScore =
-        Math.log(item._vendorRatingCount + 1) *
-        DISCOVERY_SCORE.REVIEW_COUNT_MULTIPLIER
-      const availabilityBoost = item.isAvailableNow
-        ? DISCOVERY_SCORE.AVAILABILITY_BOOST
-        : 0
-      const score =
-        featuredBoost +
-        ratingScore +
-        reviewCountScore +
-        availabilityBoost +
-        recencyBoost
-      return { item, score }
-    })
-
-    scored.sort((a, b) => b.score - a.score)
-
-    // Vendor diversity cap: interleave so no vendor takes consecutive slots
-    // beyond MAX_CONSECUTIVE_VENDOR_SLOTS.
-    const MAX_CONSECUTIVE = DISCOVERY_SCORE.MAX_CONSECUTIVE_VENDOR_SLOTS
-    const result: typeof mappedItems = []
-    const pool = scored.map((s) => s.item)
-    const vendorCounts = new Map<string, number>()
-    let lastVendorId: string | null = null
-    let consecutiveCount = 0
-
-    while (pool.length > 0) {
-      // Find next eligible item (doesn't exceed consecutive limit)
-      let idx = pool.findIndex((item) => {
-        const vid = item.vendorId
-        if (vid !== lastVendorId) return true
-        return consecutiveCount < MAX_CONSECUTIVE
-      })
-
-      // If no alternative vendor exists to interleave, we must pick the
-      // next item anyway to avoid dropping results.
-      if (idx === -1) {
-        idx = 0
-      }
-
-      const item = pool.splice(idx, 1)[0]
-      if (item.vendorId === lastVendorId) {
-        consecutiveCount++
-      } else {
-        consecutiveCount = 1
-        lastVendorId = item.vendorId
-      }
-      vendorCounts.set(
-        item.vendorId,
-        (vendorCounts.get(item.vendorId) ?? 0) + 1
-      )
-      result.push(item)
-    }
-
-    finalItems = result
-  }
-
-  // Strip internal scoring props before returning
-  const cleanItems = finalItems.map(
-    ({ _vendorIsFeatured, _vendorRating, _vendorRatingCount, ...rest }) => rest
-  )
-
-  return { items: cleanItems, totalItems }
+  return { items: mappedItems, totalItems }
 }
 
 /// ─── Vendor Dashboard: Manage menu items ─────────────────────────────────────

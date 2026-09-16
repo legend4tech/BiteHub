@@ -2,17 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface DashboardStats {
-  totalVendors: number
-  activeVendors: number
-  totalOrders: number
-  todayOrders: number
-  pendingOrders: number
-  completedOrders: number
-  cancelledOrders: number
-  byStatus: Record<string, number>
-}
+import type { DashboardStats } from "@/types/vendor"
 
 export function useDashboardStats() {
   return useQuery({

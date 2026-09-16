@@ -8,6 +8,7 @@ import { Field, FieldError } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { toast } from "sonner"
+import { StoreStatusToggle } from "./StoreStatusToggle"
 import type { Vendor } from "@/types/vendor"
 import { useVendorUpdateSettings } from "@/hooks/vendor/useVendorMutations"
 import { useRouter } from "next/navigation"
@@ -65,6 +66,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
       image: typeof initial.image === "string" ? undefined : initial.image,
       school: initial.school ?? "",
       campus: initial.campus ?? "",
+      isOpen: initial.isOpen ?? true,
     },
   })
 
@@ -115,6 +117,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         image: imageToSave,
         school: values.school,
         campus: values.campus,
+        isOpen: values.isOpen,
       })
 
       const initialImageUrl =
@@ -147,6 +150,18 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Controller
+        control={form.control}
+        name="isOpen"
+        render={({ field }) => (
+          <StoreStatusToggle
+            isOpen={field.value ?? false}
+            onToggle={(val) => field.onChange(val)}
+            disabled={saving}
+          />
+        )}
+      />
+
       <Field data-invalid={!!form.formState.errors.name}>
         <label className="text-sm font-medium" htmlFor="name">
           Vendor Name

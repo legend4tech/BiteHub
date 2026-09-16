@@ -95,12 +95,20 @@ export async function PATCH(
         ? body.quantityAvailable
         : existingItem.quantityAvailable
 
+    const updatedIsPreorder = body.isPreorder ?? existingItem.isPreorder
+    const updatedPreorderEndDate =
+      body.preorderEndDate !== undefined
+        ? body.preorderEndDate
+        : existingItem.preorderEndDate
+
     body.computedIsAvailableNow = isItemAvailableNow(
       updatedIsAvailable,
       updatedAvailableFrom,
       updatedAvailableTo,
       updatedAvailableDays,
-      updatedQuantityAvailable
+      updatedQuantityAvailable,
+      updatedIsPreorder,
+      updatedPreorderEndDate
     )
 
     // Reset low stock alert if the vendor restocks the item above the threshold or sets it to infinite

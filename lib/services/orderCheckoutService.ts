@@ -17,12 +17,14 @@ export async function resolveDeliveryFee(
   let deliveryFee = vendor.deliveryFee || 0
 
   const landmarks = await Landmark.find({
-    school: vendor.school,
-    campus: vendor.campus,
+    school: { $regex: new RegExp(`^${vendor.school}$`, "i") },
+    campus: { $regex: new RegExp(`^${vendor.campus}$`, "i") },
+    isActive: true,
   }).lean()
 
   const subLandmarks = await SubLandmark.find({
     landmarkId: { $in: landmarks.map((l: { _id: unknown }) => l._id) },
+    isActive: true,
   }).lean()
 
   let deliveryZoneMatched = false

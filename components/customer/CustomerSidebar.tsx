@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   Wallet,
+  Receipt,
   Gift,
   Settings,
   LogOut,
@@ -42,9 +43,10 @@ const navItems: {
   label: string
   icon: React.ElementType
 }[] = [
-  { section: "overview", label: "Overview", icon: LayoutDashboard },
+  { section: "dashboard", label: "Overview", icon: LayoutDashboard },
   { section: "orders", label: "My Orders", icon: ShoppingBag },
   { section: "wallet", label: "Wallet", icon: Wallet },
+  { section: "transactions", label: "Transactions", icon: Receipt },
   { section: "rewards", label: "Rewards", icon: Gift },
   { section: "settings", label: "Settings", icon: Settings },
 ]
@@ -64,13 +66,10 @@ function NavLinks({
     <TooltipProvider delayDuration={0}>
       <nav className="flex-1 space-y-1.5 px-3 py-6">
         {navItems.map((item) => {
-          const href =
-            item.section === "overview"
-              ? "/customer/dashboard"
-              : `/customer/dashboard/${item.section}`
+          const href = `/customer/${item.section}`
           const active =
             pathname === href ||
-            (item.section !== "overview" && pathname.startsWith(href))
+            (item.section !== "dashboard" && pathname.startsWith(href))
 
           return (
             <Tooltip key={item.section}>
@@ -175,7 +174,10 @@ function SidebarContent({
       </div>
 
       {/* ── Scrollable middle: nav ── */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        data-lenis-prevent
+      >
         <NavLinks collapsed={collapsed} onNavigate={onNavigate} />
       </div>
 

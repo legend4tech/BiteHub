@@ -264,13 +264,17 @@ import { mySchema } from "@/lib/schemas";
 
 export async function GET(req: Request) {
   try {
+    // 1. Auth check (if protected) — Do this FIRST to reject unauthorized requests statelessly
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // 2. Parse + validate query params or body via Zod
+    // 3. Connect to DB only AFTER auth and validation succeed
     await dbConnect();
 
-    // 1. Parse + validate query params or body via Zod
-    // 2. Auth check (if protected)
-    // 3. Call service or model
-    // 4. Serialize result
-    // 5. Return response
+    // 4. Call service or model
+    // 5. Serialize result
+    // 6. Return response
 
     return NextResponse.json(data);
   } catch (error) {

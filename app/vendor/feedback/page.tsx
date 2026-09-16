@@ -1,10 +1,8 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import {
-  useVendorFeedback,
-  type Feedback,
-} from "@/hooks/vendor/useVendorFeedback"
+import { useVendorFeedback } from "@/hooks/vendor/useVendorFeedback"
+import type { Feedback } from "@/types/vendor"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
@@ -90,7 +88,7 @@ export default function VendorFeedbackPage() {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`size-3.5 ${feedback.rating >= star ? "text-warning fill-rating" : "text-muted-foreground"}`}
+                            className={`size-3.5 ${feedback.rating >= star ? "fill-rating text-warning" : "text-muted-foreground"}`}
                           />
                         ))}
                       </div>

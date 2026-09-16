@@ -15,6 +15,7 @@ import {
   ORDER_STATUS,
   generateOrderId,
   LOW_STOCK_THRESHOLD,
+  PLATFORM_FLAT_FEE,
 } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
@@ -95,12 +96,13 @@ export async function POST(request: Request) {
     }).lean()
 
     if (existingCustomer) {
-      // Any existing customer — with or without a password — must be logged in to order again.
-      // First order is allowed as a guest; every subsequent order requires an account.
-      if (
-        !session ||
-        session.user?.email?.toLowerCase() !== customerEmail.toLowerCase()
-      ) {
+      // Any existing customer — with or without a password — must be logged in as a CUSTOMER to order again.
+      // First order is allowed as a guest; every subsequent order requires a customer account.
+      const isAuthenticatedCustomer =
+        session?.user?.role === "customer" &&
+        session.user?.email?.toLowerCase() === customerEmail.toLowerCase()
+
+      if (!isAuthenticatedCustomer) {
         const hasPassword = !!existingCustomer.password
         return NextResponse.json(
           {
@@ -113,24 +115,24 @@ export async function POST(request: Request) {
           { status: 401 }
         )
       }
-    } else {
-      // First-time buyer: silently create a passwordless guest account
-      const randomReferral = crypto.randomBytes(4).toString("hex")
-      await Customer.create({
-        name: customerName,
-        email: customerEmail.toLowerCase(),
-        phone: customerPhone,
-        referralCode: `REF-${randomReferral.toUpperCase()}`,
-        isActive: true,
-      })
     }
 
-    // Verify vendor exists and is active before accepting the order
+    // Verify vendor exists, is active, and is open before accepting the order
     const vendor = await Vendor.findById(vendorId).lean()
     if (!vendor || !vendor.isActive) {
       return NextResponse.json(
         { error: "Vendor not found or inactive" },
         { status: 404 }
+      )
+    }
+
+    if (vendor.isOpen === false) {
+      return NextResponse.json(
+        {
+          error:
+            "Vendor is currently closed and not accepting orders at this time.",
+        },
+        { status: 400 }
       )
     }
 
@@ -181,9 +183,13 @@ export async function POST(request: Request) {
     // Gross-up formula: collect exactly enough from the customer so that after Monnify
     // takes their 1.5% cut of the total, the vendor absorbs zero processing fee.
     // See lib/fees.ts for the full derivation.
-    // Note: No service fee applies for wallet payments.
-    const serviceFee =
-      paymentMethod === "wallet" ? 0 : computeMonnifyServiceFee(calculatedTotal)
+    // Note: Gateway service fee does not apply for wallet payments.
+    const targetAmountToReceive = calculatedTotal + PLATFORM_FLAT_FEE
+    const monnifyFee =
+      paymentMethod === "wallet"
+        ? 0
+        : computeMonnifyServiceFee(targetAmountToReceive)
+    const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
     const finalTotal = calculatedTotal + serviceFee
 
     // Calculate exact revenue split
@@ -246,6 +252,8 @@ export async function POST(request: Request) {
         customerId: customer._id,
         type: "order_payment",
         amount: finalTotal,
+        balanceAfter: wallet.balance,
+        direction: "debit",
         reference: `ORD-${orderId}`,
         description: `Payment for order ${orderId}`,
       })

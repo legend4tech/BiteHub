@@ -22,8 +22,17 @@ import {
   AdminListSkeleton,
   AdminOrdersSkeleton,
   AdminOverviewStatsSkeleton,
+  AdminAnalyticsDashboardSkeleton,
   AdminFeedbackSkeleton,
 } from "./skeletons/AdminSkeletons"
+
+import {
+  CustomerDashboardSkeleton,
+  CustomerOrdersSkeleton,
+  CustomerWalletSkeleton,
+  CustomerRewardsSkeleton,
+  CustomerSettingsSkeleton,
+} from "./skeletons/CustomerDashboardSkeletons"
 
 // ─── PageSkeleton ─────────────────────────────────────────────────────────────
 // A reusable skeleton component. Pass a variant to imitate the matching page
@@ -53,7 +62,13 @@ type SkeletonVariant =
   | "admin-list"
   | "admin-orders"
   | "admin-overview-stats"
+  | "admin-analytics-dashboard"
   | "admin-feedback"
+  | "customer-dashboard"
+  | "customer-orders"
+  | "customer-wallet"
+  | "customer-rewards"
+  | "customer-settings"
 
 interface PageSkeletonProps {
   variant: SkeletonVariant
@@ -62,6 +77,16 @@ interface PageSkeletonProps {
 
 export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
   switch (variant) {
+    case "customer-dashboard":
+      return <CustomerDashboardSkeleton />
+    case "customer-orders":
+      return <CustomerOrdersSkeleton />
+    case "customer-wallet":
+      return <CustomerWalletSkeleton />
+    case "customer-rewards":
+      return <CustomerRewardsSkeleton />
+    case "customer-settings":
+      return <CustomerSettingsSkeleton />
     case "menu-item-grid":
       return <MenuItemGridSkeleton count={count} />
     case "vendor-list":
@@ -94,6 +119,8 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <AdminOrdersSkeleton count={count} />
     case "admin-overview-stats":
       return <AdminOverviewStatsSkeleton count={count} />
+    case "admin-analytics-dashboard":
+      return <AdminAnalyticsDashboardSkeleton />
     case "admin-feedback":
       return <AdminFeedbackSkeleton count={count} />
     default:

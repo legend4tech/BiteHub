@@ -4,6 +4,7 @@ import PlatformFeedback from "@/models/PlatformFeedback"
 import VendorFeedback from "@/models/VendorFeedback"
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
+import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
 import { z } from "zod"
 
@@ -111,6 +112,7 @@ export async function POST(request: Request) {
         vendorDoc.rating = newRating
         vendorDoc.ratingCount = newCount
         await vendorDoc.save()
+        await syncVendorMenuScores(vendor.vendorId)
       }
     }
 

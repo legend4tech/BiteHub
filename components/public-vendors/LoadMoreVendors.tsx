@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
-import { useInView } from "react-intersection-observer"
 import { useVendors } from "@/hooks/vendor/useVendors"
 import { VendorCard } from "@/components/public-vendors/VendorCard"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { FadeIn } from "@/components/FadeIn"
+import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger"
 
 interface LoadMoreVendorsProps {
   initialPage: number
@@ -17,7 +16,6 @@ export function LoadMoreVendors({
   initialPage,
   searchParams,
 }: LoadMoreVendorsProps) {
-  const { ref, inView } = useInView()
   const searchQuery = typeof searchParams.q === "string" ? searchParams.q : ""
 
   const {
@@ -37,12 +35,6 @@ export function LoadMoreVendors({
     enabled: true,
   })
 
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
-
   // Combine all pages of vendors into a single array
   const vendors = data ? data.pages.flatMap((page) => page.vendors) : []
 
@@ -59,8 +51,16 @@ export function LoadMoreVendors({
       )}
 
       {(hasNextPage || isFetchingNextPage) && (
-        <div ref={ref} className="mt-8">
-          <PageSkeleton variant="menu-item-grid" count={4} />
+        <div className="mt-8">
+          <InfiniteScrollTrigger
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+            skeletonVariant="menu-item-grid"
+            skeletonCount={4}
+            loadingText="Loading more vendors..."
+            endText="You've reached the end of the vendors."
+          />
         </div>
       )}
 

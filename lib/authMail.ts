@@ -18,6 +18,7 @@ import BankChangeOtpEmail from "@/emails/BankChangeOtpEmail"
 import BankChangeConfirmationEmail from "@/emails/BankChangeConfirmationEmail"
 import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
 import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
+import CustomerWelcomeEmail from "@/emails/CustomerWelcomeEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -70,6 +71,42 @@ export async function sendPasswordResetEmail(
     return { success: true, data }
   } catch (error) {
     console.error("Failed to send password reset email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendCustomerPasswordResetEmail(
+  email: string,
+  customerName: string,
+  resetLink: string,
+  expiryMinutes: number = 15
+) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(
+      "⚠️ RESEND_API_KEY is not defined in env. Logged customer reset link:",
+      resetLink
+    )
+    return { success: false, error: "Email provider key missing" }
+  }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolveFrom(),
+      to: email,
+      subject: "Reset your BiteHub password",
+      react: React.createElement(ResetPasswordEmail, {
+        vendorName: customerName,
+        resetLink,
+        expiryMinutes,
+        userType: "customer",
+      }),
+    })
+    if (error) {
+      console.error("Resend API Error (Customer Password Reset):", error)
+      return { success: false, error }
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send customer password reset email:", error)
     return { success: false, error }
   }
 }
@@ -186,7 +223,34 @@ export async function sendAdminPasswordChangedEmail(
     }
     return { success: true, data }
   } catch (error) {
-    console.error("Failed to send admin password change email:", error)
+    console.error("Failed to send admin password change notification:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendCustomerWelcomeEmail(
+  email: string,
+  customerName: string
+) {
+  if (!process.env.RESEND_API_KEY) return missingKey()
+  try {
+    const { data, error } = await resend.emails.send({
+      from: resolveFrom(),
+      to: email,
+      subject: `Welcome to BiteHub, ${customerName}! 🍕`,
+      react: React.createElement(CustomerWelcomeEmail, {
+        customerName,
+        dashboardUrl:
+          process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com",
+      }),
+    })
+    if (error) {
+      console.error("Resend API Error (Customer Welcome):", error)
+      return { success: false, error }
+    }
+    return { success: true, data }
+  } catch (error) {
+    console.error("Failed to send customer welcome email:", error)
     return { success: false, error }
   }
 }

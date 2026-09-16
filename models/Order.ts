@@ -13,6 +13,7 @@ export interface IOrder extends Document {
   vendorName: string
   vendorWhatsappNumber: string
   vendorPrepTime?: string
+  customerId?: Types.ObjectId
   customerName: string
   customerEmail?: string
   customerPhone: string
@@ -60,6 +61,10 @@ const OrderSchema = new Schema<IOrder>(
     vendorName: { type: String, required: true },
     vendorWhatsappNumber: { type: String, default: "" },
     vendorPrepTime: { type: String, default: "" },
+    customerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Customer",
+    },
     customerName: { type: String, required: true },
     customerEmail: { type: String },
     customerPhone: { type: String, required: true },
@@ -122,6 +127,19 @@ const OrderSchema = new Schema<IOrder>(
 // MongoDB uses the leftmost prefix, so { vendorId } and { vendorId, status }
 // queries are also covered without a separate index.
 OrderSchema.index({ vendorId: 1, status: 1, createdAt: -1 })
+
+// Compound index for Customer Dashboard
+// Covers counting orders by email and fetching recent orders sorted by date
+OrderSchema.index({ customerEmail: 1, createdAt: -1 })
+
+// Compound index for Admin Analytics
+// Covers all analytics queries filtering by paymentStatus + date range:
+//   - paid orders KPIs: { paymentStatus: "paid", createdAt: { $gte } }
+//   - all-orders queries: { createdAt: { $gte } } — uses createdAt suffix
+//   - top vendors agg: { paymentStatus: "paid", createdAt: dateFilter }
+//   - zone agg: { createdAt: dateFilter }
+// Eliminates full collection scans on every analytics page load.
+OrderSchema.index({ paymentStatus: 1, createdAt: -1 })
 
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", OrderSchema)

@@ -1,23 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import { AdminLandmarkValues, AdminSubLandmarkValues } from "@/lib/schemas"
-
-export interface SubLandmark {
-  id: string
-  name: string
-  defaultDeliveryFee?: number
-  isActive: boolean
-}
-
-export interface Landmark {
-  id: string
-  school: string
-  campus: string
-  name: string
-  defaultDeliveryFee: number
-  isActive: boolean
-  subLandmarks: SubLandmark[]
-}
+import type { SubLandmark, Landmark } from "@/types/admin"
 
 export function useAdminDeliveryZones() {
   const queryClient = useQueryClient()

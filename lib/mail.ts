@@ -14,6 +14,7 @@
 
 export {
   sendPasswordResetEmail,
+  sendCustomerPasswordResetEmail,
   sendBankSetupConfirmationEmail,
   sendBankChangeOtpEmail,
   sendBankChangeConfirmationEmail,

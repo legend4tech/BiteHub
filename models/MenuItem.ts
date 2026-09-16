@@ -21,6 +21,7 @@ export interface IMenuItem extends Document {
   preorderEndDate?: Date
   preorderDeliveryInfo?: string
   lowStockAlertSent?: boolean
+  baseDiscoveryScore: number
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -69,6 +70,10 @@ const MenuItemSchema: Schema = new Schema(
     lowStockAlertSent: {
       type: Boolean,
       default: false,
+    },
+    baseDiscoveryScore: {
+      type: Number,
+      default: 0,
     },
   },
   {

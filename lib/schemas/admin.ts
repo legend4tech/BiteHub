@@ -69,3 +69,49 @@ export const updateAdminProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50),
 })
 export type UpdateAdminProfileValues = z.infer<typeof updateAdminProfileSchema>
+
+// ─── Platform Withdrawals ──────────────────────────────────────────────────────
+
+export const withdrawalSchema = z.object({
+  amount: z.number().positive(),
+  reference: z.string().min(1),
+  note: z.string().optional(),
+})
+export type WithdrawalValues = z.infer<typeof withdrawalSchema>
+
+// ─── Analytics ─────────────────────────────────────────────────────────────────
+
+export const analyticsQuerySchema = z.object({
+  range: z.enum(["7d", "30d", "1y", "all", "custom"]).default("30d"),
+  from: z.string().optional(),
+  to: z.string().optional(),
+})
+export type AnalyticsQueryValues = z.infer<typeof analyticsQuerySchema>
+// ─── Vendor Management ─────────────────────────────────────────────────────────
+
+export const adminCreateVendorApiSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
+  email: z.string().email("Invalid email"),
+  password: strongPasswordSchema,
+  description: z.string().optional().default(""),
+  category: z.string().optional().default("general"),
+  tags: z.array(z.string()).optional().default([]),
+  prepTime: z.string().optional().default(""),
+  school: z.string().optional(),
+  campus: z.string().optional(),
+  image: z.object({ url: z.string().min(1), publicId: z.string() }).optional(),
+  isManagedByBiteHub: z.boolean().optional().default(false),
+})
+
+export const adminUpdateVendorSchema = z.object({
+  isActive: z.boolean().optional(),
+  accountIsActive: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  isManagedByBiteHub: z.boolean().optional(),
+})
+
+export type AdminCreateVendorApiValues = z.infer<
+  typeof adminCreateVendorApiSchema
+>
+export type AdminUpdateVendorValues = z.infer<typeof adminUpdateVendorSchema>

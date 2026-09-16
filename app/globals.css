@@ -69,6 +69,8 @@
     --color-success-foreground: var(--success-foreground);
     --color-whatsapp: var(--whatsapp);
     --color-info: var(--info);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
 }
 
 /* Light theme — Primary: #FF6B00, Background: #FFF4EC, Text: #1A1A1A */

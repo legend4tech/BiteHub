@@ -14,6 +14,15 @@ import {
   Menu,
   ChevronRight,
 } from "lucide-react"
+import { useSession, signOut } from "next-auth/react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { motion } from "framer-motion"
 import { usePathname } from "next/navigation"
@@ -25,10 +34,12 @@ import {
 } from "@/components/ui/sheet"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 import { useCampus } from "@/components/providers/CampusProvider"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 
 export function Navbar() {
   const pathname = usePathname()
   const { schoolId, campusId } = useCampus()
+  const { data: session, status } = useSession()
 
   // Campus query string — appended to any link that triggers a server-side filtered page
   const cq = `school=${schoolId}&campus=${campusId}`
@@ -112,17 +123,86 @@ export function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <Button
-            asChild
-            variant="hero"
-            size="lg"
-            className="group rounded-2xl px-3 font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/30 active:scale-95 sm:px-6"
-          >
-            <Link href={`/menus?${cq}`} className="flex items-center gap-2">
-              <ShoppingBag className="size-4 transition-transform group-hover:rotate-12" />
-              <span className="hidden sm:inline">Order now</span>
-            </Link>
-          </Button>
+          {status === "loading" ? (
+            <div className="h-10 w-10 animate-pulse rounded-full bg-muted"></div>
+          ) : session?.user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="outline-none">
+                <Avatar className="h-11 w-11 border-2 border-primary/20 shadow-sm transition-transform hover:scale-105 active:scale-95">
+                  <AvatarImage
+                    src={session.user.image || ""}
+                    alt={session.user.name || "User"}
+                  />
+                  <AvatarFallback className="bg-primary/10 font-bold text-primary">
+                    {session.user.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 rounded-xl border-white/10 bg-background/95 p-2 shadow-xl backdrop-blur-md"
+              >
+                <div className="mb-1 px-2 py-1.5">
+                  <p className="truncate text-sm font-semibold">
+                    {session.user.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {session.user.email}
+                  </p>
+                </div>
+                <DropdownMenuSeparator className="bg-border/50" />
+                <DropdownMenuItem
+                  asChild
+                  className="cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground"
+                >
+                  <Link
+                    href={
+                      session.user.role === "admin" ||
+                      session.user.role === "superadmin"
+                        ? "/admin"
+                        : session.user.role === "vendor"
+                          ? "/vendor/dashboard"
+                          : session.user.role === "vendor_manager"
+                            ? "/vendor-manager"
+                            : "/customer/dashboard"
+                    }
+                  >
+                    Go to Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <ConfirmDialog
+                  title="Log out"
+                  description="Are you sure you want to log out?"
+                  confirmText="Log out"
+                  isDestructive={true}
+                  onConfirm={() => signOut({ callbackUrl: "/" })}
+                  trigger={
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="cursor-pointer rounded-lg px-3 py-2 text-sm text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    >
+                      Log out
+                    </DropdownMenuItem>
+                  }
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              asChild
+              variant="hero"
+              size="lg"
+              className="group rounded-2xl px-3 font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] hover:shadow-primary/30 active:scale-95 sm:px-6"
+            >
+              <Link
+                href={`/customer/login?redirect=/menus?${cq}`}
+                className="flex items-center gap-2"
+              >
+                <ShoppingBag className="size-4 transition-transform group-hover:rotate-12" />
+                <span className="hidden sm:inline">Login to order</span>
+              </Link>
+            </Button>
+          )}
 
           <Sheet>
             <SheetTrigger asChild>
@@ -160,9 +240,12 @@ export function Navbar() {
                 </span>
               </div>
 
-              {/* Navigation Links */}
-              <div className="scrollbar-hide flex-1 overflow-y-auto px-4 py-6">
-                <div className="flex flex-col gap-2">
+              {/* ── Scrollable Nav ── */}
+              <div
+                className="scrollbar-hide flex-1 overflow-y-auto px-4 py-6"
+                data-lenis-prevent
+              >
+                <div className="flex flex-col gap-1">
                   {navLinks.map((link) => {
                     const isActive =
                       pathname === link.base ||
@@ -206,20 +289,45 @@ export function Navbar() {
               {/* Footer CTA & Info */}
               <div className="mt-auto border-t border-border/50 bg-background/50 p-6 backdrop-blur-md">
                 <SheetClose asChild>
-                  <Button
-                    asChild
-                    variant="hero"
-                    size="lg"
-                    className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
-                  >
-                    <Link
-                      href={`/menus?${cq}`}
-                      className="flex items-center justify-center gap-2"
+                  {session?.user ? (
+                    <Button
+                      asChild
+                      variant="hero"
+                      size="lg"
+                      className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
                     >
-                      <ShoppingBag className="size-5" />
-                      Order now
-                    </Link>
-                  </Button>
+                      <Link
+                        href={
+                          session.user.role === "admin" ||
+                          session.user.role === "superadmin"
+                            ? "/admin"
+                            : session.user.role === "vendor"
+                              ? "/vendor/dashboard"
+                              : session.user.role === "vendor_manager"
+                                ? "/vendor-manager"
+                                : "/customer/dashboard"
+                        }
+                        className="flex items-center justify-center gap-2"
+                      >
+                        Go to Dashboard
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      variant="hero"
+                      size="lg"
+                      className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
+                    >
+                      <Link
+                        href={`/customer/login?redirect=/menus?${cq}`}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <ShoppingBag className="size-5" />
+                        Login to order
+                      </Link>
+                    </Button>
+                  )}
                 </SheetClose>
                 <p className="mt-4 text-center text-xs font-medium text-muted-foreground opacity-80">
                   Empowering campus food businesses.

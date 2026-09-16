@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
 import { useAdminStats } from "@/hooks/admin/useAdminStats"
 import { ORDER_STATUS } from "@/lib/constants"
-import type { AdminStats } from "@/components/admin/types"
+import type { AdminStats } from "@/types/admin"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { OrderStatus } from "@/types/shared"
 import Link from "next/link"
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -74,19 +76,6 @@ export function VendorManagerOverview() {
       refetchInterval: 15000, // Auto-refresh every 15 seconds for live feed
     }
   )
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case ORDER_STATUS.CONFIRMED:
-        return "bg-status-confirmed/20 text-status-confirmed-foreground"
-      case ORDER_STATUS.PREPARING:
-        return "bg-status-preparing/20 text-status-preparing-foreground"
-      case ORDER_STATUS.READY:
-        return "bg-status-ready/20 text-status-ready-foreground"
-      default:
-        return "bg-muted text-muted-foreground"
-    }
-  }
 
   const activeOrdersCount = stats?.preparingOrders ?? 0 // Currently 'preparing' or 'ready' would be active
 
@@ -205,11 +194,10 @@ export function VendorManagerOverview() {
                   >
                     {order.orderId}
                   </Link>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
-                  >
-                    {order.status}
-                  </span>
+                  <StatusBadge
+                    status={order.status as OrderStatus}
+                    paymentStatus={order.paymentStatus}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

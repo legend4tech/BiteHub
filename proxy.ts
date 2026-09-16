@@ -116,6 +116,12 @@ export default auth(async (req) => {
     pathname !== "/vendor/forgot-password" &&
     pathname !== "/vendor/reset-password" &&
     pathname !== "/vendor/confirm-email"
+  const isOnCustomerProtected =
+    pathname.startsWith("/customer/") &&
+    pathname !== "/customer/login" &&
+    pathname !== "/customer/signup" &&
+    pathname !== "/customer/forgot-password" &&
+    pathname !== "/customer/reset-password"
 
   let res = NextResponse.next()
 
@@ -126,8 +132,10 @@ export default auth(async (req) => {
     } else if (role !== "admin" && role !== "superadmin") {
       if (role === "vendor_manager") {
         res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
-      } else {
+      } else if (role === "vendor") {
         res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/customer/dashboard", req.nextUrl))
       }
     }
   }
@@ -139,8 +147,10 @@ export default auth(async (req) => {
     } else if (role !== "vendor_manager") {
       if (role === "admin" || role === "superadmin") {
         res = NextResponse.redirect(new URL("/admin", req.nextUrl))
-      } else {
+      } else if (role === "vendor") {
         res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/customer/dashboard", req.nextUrl))
       }
     }
   }
@@ -152,9 +162,50 @@ export default auth(async (req) => {
     } else if (role !== "vendor") {
       if (role === "vendor_manager") {
         res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
-      } else {
+      } else if (role === "admin" || role === "superadmin") {
         res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/customer/dashboard", req.nextUrl))
       }
+    }
+  }
+
+  // Customer protected section guard
+  else if (isOnCustomerProtected) {
+    if (!isLoggedIn) {
+      res = NextResponse.redirect(new URL("/customer/login", req.nextUrl))
+    } else if (role !== "customer") {
+      if (role === "vendor_manager") {
+        res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
+      } else if (role === "admin" || role === "superadmin") {
+        res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+      } else {
+        res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+      }
+    }
+  }
+
+  // Redirect logged-in users away from auth pages
+  else if (
+    isLoggedIn &&
+    (isAdminLoginRoute ||
+      isVendorManagerLoginRoute ||
+      pathname === "/vendor/login" ||
+      pathname === "/vendor/forgot-password" ||
+      pathname === "/vendor/reset-password" ||
+      pathname === "/customer/login" ||
+      pathname === "/customer/signup" ||
+      pathname === "/customer/forgot-password" ||
+      pathname === "/customer/reset-password")
+  ) {
+    if (role === "admin" || role === "superadmin") {
+      res = NextResponse.redirect(new URL("/admin", req.nextUrl))
+    } else if (role === "vendor_manager") {
+      res = NextResponse.redirect(new URL("/vendor-manager", req.nextUrl))
+    } else if (role === "vendor") {
+      res = NextResponse.redirect(new URL("/vendor/dashboard", req.nextUrl))
+    } else {
+      res = NextResponse.redirect(new URL("/customer/dashboard", req.nextUrl))
     }
   }
 

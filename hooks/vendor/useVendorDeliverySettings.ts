@@ -1,25 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
 import { VendorDeliverySettingsUpdateValues } from "@/lib/schemas"
-
-export interface DeliverySettingsResponse {
-  landmarks: {
-    id: string
-    school: string
-    campus: string
-    name: string
-    defaultDeliveryFee: number
-    subLandmarks: {
-      id: string
-      name: string
-      defaultDeliveryFee?: number
-    }[]
-  }[]
-  overrides: {
-    landmarks: { landmarkId: string; fee: number }[]
-    subLandmarks: { subLandmarkId: string; fee: number }[]
-  }
-}
+import type { DeliverySettingsResponse } from "@/types/vendor"
 
 export function useVendorDeliverySettings() {
   const queryClient = useQueryClient()

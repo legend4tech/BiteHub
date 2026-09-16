@@ -2,7 +2,7 @@ import { Copy, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { formatTime } from "@/lib/format"
-import { StatusBadge } from "@/components/vendor-dashboard/StatusBadge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { type Order } from "@/types/shared"
 
 interface OrderHeroCardProps {

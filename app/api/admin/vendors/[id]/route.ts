@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
+import MenuItemModel from "@/models/MenuItem"
 import VendorUserModel from "@/models/VendorUser"
+import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import mongoose from "mongoose"
 import { auth } from "@/auth"
+import { adminUpdateVendorSchema } from "@/lib/schemas/admin"
 
 // PATCH — toggle vendor isActive or update fields
 export async function PATCH(
@@ -29,10 +32,19 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { isActive, accountIsActive, isFeatured } = body
+    const parsedBody = adminUpdateVendorSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: parsedBody.error.issues[0].message },
+        { status: 400 }
+      )
+    }
+
+    const { isActive, accountIsActive, isFeatured, isManagedByBiteHub } =
+      parsedBody.data
 
     // Toggle vendor storefront
-    if (typeof isActive === "boolean") {
+    if (isActive !== undefined) {
       if (isActive) {
         // Enforce payment details requirement before activating
         const vendor = await VendorModel.findById(id).lean()
@@ -53,7 +65,7 @@ export async function PATCH(
     }
 
     // Toggle vendor login account independently
-    if (typeof accountIsActive === "boolean") {
+    if (accountIsActive !== undefined) {
       await VendorUserModel.findOneAndUpdate(
         { vendorId: id },
         { isActive: accountIsActive }
@@ -61,8 +73,14 @@ export async function PATCH(
     }
 
     // Toggle featured status
-    if (typeof isFeatured === "boolean") {
+    if (isFeatured !== undefined) {
       await VendorModel.findByIdAndUpdate(id, { isFeatured })
+      await syncVendorMenuScores(id)
+    }
+
+    // Toggle managed status
+    if (isManagedByBiteHub !== undefined) {
+      await VendorModel.findByIdAndUpdate(id, { isManagedByBiteHub })
     }
 
     return NextResponse.json({ message: "Updated successfully" })

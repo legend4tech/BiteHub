@@ -6,7 +6,6 @@ import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { OrderStatusTracker } from "@/components/cart/OrderStatusTracker"
-import { WhatsAppButton } from "@/components/cart/WhatsAppButton"
 import { OrderItemsBreakdown } from "@/components/cart/OrderItemsBreakdown"
 import { OrderHeroCard } from "@/components/cart/OrderHeroCard"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -15,7 +14,6 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import {
   Home,
   ShoppingBag,
-  MessageCircle,
   ChevronRight,
   Clock,
   Loader2,
@@ -219,13 +217,13 @@ export default function OrderPage() {
         {/* ── Payment verification banner ─────────────────────────── */}
         {order.paymentStatus === "pending" &&
           (!isStalePayment || isVerifyingDirectly) && (
-            <div className="border-warning/20 bg-warning/10 flex items-center gap-3 rounded-[20px] border px-5 py-4">
-              <Loader2 className="text-warning size-4 shrink-0 animate-spin" />
+            <div className="flex items-center gap-3 rounded-[20px] border border-warning/20 bg-warning/10 px-5 py-4">
+              <Loader2 className="size-4 shrink-0 animate-spin text-warning" />
               <div>
-                <p className="text-warning-foreground dark:text-warning text-sm font-semibold">
+                <p className="text-sm font-semibold text-warning-foreground dark:text-warning">
                   Verifying your payment…
                 </p>
-                <p className="text-warning/80 dark:text-warning/80 text-xs">
+                <p className="text-xs text-warning/80 dark:text-warning/80">
                   Contacting Monnify securely to confirm your transaction
                   status.
                 </p>
@@ -235,6 +233,7 @@ export default function OrderPage() {
 
         {/* ── Payment recovery banner ─────────────────────────────── */}
         {order.paymentStatus === "pending" &&
+          order.status !== ORDER_STATUS.CANCELLED &&
           isStalePayment &&
           !isVerifyingDirectly && (
             <div className="flex flex-col items-start justify-between gap-4 rounded-[20px] border border-destructive/20 bg-destructive/5 px-5 py-4 sm:flex-row sm:items-center">
@@ -296,38 +295,6 @@ export default function OrderPage() {
         </div>
 
         <OrderItemsBreakdown order={order} />
-
-        {/* ── Contact vendor via WhatsApp ────────────────────────── */}
-        <div className="rounded-[28px] border border-border bg-card shadow-sm">
-          <div className="flex items-center gap-2.5 border-b border-border/60 px-7 py-5 sm:px-8">
-            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10">
-              <MessageCircle className="size-4 text-primary" />
-            </div>
-            <h2 className="font-heading text-base font-bold sm:text-lg">
-              Contact vendor
-            </h2>
-          </div>
-
-          <div className="px-7 py-5 sm:px-8">
-            <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-              Message the vendor on WhatsApp for any updates or questions about
-              your order.
-            </p>
-            <WhatsAppButton
-              vendorPhone={order.vendorWhatsappNumber}
-              status={order.status}
-              order={{
-                orderId: order.orderId,
-                customerName: order.customerName,
-                items: order.items,
-                total: order.totalAmount,
-                notes: order.notes ?? undefined,
-                paymentMethod: order.paymentMethod,
-                paymentStatus: order.paymentStatus,
-              }}
-            />
-          </div>
-        </div>
 
         {/* ── Feedback Modal for completed orders ────────────────── */}
         {order && (

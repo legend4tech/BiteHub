@@ -16,22 +16,47 @@ export interface CartState {
 }
 
 export interface OrderRecord {
-  _id: { toString: () => string }
+  id?: string
+  _id?: { toString: () => string }
   orderId: string
   vendorName: string
   totalAmount: number
   status: string
+  paymentStatus?: string
   location: string
   createdAt: string | Date
   items: Array<{ name: string; quantity: number; price: number }>
 }
 
 export interface Transaction {
-  _id: { toString: () => string }
+  id?: string
+  _id?: { toString: () => string }
   type: string
   amount: number
+  balanceAfter?: number
+  direction?: "credit" | "debit"
   description?: string
-  status: string
+  status?: string
   reference: string
   createdAt: string | Date
+}
+
+export interface CustomerOrdersPageData {
+  orders: OrderRecord[]
+  page: number
+  hasMore: boolean
+  totalOrders: number
+}
+
+export interface CustomerProfile {
+  name: string
+  email: string
+  phone: string
+  school?: string
+  campus?: string
+  preferredLandmark?: string
+  preferredSubLandmark?: string
+  preferredExactLocation?: string
+  image?: string
+  imagePublicId?: string
 }

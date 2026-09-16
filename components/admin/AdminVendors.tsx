@@ -12,12 +12,14 @@ import {
   Star,
   Filter,
   UtensilsCrossed,
+  ShieldCheck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
-import type { AdminVendor } from "./types"
+import type { AdminVendor } from "@/types/admin"
 
 interface AdminVendorsProps {
   vendors: AdminVendor[]
@@ -26,8 +28,10 @@ interface AdminVendorsProps {
   noAccountVendors: AdminVendor[]
   togglingId: string | null
   togglingFeaturedId: string | null
+  togglingManagedId: string | null
   onToggleActive: (vendor: AdminVendor) => void
   onToggleFeatured: (vendor: AdminVendor) => void
+  onToggleManaged: (vendor: AdminVendor, isManaged: boolean) => void
   onAddLogin: (vendor: AdminVendor) => void
 }
 
@@ -38,8 +42,10 @@ export function AdminVendors({
   noAccountVendors,
   togglingId,
   togglingFeaturedId,
+  togglingManagedId,
   onToggleActive,
   onToggleFeatured,
+  onToggleManaged,
   onAddLogin,
 }: AdminVendorsProps) {
   const pathname = usePathname()
@@ -51,6 +57,13 @@ export function AdminVendors({
     "all" | "active" | "inactive" | "no_login" | "pending_monnify" | "no_menu"
   >("all")
 
+  const [managedModalVendorId, setManagedModalVendorId] = useState<
+    string | null
+  >(null)
+  const [pendingManagedStatus, setPendingManagedStatus] = useState<
+    boolean | null
+  >(null)
+
   const filteredVendors = optimisticVendors.filter((v) => {
     if (filter === "active") return v.isActive
     if (filter === "inactive") return !v.isActive
@@ -60,10 +73,9 @@ export function AdminVendors({
     if (filter === "no_menu") return !v.hasMenu
     return true
   })
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="font-heading text-2xl font-bold">Vendors</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -148,80 +160,114 @@ export function AdminVendors({
             {filteredVendors.map((vendor) => {
               const initials = vendor.name
                 .split(" ")
-                .map((w) => w[0])
+                .map((w: string) => w[0])
                 .slice(0, 2)
                 .join("")
                 .toUpperCase()
               return (
                 <div
                   key={vendor.id}
-                  className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30"
+                  className="relative flex flex-col justify-between gap-4 px-4 py-4 pr-12 transition-colors hover:bg-muted/30 sm:px-6 md:flex-row md:items-center md:pr-6"
                 >
-                  {/* Avatar */}
-                  <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
-                    {vendor.image?.url ? (
-                      <img
-                        src={vendor.image.url}
-                        alt={vendor.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold">
-                        {vendor.name}
-                      </p>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.isActive ? "bg-status-completed/20 text-status-completed-foreground" : "bg-muted text-muted-foreground"}`}
-                      >
-                        {vendor.isActive ? "Active" : "Inactive"}
-                      </span>
-                      {vendor.onboardedByName && (
-                        <span
-                          className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
-                          title={`Onboarded by ${vendor.onboardedByName}`}
-                        >
-                          By {vendor.onboardedByName.split(" ")[0]}
-                        </span>
-                      )}
-                      {vendor.account ? (
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.account.isActive ? "bg-status-confirmed/20 text-status-confirmed-foreground" : "bg-muted text-muted-foreground"}`}
-                        >
-                          Login{" "}
-                          {vendor.account.isActive ? "active" : "disabled"}
-                        </span>
+                  <div className="flex min-w-0 flex-1 items-start gap-4">
+                    {/* Avatar */}
+                    <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
+                      {vendor.image?.url ? (
+                        <img
+                          src={vendor.image.url}
+                          alt={vendor.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <span className="shrink-0 rounded-full bg-status-pending/20 px-2 py-0.5 text-[10px] font-bold text-status-pending-foreground">
-                          No login
-                        </span>
-                      )}
-                      {!vendor.hasMenu && (
-                        <span
-                          className="flex shrink-0 items-center gap-1 rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive"
-                          title="This vendor has not added any menu items yet."
-                        >
-                          <UtensilsCrossed className="size-3" /> No Menu
-                        </span>
+                        initials
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {vendor.whatsappNumber} · {vendor.campus}
-                      {vendor.account && (
-                        <span className="ml-2 text-primary/70">
-                          · {vendor.account.email}
+
+                    {/* Info */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <p className="text-base leading-tight font-bold break-words text-foreground">
+                        {vendor.name}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.isActive ? "bg-status-completed/20 text-status-completed-foreground" : "bg-muted text-muted-foreground"}`}
+                        >
+                          {vendor.isActive ? "Active" : "Inactive"}
                         </span>
-                      )}
-                    </p>
+                        {vendor.onboardedByName && (
+                          <span
+                            className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase"
+                            title={`Onboarded by ${vendor.onboardedByName}`}
+                          >
+                            By {vendor.onboardedByName.split(" ")[0]}
+                          </span>
+                        )}
+                        {vendor.account ? (
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${vendor.account.isActive ? "bg-status-confirmed/20 text-status-confirmed-foreground" : "bg-muted text-muted-foreground"}`}
+                          >
+                            Login{" "}
+                            {vendor.account.isActive ? "active" : "disabled"}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 rounded-full bg-status-pending/20 px-2 py-0.5 text-[10px] font-bold text-status-pending-foreground">
+                            No login
+                          </span>
+                        )}
+                        {!vendor.hasMenu && (
+                          <span
+                            className="flex shrink-0 items-center gap-1 rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive"
+                            title="This vendor has not added any menu items yet."
+                          >
+                            <UtensilsCrossed className="size-3" /> No Menu
+                          </span>
+                        )}
+                        {vendor.isManagedByBiteHub && (
+                          <span
+                            className="flex shrink-0 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
+                            title="Managed by BiteHub"
+                          >
+                            <ShieldCheck className="size-3" /> Managed
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs break-words text-muted-foreground">
+                        {vendor.whatsappNumber} · {vendor.campus}
+                        {vendor.account && (
+                          <span className="ml-2 inline-block text-primary/70">
+                            · {vendor.account.email}
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex shrink-0 items-center gap-1">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2 pt-2 pl-[56px] sm:gap-4 md:pt-0 md:pl-0">
+                    <div
+                      className="flex items-center space-x-2 border-r border-border pr-4"
+                      title="Toggle Managed Status"
+                    >
+                      <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                        Managed
+                      </span>
+                      <Switch
+                        checked={
+                          (managedModalVendorId === vendor.id ||
+                            togglingManagedId === vendor.id) &&
+                          pendingManagedStatus !== null
+                            ? pendingManagedStatus
+                            : vendor.isManagedByBiteHub
+                        }
+                        onCheckedChange={(val) => {
+                          setPendingManagedStatus(val)
+                          setManagedModalVendorId(vendor.id)
+                        }}
+                        disabled={togglingManagedId === vendor.id}
+                        className="scale-75 data-[state=checked]:bg-primary"
+                      />
+                    </div>
+
                     {vendor.isFeatured ? (
                       <ConfirmDialog
                         trigger={
@@ -312,24 +358,64 @@ export function AdminVendors({
                         />
                       </Button>
                     )}
-
-                    <Link href={`/vendors/${vendor.slug}`} target="_blank">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        title="View storefront"
-                      >
-                        <ChevronRight className="size-4 text-muted-foreground" />
-                      </Button>
-                    </Link>
                   </div>
+
+                  <Link
+                    href={`/vendors/${vendor.slug}`}
+                    target="_blank"
+                    className="absolute top-4 right-4 md:static"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="View storefront"
+                    >
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </Button>
+                  </Link>
                 </div>
               )
             })}
           </div>
         )}
       </div>
+
+      {managedModalVendorId && (
+        <ConfirmDialog
+          open={!!managedModalVendorId}
+          onOpenChange={(open) => {
+            if (!open) {
+              setManagedModalVendorId(null)
+            }
+          }}
+          title={
+            pendingManagedStatus
+              ? "Make Managed Vendor?"
+              : "Remove Managed Status?"
+          }
+          description={
+            pendingManagedStatus
+              ? "Are you sure you want to manage this vendor? This allows them to safely share a central bank account for payouts."
+              : "Are you sure you want to stop managing this vendor? They will no longer be able to share a central bank account with other vendors."
+          }
+          confirmText={
+            pendingManagedStatus
+              ? "Yes, manage vendor"
+              : "Yes, remove managed status"
+          }
+          isDestructive={!pendingManagedStatus}
+          onConfirm={() => {
+            const vendor = optimisticVendors.find(
+              (v) => v.id === managedModalVendorId
+            )
+            if (vendor && pendingManagedStatus !== null) {
+              onToggleManaged(vendor, pendingManagedStatus)
+            }
+            setManagedModalVendorId(null)
+          }}
+        />
+      )}
     </div>
   )
 }

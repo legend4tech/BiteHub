@@ -6,21 +6,7 @@
  */
 import { useMutation } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface SubmitFeedbackPayload {
-  orderId?: string
-  vendorId?: string
-  platform?: {
-    rating: number
-    comments?: string
-  }
-  vendor?: {
-    vendorId: string
-    rating: number
-    comments?: string
-    isAnonymous?: boolean
-  }
-}
+import type { SubmitFeedbackPayload } from "@/types/shared"
 
 async function submitFeedback(payload: SubmitFeedbackPayload) {
   const res = await apiClient.post("/feedback", payload)

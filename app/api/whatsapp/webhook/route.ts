@@ -15,7 +15,6 @@ export async function GET(req: Request) {
   if (mode && token) {
     // Check the mode and token sent are correct
     if (mode === "subscribe" && token === verifyToken) {
-      console.log("WEBHOOK_VERIFIED")
       // Respond with 200 OK and challenge token from the request
       return new NextResponse(challenge, { status: 200 })
     } else {
@@ -30,7 +29,6 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log("Raw Webhook Payload:", JSON.stringify(body, null, 2))
 
     // Check if this is an event from a WhatsApp API
     if (body.object === "whatsapp_business_account") {
@@ -42,11 +40,6 @@ export async function POST(req: Request) {
           // Handle incoming messages
           if (value && value.messages && value.messages.length > 0) {
             for (const message of value.messages) {
-              console.log(
-                `Received incoming message from ${message.from}:`,
-                JSON.stringify(message, null, 2)
-              )
-
               // Only auto-reply to user text messages or standard media to avoid infinite loops with system messages
               if (
                 message.type === "text" ||
@@ -69,9 +62,6 @@ export async function POST(req: Request) {
           // Handle message status updates (sent, delivered, read, failed)
           if (value && value.statuses && value.statuses.length > 0) {
             for (const status of value.statuses) {
-              console.log(
-                `Message ${status.id} status updated to: ${status.status}`
-              )
               // TODO: Update your database to reflect the delivery status of the message
             }
           }

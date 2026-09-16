@@ -2,27 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface VendorReview {
-  id: string
-  rating: number
-  comments?: string
-  createdAt: string
-  isAnonymous: boolean
-  customerName: string
-}
-
-export interface RatingStatisticsData {
-  averageRating: number
-  totalReviews: number
-  distribution: {
-    1: number
-    2: number
-    3: number
-    4: number
-    5: number
-  }
-}
+import type { VendorReview, RatingStatisticsData } from "@/types/vendor"
 
 export function useVendorReviews(
   slug: string,

@@ -31,10 +31,47 @@ export function AdminOrdersSkeleton({ count }: { count: number }) {
 
 export function AdminOverviewStatsSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className="h-28 rounded-2xl" />
-      ))}
+    <>
+      <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-2xl" />
+        ))}
+      </div>
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-2xl" />
+        ))}
+      </div>
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Skeleton className="col-span-1 h-64 rounded-2xl md:col-span-2" />
+        <Skeleton className="col-span-1 h-64 rounded-2xl" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Skeleton className="col-span-1 h-96 rounded-2xl lg:col-span-2" />
+        <Skeleton className="col-span-1 h-96 rounded-2xl lg:col-span-1" />
+      </div>
+    </>
+  )
+}
+
+export function AdminAnalyticsDashboardSkeleton() {
+  return (
+    <div className="space-y-6 pt-4">
+      {/* 5 KPI Cards (matches grid-cols-2 xl:grid-cols-5) */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 rounded-2xl" />
+        ))}
+      </div>
+
+      {/* Revenue Trend Chart */}
+      <Skeleton className="h-[380px] w-full rounded-3xl" />
+
+      {/* Day-of-Week + Payment split row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <Skeleton className="h-[340px] rounded-3xl lg:col-span-3" />
+        <Skeleton className="h-[340px] rounded-3xl lg:col-span-2" />
+      </div>
     </div>
   )
 }

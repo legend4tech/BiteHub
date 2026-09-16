@@ -9,57 +9,24 @@ import {
   X,
   KeyRound,
   Store,
+  Wallet,
+  ArrowDownToLine,
+  AlertTriangle,
+  ShieldCheck,
 } from "lucide-react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { OrderStatus } from "@/types/shared"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
-import apiClient from "@/lib/axios"
-import { formatPrice } from "@/lib/format"
-import type { AdminStats, AdminVendor, AdminOrder } from "./types"
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent = false,
-  sub,
-}: {
-  label: string
-  value: string | number
-  icon: React.ElementType
-  accent?: boolean
-  sub?: string
-}) {
-  return (
-    <div
-      className={`flex flex-col gap-3 rounded-2xl border p-5 ${accent ? "border-primary/20 bg-primary/5" : "border-border bg-card"}`}
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-          {label}
-        </p>
-        <div
-          className={`flex h-9 w-9 items-center justify-center rounded-xl ${accent ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
-        >
-          <Icon className="size-4" />
-        </div>
-      </div>
-      <div className="min-w-0">
-        <p
-          title={String(value)}
-          className={`truncate font-heading text-2xl font-bold ${accent ? "text-primary" : ""}`}
-        >
-          {value}
-        </p>
-        {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
-      </div>
-    </div>
-  )
-}
+import { useAdminLogWithdrawal } from "@/hooks/admin/useAdminMutations"
+import { formatPriceExact as formatPrice } from "@/lib/format"
+import { toast } from "sonner"
+import type { AdminStats, AdminVendor, AdminOrder } from "@/types/admin"
+import { StatCard, WithdrawalModal } from "./AdminOverviewWidgets"
 
 // ─── Overview Section ─────────────────────────────────────────────────────────
 
@@ -78,6 +45,41 @@ export function AdminOverview({
   onGoToVendors,
   onRefresh,
 }: AdminOverviewProps) {
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [withdrawRef, setWithdrawRef] = useState("")
+  const [withdrawNote, setWithdrawNote] = useState("")
+  const logWithdrawal = useAdminLogWithdrawal()
+
+  async function handleLogWithdrawal() {
+    const amount = parseFloat(withdrawAmount)
+    if (!amount || amount <= 0 || !withdrawRef.trim()) {
+      toast.error("Please enter a valid amount and reference.")
+      return
+    }
+
+    logWithdrawal.mutate(
+      {
+        amount,
+        reference: withdrawRef.trim(),
+        note: withdrawNote.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Withdrawal logged successfully!")
+          setShowWithdrawalModal(false)
+          setWithdrawAmount("")
+          setWithdrawRef("")
+          setWithdrawNote("")
+          onRefresh()
+        },
+        onError: () => {
+          toast.error("Failed to log withdrawal. Please try again.")
+        },
+      }
+    )
+  }
+
   // Fetch the 5 most recent orders for the quick feed
   const { data: recentOrdersData, isLoading: loadingOrders } = useAdminOrders(
     1,
@@ -89,24 +91,6 @@ export function AdminOverview({
     }
   )
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-status-pending/20 text-status-pending-foreground"
-      case "confirmed":
-        return "bg-status-confirmed/20 text-status-confirmed-foreground"
-      case "preparing":
-        return "bg-status-preparing/20 text-status-preparing-foreground"
-      case "ready":
-        return "bg-status-ready/20 text-status-ready-foreground"
-      case "completed":
-        return "bg-status-completed/20 text-status-completed-foreground"
-      case "cancelled":
-        return "bg-status-cancelled/20 text-status-cancelled-foreground"
-      default:
-        return "bg-muted text-muted-foreground"
-    }
-  }
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -130,13 +114,7 @@ export function AdminOverview({
         <PageSkeleton variant="admin-overview-stats" count={8} />
       ) : stats ? (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <StatCard
-              label="Total Vendors"
-              value={stats.totalVendors}
-              icon={Store}
-              sub={`${stats.activeVendors} active`}
-            />
+          <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
               label="Total Orders"
               value={stats.totalOrders}
@@ -150,36 +128,29 @@ export function AdminOverview({
               accent
             />
             <StatCard
+              label="Pending Orders"
+              value={stats.pendingOrders}
+              icon={Clock}
+              sub="Awaiting vendor"
+            />
+            <StatCard
+              label="Cancelled Orders"
+              value={stats.cancelledOrders}
+              icon={X}
+            />
+          </div>
+          <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <StatCard
               label="Gross Volume (GMV)"
               value={formatPrice(stats.grossVolume)}
               icon={TrendingUp}
               sub="Total money processed"
-            />
-            <StatCard
-              label="Platform Profit"
-              value={formatPrice(stats.platformProfit)}
-              icon={TrendingUp}
               accent
-              sub="BiteHub gross commission"
             />
             <StatCard
-              label="Live Monnify Balance"
-              value={
-                stats.monnifyBalance !== null
-                  ? formatPrice(stats.monnifyBalance)
-                  : "N/A"
-              }
-              icon={TrendingUp}
-              accent
-              sub="Actual available cash"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Pending"
-              value={stats.pendingOrders}
-              icon={Clock}
-              sub="Awaiting vendor"
+              label="Total Vendors"
+              value={stats.totalVendors}
+              icon={Store}
             />
             <StatCard
               label="Active Vendors"
@@ -187,17 +158,194 @@ export function AdminOverview({
               icon={Users}
               sub={`of ${stats.totalVendors} total`}
             />
-            <StatCard
-              label="Cancelled"
-              value={stats.cancelledOrders}
-              icon={X}
-            />
-            <StatCard
-              label="Today's Orders"
-              value={stats.todayOrders}
-              icon={TrendingUp}
-            />
           </div>
+
+          {/* ── Financial Health Section ──────────────────────────── */}
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-border bg-gradient-to-br from-primary/5 via-transparent to-transparent px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight">
+                  <Wallet className="size-5 text-primary" />
+                  Financial Health & Ledger
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Monitor the platform&apos;s liquidity, available profit, and
+                  customer liabilities.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowWithdrawalModal(true)}
+                className="gap-2 shadow-sm"
+              >
+                <ArrowDownToLine className="size-4" />
+                Log Withdrawal
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4 lg:divide-y-0">
+              {/* All-time profit */}
+              <div className="flex flex-col p-6 hover:bg-muted/10">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-muted">
+                    <TrendingUp className="size-3.5" />
+                  </div>
+                  All-Time Profit
+                </div>
+                <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
+                  {formatPrice(stats.allTimePlatformProfit)}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Total gross commission earned
+                </p>
+              </div>
+
+              {/* Total withdrawn */}
+              <div className="flex flex-col p-6 hover:bg-muted/10">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-muted">
+                    <ArrowDownToLine className="size-3.5" />
+                  </div>
+                  Total Withdrawn
+                </div>
+                <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
+                  {formatPrice(stats.totalWithdrawn)}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Previously transferred to your bank
+                </p>
+              </div>
+
+              {/* Remaining profit */}
+              <div className="flex flex-col bg-primary/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--primary)/0.1)] hover:bg-primary/10">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-primary uppercase">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-primary/20">
+                    <CheckCircle2 className="size-3.5" />
+                  </div>
+                  Available Profit
+                </div>
+                <p className="font-heading text-3xl font-extrabold tracking-tight text-primary">
+                  {formatPrice(stats.remainingProfit)}
+                </p>
+                <p className="mt-2 text-xs text-primary/70">
+                  Safe to withdraw right now
+                </p>
+              </div>
+
+              {/* Customer liabilities */}
+              <div className="flex flex-col bg-destructive/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--destructive)/0.1)] hover:bg-destructive/10">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-destructive uppercase">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-destructive/20">
+                    <AlertTriangle className="size-3.5" />
+                  </div>
+                  User Liabilities
+                </div>
+                <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
+                  {formatPrice(stats.totalCustomerWalletLiabilities)}
+                </p>
+                <p className="mt-2 text-xs text-destructive/70">
+                  Do NOT withdraw — belongs to users
+                </p>
+              </div>
+            </div>
+
+            {/* Reconciliation health check */}
+            <div className="border-t border-border bg-muted/20">
+              {stats.monnifyBalance !== null ? (
+                (() => {
+                  const expected =
+                    stats.remainingProfit + stats.totalCustomerWalletLiabilities
+                  const gap = Math.abs((stats.monnifyBalance ?? 0) - expected)
+                  const isHealthy = gap < 500 // within ₦500 tolerance
+
+                  return (
+                    <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                          <div className="flex size-6 items-center justify-center rounded-md bg-muted">
+                            <Store className="size-3.5" />
+                          </div>
+                          Live Monnify Account Balance
+                        </div>
+                        <p className="font-heading text-4xl font-extrabold tracking-tight">
+                          {formatPrice(stats.monnifyBalance ?? 0)}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`flex flex-1 items-center gap-4 rounded-2xl px-5 py-4 shadow-sm ${
+                          isHealthy
+                            ? "border border-status-completed/20 bg-status-completed/10"
+                            : "border border-status-pending/20 bg-status-pending/10"
+                        }`}
+                      >
+                        <div
+                          className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+                            isHealthy
+                              ? "bg-status-completed/20 text-status-completed"
+                              : "bg-status-pending/20 text-status-pending"
+                          }`}
+                        >
+                          {isHealthy ? (
+                            <ShieldCheck className="size-5" />
+                          ) : (
+                            <AlertTriangle className="size-5" />
+                          )}
+                        </div>
+                        <div className="text-sm">
+                          <p
+                            className={`font-bold ${isHealthy ? "text-status-completed-foreground" : "text-status-pending-foreground"}`}
+                          >
+                            {isHealthy
+                              ? "Ledger is perfectly balanced ✓"
+                              : "Reconciliation gap detected"}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>
+                              Expected:{" "}
+                              <strong className="text-foreground">
+                                {formatPrice(expected)}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Difference:{" "}
+                              <strong
+                                className={
+                                  isHealthy
+                                    ? "text-foreground"
+                                    : "text-destructive"
+                                }
+                              >
+                                {formatPrice(gap)}
+                              </strong>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : (
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  Unable to fetch live Monnify balance.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Withdrawal Modal ──────────────────────────────────── */}
+          <WithdrawalModal
+            show={showWithdrawalModal}
+            onClose={() => setShowWithdrawalModal(false)}
+            withdrawAmount={withdrawAmount}
+            setWithdrawAmount={setWithdrawAmount}
+            withdrawRef={withdrawRef}
+            setWithdrawRef={setWithdrawRef}
+            withdrawNote={withdrawNote}
+            setWithdrawNote={setWithdrawNote}
+            submitting={logWithdrawal.isPending}
+            onSubmit={handleLogWithdrawal}
+          />
 
           {noAccountVendors.length > 0 && (
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-status-pending/30 bg-status-pending/5 px-5 py-4">
@@ -253,11 +401,10 @@ export function AdminOverview({
                       <p className="font-mono text-sm font-bold">
                         {order.orderId}
                       </p>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusColor(order.status)}`}
-                      >
-                        {order.status}
-                      </span>
+                      <StatusBadge
+                        status={order.status as OrderStatus}
+                        paymentStatus={order.paymentStatus}
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>

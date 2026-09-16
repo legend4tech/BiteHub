@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Plus, Minus, ShoppingBag } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
@@ -17,9 +17,19 @@ export function SingleItemCartControls({
   item,
   vendorIsActive = true,
 }: SingleItemCartControlsProps) {
-  const { cart, addItem, updateQuantity, isDifferentVendor, clearAndAdd } =
-    useCart()
+  const {
+    cart,
+    addItem,
+    updateQuantity,
+    isDifferentVendor,
+    clearAndAdd,
+    syncItem,
+  } = useCart()
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
+
+  useEffect(() => {
+    syncItem(item)
+  }, [item, syncItem])
 
   const cartEntry = cart.items.find((ci) => ci.menuItem.id === item.id)
   const qty = cartEntry?.quantity ?? 0

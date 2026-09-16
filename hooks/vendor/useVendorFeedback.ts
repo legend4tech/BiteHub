@@ -1,13 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface Feedback {
-  _id: string
-  rating: number
-  comments?: string
-  orderId?: string
-  createdAt: string
-}
+import type { Feedback } from "@/types/vendor"
 
 export function useVendorFeedback(enabled: boolean = true) {
   return useQuery<Feedback[]>({

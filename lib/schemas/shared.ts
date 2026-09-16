@@ -77,3 +77,9 @@ export const statusUpdateSchema = z.object({
   ]),
 })
 export type StatusUpdateValues = z.infer<typeof statusUpdateSchema>
+
+export const getLandmarksQuerySchema = z.object({
+  school: z.string().min(1, "School is required"),
+  campus: z.string().min(1, "Campus is required"),
+})
+export type GetLandmarksQueryValues = z.infer<typeof getLandmarksQuerySchema>

@@ -17,6 +17,7 @@ import {
   MapPin,
   ShoppingCart,
   Users,
+  TrendingUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -50,6 +51,7 @@ const navItems: {
   icon: React.ElementType
 }[] = [
   { section: "overview", label: "Overview", icon: LayoutDashboard },
+  { section: "analytics", label: "Analytics", icon: TrendingUp },
   { section: "orders", label: "Orders", icon: ShoppingCart },
   { section: "vendors", label: "Vendors", icon: Store },
   { section: "feedback", label: "Feedback", icon: Star },
@@ -192,7 +194,10 @@ function SidebarContent({
       </div>
 
       {/* ── Scrollable middle: role badge + nav ── */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        data-lenis-prevent
+      >
         {/* ── Admin role badge ── */}
         {!collapsed && (
           <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">

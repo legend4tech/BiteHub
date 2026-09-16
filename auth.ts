@@ -47,6 +47,8 @@ async function checkRateLimit(email: string) {
 // ─── Session validation helper ────────────────────────────────────────────────
 // Runs on every JWT refresh to check if the user has been deactivated or their
 // password changed after the token was issued. Returns null to destroy the session.
+// Also syncs name and image from the DB back into the token so the Navbar always
+// reflects the latest profile data without needing a log-out/log-in cycle.
 async function validateSession(token: JWT): Promise<JWT | null> {
   if (!token.id || !token.role) return token
   try {
@@ -54,7 +56,7 @@ async function validateSession(token: JWT): Promise<JWT | null> {
 
     if (token.role === "vendor") {
       const dbUser = await VendorUserModel.findById(token.id)
-        .select("lastPasswordChangeAt isActive")
+        .select("lastPasswordChangeAt isActive name image")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
       if (dbUser.lastPasswordChangeAt && token.iat) {
@@ -63,16 +65,23 @@ async function validateSession(token: JWT): Promise<JWT | null> {
         )
         if (changedAtSeconds > token.iat) return null
       }
+      // Sync display fields so the JWT self-heals on every refresh
+      if (dbUser.name) token.name = dbUser.name
+      if (dbUser.image) token.image = dbUser.image
     } else if (token.role === "admin" || token.role === "superadmin") {
       const dbUser = await AdminUser.findById(token.id)
-        .select("isActive")
+        .select("isActive name")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
+      if (dbUser.name) token.name = dbUser.name
     } else if (token.role === "customer") {
       const dbUser = await CustomerModel.findById(token.id)
-        .select("isActive")
+        .select("isActive name image")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
+      // Sync display fields — use !== undefined so clearing the image also propagates
+      if (dbUser.name) token.name = dbUser.name
+      if (dbUser.image !== undefined) token.image = dbUser.image
     }
   } catch (error) {
     console.error("[validateSession] DB error:", error)
@@ -227,7 +236,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: "customer",
             vendorId: undefined,
-            image: undefined,
+            image: user.image,
           }
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error

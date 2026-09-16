@@ -53,3 +53,42 @@ export interface Order {
   }
   isRated?: boolean
 }
+
+export interface SubmitFeedbackPayload {
+  orderId?: string
+  vendorId?: string
+  platform?: {
+    rating: number
+    comments?: string
+  }
+  vendor?: {
+    vendorId: string
+    rating: number
+    comments?: string
+    isAnonymous?: boolean
+  }
+}
+
+export interface Bank {
+  name: string
+  code: string
+  cbnCode: string
+  baseCode: string
+}
+
+export interface SystemLandmark {
+  id: string
+  name: string
+  school: string
+  campus: string
+  defaultDeliveryFee: number
+  subLandmarks?: {
+    id: string
+    landmarkId: string
+    name: string
+    defaultDeliveryFee: number | null
+    isActive: boolean
+    createdAt: string
+    updatedAt: string
+  }[]
+}

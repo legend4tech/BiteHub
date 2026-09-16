@@ -3,7 +3,9 @@ export function isItemAvailableNow(
   availableFrom: string | null | undefined,
   availableTo: string | null | undefined,
   availableDays: string[] | undefined,
-  quantityAvailable?: number | null
+  quantityAvailable?: number | null,
+  isPreorder?: boolean,
+  preorderEndDate?: Date | string | null
 ): boolean {
   if (!isAvailable) return false
 
@@ -17,6 +19,15 @@ export function isItemAvailableNow(
   }
 
   const now = new Date()
+
+  // Pre-orders bypass daily schedules if the end date hasn't passed
+  if (isPreorder) {
+    if (preorderEndDate) {
+      const endDate = new Date(preorderEndDate)
+      return now.getTime() <= endDate.getTime()
+    }
+    return true
+  }
 
   // Use West Africa Time (WAT) for Nigerian students by default,
   // or fall back to system local time if Intl is not supported.

@@ -111,6 +111,27 @@ export function useAdminToggleVendorFeatured() {
   })
 }
 
+export function useAdminToggleVendorManaged() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      vendorId,
+      isManagedByBiteHub,
+    }: {
+      vendorId: string
+      isManagedByBiteHub: boolean
+    }) => {
+      const res = await apiClient.patch(`/admin/vendors/${vendorId}`, {
+        isManagedByBiteHub,
+      })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+    },
+  })
+}
+
 export function useAdminVerifyOrder() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -134,6 +155,23 @@ export function useAdminCreateStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-staff"] })
+    },
+  })
+}
+
+export function useAdminLogWithdrawal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: {
+      amount: number
+      reference: string
+      note?: string
+    }) => {
+      const res = await apiClient.post("/api/admin/withdrawals", data)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] })
     },
   })
 }

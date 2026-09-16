@@ -6,8 +6,8 @@ import type { Vendor } from "@/types/vendor"
 
 export default async function VendorSettingsPage() {
   const session = await auth()
-  if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
-    redirect("/vendor/login")
+  if (!session || !session.user?.vendorId) {
+    return null
   }
 
   const vendor = await getVendorProfile(session.user.vendorId)
@@ -20,7 +20,7 @@ export default async function VendorSettingsPage() {
 
   return (
     <VendorSettingsTabs
-      serializedVendor={vendor as Vendor}
+      serializedVendor={vendor as unknown as Vendor}
       currentEmail={currentEmail}
     />
   )

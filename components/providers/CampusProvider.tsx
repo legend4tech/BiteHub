@@ -13,6 +13,7 @@ import {
   DEFAULT_CAMPUS_ID,
   SCHOOL_CAMPUS_CONFIG,
 } from "@/lib/config/campus"
+import { SS_ACCEPTED_CROSS_CAMPUS } from "@/lib/constants"
 import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 
 interface CampusContextType {
@@ -82,33 +83,68 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
   const { data: profile, isCustomer } = useCustomerProfile()
 
   useEffect(() => {
+    // We want to evaluate the source of truth carefully.
     const sp = searchParamsRef.current
     const urlSchool = sp.get("school")
     const urlCampus = sp.get("campus")
+    const stored = loadFromLocalStorage()
 
-    // 1. URL search params take highest priority (e.g. sharing links)
-    if (urlSchool && urlCampus) {
-      const validated = validateCampus(urlSchool, urlCampus)
-      setSchoolId(validated.schoolId)
-      setCampusId(validated.campusId)
-      saveToLocalStorage(validated.schoolId, validated.campusId)
-    } 
-    // 2. If logged in and profile has preferences, they take precedence over local storage
-    else if (isCustomer && profile?.school && profile?.campus) {
-      const validated = validateCampus(profile.school, profile.campus)
-      setSchoolId(validated.schoolId)
-      setCampusId(validated.campusId)
-      saveToLocalStorage(validated.schoolId, validated.campusId)
-    } 
-    // 3. Fallback to Local Storage or Defaults
-    else {
-      const stored = loadFromLocalStorage()
-      const pref = stored ?? {
-        schoolId: DEFAULT_SCHOOL_ID,
-        campusId: DEFAULT_CAMPUS_ID,
+    // If customer profile is loaded, it is the ultimate baseline.
+    if (isCustomer && profile?.school && profile?.campus) {
+      // If there is a URL param and it differs from profile, we let it be
+      // (CampusSelector modal will ask them to confirm temporary view).
+      // BUT if the URL param exactly matches what was in local storage BEFORE they logged in,
+      // it's likely just a stale leftover from their guest session. We should overwrite it.
+      // Actually, a simpler rock-solid rule: When profile loads, always sync it if it differs from current state,
+      // unless we ALREADY accepted a temporary view (which is handled by CampusSelector).
+      // Since CampusProvider initializes, let's just initialize to URL if present, otherwise Profile, otherwise Local Storage.
+      // Wait, if we initialize to URL, they get the modal. That's fine!
+      // But let's make sure we don't infinitely re-set it.
+
+      // Let's check if the URL params match the stale local storage from when they were a guest.
+      const isStaleUrlFromGuest =
+        urlSchool &&
+        stored &&
+        urlSchool === stored.schoolId &&
+        urlCampus === stored.campusId &&
+        (urlSchool !== profile.school || urlCampus !== profile.campus)
+
+      if (
+        isStaleUrlFromGuest &&
+        !sessionStorage.getItem(SS_ACCEPTED_CROSS_CAMPUS)
+      ) {
+        // Force their profile, ignoring the stale URL
+        const validated = validateCampus(profile.school, profile.campus)
+        setSchoolId(validated.schoolId)
+        setCampusId(validated.campusId)
+        saveToLocalStorage(validated.schoolId, validated.campusId)
+      } else if (urlSchool && urlCampus) {
+        const validated = validateCampus(urlSchool, urlCampus)
+        setSchoolId(validated.schoolId)
+        setCampusId(validated.campusId)
+        saveToLocalStorage(validated.schoolId, validated.campusId)
+      } else {
+        const validated = validateCampus(profile.school, profile.campus)
+        setSchoolId(validated.schoolId)
+        setCampusId(validated.campusId)
+        saveToLocalStorage(validated.schoolId, validated.campusId)
       }
-      setSchoolId(pref.schoolId)
-      setCampusId(pref.campusId)
+    }
+    // Not logged in or profile not loaded yet
+    else {
+      if (urlSchool && urlCampus) {
+        const validated = validateCampus(urlSchool, urlCampus)
+        setSchoolId(validated.schoolId)
+        setCampusId(validated.campusId)
+        saveToLocalStorage(validated.schoolId, validated.campusId)
+      } else {
+        const pref = stored ?? {
+          schoolId: DEFAULT_SCHOOL_ID,
+          campusId: DEFAULT_CAMPUS_ID,
+        }
+        setSchoolId(pref.schoolId)
+        setCampusId(pref.campusId)
+      }
     }
 
     setIsLoaded(true)

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
@@ -37,6 +38,7 @@ import {
   type CustomerSignupFormValues,
 } from "@/lib/schemas"
 import { useCustomerSignup } from "@/hooks/shared/usePublicMutations"
+import { Step1Fields, Step2Fields } from "./CustomerSignupFields"
 
 export default function CustomerSignupForm() {
   const router = useRouter()
@@ -44,14 +46,40 @@ export default function CustomerSignupForm() {
   const redirect = searchParams.get("redirect") || "/"
 
   const [showPw, setShowPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [step, setStep] = useState<1 | 2>(1)
+  const [direction, setDirection] = useState(1)
   const signupMutation = useCustomerSignup()
 
   const form = useForm<CustomerSignupFormValues>({
+    mode: "onChange",
     resolver: zodResolver(
       customerSignupFormSchema
     ) as unknown as Resolver<CustomerSignupFormValues>,
-    defaultValues: { name: "", email: "", phone: "", password: "", school: "", campus: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      school: "",
+      campus: "",
+      referredBy: searchParams.get("ref") || "",
+    },
   })
+
+  const handleNextStep = async () => {
+    const isValid = await form.trigger(["name", "email", "phone"])
+    if (isValid) {
+      setDirection(1)
+      setStep(2)
+    }
+  }
+
+  const handlePrevStep = () => {
+    setDirection(-1)
+    setStep(1)
+  }
 
   const selectedSchool = form.watch("school")
 
@@ -161,180 +189,128 @@ export default function CustomerSignupForm() {
               <p className="mt-1.5 text-sm text-muted-foreground">
                 Join BiteHub today to order easily
               </p>
+
+              {/* Progress bar */}
+              <div className="mt-6 space-y-2">
+                <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                  <span
+                    className={
+                      step === 1
+                        ? "text-foreground"
+                        : "cursor-pointer transition-colors hover:text-foreground"
+                    }
+                    onClick={handlePrevStep}
+                  >
+                    Step 1: Contact
+                  </span>
+                  <span className={step === 2 ? "text-foreground" : ""}>
+                    Step 2: Account Setup
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-in-out"
+                    style={{ width: step === 1 ? "50%" : "100%" }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Form */}
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <Controller
-                name="name"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Full Name</FieldLabel>
-                    <Input
-                      {...field}
-                      id={field.name}
-                      placeholder="John Doe"
-                      autoComplete="name"
-                      aria-invalid={fieldState.invalid}
-                      className="h-11"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="relative space-y-4 overflow-hidden"
+            >
+              <AnimatePresence mode="wait" custom={direction}>
+                {/* --- STEP 1: Personal Info --- */}
+                {step === 1 && (
+                  <motion.div
+                    key="step1"
+                    custom={direction}
+                    initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="block space-y-4"
+                  >
+                    <Step1Fields control={form.control} />
 
-              <Controller
-                name="email"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Email Address</FieldLabel>
-                    <Input
-                      {...field}
-                      id={field.name}
-                      type="email"
-                      placeholder="you@example.com"
-                      autoComplete="username"
-                      aria-invalid={fieldState.invalid}
-                      className="h-11"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="phone"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Phone Number</FieldLabel>
-                    <Input
-                      {...field}
-                      id={field.name}
-                      type="tel"
-                      placeholder="08012345678"
-                      autoComplete="tel"
-                      aria-invalid={fieldState.invalid}
-                      className="h-11"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-
-              <Controller
-                name="school"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>School</FieldLabel>
-                    <Select
-                      onValueChange={(val) => {
-                        field.onChange(val)
-                        form.setValue("campus", "")
-                      }}
-                      value={field.value}
+                    <Button
+                      type="button"
+                      variant="hero"
+                      className="mt-6 h-11 w-full text-base"
+                      onClick={handleNextStep}
                     >
-                      <SelectTrigger id={field.name} className="h-11">
-                        <SelectValue placeholder="Select your school" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getSchoolOptions().map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
+                      Next Step
+                    </Button>
+                  </motion.div>
                 )}
-              />
 
-              <Controller
-                name="campus"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Campus</FieldLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!selectedSchool}
-                    >
-                      <SelectTrigger id={field.name} className="h-11">
-                        <SelectValue placeholder="Select your campus" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCampusOptions(selectedSchool).map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
+                {/* --- STEP 2: Account Setup --- */}
+                {step === 2 && (
+                  <motion.div
+                    key="step2"
+                    custom={direction}
+                    initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="block space-y-4"
+                  >
+                    <Step2Fields
+                      control={form.control}
+                      selectedSchool={selectedSchool}
+                      passwordValue={passwordValue}
+                      setValue={form.setValue}
+                    />
 
-              <Controller
-                name="password"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        id={field.name}
-                        type={showPw ? "text" : "password"}
-                        placeholder="••••••••"
-                        autoComplete="new-password"
-                        aria-invalid={fieldState.invalid}
-                        className="h-11 pr-11"
-                      />
-                      <button
+                    <Controller
+                      name="referredBy"
+                      control={form.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>
+                            Referral Code (Optional)
+                          </FieldLabel>
+                          <Input
+                            {...field}
+                            id={field.name}
+                            type="text"
+                            placeholder="e.g. REF-ABC1234"
+                            aria-invalid={fieldState.invalid}
+                            className="h-11"
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
+
+                    <div className="mt-6 flex gap-3">
+                      <Button
                         type="button"
-                        onClick={() => setShowPw((p) => !p)}
-                        className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                        variant="outline"
+                        className="h-11 w-1/3 text-base"
+                        onClick={handlePrevStep}
                       >
-                        {showPw ? (
-                          <EyeOff className="size-4" />
-                        ) : (
-                          <Eye className="size-4" />
+                        Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="hero"
+                        className="h-11 flex-1 text-base"
+                        disabled={isPending}
+                      >
+                        {isPending && (
+                          <Loader2 className="size-4 animate-spin" />
                         )}
-                      </button>
+                        {isPending ? "Creating account…" : "Create account"}
+                      </Button>
                     </div>
-                    <PasswordStrengthMeter password={passwordValue} />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
+                  </motion.div>
                 )}
-              />
-
-              <Button
-                type="submit"
-                variant="hero"
-                className="mt-4 h-11 w-full text-base"
-                disabled={isPending}
-              >
-                {isPending && <Loader2 className="size-4 animate-spin" />}
-                {isPending ? "Creating account…" : "Create account"}
-              </Button>
+              </AnimatePresence>
             </form>
 
             {/* Bottom links */}

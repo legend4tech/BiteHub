@@ -1,49 +1,71 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import dbConnect from "@/lib/db"
-import Customer from "@/models/Customer"
-import Wallet from "@/models/Wallet"
-import Order from "@/models/Order"
-import { Wallet as WalletIcon, ShoppingBag, Gift } from "lucide-react"
-import { formatPrice } from "@/lib/format"
+import {
+  Wallet as WalletIcon,
+  ShoppingBag,
+  Gift,
+  ChevronRight,
+  User,
+} from "lucide-react"
+import { formatPriceExact } from "@/lib/format"
 import Link from "next/link"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { OrderStatus } from "@/types/shared"
 import type { OrderRecord } from "@/types/customer"
+import {
+  getCustomerByEmail,
+  getCustomerWalletData,
+} from "@/lib/services/customerService"
+import {
+  getRecentCustomerOrders,
+  getCustomerOrdersCount,
+} from "@/lib/services/orderService"
 
 export default async function CustomerDashboardPage() {
   const session = await auth()
-  if (!session?.user?.email || session.user.role !== "customer") {
-    redirect("/customer/login")
+  if (!session?.user?.email) {
+    return null
   }
 
-  await dbConnect()
-  const customer = await Customer.findOne({ email: session.user.email })
+  const customer = await getCustomerByEmail(session.user.email)
   if (!customer) {
-    redirect("/customer/login")
+    return null
   }
 
-  const wallet = await Wallet.findOne({ customerId: customer._id })
+  const { wallet } = await getCustomerWalletData(customer._id.toString())
 
   // Fetch last 3 orders
-  const recentOrders = await Order.find({ customerEmail: session.user.email })
-    .sort({ createdAt: -1 })
-    .limit(3)
-    .lean()
+  const recentOrders = await getRecentCustomerOrders(session.user.email, 3)
 
   const walletBalance = wallet ? wallet.balance : 0
-  const orderCount = await Order.countDocuments({
-    customerEmail: session.user.email,
-  })
+  const orderCount = await getCustomerOrdersCount(session.user.email)
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">
-          Welcome back, {customer.name.split(" ")[0]}!
-        </h1>
-        <p className="text-muted-foreground">
-          Here is what is happening with your account today.
-        </p>
+      <div className="flex items-center gap-4">
+        {customer.image ? (
+          <div className="size-16 shrink-0 overflow-hidden rounded-full border-2 border-border shadow-sm">
+            <img
+              src={customer.image}
+              alt={customer.name}
+              className="size-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/10 shadow-sm">
+            <User className="size-8 text-primary" />
+          </div>
+        )}
+        <div>
+          <h1 className="font-heading text-2xl font-bold">
+            Welcome back, {customer.name.split(" ")[0]}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here is what is happening with your account today.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -58,14 +80,14 @@ export default async function CustomerDashboardPage() {
                 Wallet Balance
               </p>
               <h3 className="text-2xl font-bold">
-                {formatPrice(walletBalance)}
+                {formatPriceExact(walletBalance)}
               </h3>
             </div>
           </div>
           <div className="mt-4 border-t border-border pt-4">
             {!wallet ? (
               <Button asChild variant="outline" size="sm" className="w-full">
-                <Link href="/customer/dashboard/wallet">Activate Wallet</Link>
+                <Link href="/customer/wallet">Activate Wallet</Link>
               </Button>
             ) : (
               <Button
@@ -74,9 +96,7 @@ export default async function CustomerDashboardPage() {
                 size="sm"
                 className="w-full text-primary hover:bg-primary/5 hover:text-primary/80"
               >
-                <Link href="/customer/dashboard/wallet">
-                  Fund Wallet &rarr;
-                </Link>
+                <Link href="/customer/wallet">Fund Wallet &rarr;</Link>
               </Button>
             )}
           </div>
@@ -102,7 +122,7 @@ export default async function CustomerDashboardPage() {
               size="sm"
               className="w-full text-info hover:bg-info/5 hover:text-info"
             >
-              <Link href="/customer/dashboard/orders">View History &rarr;</Link>
+              <Link href="/customer/orders">View History &rarr;</Link>
             </Button>
           </div>
         </div>
@@ -132,7 +152,7 @@ export default async function CustomerDashboardPage() {
               size="sm"
               className="w-full text-status-ready hover:bg-status-ready/5 hover:text-status-ready"
             >
-              <Link href="/customer/dashboard/rewards">Earn More &rarr;</Link>
+              <Link href="/customer/rewards">Earn More &rarr;</Link>
             </Button>
           </div>
         </div>
@@ -143,7 +163,7 @@ export default async function CustomerDashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-lg font-bold">Recent Orders</h2>
           <Link
-            href="/customer/dashboard/orders"
+            href="/customer/orders"
             className="text-sm font-medium text-primary hover:underline"
           >
             View all
@@ -151,20 +171,18 @@ export default async function CustomerDashboardPage() {
         </div>
 
         {recentOrders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
-            <ShoppingBag className="mx-auto mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm font-medium text-muted-foreground">
-              No orders yet
-            </p>
-            <Button asChild variant="hero" size="sm" className="mt-4">
-              <Link href="/">Order Food</Link>
-            </Button>
-          </div>
+          <EmptyState
+            size="sm"
+            title="No orders yet"
+            description="Start ordering your favorite meals!"
+            action={{ label: "Order Food", href: "/" }}
+            className="rounded-xl border border-dashed border-border bg-card/50"
+          />
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {recentOrders.map((order: OrderRecord, i: number) => (
               <div
-                key={order._id.toString()}
+                key={order.id}
                 className={`flex items-center justify-between p-4 ${
                   i !== 0 ? "border-t border-border" : ""
                 }`}
@@ -174,7 +192,12 @@ export default async function CustomerDashboardPage() {
                     <ShoppingBag className="size-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-semibold">{order.vendorName}</p>
+                    <p className="font-semibold">
+                      <span className="font-normal text-muted-foreground">
+                        Ordered from:
+                      </span>{" "}
+                      {order.vendorName}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(order.createdAt).toLocaleDateString()} •{" "}
                       {order.items.length} items
@@ -183,11 +206,15 @@ export default async function CustomerDashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-primary">
-                    {formatPrice(order.totalAmount)}
+                    {formatPriceExact(order.totalAmount)}
                   </p>
-                  <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-foreground uppercase">
-                    {order.status}
-                  </span>
+                  <div className="mt-1 flex justify-end">
+                    <StatusBadge
+                      status={order.status as OrderStatus}
+                      paymentStatus={order.paymentStatus}
+                      className="px-2 py-0.5 text-[10px] uppercase"
+                    />
+                  </div>
                 </div>
               </div>
             ))}

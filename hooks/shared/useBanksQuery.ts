@@ -1,12 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
-
-export interface Bank {
-  name: string
-  code: string
-  cbnCode: string
-  baseCode: string
-}
+import type { Bank } from "@/types/shared"
 
 export function useBanksQuery() {
   return useQuery<Bank[]>({

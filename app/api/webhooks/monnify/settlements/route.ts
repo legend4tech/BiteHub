@@ -22,9 +22,7 @@ async function processSettlement(
   const currentDisbursed = vendor.monnifyTotalDisbursed || 0
   vendor.monnifyTotalDisbursed = currentDisbursed + amount
   await vendor.save()
-  console.log(
-    `[Settlement Webhook] ✅ Updated vendor "${vendor.slug}" — added ₦${amount}. Total disbursed: ₦${vendor.monnifyTotalDisbursed}. Settlement ref: ${settlementReference}`
-  )
+  // Log removed for production
 }
 
 export async function POST(request: Request) {
@@ -51,10 +49,7 @@ export async function POST(request: Request) {
     const event = JSON.parse(rawBody)
     const { eventType, eventData } = event
 
-    console.log(
-      `[Settlement Webhook] Received event: ${eventType}`,
-      JSON.stringify(eventData, null, 2)
-    )
+    // Log removed for production
 
     if (
       eventType === "SETTLEMENT" ||

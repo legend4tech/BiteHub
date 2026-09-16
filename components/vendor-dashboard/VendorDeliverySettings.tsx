@@ -2,16 +2,15 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import {
-  useVendorDeliverySettings,
-  DeliverySettingsResponse,
-} from "@/hooks/vendor/useVendorDeliverySettings"
+import { useVendorDeliverySettings } from "@/hooks/vendor/useVendorDeliverySettings"
+import type { DeliverySettingsResponse } from "@/types/vendor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, MapPin, Save, Undo } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { FetchError } from "@/components/shared/FetchError"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 export function VendorDeliverySettings() {
   const [localLandmarkOverrides, setLocalLandmarkOverrides] = useState<
@@ -124,13 +123,11 @@ export function VendorDeliverySettings() {
 
       <div className="grid gap-6">
         {landmarks.length === 0 ? (
-          <div className="rounded-xl border border-dashed py-12 text-center">
-            <h3 className="text-lg font-medium">No Landmarks Found</h3>
-            <p className="text-muted-foreground">
-              The platform admin has not set up any landmarks for your campus
-              yet.
-            </p>
-          </div>
+          <EmptyState
+            title="No Landmarks Found"
+            description="The platform admin has not set up any landmarks for your campus yet."
+            className="rounded-xl border border-dashed py-12"
+          />
         ) : (
           landmarks.map((lm) => {
             const hasOverride =

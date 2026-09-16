@@ -28,6 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
+import { SS_ACCEPTED_CROSS_CAMPUS } from "@/lib/constants"
 
 export function CampusSelector() {
   const { schoolId, campusId, setSchoolAndCampus, isLoaded } = useCampus()
@@ -58,7 +59,10 @@ export function CampusSelector() {
         (urlSchool && urlSchool !== profileData.school) ||
         (urlCampus && urlCampus !== profileData.campus)
       ) {
-        setShowDirectLinkModal(true)
+        if (!sessionStorage.getItem(SS_ACCEPTED_CROSS_CAMPUS)) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setShowDirectLinkModal(true)
+        }
       } else {
         // Automatically sync CampusProvider to profile if URL doesn't specify otherwise
         if (
@@ -70,7 +74,15 @@ export function CampusSelector() {
         }
       }
     }
-  }, [isCustomer, profileData, isLoaded, searchParams, schoolId, campusId, setSchoolAndCampus])
+  }, [
+    isCustomer,
+    profileData,
+    isLoaded,
+    searchParams,
+    schoolId,
+    campusId,
+    setSchoolAndCampus,
+  ])
 
   // Sync local state when global state loads
   if (schoolId !== prevGlobalSchoolId || campusId !== prevGlobalCampusId) {
@@ -131,170 +143,189 @@ export function CampusSelector() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {isCustomer ? (
-        <div className="flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm">
-          <MapPin className="size-4 text-primary" />
-          <span className="hidden font-medium sm:inline">
-            <span className="mr-1 text-xs font-normal text-muted-foreground">
-              Campus:
-            </span>
-            {getSchoolName(schoolId)}{" "}
-            <span className="font-normal text-muted-foreground">
-              ({getCampusName(schoolId, campusId)})
-            </span>
-          </span>
-          <span className="font-medium sm:hidden">
-            {getCampusName(schoolId, campusId)}
-          </span>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsOpen(!isOpen)}
-          className="h-9 gap-2 rounded-xl"
-        >
-          <MapPin className="size-4" />
-          <span className="hidden text-sm font-medium sm:inline">
-            <span className="mr-1 text-xs font-normal text-muted-foreground">
-              Showing:
-            </span>
-            {getSchoolName(schoolId)}{" "}
-            <span className="font-normal text-muted-foreground">
-              ({getCampusName(schoolId, campusId)})
-            </span>
-          </span>
-          <span className="text-sm font-medium sm:hidden">
-            {getCampusName(schoolId, campusId)}
-          </span>
-          <ChevronDown className="size-3 text-muted-foreground" />
-        </Button>
+    <div className="flex flex-col items-start gap-1">
+      {!isCustomer && (
+        <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+          Not your School or Campus? Change it here
+        </p>
       )}
-
-      {/* Cross-Campus Direct Link Modal */}
-      <Dialog open={showDirectLinkModal} onOpenChange={setShowDirectLinkModal}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>View Vendor Menu?</DialogTitle>
-            <DialogDescription>
-              Hey! This vendor is in{" "}
-              <strong className="text-foreground">
-                {getCampusName(searchParams.get("school") || "", searchParams.get("campus") || "")}
-              </strong>
-              , but your profile is set to{" "}
-              <strong className="text-foreground">
-                {getCampusName(profileData?.school || "", profileData?.campus || "")}
-              </strong>
-              .
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Want to switch your campus temporarily to view this menu?
-          </p>
-          <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowDirectLinkModal(false)
-                // Revert to their profile campus
-                if (profileData?.school && profileData?.campus) {
-                  setSchoolAndCampus(profileData.school, profileData.campus)
-                  const params = new URLSearchParams(searchParams.toString())
-                  params.set("school", profileData.school)
-                  params.set("campus", profileData.campus)
-                  router.replace(`${pathname}?${params.toString()}`)
-                }
-              }}
-              className="rounded-xl"
-            >
-              Take me back
-            </Button>
-            <Button
-              type="button"
-              variant="hero"
-              onClick={() => {
-                setShowDirectLinkModal(false)
-                // Keep the URL campus, sync provider state
-                const urlSchool = searchParams.get("school") || DEFAULT_SCHOOL_ID
-                const urlCampus = searchParams.get("campus") || DEFAULT_CAMPUS_ID
-                setSchoolAndCampus(urlSchool, urlCampus)
-              }}
-              className="rounded-xl"
-            >
-              Yes, view menu
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {!isCustomer && isOpen && (
-        <div className="absolute top-full left-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] animate-in rounded-2xl border border-border bg-card p-4 shadow-xl fade-in slide-in-from-top-2 sm:right-0 sm:left-auto">
-          <div className="space-y-4">
-            <div>
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <MapPin className="size-3.5" />
-                Filter by your campus
-              </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Only vendors and menus near you will show up.
-              </p>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                School
-              </label>
-              <Select
-                value={localSchool}
-                onValueChange={handleSchoolChange}
-                onOpenChange={setIsSchoolSelectOpen}
-              >
-                <SelectTrigger className="h-10 w-full rounded-xl bg-background">
-                  <SelectValue placeholder="Select school" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getSchoolOptions().map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Campus
-              </label>
-              <Select
-                value={localCampus}
-                onValueChange={setLocalCampus}
-                onOpenChange={setIsCampusSelectOpen}
-              >
-                <SelectTrigger className="h-10 w-full rounded-xl bg-background">
-                  <SelectValue placeholder="Select campus" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getCampusOptions(localSchool).map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={handleApply}
-              className="h-10 w-full rounded-xl font-bold"
-              variant="hero"
-            >
-              Apply Filter
-            </Button>
+      <div className="relative" ref={dropdownRef}>
+        {isCustomer ? (
+          <div className="flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm">
+            <MapPin className="size-4 text-primary" />
+            <span className="hidden font-medium sm:inline">
+              <span className="mr-1 text-xs font-normal text-muted-foreground">
+                Campus:
+              </span>
+              {getSchoolName(schoolId)}{" "}
+              <span className="font-normal text-muted-foreground">
+                ({getCampusName(schoolId, campusId)})
+              </span>
+            </span>
+            <span className="font-medium sm:hidden">
+              {getCampusName(schoolId, campusId)}
+            </span>
           </div>
-        </div>
-      )}
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsOpen(!isOpen)}
+            className="h-9 gap-2 rounded-xl"
+          >
+            <MapPin className="size-4" />
+            <span className="hidden text-sm font-medium sm:inline">
+              <span className="mr-1 text-xs font-normal text-muted-foreground">
+                Showing:
+              </span>
+              {getSchoolName(schoolId)}{" "}
+              <span className="font-normal text-muted-foreground">
+                ({getCampusName(schoolId, campusId)})
+              </span>
+            </span>
+            <span className="text-sm font-medium sm:hidden">
+              {getCampusName(schoolId, campusId)}
+            </span>
+            <ChevronDown className="size-3 text-muted-foreground" />
+          </Button>
+        )}
+
+        {/* Cross-Campus Direct Link Modal */}
+        <Dialog
+          open={showDirectLinkModal}
+          onOpenChange={setShowDirectLinkModal}
+        >
+          <DialogContent className="rounded-2xl sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>View Vendor Menu?</DialogTitle>
+              <DialogDescription>
+                Hey! This vendor is in{" "}
+                <strong className="text-foreground">
+                  {getCampusName(
+                    searchParams.get("school") || "",
+                    searchParams.get("campus") || ""
+                  )}
+                </strong>
+                , but your profile is set to{" "}
+                <strong className="text-foreground">
+                  {getCampusName(
+                    profileData?.school || "",
+                    profileData?.campus || ""
+                  )}
+                </strong>
+                .
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Want to switch your campus temporarily to view this menu?
+            </p>
+            <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDirectLinkModal(false)
+                  // Revert to their profile campus
+                  if (profileData?.school && profileData?.campus) {
+                    setSchoolAndCampus(profileData.school, profileData.campus)
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.set("school", profileData.school)
+                    params.set("campus", profileData.campus)
+                    router.replace(`${pathname}?${params.toString()}`)
+                  }
+                }}
+                className="rounded-xl"
+              >
+                Take me back
+              </Button>
+              <Button
+                type="button"
+                variant="hero"
+                onClick={() => {
+                  setShowDirectLinkModal(false)
+                  // Keep the URL campus, sync provider state
+                  const urlSchool =
+                    searchParams.get("school") || DEFAULT_SCHOOL_ID
+                  const urlCampus =
+                    searchParams.get("campus") || DEFAULT_CAMPUS_ID
+                  sessionStorage.setItem(SS_ACCEPTED_CROSS_CAMPUS, "true")
+                  setSchoolAndCampus(urlSchool, urlCampus)
+                }}
+                className="rounded-xl"
+              >
+                Yes, view menu
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {!isCustomer && isOpen && (
+          <div className="absolute top-full left-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] animate-in rounded-2xl border border-border bg-card p-4 shadow-xl fade-in slide-in-from-top-2 sm:right-0 sm:left-auto">
+            <div className="space-y-4">
+              <div>
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <MapPin className="size-3.5" />
+                  Filter by your campus
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Only vendors and menus near you will show up.
+                </p>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  School
+                </label>
+                <Select
+                  value={localSchool}
+                  onValueChange={handleSchoolChange}
+                  onOpenChange={setIsSchoolSelectOpen}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl bg-background">
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSchoolOptions().map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  Campus
+                </label>
+                <Select
+                  value={localCampus}
+                  onValueChange={setLocalCampus}
+                  onOpenChange={setIsCampusSelectOpen}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl bg-background">
+                    <SelectValue placeholder="Select campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCampusOptions(localSchool).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                onClick={handleApply}
+                className="h-10 w-full rounded-xl font-bold"
+                variant="hero"
+              >
+                Apply Filter
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

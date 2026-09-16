@@ -198,7 +198,7 @@ function SidebarContent({
       )}
 
       {/* Nav — flex-1 here ensures bottom bar is always pinned to the bottom */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto" data-lenis-prevent>
         <NavLinks
           pathname={pathname}
           collapsed={collapsed}

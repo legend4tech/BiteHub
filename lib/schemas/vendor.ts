@@ -79,6 +79,7 @@ export const vendorSettingsSchema = z.object({
   prepTime: z.string().min(1, "Estimated prep time is required"),
   school: z.string().optional(),
   campus: z.string().optional(),
+  isOpen: z.boolean().optional(),
   image: z.any().nullable().optional(),
 })
 
@@ -99,6 +100,16 @@ export type VendorPaymentSettingsValues = z.infer<
 export const vendorUpdateSchema = vendorSettingsSchema
   .merge(vendorPaymentSettingsSchema)
   .partial()
+
+export const monnifySubaccountRequestSchema = z.object({
+  accountNumber: z.string().min(1, "Account number is required"),
+  bankCode: z.string().min(1, "Bank code is required"),
+  bankName: z.string().optional(),
+})
+
+export type MonnifySubaccountRequestValues = z.infer<
+  typeof monnifySubaccountRequestSchema
+>
 
 // ─── Vendor Login Schema ──────────────────────────────────────────────────────
 
@@ -166,6 +177,7 @@ export const vendorCreationSchema = z.object({
     .refine((val) => val !== null && val !== undefined && val.url.length > 0, {
       message: "Image is required",
     }),
+  isManagedByBiteHub: z.boolean().optional().default(false),
 })
 export type VendorCreationValues = z.infer<typeof vendorCreationSchema>
 

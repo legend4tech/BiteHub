@@ -146,22 +146,12 @@ export const VendorNewOrderEmail = ({
                   <Text style={summaryValue}>{fmt(deliveryFee)}</Text>
                 </div>
               )}
-              {serviceFee > 0 && (
-                <div style={summaryRow}>
-                  <Text style={summaryLabel}>Processing Fee (Monnify)</Text>
-                  <Text style={summaryValue}>{fmt(serviceFee)}</Text>
-                </div>
-              )}
               {platformCommission > 0 && (
                 <div style={summaryRow}>
                   <Text style={summaryLabel}>Platform Commission</Text>
                   <Text style={summaryValue}>{fmt(platformCommission)}</Text>
                 </div>
               )}
-              <div style={summaryRow}>
-                <Text style={summaryLabel}>Total charged to customer</Text>
-                <Text style={summaryValue}>{fmt(totalAmount)}</Text>
-              </div>
 
               {/* Earnings highlight */}
               <div style={earningsRow}>

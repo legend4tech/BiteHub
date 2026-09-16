@@ -180,12 +180,7 @@ export default async function MenusPage({
                   </p>
                   <SearchInput placeholder="Search for meals, snacks..." />
                 </div>
-                <div className="flex flex-col items-start gap-1">
-                  <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-                    Not your School or Campus? Change it here
-                  </p>
-                  <CampusSelector />
-                </div>
+                <CampusSelector />
               </div>
 
               {/* Vendor filter + filter panel */}

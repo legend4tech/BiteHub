@@ -11,23 +11,19 @@ import { Loader2 } from "lucide-react"
 
 const pageTitles: Record<string, string> = {
   "/customer/dashboard": "Overview",
-  "/customer/dashboard/orders": "My Orders",
-  "/customer/dashboard/wallet": "Wallet",
-  "/customer/dashboard/rewards": "Rewards",
-  "/customer/dashboard/settings": "Settings",
+  "/customer/orders": "My Orders",
+  "/customer/wallet": "Wallet",
+  "/customer/rewards": "Rewards",
+  "/customer/settings": "Settings",
 }
 
 function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession()
   const pathname = usePathname()
 
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    )
-  }
+  // We remove the blocking loading spinner here so that the layout
+  // (sidebar, top bar) renders immediately. The individual page content
+  // will use loading.tsx skeletons while NextAuth and database fetch data.
 
   const pageTitle = pageTitles[pathname] ?? "Customer Dashboard"
 

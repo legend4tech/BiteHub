@@ -1,10 +1,8 @@
+export const dynamic = "force-dynamic"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import dbConnect from "@/lib/db"
-import Customer from "@/models/Customer"
-import Wallet from "@/models/Wallet"
-import WalletTransaction from "@/models/WalletTransaction"
-import { formatPrice } from "@/lib/format"
+import Link from "next/link"
+import { formatPriceExact } from "@/lib/format"
 import {
   Wallet as WalletIcon,
   ArrowDownLeft,
@@ -12,38 +10,40 @@ import {
   Copy,
   Landmark,
   Banknote,
+  Info,
 } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
-import { activateWallet } from "@/lib/actions/wallet"
+import { ActivateWalletForm } from "@/components/customer/ActivateWalletForm"
+import { FundWalletFlow } from "@/components/customer/FundWalletFlow"
+import { WalletAutoRefresher } from "@/components/customer/WalletAutoRefresher"
 import type { Transaction } from "@/types/customer"
+import {
+  getCustomerByEmail,
+  getCustomerWalletData,
+} from "@/lib/services/customerService"
 
 export default async function CustomerWalletPage() {
   const session = await auth()
-  if (!session?.user?.email || session.user.role !== "customer") {
-    redirect("/customer/login")
+  if (!session?.user?.email) {
+    return null
   }
 
-  await dbConnect()
-  const customer = await Customer.findOne({ email: session.user.email })
+  const customer = await getCustomerByEmail(session.user.email)
   if (!customer) {
-    redirect("/customer/login")
+    return null
   }
 
-  const wallet = await Wallet.findOne({ customerId: customer._id })
-
-  let transactions: Transaction[] = []
-  if (wallet) {
-    transactions = await WalletTransaction.find({ customerId: customer._id })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean()
-  }
+  const { wallet, transactions } = await getCustomerWalletData(
+    customer._id.toString()
+  )
 
   const walletBalance = wallet ? wallet.balance : 0
   const isActive = !!wallet?.accountNumber
 
   return (
     <div className="space-y-6">
+      <WalletAutoRefresher />
       <div>
         <h1 className="font-heading text-2xl font-bold">My Wallet</h1>
         <p className="text-muted-foreground">
@@ -51,9 +51,9 @@ export default async function CustomerWalletPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
         {/* Balance & Actions */}
-        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm lg:col-span-1">
           <div>
             <div className="mb-2 flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
@@ -64,22 +64,15 @@ export default async function CustomerWalletPage() {
               </p>
             </div>
             <h2 className="text-4xl font-bold tracking-tight">
-              {formatPrice(walletBalance)}
+              {formatPriceExact(walletBalance)}
             </h2>
           </div>
 
           <div className="mt-8 border-t border-border pt-6">
             {!isActive ? (
-              <form action={activateWallet}>
-                <Button type="submit" variant="hero" className="w-full">
-                  Activate Naira Wallet
-                </Button>
-              </form>
+              <ActivateWalletForm />
             ) : (
               <div className="flex flex-col gap-3">
-                <Button variant="hero" className="w-full justify-start pl-4">
-                  <Landmark className="mr-3 size-4" /> Fund via Bank Transfer
-                </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start pl-4"
@@ -94,75 +87,52 @@ export default async function CustomerWalletPage() {
         </div>
 
         {/* Deposit Info (Monnify Virtual Account) */}
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 shadow-sm">
-          <h3 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
-            <Landmark className="size-5 text-primary" /> Virtual Bank Account
-          </h3>
-
+        <div className="lg:col-span-2">
           {!isActive ? (
-            <div className="flex h-40 flex-col items-center justify-center space-y-3 text-center">
-              <div className="rounded-full border border-border bg-background p-3">
-                <Landmark className="size-6 text-muted-foreground" />
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 shadow-sm">
+              <h3 className="mb-4 flex items-center gap-2 font-heading text-lg font-bold">
+                <Landmark className="size-5 text-primary" /> Virtual Bank
+                Account
+              </h3>
+              <div className="flex h-40 flex-col items-center justify-center space-y-3 text-center">
+                <div className="rounded-full border border-border bg-background p-3">
+                  <Landmark className="size-6 text-muted-foreground" />
+                </div>
+                <p className="max-w-[250px] text-sm font-medium text-muted-foreground">
+                  Activate your wallet to get a dedicated Monnify account number
+                  for automatic funding.
+                </p>
               </div>
-              <p className="max-w-[250px] text-sm font-medium text-muted-foreground">
-                Activate your wallet to get a dedicated Monnify account number
-                for automatic funding.
-              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Transfer Naira to this account to instantly fund your wallet.
-              </p>
-              <div className="space-y-3">
-                <div className="rounded-xl border border-border bg-background p-4">
-                  <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">
-                    Bank Name
-                  </p>
-                  <p className="font-bold">{wallet!.bankName}</p>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-border bg-background p-4">
-                  <div>
-                    <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">
-                      Account Number
-                    </p>
-                    <p className="font-mono text-lg font-bold tracking-wider text-primary">
-                      {wallet!.accountNumber}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-muted-foreground hover:text-foreground"
-                  >
-                    <Copy className="size-4" />
-                  </Button>
-                </div>
-                <div className="rounded-xl border border-border bg-background p-4">
-                  <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase">
-                    Account Name
-                  </p>
-                  <p className="font-bold">{wallet!.accountName}</p>
-                </div>
-              </div>
-            </div>
+            <FundWalletFlow wallet={wallet} />
           )}
         </div>
       </div>
 
       {/* Transaction History */}
       <div className="space-y-4">
-        <h2 className="font-heading text-lg font-bold">Recent Transactions</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg font-bold">
+            Recent Transactions
+          </h2>
+          {transactions.length > 0 && (
+            <Link
+              href="/customer/transactions"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              View all
+            </Link>
+          )}
+        </div>
 
         {transactions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
-              <Banknote className="size-6 text-muted-foreground/50" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">
-              No transactions yet
-            </p>
-          </div>
+          <EmptyState
+            size="sm"
+            title="No transactions yet"
+            description="Your wallet history will appear here."
+            className="rounded-xl border border-dashed border-border bg-card/50"
+          />
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {transactions.map((tx: Transaction, i: number) => {
@@ -170,7 +140,7 @@ export default async function CustomerWalletPage() {
                 tx.type.includes("deposit") || tx.type === "reward"
               return (
                 <div
-                  key={tx._id.toString()}
+                  key={tx.id}
                   className={`flex items-center justify-between p-4 ${
                     i !== 0 ? "border-t border-border" : ""
                   }`}
@@ -200,15 +170,20 @@ export default async function CustomerWalletPage() {
                   <div className="text-right">
                     <p
                       className={`font-bold ${
-                        isCredit ? "text-success" : "text-foreground"
+                        isCredit ? "text-success" : "text-destructive"
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatPrice(tx.amount)}
+                      {formatPriceExact(tx.amount)}
                     </p>
                     <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-foreground uppercase">
                       {tx.type.replace("_", " ")}
                     </span>
+                    {tx.balanceAfter !== undefined && (
+                      <p className="mt-1 text-xs font-medium text-muted-foreground">
+                        Bal: {formatPriceExact(tx.balanceAfter)}
+                      </p>
+                    )}
                   </div>
                 </div>
               )

@@ -9,7 +9,7 @@ import {
   VALID_ORDER_STATUSES,
 } from "@/lib/constants"
 import type { OrderStatus } from "@/types/shared"
-import { StatusBadge } from "@/components/vendor-dashboard/StatusBadge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import {
@@ -21,6 +21,8 @@ import { formatPriceExact, formatTime } from "@/lib/format"
 import {
   Copy,
   Check,
+  CheckCircle2,
+  XCircle,
   Clock,
   MapPin,
   Receipt,
@@ -236,7 +238,10 @@ export function OrderTable({
                 </p>
                 {!onStatusChange && (
                   <div className="mt-1">
-                    <StatusBadge status={order.status} />
+                    <StatusBadge
+                      status={order.status}
+                      paymentStatus={order.paymentStatus}
+                    />
                   </div>
                 )}
               </div>
@@ -272,9 +277,9 @@ export function OrderTable({
               </div>
               {order.notes && (
                 <div className="mt-1 flex items-start gap-2.5 border-t border-border/50 pt-2">
-                  <MessageSquare className="text-warning mt-0.5 size-4 shrink-0" />
+                  <MessageSquare className="mt-0.5 size-4 shrink-0 text-warning" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-warning dark:text-warning text-[10px] font-bold tracking-wider uppercase">
+                    <p className="text-[10px] font-bold tracking-wider text-warning uppercase dark:text-warning">
                       Customer Note
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed font-medium text-foreground italic">
@@ -305,27 +310,34 @@ export function OrderTable({
                       <Check className="size-4" /> Paid securely via Monnify
                     </div>
                   )}
-                  {order.paymentStatus === "pending" && (
-                    <div className="flex flex-col gap-2">
-                      <div className="bg-warning/10 text-warning dark:text-warning flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold">
-                        <Clock className="size-4" /> Payment Pending
+                  {order.paymentStatus === "pending" &&
+                    order.status !== ORDER_STATUS.CANCELLED && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-center gap-1.5 rounded-xl bg-warning/10 py-2 text-sm font-semibold text-warning dark:text-warning">
+                          <Clock className="size-4" /> Payment Pending
+                        </div>
+                        <button
+                          onClick={() => handleVerifyPayment(order.orderId)}
+                          disabled={verifyingOrderId === order.orderId}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-all hover:border-primary/60 hover:bg-primary/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {verifyingOrderId === order.orderId ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <ShieldCheck className="size-4" />
+                          )}
+                          {verifyingOrderId === order.orderId
+                            ? "Verifying…"
+                            : "Verify Payment"}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleVerifyPayment(order.orderId)}
-                        disabled={verifyingOrderId === order.orderId}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-all hover:border-primary/60 hover:bg-primary/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {verifyingOrderId === order.orderId ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <ShieldCheck className="size-4" />
-                        )}
-                        {verifyingOrderId === order.orderId
-                          ? "Verifying…"
-                          : "Verify Payment"}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  {order.paymentStatus === "pending" &&
+                    order.status === ORDER_STATUS.CANCELLED && (
+                      <div className="flex items-center justify-center gap-1.5 rounded-xl bg-muted/50 py-2 text-sm font-semibold text-muted-foreground">
+                        <AlertCircle className="size-4" /> No Payment Made
+                      </div>
+                    )}
                   {order.paymentStatus === "failed" && (
                     <div className="flex items-center justify-center gap-1.5 rounded-xl bg-destructive/10 py-2 text-sm font-semibold text-destructive">
                       <AlertCircle className="size-4" /> Payment Failed
@@ -340,54 +352,73 @@ export function OrderTable({
                   <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                     Update Status
                   </label>
-                  <select
-                    value={order.status}
-                    onChange={(e) => {
-                      const newStatus = e.target.value as OrderStatus
-                      setConfirmState({
-                        isOpen: true,
-                        orderId: order.orderId,
-                        newStatus,
-                      })
-                    }}
-                    className={cn(
-                      "w-full cursor-pointer rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all focus:outline-none disabled:opacity-50",
-                      ORDER_STATUS_CONFIG[order.status].className,
-                      "focus:ring-4",
-                      // extract the text color class from the config and append it with /20 to make a soft focus ring
-                      // (Tailwind handles this automatically if we rely on standard focus rings, but using the config class is enough)
-                      "focus:border-primary/50"
-                    )}
-                    disabled={
-                      order.status === ORDER_STATUS.CANCELLED ||
-                      order.status === ORDER_STATUS.COMPLETED
-                    }
-                  >
-                    {ALL_STATUSES.map((s) => {
-                      const isBackwards =
-                        STATUS_LEVELS[s] < STATUS_LEVELS[order.status]
-                      const isCancelled = s === ORDER_STATUS.CANCELLED
+                  {order.status === ORDER_STATUS.COMPLETED ? (
+                    <div
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-xl border-2 px-3 py-2.5 text-sm font-semibold",
+                        ORDER_STATUS_CONFIG[order.status].className
+                      )}
+                    >
+                      <span>Completed</span>
+                      <CheckCircle2 className="size-4" />
+                    </div>
+                  ) : order.status === ORDER_STATUS.CANCELLED ? (
+                    <div
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-xl border-2 px-3 py-2.5 text-sm font-semibold",
+                        ORDER_STATUS_CONFIG[order.status].className
+                      )}
+                    >
+                      <span>Cancelled</span>
+                      <XCircle className="size-4" />
+                    </div>
+                  ) : (
+                    <select
+                      value={order.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value as OrderStatus
+                        setConfirmState({
+                          isOpen: true,
+                          orderId: order.orderId,
+                          newStatus,
+                        })
+                      }}
+                      className={cn(
+                        "w-full cursor-pointer rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all focus:outline-none disabled:opacity-50",
+                        ORDER_STATUS_CONFIG[order.status].className,
+                        "focus:ring-4",
+                        // extract the text color class from the config and append it with /20 to make a soft focus ring
+                        // (Tailwind handles this automatically if we rely on standard focus rings, but using the config class is enough)
+                        "focus:border-primary/50"
+                      )}
+                    >
+                      {ALL_STATUSES.map((s) => {
+                        const isBackwards =
+                          STATUS_LEVELS[s] < STATUS_LEVELS[order.status]
+                        const isCancelled = s === ORDER_STATUS.CANCELLED
 
-                      const isPendingPayment = order.paymentStatus === "pending"
-                      const isDisabled =
-                        (isBackwards && !isCancelled) ||
-                        (isPendingPayment && !isCancelled)
+                        const isPendingPayment =
+                          order.paymentStatus === "pending"
+                        const isDisabled =
+                          (isBackwards && !isCancelled) ||
+                          (isPendingPayment && !isCancelled)
 
-                      return (
-                        <option
-                          key={s}
-                          value={s}
-                          disabled={isDisabled}
-                          className={cn(
-                            "bg-background",
-                            ORDER_STATUS_CONFIG[s].textColor
-                          )}
-                        >
-                          {ORDER_STATUS_CONFIG[s].label}
-                        </option>
-                      )
-                    })}
-                  </select>
+                        return (
+                          <option
+                            key={s}
+                            value={s}
+                            disabled={isDisabled}
+                            className={cn(
+                              "bg-background",
+                              ORDER_STATUS_CONFIG[s].textColor
+                            )}
+                          >
+                            {ORDER_STATUS_CONFIG[s].label}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  )}
                 </div>
               )}
             </div>

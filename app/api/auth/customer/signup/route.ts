@@ -38,7 +38,21 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("[Customer Signup] Error:", error)
+    if (error instanceof Error && error.message === "INVALID_REFERRAL_CODE") {
+      return NextResponse.json(
+        { error: "The provided referral code is invalid." },
+        { status: 400 }
+      )
+    }
+
+    if (error instanceof Error && error.message === "CANNOT_REFER_SELF") {
+      return NextResponse.json(
+        { error: "You cannot use your own referral code." },
+        { status: 400 }
+      )
+    }
+
+    console.error("[POST /api/auth/customer/signup]", error)
     return NextResponse.json(
       { error: "Internal server error." },
       { status: 500 }

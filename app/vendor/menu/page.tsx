@@ -13,8 +13,8 @@ interface Props {
 
 export default async function VendorMenuPage({ searchParams }: Props) {
   const session = await auth()
-  if (!session || session.user?.role !== "vendor" || !session.user?.vendorId) {
-    redirect("/vendor/login")
+  if (!session || !session.user?.vendorId) {
+    return null
   }
 
   const resolvedParams = await searchParams

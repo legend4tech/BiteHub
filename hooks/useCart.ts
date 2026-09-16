@@ -210,6 +210,31 @@ export function useCart() {
     [persist, removeItem]
   )
 
+  const syncItem = useCallback(
+    (menuItem: MenuItem) => {
+      const current = readCart()
+      const existing = current.items.find(
+        (ci) => ci.menuItem.id === menuItem.id
+      )
+      if (existing) {
+        if (
+          existing.menuItem.price !== menuItem.price ||
+          existing.menuItem.name !== menuItem.name ||
+          existing.menuItem.quantityAvailable !== menuItem.quantityAvailable ||
+          existing.menuItem.isAvailable !== menuItem.isAvailable
+        ) {
+          persist({
+            ...current,
+            items: current.items.map((ci) =>
+              ci.menuItem.id === menuItem.id ? { ...ci, menuItem } : ci
+            ),
+          })
+        }
+      }
+    },
+    [persist]
+  )
+
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
 
   const syncVendorDetails = useCallback(
@@ -244,7 +269,7 @@ export function useCart() {
 
   const total = cart.items.reduce(
     (sum, ci) => sum + ci.menuItem.price * ci.quantity,
-    cart.vendorDeliveryFee
+    0
   )
   const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0)
 
@@ -277,6 +302,7 @@ export function useCart() {
     updateQuantity,
     clearCart,
     syncVendorDetails,
+    syncItem,
     isDifferentVendor,
     total,
     count,

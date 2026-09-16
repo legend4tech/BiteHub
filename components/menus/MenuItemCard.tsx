@@ -2,10 +2,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Plus, Minus, ExternalLink, UtensilsCrossed, Clock, Trash2 } from "lucide-react"
+import {
+  Plus,
+  Minus,
+  ExternalLink,
+  UtensilsCrossed,
+  Clock,
+  Trash2,
+} from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/types/vendor"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   formatPrice,
   formatTime,
@@ -20,8 +27,13 @@ interface MenuItemCardProps {
 }
 
 export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
-  const { cart, addItem, updateQuantity, isDifferentVendor } = useCart()
+  const { cart, addItem, updateQuantity, isDifferentVendor, syncItem } =
+    useCart()
   const [imgError, setImgError] = useState(false)
+
+  useEffect(() => {
+    syncItem(item)
+  }, [item, syncItem])
 
   const cartEntry = cart.items.find((ci) => ci.menuItem.id === item.id)
   const qty = cartEntry?.quantity ?? 0
@@ -174,7 +186,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           item.quantityAvailable !== undefined &&
           item.quantityAvailable <= 5 &&
           item.quantityAvailable > 0 && (
-            <span className="bg-warning/10 text-warning absolute bottom-2.5 left-2.5 z-10 rounded-full border border-border px-2.5 py-0.5 text-[10px] font-semibold shadow-sm">
+            <span className="absolute bottom-2.5 left-2.5 z-10 rounded-full border border-border bg-warning/10 px-2.5 py-0.5 text-[10px] font-semibold text-warning shadow-sm">
               Limited: {item.quantityAvailable} left
             </span>
           )}
@@ -249,9 +261,9 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
                 updateQuantity(item.id, 0)
               }}
               aria-label="Remove from cart"
-              className="group flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-[10px] font-bold tracking-wider text-destructive uppercase transition-all duration-300 hover:bg-destructive/20 dark:hover:bg-destructive/30 active:scale-95"
+              className="group flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-[10px] font-bold tracking-wider text-destructive uppercase transition-all duration-300 hover:bg-destructive/20 active:scale-95 dark:hover:bg-destructive/30"
             >
-              <Trash2 className="size-3.5 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+              <Trash2 className="size-3.5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
               <span>Remove</span>
             </button>
           ) : qty === 0 ? (

@@ -9,6 +9,7 @@ export interface Vendor {
   school: string
   campus: string
   isActive: boolean
+  isOpen: boolean
   deliveryFee: number
   prepTime?: string
   image?: string | { url: string; publicId: string }
@@ -84,18 +85,99 @@ export interface SubLandmark {
   fee: number
 }
 
+export interface Feedback {
+  _id: string
+  rating: number
+  comments?: string
+  orderId?: string
+  createdAt: string
+}
+
+export interface DeliverySettingsResponse {
+  landmarks: {
+    id: string
+    school: string
+    campus: string
+    name: string
+    defaultDeliveryFee: number
+    subLandmarks: {
+      id: string
+      name: string
+      defaultDeliveryFee?: number
+    }[]
+  }[]
+  overrides: {
+    landmarks: { landmarkId: string; fee: number }[]
+    subLandmarks: { subLandmarkId: string; fee: number }[]
+  }
+}
+
+export interface VendorFeeResponse {
+  prepTime: string
+  monnifySubaccountCode: string
+}
+
+export interface VendorStats {
+  totalOrders: number
+  todayOrders: number
+  pending: number
+  inProgress: number
+  totalCompleted: number
+  totalRevenue: number
+  hasPaymentDetails?: boolean
+  slug?: string
+  acceptedTermsVersion?: string
+  isNewcomer?: boolean
+  monnifyDisbursed?: number
+  monnifyPending?: number
+}
+
+export interface VendorWithMenu extends Vendor {
+  itemCount?: number
+  avgRating?: number
+}
+
+export interface DashboardStats {
+  totalVendors: number
+  activeVendors: number
+  totalOrders: number
+  todayOrders: number
+  pendingOrders: number
+  completedOrders: number
+  cancelledOrders: number
+  byStatus: Record<string, number>
+}
+
 export interface DeliveryZone {
   id: string
   name: string
   fee: number
-  subLandmarks: SubLandmark[]
+  subLandmarks: { id: string; name: string; fee: number }[]
+}
+
+export interface DeliveryZonesResponse {
+  vendorCampus: string
+  vendorSchool: string
+  zones: DeliveryZone[]
 }
 
 export interface VendorReview {
   id: string
   rating: number
   comments?: string
-  customerName: string
-  createdAt: string | null
+  createdAt: string
   isAnonymous: boolean
+  customerName: string
+}
+
+export interface RatingStatisticsData {
+  averageRating: number
+  totalReviews: number
+  distribution: {
+    1: number
+    2: number
+    3: number
+    4: number
+    5: number
+  }
 }

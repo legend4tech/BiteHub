@@ -2,21 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-
-export interface VendorStats {
-  totalOrders: number
-  todayOrders: number
-  pending: number
-  inProgress: number
-  totalCompleted: number
-  totalRevenue: number
-  hasPaymentDetails?: boolean
-  slug?: string
-  acceptedTermsVersion?: string
-  isNewcomer?: boolean
-  monnifyDisbursed?: number
-  monnifyPending?: number
-}
+import type { VendorStats } from "@/types/vendor"
 
 export function useVendorStats(options?: { enabled?: boolean }) {
   return useQuery<VendorStats>({

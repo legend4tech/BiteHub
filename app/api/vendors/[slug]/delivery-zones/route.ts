@@ -106,7 +106,11 @@ export async function GET(
       }
     })
 
-    return NextResponse.json(result)
+    return NextResponse.json({
+      vendorCampus: vendor.campus as string,
+      vendorSchool: vendor.school as string,
+      zones: result,
+    })
   } catch (error) {
     console.error("[vendors/delivery-zones GET]", error)
     return NextResponse.json(

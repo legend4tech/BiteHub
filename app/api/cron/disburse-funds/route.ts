@@ -27,9 +27,7 @@ export async function GET(request: Request) {
       cutoffTime.setDate(cutoffTime.getDate() - 1)
     }
 
-    console.log(
-      `[Cron Disbursement] Using cutoff time: ${cutoffTime.toLocaleString()}`
-    )
+    // Log removed for production
 
     const query = {
       paymentStatus: "paid",
@@ -42,9 +40,7 @@ export async function GET(request: Request) {
     const ordersToDisburse = await Order.find(query)
 
     if (ordersToDisburse.length === 0) {
-      console.log(
-        "[Cron Disbursement] No pending orders to disburse before the cutoff time."
-      )
+      // Log removed for production
       return NextResponse.json({ message: "No pending orders", processed: 0 })
     }
 
@@ -71,9 +67,7 @@ export async function GET(request: Request) {
       await vendor.save()
       await order.save({ validateModifiedOnly: true })
 
-      console.log(
-        `[Cron Disbursement] ✅ Disbursed ₦${amountToDisburse} to Vendor: "${vendor.slug}" for Order: ${order.orderId}`
-      )
+      // Log removed for production
 
       totalDisbursedAmount += amountToDisburse
       processedCount++
