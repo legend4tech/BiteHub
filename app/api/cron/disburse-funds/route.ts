@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server"
-import dbConnect from "@/lib/db"
-import Order from "@/models/Order"
-import Vendor from "@/models/Vendor"
-import { ORDER_STATUS } from "@/lib/constants"
+import { processWalletDisbursements } from "@/lib/services/payoutService"
 
 export const dynamic = "force-dynamic"
 
@@ -15,71 +12,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await dbConnect()
-
-    // Calculate the most recent 10:30 PM
-    const now = new Date()
-    const cutoffTime = new Date(now)
-    cutoffTime.setHours(22, 30, 0, 0) // 10:30 PM
-
-    // If today's 10:30 PM is still in the future, we want yesterday's 10:30 PM
-    if (cutoffTime > now) {
-      cutoffTime.setDate(cutoffTime.getDate() - 1)
+    const result = await processWalletDisbursements()
+    if (result.processed === 0) {
+      return NextResponse.json(result)
     }
 
-    // Log removed for production
-
-    const query = {
-      paymentStatus: "paid",
-      paymentMethod: "monnify",
-      status: ORDER_STATUS.COMPLETED,
-      isDisbursed: { $ne: true },
-      createdAt: { $lt: cutoffTime },
-    }
-
-    const ordersToDisburse = await Order.find(query)
-
-    if (ordersToDisburse.length === 0) {
-      // Log removed for production
-      return NextResponse.json({ message: "No pending orders", processed: 0 })
-    }
-
-    let totalDisbursedAmount = 0
-    let processedCount = 0
-
-    for (const order of ordersToDisburse) {
-      const amountToDisburse = order.vendorRevenue
-
-      if (!amountToDisburse || amountToDisburse <= 0) {
-        continue
-      }
-
-      const vendor = await Vendor.findById(order.vendorId)
-      if (!vendor) {
-        continue
-      }
-
-      const currentDisbursed = vendor.monnifyTotalDisbursed || 0
-      vendor.monnifyTotalDisbursed = currentDisbursed + amountToDisburse
-
-      order.isDisbursed = true
-
-      await vendor.save()
-      await order.save({ validateModifiedOnly: true })
-
-      // Log removed for production
-
-      totalDisbursedAmount += amountToDisburse
-      processedCount++
-    }
-
-    return NextResponse.json({
-      message: "Disbursement successful",
-      processed: processedCount,
-      totalAmount: totalDisbursedAmount,
-    })
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("[Cron Disbursement] Error during execution:", error)
+    console.error("[GET /api/cron/disburse-funds]", error)
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

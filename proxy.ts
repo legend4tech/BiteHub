@@ -40,8 +40,12 @@ export default auth(async (req) => {
     isNewDevice = true
   }
 
-  // 1. Rate Limiting Logic (TEMPORARILY DISABLED)
-  /*
+  // 1. Rate Limiting Logic
+
+  // Move auth extraction up so we can use it for rate limiting
+  const session = req.auth
+  const userId = session?.user?.id
+
   if (isRateLimitingEnabled) {
     const ip =
       (req as { ip?: string }).ip ??
@@ -49,19 +53,36 @@ export default auth(async (req) => {
       "127.0.0.1"
     const path = req.nextUrl.pathname
 
-    // Strict Rate Limiting for Auth Login & Sensitive routes
-    const isLoginAttempt =
-      req.method === "POST" && path.startsWith("/api/auth/callback/")
+    const isAuthRoute = path.startsWith("/api/auth/")
     const isOrderRoute = path.startsWith("/api/orders")
+    const isWalletRoute = path.startsWith("/api/wallet")
+    const isCustomerRoute = path.startsWith("/api/customer")
+    const isFeedbackRoute = path.startsWith("/api/feedback")
 
-    if (isLoginAttempt || isOrderRoute) {
-      const [deviceLimit, ipLimit] = await Promise.all([
-        strictRateLimiter.limit(`strict_device_${deviceId}`),
-        strictIpRateLimiter.limit(`strict_ip_${ip}`),
-      ])
+    // Only rate limit mutations (POST/PUT/DELETE) on specific high-risk routes
+    // GET requests (reading data) bypass Redis completely to save quota.
+    const isHighRiskMutation =
+      req.method !== "GET" &&
+      (isOrderRoute || isWalletRoute || isCustomerRoute || isFeedbackRoute)
 
-      if (!deviceLimit.success || !ipLimit.success) {
-        const failedLimit = !deviceLimit.success ? deviceLimit : ipLimit
+    if (isAuthRoute || isHighRiskMutation) {
+      // 1. Prioritize User ID, then Device ID, fallback to IP
+      const rawIdentifier = userId || deviceId || ip
+
+      // 2. Hash it to protect privacy using Edge-compatible Web Crypto
+      const hashBuffer = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(rawIdentifier)
+      )
+      const hashedIdentifier = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+
+      const limitResult = await strictIpRateLimiter.limit(
+        `strict_masked_${hashedIdentifier}`
+      )
+
+      if (!limitResult.success) {
         return NextResponse.json(
           {
             error: "Too Many Requests",
@@ -70,39 +91,18 @@ export default auth(async (req) => {
           {
             status: 429,
             headers: {
-              "X-RateLimit-Limit": failedLimit.limit.toString(),
-              "X-RateLimit-Remaining": failedLimit.remaining.toString(),
-              "X-RateLimit-Reset": failedLimit.reset.toString(),
+              "X-RateLimit-Limit": limitResult.limit.toString(),
+              "X-RateLimit-Remaining": limitResult.remaining.toString(),
+              "X-RateLimit-Reset": limitResult.reset.toString(),
             },
           }
         )
       }
     }
-    // Global Rate Limiting for all other API routes
-    else if (path.startsWith("/api/")) {
-      const [deviceLimit, ipLimit] = await Promise.all([
-        globalRateLimiter.limit(`global_device_${deviceId}`),
-        globalIpRateLimiter.limit(`global_ip_${ip}`),
-      ])
-
-      if (!deviceLimit.success || !ipLimit.success) {
-        const failedLimit = !deviceLimit.success ? deviceLimit : ipLimit
-        return new NextResponse("Too Many Requests", {
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": failedLimit.limit.toString(),
-            "X-RateLimit-Remaining": failedLimit.remaining.toString(),
-            "X-RateLimit-Reset": failedLimit.reset.toString(),
-          },
-        })
-      }
-    }
   }
-  */
 
   // 2. Auth guard — enforce role-based access at the edge to prevent flash-of-protected-content
   const { pathname } = req.nextUrl
-  const session = req.auth
   const isLoggedIn = !!session?.user
   const role = session?.user?.role
 

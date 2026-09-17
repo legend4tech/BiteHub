@@ -21,16 +21,38 @@ async function processDisbursement(
     return
   }
 
+  // Idempotency Check in memory first
+  if (vendor.processedDisbursementRefs?.includes(reference)) {
+    console.log(
+      `[Disbursement Webhook] Duplicate reference ${reference} ignored (Idempotency catch).`
+    )
+    return
+  }
+
+  const updateDoc: Record<string, unknown> = {
+    $addToSet: { processedDisbursementRefs: reference },
+  }
+
   if (status === "SUCCESS") {
-    const currentDisbursed = vendor.monnifyTotalDisbursed || 0
-    vendor.monnifyTotalDisbursed = currentDisbursed + amount
-    await vendor.save()
-    // Log removed for production
+    updateDoc.$inc = { monnifyTotalDisbursed: amount }
   } else {
     console.warn(
-      `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}`
+      `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}. Rolling back optimistic deduction.`
     )
+    updateDoc.$inc = {
+      walletTotalDisbursed: -amount,
+      pendingWalletBalance: amount,
+    }
   }
+
+  // Atomically update ONLY IF the reference is not already in the array (Concurrency safety)
+  await Vendor.findOneAndUpdate(
+    {
+      _id: vendor._id,
+      processedDisbursementRefs: { $ne: reference },
+    },
+    updateDoc
+  )
 }
 
 export async function POST(request: Request) {

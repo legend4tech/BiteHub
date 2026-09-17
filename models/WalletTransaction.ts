@@ -6,6 +6,7 @@ export interface IWalletTransaction extends Document {
     | "deposit"
     | "order_payment"
     | "reward"
+    | "refund"
     | "crypto_deposit"
     | "fiat_deposit"
   amount: number
@@ -30,6 +31,7 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
         "deposit",
         "order_payment",
         "reward",
+        "refund",
         "crypto_deposit",
         "fiat_deposit",
       ],

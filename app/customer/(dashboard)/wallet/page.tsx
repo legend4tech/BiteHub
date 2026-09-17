@@ -176,7 +176,7 @@ export default async function CustomerWalletPage() {
                       {isCredit ? "+" : "-"}
                       {formatPriceExact(tx.amount)}
                     </p>
-                    <span className="inline-flex items-center rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-foreground uppercase">
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
                       {tx.type.replace("_", " ")}
                     </span>
                     {tx.balanceAfter !== undefined && (

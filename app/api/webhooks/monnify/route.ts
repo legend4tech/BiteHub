@@ -8,7 +8,7 @@ import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendWalletTopupEmail } from "@/lib/walletMail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
-import { ORDER_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 import Wallet from "@/models/Wallet"
 import WalletTransaction from "@/models/WalletTransaction"
 import { eventBus } from "@/lib/events"
@@ -48,18 +48,37 @@ async function processSuccessfulTransaction(paymentReference: string) {
             monnifyData.amount
         )
 
-        await WalletTransaction.create({
-          customerId: wallet.customerId,
-          type: "fiat_deposit",
-          amount: amount,
-          balanceAfter: wallet.balance + amount,
-          direction: "credit",
-          reference: paymentReference,
-          description: "Bank Transfer Deposit",
-        })
+        const updatedWallet = await Wallet.findOneAndUpdate(
+          { _id: wallet._id },
+          { $inc: { balance: amount } },
+          { new: true }
+        )
 
-        wallet.balance += amount
-        await wallet.save()
+        try {
+          await WalletTransaction.create({
+            customerId: wallet.customerId,
+            type: "fiat_deposit",
+            amount: amount,
+            balanceAfter: updatedWallet.balance, // Set exact correct value atomically
+            direction: "credit",
+            reference: paymentReference,
+            description: "Bank Transfer Deposit",
+          })
+        } catch (e: unknown) {
+          if ((e as { code?: number }).code === 11000) {
+            console.log(
+              `[Collection Webhook] Duplicate transaction for ${paymentReference} - gracefully ignored (Idempotency catch).`
+            )
+            // Rollback wallet increment if transaction already exists (another process beat us)
+            await Wallet.findOneAndUpdate(
+              { _id: wallet._id },
+              { $inc: { balance: -amount } }
+            )
+            return NextResponse.json({ status: "Duplicate event" })
+          }
+          throw e
+        }
+
         revalidatePath("/customer/wallet")
 
         // Broadcast the real-time event so the browser auto-refreshes!
@@ -109,16 +128,16 @@ async function processSuccessfulTransaction(paymentReference: string) {
     return
   }
 
-  if (order.paymentStatus === "paid") {
+  if (order.paymentStatus === PAYMENT_STATUS.PAID) {
     // Log removed for production
     return
   }
 
   const updatedOrder = await Order.findOneAndUpdate(
-    { orderId: order.orderId, paymentStatus: { $ne: "paid" } },
+    { orderId: order.orderId, paymentStatus: { $ne: PAYMENT_STATUS.PAID } },
     {
       $set: {
-        paymentStatus: "paid",
+        paymentStatus: PAYMENT_STATUS.PAID,
         status: ORDER_STATUS.CONFIRMED,
       },
     },
@@ -233,6 +252,25 @@ export async function POST(request: Request) {
 
     const event = JSON.parse(rawBody)
     const { eventType, eventData } = event
+
+    // Webhook Timestamp / Age Validation (Replay Protection)
+    const eventTimestampStr = eventData?.createdOn || eventData?.transactionDate
+    if (eventTimestampStr) {
+      // Use the Nigerian timezone offset or parse directly depending on the format.
+      // Assuming Monnify sends ISO strings or parseable date strings.
+      const eventTimestamp = new Date(eventTimestampStr).getTime()
+      if (!isNaN(eventTimestamp)) {
+        const ageMs = Date.now() - eventTimestamp
+        // Reject events older than 10 minutes
+        if (ageMs > 10 * 60 * 1000) {
+          console.warn(
+            "[Collection Webhook] Stale event rejected:",
+            eventData?.paymentReference
+          )
+          return NextResponse.json({ status: "stale_event_ignored" })
+        }
+      }
+    }
 
     // Log removed for production
 

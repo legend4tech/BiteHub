@@ -115,3 +115,10 @@ export type AdminCreateVendorApiValues = z.infer<
   typeof adminCreateVendorApiSchema
 >
 export type AdminUpdateVendorValues = z.infer<typeof adminUpdateVendorSchema>
+
+export const adminVendorAccountSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: strongPasswordSchema,
+})
+
+export type AdminVendorAccountValues = z.infer<typeof adminVendorAccountSchema>

@@ -115,8 +115,8 @@ export function FundWalletFlow({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-                <Info className="mt-0.5 size-5 shrink-0 text-amber-600" />
+              <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 p-4 text-warning-foreground">
+                <Info className="mt-0.5 size-5 shrink-0 text-warning" />
                 <div className="text-xs leading-relaxed">
                   <p className="mb-1 font-semibold">Transfer Limits</p>
                   <ul className="list-disc space-y-0.5 pl-4">

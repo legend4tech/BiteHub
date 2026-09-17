@@ -7,6 +7,7 @@ import { auth } from "@/auth"
 import { sendBankChangeConfirmationEmail } from "@/lib/mail"
 import { updateMonnifySubaccount, getSubaccounts } from "@/lib/monnify"
 import GlobalSettings from "@/models/GlobalSettings"
+import { monnifyBankVerifySchema } from "@/lib/schemas"
 
 export async function POST(
   request: Request,
@@ -14,7 +15,15 @@ export async function POST(
 ) {
   try {
     const body = await request.json()
-    const { accountNumber, bankCode, bankName, otp } = body
+    const parsedBody = monnifyBankVerifySchema.safeParse(body)
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+    const { accountNumber, bankCode, bankName, otp } = parsedBody.data
 
     const { slug } = await params
     const session = await auth()
@@ -28,13 +37,6 @@ export async function POST(
 
     await dbConnect()
     const vendorId = new Types.ObjectId(slug)
-
-    if (!accountNumber || !bankCode || !otp) {
-      return NextResponse.json(
-        { error: "Account number, bank code, and OTP are required" },
-        { status: 400 }
-      )
-    }
 
     const vendor = await Vendor.findById(vendorId)
     if (!vendor) {

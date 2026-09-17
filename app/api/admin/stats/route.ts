@@ -49,6 +49,7 @@ export async function GET() {
       vendorIdsWithMenus,
       withdrawalAgg,
       walletLiabilitiesAgg,
+      vendorWalletAgg,
     ] = await Promise.all([
       VendorModel.countDocuments({}),
       VendorModel.countDocuments({ isActive: true }),
@@ -64,6 +65,15 @@ export async function GET() {
       ]),
       Wallet.aggregate([
         { $group: { _id: null, total: { $sum: "$balance" } } },
+      ]),
+      VendorModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalPending: { $sum: "$pendingWalletBalance" },
+            totalDisbursed: { $sum: "$walletTotalDisbursed" },
+          },
+        },
       ]),
     ])
 
@@ -98,6 +108,9 @@ export async function GET() {
     const remainingProfit = allTimePlatformProfit - totalWithdrawn
     const totalCustomerWalletLiabilities = walletLiabilitiesAgg[0]?.total ?? 0
 
+    const totalPendingVendorWallet = vendorWalletAgg[0]?.totalPending ?? 0
+    const totalVendorWalletDisbursed = vendorWalletAgg[0]?.totalDisbursed ?? 0
+
     return NextResponse.json({
       totalVendors,
       activeVendors,
@@ -116,6 +129,8 @@ export async function GET() {
       totalWithdrawn,
       remainingProfit,
       totalCustomerWalletLiabilities,
+      totalPendingVendorWallet,
+      totalVendorWalletDisbursed,
     })
   } catch (error) {
     console.error("[admin/stats]", error)

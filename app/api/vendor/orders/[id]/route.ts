@@ -6,6 +6,7 @@ import { auth } from "@/auth"
 import {
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
+  PAYMENT_STATUS,
   OrderStatusType,
 } from "@/lib/constants"
 
@@ -52,7 +53,7 @@ export async function PATCH(
     }
 
     if (
-      order.paymentStatus === "pending" &&
+      order.paymentStatus === PAYMENT_STATUS.PENDING &&
       status !== ORDER_STATUS.CANCELLED
     ) {
       return NextResponse.json(
@@ -61,10 +62,36 @@ export async function PATCH(
       )
     }
 
-    const wasCancelled = order.status === ORDER_STATUS.CANCELLED
+    if (
+      status === ORDER_STATUS.CANCELLED &&
+      order.status === ORDER_STATUS.COMPLETED
+    ) {
+      return NextResponse.json(
+        {
+          error: "You cannot cancel an order that has already been completed.",
+        },
+        { status: 400 }
+      )
+    }
+
+    // Atomic update to prevent Double Refund / Race Conditions
     const oldStatus = order.status
-    order.status = status
-    await order.save({ validateModifiedOnly: true })
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId: params.id, vendorId, status: { $ne: status } },
+      { $set: { status } },
+      { new: true, runValidators: true }
+    )
+
+    if (!updatedOrder) {
+      // Order status was already updated by a concurrent request
+      return NextResponse.json(
+        { message: "Order status already updated" },
+        { status: 200 }
+      )
+    }
+
+    order.status = status // Update local object for the rest of the flow
+    const wasCancelled = oldStatus === ORDER_STATUS.CANCELLED
 
     // Send customer email if email exists and status changed
     if (order.customerEmail && status !== oldStatus) {
@@ -95,6 +122,41 @@ export async function PATCH(
     }
 
     if (status === ORDER_STATUS.CANCELLED && !wasCancelled) {
+      if (order.paymentMethod === "wallet" && !order.isDisbursed) {
+        const { default: Customer } = await import("@/models/Customer")
+        const customer = await Customer.findOne({ email: order.customerEmail })
+
+        if (customer) {
+          const { default: Wallet } = await import("@/models/Wallet")
+          const { default: WalletTransaction } =
+            await import("@/models/WalletTransaction")
+
+          // Atomic Wallet Refund to prevent race conditions
+          const updatedWallet = await Wallet.findOneAndUpdate(
+            { customerId: customer._id },
+            { $inc: { balance: order.totalAmount } },
+            { new: true }
+          )
+
+          if (updatedWallet) {
+            await WalletTransaction.create({
+              customerId: customer._id,
+              type: "refund",
+              amount: order.totalAmount,
+              balanceAfter: updatedWallet.balance,
+              direction: "credit",
+              reference: `REF-${order.orderId}`,
+              description: `Refund for cancelled order ${order.orderId}`,
+            })
+
+            const { default: Vendor } = await import("@/models/Vendor")
+            await Vendor.findByIdAndUpdate(order.vendorId, {
+              $inc: { pendingWalletBalance: -order.vendorRevenue },
+            })
+          }
+        }
+      }
+
       const { default: AdminUser } = await import("@/models/AdminUser")
       const { sendAdminOrderCancelledEmail } = await import("@/lib/mail")
 

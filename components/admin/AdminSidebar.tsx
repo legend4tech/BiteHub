@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Users,
   TrendingUp,
+  Banknote,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -54,6 +55,7 @@ const navItems: {
   { section: "analytics", label: "Analytics", icon: TrendingUp },
   { section: "orders", label: "Orders", icon: ShoppingCart },
   { section: "vendors", label: "Vendors", icon: Store },
+  { section: "payouts", label: "Payouts", icon: Banknote },
   { section: "feedback", label: "Feedback", icon: Star },
   { section: "staff", label: "Staff", icon: Users },
   { section: "delivery-zones", label: "Delivery Zones", icon: MapPin },
@@ -74,7 +76,7 @@ function NavLinks({
   const pathname = usePathname()
   const filteredNavItems = navItems.filter((item) => {
     if (role === "vendor_manager") {
-      return ["vendors", "orders", "feedback"].includes(item.section)
+      return ["vendors", "orders", "feedback", "payouts"].includes(item.section)
     }
     return true
   })

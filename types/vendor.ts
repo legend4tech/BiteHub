@@ -19,6 +19,8 @@ export interface Vendor {
   monnifyBankCode?: string
   monnifyAccountNumber?: string
   monnifyIntegrationStatus?: "pending" | "active"
+  pendingWalletBalance?: number
+  walletTotalDisbursed?: number
   lastBankUpdateAt?: string // ISO string
 
   // Computed/virtual UI properties

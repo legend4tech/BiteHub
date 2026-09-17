@@ -74,6 +74,9 @@ export async function GET() {
         hasMenu,
         image: v.image,
         isManagedByBiteHub: v.isManagedByBiteHub || false,
+        pendingWalletBalance: v.pendingWalletBalance || 0,
+        monnifyBankCode: v.monnifyBankCode,
+        monnifyAccountNumber: v.monnifyAccountNumber,
         createdAt: (v as { createdAt: string }).createdAt,
         // Login account info (may be null if not yet created)
         account: user

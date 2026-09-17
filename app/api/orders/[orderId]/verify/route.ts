@@ -7,7 +7,7 @@ import crypto from "crypto"
 import { sendOrderReceiptEmail } from "@/lib/mail"
 import { sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
-import { ORDER_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export async function POST(
   request: Request,
@@ -22,7 +22,7 @@ export async function POST(
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    if (order.paymentStatus === "paid") {
+    if (order.paymentStatus === PAYMENT_STATUS.PAID) {
       return NextResponse.json({ success: true, alreadyPaid: true })
     }
 
@@ -39,10 +39,10 @@ export async function POST(
     if (monnifyData.paymentStatus === "PAID") {
       // Atomically acquire lock and update state
       const updatedOrder = await Order.findOneAndUpdate(
-        { orderId, paymentStatus: { $ne: "paid" } },
+        { orderId, paymentStatus: { $ne: PAYMENT_STATUS.PAID } },
         {
           $set: {
-            paymentStatus: "paid",
+            paymentStatus: PAYMENT_STATUS.PAID,
             status: ORDER_STATUS.CONFIRMED,
           },
         },

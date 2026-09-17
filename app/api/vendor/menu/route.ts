@@ -6,6 +6,7 @@ import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import { auth } from "@/auth"
 import { serializeMenuItem } from "@/lib/serializers"
 import { isItemAvailableNow } from "@/lib/timeUtils"
+import { menuItemFormSchema } from "@/lib/schemas"
 
 export async function GET(request: Request) {
   try {
@@ -64,6 +65,14 @@ export async function POST(request: Request) {
     const vendorId = new Types.ObjectId(session.user.vendorId)
     const body = await request.json()
 
+    const parsedBody = menuItemFormSchema.safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
     const {
       name,
       description,
@@ -77,14 +86,10 @@ export async function POST(request: Request) {
       prepTimeUnit,
       quantityAvailable,
       availableDays,
-    } = body
-
-    if (!name || !price || !category || !image) {
-      return NextResponse.json(
-        { error: "Name, price, category, and image are required" },
-        { status: 400 }
-      )
-    }
+      isPreorder,
+      preorderEndDate,
+      preorderDeliveryInfo,
+    } = parsedBody.data
 
     const newItem = await MenuItem.create({
       vendorId,
@@ -113,6 +118,9 @@ export async function POST(request: Request) {
         "Friday",
         "Saturday",
       ],
+      isPreorder,
+      preorderEndDate,
+      preorderDeliveryInfo,
     })
 
     const computedIsAvailableNow = isItemAvailableNow(

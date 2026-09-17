@@ -70,7 +70,11 @@ export const orderItemSchema = z.object({
   menuItemId: z.string().min(1, "Menu item ID is required"),
   name: z.string().min(1, "Name is required"),
   price: z.number().min(0, "Price must be non-negative"),
-  quantity: z.number().int().min(1, "Quantity must be at least 1"),
+  quantity: z
+    .number()
+    .int()
+    .min(1, "Quantity must be at least 1")
+    .max(100, "Quantity cannot exceed 100 per item"),
 })
 export type OrderItemValues = z.infer<typeof orderItemSchema>
 

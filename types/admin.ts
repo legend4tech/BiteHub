@@ -130,6 +130,8 @@ export interface AdminStats {
   totalWithdrawn: number
   remainingProfit: number
   totalCustomerWalletLiabilities: number
+  totalPendingVendorWallet: number
+  totalVendorWalletDisbursed: number
 }
 
 export interface VendorAccount {
@@ -156,4 +158,7 @@ export interface AdminVendor {
   monnifyIntegrationStatus?: "pending" | "active" | "failed" | string
   onboardedByName?: string
   isManagedByBiteHub?: boolean
+  pendingWalletBalance?: number
+  monnifyBankCode?: string
+  monnifyAccountNumber?: string
 }

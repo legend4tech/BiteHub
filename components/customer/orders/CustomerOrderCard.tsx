@@ -38,10 +38,12 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="size-3.5" />
-                {new Date(order.createdAt).toLocaleDateString(undefined, {
+                {new Date(order.createdAt).toLocaleString(undefined, {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </span>
             </div>

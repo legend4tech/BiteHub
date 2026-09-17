@@ -83,6 +83,8 @@ export function serializeVendor(doc: LeanVendor | null) {
     monnifyBankCode: doc.monnifyBankCode ?? null,
     monnifyAccountNumber: doc.monnifyAccountNumber ?? null,
     monnifyIntegrationStatus: doc.monnifyIntegrationStatus ?? "pending",
+    pendingWalletBalance: doc.pendingWalletBalance ?? 0,
+    walletTotalDisbursed: doc.walletTotalDisbursed ?? 0,
     lastBankUpdateAt: doc.lastBankUpdateAt
       ? safeDate(doc.lastBankUpdateAt)
       : null,

@@ -188,3 +188,11 @@ export const vendorsPublicQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 })
 export type VendorsPublicQueryValues = z.infer<typeof vendorsPublicQuerySchema>
+
+export const monnifyBankVerifySchema = z.object({
+  accountNumber: z.string().min(1, "Account number is required"),
+  bankCode: z.string().min(1, "Bank code is required"),
+  bankName: z.string().optional(),
+  otp: z.string().min(1, "OTP is required"),
+})
+export type MonnifyBankVerifyValues = z.infer<typeof monnifyBankVerifySchema>

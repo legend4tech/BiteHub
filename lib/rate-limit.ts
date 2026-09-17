@@ -10,7 +10,7 @@ const redis = hasUpstashConfig
   ? Redis.fromEnv()
   : new Redis({ url: "https://mock.upstash.io", token: "mock" })
 
-export const isRateLimitingEnabled = false
+export const isRateLimitingEnabled = true
 
 // Global Rate Limiter: 50 requests per 10 seconds per Device
 export const globalRateLimiter = new Ratelimit({

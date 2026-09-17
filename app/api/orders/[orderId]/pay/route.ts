@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import Vendor from "@/models/Vendor"
 import { initMonnifyTransaction } from "@/lib/monnify"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export async function POST(
   request: Request,
@@ -17,7 +18,10 @@ export async function POST(
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    if (order.status !== "pending" || order.paymentStatus !== "pending") {
+    if (
+      order.status !== ORDER_STATUS.PENDING ||
+      order.paymentStatus !== PAYMENT_STATUS.PENDING
+    ) {
       return NextResponse.json(
         { error: "Order is no longer pending payment." },
         { status: 400 }

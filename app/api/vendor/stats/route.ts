@@ -48,7 +48,7 @@ export async function GET() {
     // Check if the vendor has payment details set up
     const vendor = await Vendor.findById(vendorId)
       .select(
-        "paymentDetails slug monnifySubAccountCode monnifyTotalDisbursed monnifyAccountNumber"
+        "paymentDetails slug monnifySubAccountCode monnifyTotalDisbursed monnifyAccountNumber pendingWalletBalance walletTotalDisbursed"
       )
       .lean()
     const hasPaymentDetails = !!(
@@ -155,11 +155,53 @@ export async function GET() {
               ],
             },
           },
+          monnifyRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$paymentStatus", "paid"] },
+                    { $eq: ["$paymentMethod", "monnify"] },
+                    { $ne: ["$status", ORDER_STATUS.CANCELLED] },
+                  ],
+                },
+                {
+                  $cond: [
+                    {
+                      $and: [
+                        { $ne: ["$vendorRevenue", null] },
+                        { $gt: ["$vendorRevenue", 0] },
+                      ],
+                    },
+                    "$vendorRevenue",
+                    {
+                      $subtract: [
+                        { $ifNull: ["$totalAmount", 0] },
+                        {
+                          $add: [
+                            { $ifNull: ["$serviceFee", 0] },
+                            {
+                              $ceil: {
+                                $multiply: [
+                                  { $ifNull: ["$totalAmount", 0] },
+                                  0.05,
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                0,
+              ],
+            },
+          },
         },
       },
     ])
 
-    // If the vendor has no orders yet, result will be undefined
     const finalStats = result ?? {
       totalOrders: 0,
       todayOrders: 0,
@@ -167,21 +209,30 @@ export async function GET() {
       inProgress: 0,
       totalCompleted: 0,
       totalRevenue: 0,
+      monnifyRevenue: 0,
     }
 
     const monnifyDisbursed = vendor?.monnifyTotalDisbursed || 0
-    const monnifyPending = Math.max(
+    const walletTotalDisbursed = vendor?.walletTotalDisbursed || 0
+
+    // Calculate pending amounts using lifetime totals
+    const pendingMonnify = Math.max(
       0,
-      finalStats.totalRevenue - monnifyDisbursed
+      (finalStats.monnifyRevenue || 0) - monnifyDisbursed
     )
+    const pendingWallet = vendor?.pendingWalletBalance || 0
+
+    // Combine them to maintain existing UI seamlessness
+    const totalDisbursed = monnifyDisbursed + walletTotalDisbursed
+    const totalPending = pendingMonnify + pendingWallet
 
     // Check if the vendor has Monnify connected
     const monnifySubAccountCode = vendor?.monnifySubAccountCode || null
 
     const response = NextResponse.json({
       ...finalStats,
-      monnifyDisbursed,
-      monnifyPending,
+      monnifyDisbursed: totalDisbursed, // Sends combined total to UI
+      monnifyPending: totalPending, // Sends combined pending to UI
       monnifySubAccountCode,
       hasPaymentDetails,
       slug: vendor?.slug,

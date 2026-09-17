@@ -369,3 +369,53 @@ export async function createMonnifyReservedAccount({
     throw err
   }
 }
+
+export async function executeBulkDisbursement({
+  batchReference,
+  title,
+  narration,
+  transactions,
+}: {
+  batchReference: string
+  title: string
+  narration: string
+  transactions: {
+    amount: number
+    reference: string
+    narration: string
+    bankCode: string
+    accountNumber: string
+  }[]
+}) {
+  const token = await getMonnifyToken()
+  try {
+    const response = await axiosInstance.post(
+      `${MONNIFY_API_URL}/api/v2/disbursements/batch`,
+      {
+        batchReference,
+        title,
+        narration,
+        onValidationFailure: "CONTINUE",
+        notificationInterval: 100,
+        transactions,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+
+    if (response.data.requestSuccessful) {
+      return response.data.responseBody
+    }
+    throw new Error(
+      response.data.responseMessage || "Failed to execute bulk disbursement"
+    )
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unknown error"
+    console.error(
+      "[executeBulkDisbursement] Error:",
+      axios.isAxiosError(err) ? err.response?.data : errorMsg
+    )
+    throw err
+  }
+}

@@ -5,6 +5,7 @@ import VendorModel from "@/models/Vendor"
 import bcrypt from "bcryptjs"
 import mongoose from "mongoose"
 import { auth } from "@/auth"
+import { adminVendorAccountSchema } from "@/lib/schemas"
 
 // POST — create a login account for an existing vendor that doesn't have one
 export async function POST(
@@ -45,14 +46,15 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { email, password } = body
+    const parsedBody = adminVendorAccountSchema.safeParse(body)
 
-    if (!email || !password) {
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: "email and password are required" },
+        { error: "Invalid data", details: parsedBody.error.format() },
         { status: 400 }
       )
     }
+    const { email, password } = parsedBody.data
 
     // Check email uniqueness
     const emailTaken = await VendorUserModel.findOne({

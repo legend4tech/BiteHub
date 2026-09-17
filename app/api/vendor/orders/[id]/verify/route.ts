@@ -5,6 +5,7 @@ import Order from "@/models/Order"
 import { verifyMonnifyTransaction } from "@/lib/monnify"
 import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -48,7 +49,7 @@ export async function POST(
     }
 
     // Already paid — nothing to do
-    if (order.paymentStatus === "paid") {
+    if (order.paymentStatus === PAYMENT_STATUS.PAID) {
       return NextResponse.json({
         success: true,
         alreadyPaid: true,
@@ -87,8 +88,13 @@ export async function POST(
 
     // Payment confirmed — update the order (idempotent upsert)
     const updatedOrder = await Order.findOneAndUpdate(
-      { orderId, paymentStatus: { $ne: "paid" } },
-      { $set: { paymentStatus: "paid", status: "confirmed" } },
+      { orderId, paymentStatus: { $ne: PAYMENT_STATUS.PAID } },
+      {
+        $set: {
+          paymentStatus: PAYMENT_STATUS.PAID,
+          status: ORDER_STATUS.CONFIRMED,
+        },
+      },
       { new: true }
     )
 

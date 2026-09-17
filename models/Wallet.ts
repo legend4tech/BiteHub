@@ -19,7 +19,11 @@ const WalletSchema = new Schema<IWallet>(
       required: true,
       unique: true,
     },
-    balance: { type: Number, default: 0 },
+    balance: {
+      type: Number,
+      default: 0,
+      min: [0, "Balance cannot be negative"],
+    },
     monnifyReservedAccountRef: { type: String },
     accountName: { type: String },
     accountNumber: { type: String },

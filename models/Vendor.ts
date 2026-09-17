@@ -22,6 +22,10 @@ export interface IVendor extends Document {
   monnifyAccountNumber?: string
   monnifyIntegrationStatus?: "pending" | "active"
   monnifyTotalDisbursed?: number
+  pendingWalletBalance?: number
+  walletTotalDisbursed?: number
+  processedDisbursementRefs?: string[]
+  isDisbursing?: boolean
   lastBankUpdateAt?: Date
   bankUpdateOtp?: string
   bankUpdateOtpExpiry?: Date
@@ -75,6 +79,8 @@ const VendorSchema: Schema = new Schema(
       default: "pending",
     },
     monnifyTotalDisbursed: { type: Number, default: 0 },
+    pendingWalletBalance: { type: Number, default: 0 },
+    walletTotalDisbursed: { type: Number, default: 0 },
     lastBankUpdateAt: { type: Date },
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
@@ -109,6 +115,11 @@ const VendorSchema: Schema = new Schema(
       ref: "AdminUser",
     },
     isManagedByBiteHub: { type: Boolean, default: false },
+    processedDisbursementRefs: {
+      type: [String],
+      default: [],
+    },
+    isDisbursing: { type: Boolean, default: false },
   },
   {
     timestamps: true,

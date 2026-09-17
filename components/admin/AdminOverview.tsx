@@ -27,6 +27,7 @@ import { formatPriceExact as formatPrice } from "@/lib/format"
 import { toast } from "sonner"
 import type { AdminStats, AdminVendor, AdminOrder } from "@/types/admin"
 import { StatCard, WithdrawalModal } from "./AdminOverviewWidgets"
+import { AdminRecentOrdersFeed } from "./AdminRecentOrdersFeed"
 
 // ─── Overview Section ─────────────────────────────────────────────────────────
 
@@ -81,15 +82,14 @@ export function AdminOverview({
   }
 
   // Fetch the 5 most recent orders for the quick feed
-  const { data: recentOrdersData, isLoading: loadingOrders } = useAdminOrders(
-    1,
-    5,
-    undefined,
-    undefined,
-    {
-      refetchInterval: 30000, // Auto-refresh every 30 seconds
-    }
-  )
+  const {
+    data: recentOrdersData,
+    isLoading: loadingOrders,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useAdminOrders(1, 5, undefined, undefined, {
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  })
 
   return (
     <div className="space-y-8">
@@ -182,7 +182,7 @@ export function AdminOverview({
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4 lg:divide-y-0">
+            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-5 lg:divide-y-0">
               {/* All-time profit */}
               <div className="flex flex-col p-6 hover:bg-muted/10">
                 <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -237,13 +237,29 @@ export function AdminOverview({
                   <div className="flex size-6 items-center justify-center rounded-md bg-destructive/20">
                     <AlertTriangle className="size-3.5" />
                   </div>
-                  User Liabilities
+                  User Wallets
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
                   {formatPrice(stats.totalCustomerWalletLiabilities)}
                 </p>
                 <p className="mt-2 text-xs text-destructive/70">
                   Do NOT withdraw — belongs to users
+                </p>
+              </div>
+
+              {/* Vendor liabilities */}
+              <div className="flex flex-col bg-destructive/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--destructive)/0.1)] hover:bg-destructive/10">
+                <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-destructive uppercase">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-destructive/20">
+                    <Store className="size-3.5" />
+                  </div>
+                  Vendor Payouts
+                </div>
+                <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
+                  {formatPrice(stats.totalPendingVendorWallet)}
+                </p>
+                <p className="mt-2 text-xs text-destructive/70">
+                  Do NOT withdraw — owed to vendors
                 </p>
               </div>
             </div>
@@ -253,7 +269,9 @@ export function AdminOverview({
               {stats.monnifyBalance !== null ? (
                 (() => {
                   const expected =
-                    stats.remainingProfit + stats.totalCustomerWalletLiabilities
+                    stats.remainingProfit +
+                    stats.totalCustomerWalletLiabilities +
+                    stats.totalPendingVendorWallet
                   const gap = Math.abs((stats.monnifyBalance ?? 0) - expected)
                   const isHealthy = gap < 500 // within ₦500 tolerance
 
@@ -374,77 +392,12 @@ export function AdminOverview({
             </div>
           )}
 
-          {/* Recent Orders Feed */}
-          <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border bg-muted/20 px-6 py-4">
-              <h2 className="font-heading text-lg font-bold">
-                Recent Live Orders
-              </h2>
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-preparing opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-status-preparing"></span>
-              </span>
-            </div>
-            {loadingOrders ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">
-                Loading recent orders...
-              </div>
-            ) : recentOrdersData?.orders &&
-              recentOrdersData.orders.length > 0 ? (
-              <div className="divide-y divide-border">
-                {recentOrdersData.orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="flex flex-col gap-3 px-6 py-4 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-mono text-sm font-bold">
-                        {order.orderId}
-                      </p>
-                      <StatusBadge
-                        status={order.status as OrderStatus}
-                        paymentStatus={order.paymentStatus}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                          Customer
-                        </p>
-                        <p className="font-medium">{order.customerName}</p>
-                        <a
-                          href={`tel:${order.customerPhone}`}
-                          className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                        >
-                          {order.customerPhone}
-                        </a>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                          Vendor
-                        </p>
-                        <p className="font-medium">{order.vendorName}</p>
-                        <a
-                          href={`https://wa.me/${order.vendorWhatsappNumber.replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                        >
-                          {order.vendorWhatsappNumber}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No recent orders"
-                description="Live orders will appear here as they come in."
-                size="sm"
-              />
-            )}
-          </div>
+          <AdminRecentOrdersFeed
+            loadingOrders={loadingOrders}
+            error={ordersError}
+            onRetry={refetchOrders}
+            recentOrdersData={recentOrdersData}
+          />
         </>
       ) : (
         <FetchError message="Failed to load stats." onRetry={onRefresh} />

@@ -175,3 +175,19 @@ export function useAdminLogWithdrawal() {
     },
   })
 }
+
+export function useAdminRetryVendorPayout() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (vendorId: string) => {
+      const res = await apiClient.post(
+        `/admin/vendors/${vendorId}/retry-payout`
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-vendors"] })
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] })
+    },
+  })
+}
