@@ -217,6 +217,15 @@ export async function getCustomerCompletedReviews(customerId: string) {
   }
 }
 
+type PopulatedReviewOrder = LeanOrder & {
+  vendorId: {
+    _id: Types.ObjectId
+    name: string
+    slug: string
+    image?: { url: string }
+  } | null
+}
+
 /**
  * Fetch a single order by orderId, scoped to the authenticated customer.
  * Used by the write-review page to display order details before submission.
@@ -230,11 +239,10 @@ export async function getOrderForReview(orderId: string, customerId: string) {
 
   if (!rawOrder) return null
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const order: any = rawOrder
+  const order = rawOrder as unknown as PopulatedReviewOrder
 
   return {
-    ...serializeOrder(order),
+    ...serializeOrder(order as unknown as LeanOrder),
     vendor: order.vendorId
       ? {
           id: order.vendorId._id?.toString(),
