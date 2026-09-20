@@ -176,8 +176,8 @@
     --rating: #fbbf24;
     --success: oklch(0.723 0.149 161.761);
     --success-foreground: oklch(0.148 0.022 42);
-    --warning: oklch(0.828 0.148 70.08);     /* amber-400 equivalent for dark mode */
-    --warning-foreground: oklch(0.21 0.045 58.6); /* amber-950 equivalent */
+    --warning: oklch(0.828 0.148 70.08);     /* amber-400 */
+    --warning-foreground: #fef3c7; /* amber-50 equivalent for high contrast */
     --whatsapp: #25D366;
     --info: #09A5DB;
 }

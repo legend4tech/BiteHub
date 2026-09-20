@@ -71,6 +71,11 @@ export default function VendorLoginPage() {
         } else {
           toast.error(res.error || "Something went wrong. Please try again.")
         }
+      } else if (!res?.ok && res?.status === 429) {
+        // Proxy-level IP rate limit — signIn() received 429 from middleware
+        toast.error(
+          "Too many login attempts. Please wait a minute and try again."
+        )
       } else if (res?.url && res.url.includes("/api/auth/error")) {
         // NextAuth returned an error URL instead of an error message
         toast.error(
@@ -82,8 +87,18 @@ export default function VendorLoginPage() {
       }
     } catch (error: unknown) {
       const err = error as { message?: string }
-      if (err?.message?.toLowerCase().includes("fetch") || !navigator.onLine) {
+      if (!navigator.onLine || err?.message?.toLowerCase().includes("fetch")) {
         toast.error("Network error. Please check your internet connection.")
+      } else if (
+        // signIn() throws this specific "Invalid URL" error when the proxy middleware
+        // intercepts the request and returns a 429 JSON response that lacks NextAuth's internal fields.
+        err?.message?.includes("429") ||
+        err?.message?.toLowerCase().includes("too many") ||
+        err?.message?.includes("Invalid URL")
+      ) {
+        toast.error(
+          "Too many login attempts. Please wait a minute and try again."
+        )
       } else {
         toast.error("An unexpected error occurred. Please try again.")
       }

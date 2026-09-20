@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server"
+import { auth } from "@/auth"
 import { uploadStream, deleteFromCloudinary } from "@/lib/cloudinary"
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get("file") as unknown as File
     const type = formData.get("type") as string // 'vendor' or 'menu'
@@ -49,6 +55,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { publicId } = await request.json()
     if (!publicId) {
       return NextResponse.json({ error: "Missing publicId" }, { status: 400 })

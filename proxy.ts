@@ -1,13 +1,7 @@
 import NextAuth from "next-auth"
 import { authConfig } from "./auth.config"
 import { NextResponse } from "next/server"
-import {
-  globalRateLimiter,
-  globalIpRateLimiter,
-  strictRateLimiter,
-  strictIpRateLimiter,
-  isRateLimitingEnabled,
-} from "@/lib/rate-limit"
+import { strictIpRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
 
 const { auth } = NextAuth(authConfig)
 
@@ -53,21 +47,39 @@ export default auth(async (req) => {
       "127.0.0.1"
     const path = req.nextUrl.pathname
 
-    const isAuthRoute = path.startsWith("/api/auth/")
+    // Only rate-limit auth mutations (signin, callback, signout).
+    // GET routes like /session, /csrf, /providers are called on every page load
+    // and must NOT hit Redis or they will burn through the free-tier monthly quota.
+    const isAuthRoute = path.startsWith("/api/auth/") && req.method !== "GET"
     const isOrderRoute = path.startsWith("/api/orders")
     const isWalletRoute = path.startsWith("/api/wallet")
     const isCustomerRoute = path.startsWith("/api/customer")
-    const isFeedbackRoute = path.startsWith("/api/feedback")
 
-    // Only rate limit mutations (POST/PUT/DELETE) on specific high-risk routes
-    // GET requests (reading data) bypass Redis completely to save quota.
-    const isHighRiskMutation =
+    // Public vendor auth routes (forgot-password, reset-password, confirm-email) have no
+    // session requirement so they can't rely on the session-based auth check in their handlers.
+    // /api/customer/* equivalents are already covered by isCustomerRoute below.
+    const isPublicVendorAuthRoute =
       req.method !== "GET" &&
-      (isOrderRoute || isWalletRoute || isCustomerRoute || isFeedbackRoute)
+      (path.startsWith("/api/vendor/forgot-password") ||
+        path.startsWith("/api/vendor/reset-password") ||
+        path.startsWith("/api/vendor/account/confirm-email"))
 
-    if (isAuthRoute || isHighRiskMutation) {
-      // 1. Prioritize User ID, then Device ID, fallback to IP
-      const rawIdentifier = userId || deviceId || ip
+    // Only rate limit mutations (POST/PUT/DELETE) on specific high-risk routes.
+    // GET requests (reading data) bypass Redis completely to save quota.
+    // NOTE: /api/feedback is intentionally excluded — feedback/route.ts already
+    // calls strictRateLimiter internally (10/min), which is tighter than the
+    // 20/min proxy limit. Including it here would burn 2 Redis commands per request.
+    const isHighRiskMutation =
+      req.method !== "GET" && (isOrderRoute || isWalletRoute || isCustomerRoute)
+
+    if (isAuthRoute || isHighRiskMutation || isPublicVendorAuthRoute) {
+      // 1. Prioritize User ID, then the cookie-sourced device ID, then IP.
+      // NOTE: deviceId above may be a freshly generated UUID (for new devices).
+      // We must NOT use that as an identifier — it changes every request for
+      // cookie-less clients (e.g. bots/curl), making each hit a separate bucket.
+      // Only use a deviceId that actually came from the cookie; fall back to IP.
+      const cookieDeviceId = req.cookies.get("bitehub_device_id")?.value
+      const rawIdentifier = userId || cookieDeviceId || ip
 
       // 2. Hash it to protect privacy using Edge-compatible Web Crypto
       const hashBuffer = await crypto.subtle.digest(
@@ -78,25 +90,31 @@ export default auth(async (req) => {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")
 
-      const limitResult = await strictIpRateLimiter.limit(
-        `strict_masked_${hashedIdentifier}`
-      )
-
-      if (!limitResult.success) {
-        return NextResponse.json(
-          {
-            error: "Too Many Requests",
-            message: "Rate limit exceeded. Please try again later.",
-          },
-          {
-            status: 429,
-            headers: {
-              "X-RateLimit-Limit": limitResult.limit.toString(),
-              "X-RateLimit-Remaining": limitResult.remaining.toString(),
-              "X-RateLimit-Reset": limitResult.reset.toString(),
-            },
-          }
+      try {
+        const limitResult = await strictIpRateLimiter.limit(
+          `strict_masked_${hashedIdentifier}`
         )
+
+        if (!limitResult.success) {
+          return NextResponse.json(
+            {
+              error: "Too Many Requests",
+              message: "Rate limit exceeded. Please try again later.",
+            },
+            {
+              status: 429,
+              headers: {
+                "X-RateLimit-Limit": limitResult.limit.toString(),
+                "X-RateLimit-Remaining": limitResult.remaining.toString(),
+                "X-RateLimit-Reset": limitResult.reset.toString(),
+              },
+            }
+          )
+        }
+      } catch (err) {
+        // Fail open — Redis unreachable. Log and continue rather than crashing
+        // the middleware (which would break CSRF, auth routing, and all page loads).
+        console.warn("[proxy] Rate limiter unavailable, failing open:", err)
       }
     }
   }

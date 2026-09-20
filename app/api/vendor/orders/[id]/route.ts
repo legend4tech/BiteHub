@@ -74,6 +74,24 @@ export async function PATCH(
       )
     }
 
+    // We must block cancellations during the brief window when a payout is actively communicating with Monnify.
+    // If a cancellation slips through here, it would deduct from the vendor's pending balance while the cash is already in transit, resulting in a negative ledger balance.
+    if (status === ORDER_STATUS.CANCELLED && order.paymentMethod === "wallet") {
+      const { default: Vendor } = await import("@/models/Vendor")
+      const vendor = await Vendor.findById(vendorId)
+        .select("isDisbursing")
+        .lean()
+      if (vendor?.isDisbursing) {
+        return NextResponse.json(
+          {
+            error:
+              "A payout is currently in progress. To protect ledger integrity, you cannot cancel wallet orders at this exact moment. Please try again in a few minutes when the payout completes.",
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Atomic update to prevent Double Refund / Race Conditions
     const oldStatus = order.status
     const updatedOrder = await Order.findOneAndUpdate(
