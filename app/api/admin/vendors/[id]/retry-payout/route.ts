@@ -5,6 +5,7 @@ import Order from "@/models/Order"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 import { executeBulkDisbursement } from "@/lib/monnify"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(
   request: Request,
@@ -20,6 +21,19 @@ export async function POST(
       )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate-limit by admin user ID — prevents rapid double-payout triggering
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `admin_retry_payout_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     await dbConnect()

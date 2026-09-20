@@ -66,7 +66,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
           })
         } catch (e: unknown) {
           if ((e as { code?: number }).code === 11000) {
-            console.log(
+            console.warn(
               `[Collection Webhook] Duplicate transaction for ${paymentReference} - gracefully ignored (Idempotency catch).`
             )
             // Rollback wallet increment if transaction already exists (another process beat us)

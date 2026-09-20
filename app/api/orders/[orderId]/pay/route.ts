@@ -4,6 +4,7 @@ import Order from "@/models/Order"
 import Vendor from "@/models/Vendor"
 import { initMonnifyTransaction } from "@/lib/monnify"
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(
   request: Request,
@@ -11,6 +12,23 @@ export async function POST(
 ) {
   try {
     const { orderId } = await params
+
+    // The orderId itself is the implicit auth token — it is a long, unguessable
+    // string scoped to one pending order, so no session check is required here.
+    // This keeps the endpoint accessible for both logged-in customers and guests
+    // who arrive from the order-tracking page (/order/[orderId]).
+    //
+    // Rate-limit by orderId to prevent spamming Monnify payment-init for the same order.
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(`pay_${orderId}`)
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
+
     await dbConnect()
 
     const order = await Order.findOne({ orderId }).lean()

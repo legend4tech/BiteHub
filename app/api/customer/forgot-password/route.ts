@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
-import { z } from "zod"
 import crypto from "crypto"
 import { sendCustomerPasswordResetEmail } from "@/lib/mail"
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-})
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { forgotPasswordSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +20,18 @@ export async function POST(req: NextRequest) {
 
     const { email } = parsed.data
     const normalizedEmail = email.toLowerCase().trim()
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `forgot_password_${normalizedEmail}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
 
     await dbConnect()
 

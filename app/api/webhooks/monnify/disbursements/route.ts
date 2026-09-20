@@ -23,7 +23,7 @@ async function processDisbursement(
 
   // Idempotency Check in memory first
   if (vendor.processedDisbursementRefs?.includes(reference)) {
-    console.log(
+    console.warn(
       `[Disbursement Webhook] Duplicate reference ${reference} ignored (Idempotency catch).`
     )
     return

@@ -3,30 +3,32 @@ import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
-import { z } from "zod"
-import { strongPasswordSchema } from "@/lib/schemas"
+import { changePasswordSchema } from "@/lib/schemas"
 import { Resend } from "resend"
 import React from "react"
 import PasswordChangeNotification from "@/emails/PasswordChangeNotification"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-
-const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: strongPasswordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your new password"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
 
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user?.role !== "customer" || !session.user?.email) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate-limit by user ID — prevents brute-forcing current password via this endpoint
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `change_password_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     const body = await req.json()

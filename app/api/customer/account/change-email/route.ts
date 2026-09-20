@@ -2,22 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
-import { z } from "zod"
 import crypto from "crypto"
 import { Resend } from "resend"
 import React from "react"
 import EmailChangeNotification from "@/emails/EmailChangeNotification"
 import EmailChangeConfirmation from "@/emails/EmailChangeConfirmation"
+import { changeEmailSchema } from "@/lib/schemas"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-
-import { changeEmailSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
     if (!session || session.user?.role !== "customer" || !session.user?.email) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate-limit by user ID — prevents rapid email-change requests on compromised sessions
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `change_email_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     const body = await req.json()

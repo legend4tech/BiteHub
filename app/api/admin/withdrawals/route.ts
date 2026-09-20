@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db"
 import PlatformWithdrawal from "@/models/PlatformWithdrawal"
 import { withdrawalSchema } from "@/lib/schemas/admin"
 import { serializePlatformWithdrawal } from "@/lib/serializers"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 // GET — list all withdrawals
 export async function GET() {
@@ -43,6 +44,19 @@ export async function POST(req: Request) {
       !["admin", "superadmin"].includes(session.user?.role || "")
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate-limit by admin user ID — prevents double-submission of withdrawal records
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `admin_withdrawal_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     const body = await req.json()

@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import bcrypt from "bcryptjs"
 import { adminPasswordSchema } from "@/lib/schemas"
 import { sendAdminPasswordChangedEmail } from "@/lib/mail"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 const changePasswordSchema = adminPasswordSchema.omit({ confirmPassword: true })
 
@@ -18,6 +19,19 @@ export async function POST(request: Request) {
       )
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate-limit by admin user ID — prevents credential mutation abuse
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `admin_change_password_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     await dbConnect()
