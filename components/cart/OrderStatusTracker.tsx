@@ -3,6 +3,7 @@ import {
   ORDER_STATUS_STEPS,
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
+  PAYMENT_STATUS,
 } from "@/lib/constants"
 import type { OrderStatus } from "@/types/shared"
 import { cn } from "@/lib/utils"
@@ -151,7 +152,8 @@ export function OrderStatusTracker({
                     : "text-muted-foreground"
                 )}
               >
-                {step === ORDER_STATUS.PENDING && paymentStatus === "pending"
+                {step === ORDER_STATUS.PENDING &&
+                paymentStatus === PAYMENT_STATUS.PENDING
                   ? "Awaiting Payment"
                   : ORDER_STATUS_CONFIG[step].label}
               </p>
@@ -168,14 +170,16 @@ export function OrderStatusTracker({
         )}
       >
         <p className={cn("text-sm font-semibold", statusColorMap[status].fg)}>
-          {status === ORDER_STATUS.PENDING && paymentStatus === "pending"
+          {status === ORDER_STATUS.PENDING &&
+          paymentStatus === PAYMENT_STATUS.PENDING
             ? "Awaiting Payment"
             : ORDER_STATUS_CONFIG[status].label}
         </p>
         <p
           className={cn("mt-0.5 text-xs opacity-80", statusColorMap[status].fg)}
         >
-          {status === ORDER_STATUS.PENDING && paymentStatus === "pending"
+          {status === ORDER_STATUS.PENDING &&
+          paymentStatus === PAYMENT_STATUS.PENDING
             ? "Please complete your payment to proceed"
             : ORDER_STATUS_CONFIG[status].description}
         </p>

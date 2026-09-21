@@ -5,13 +5,7 @@ import Vendor from "@/models/Vendor"
 import { getMonnifyToken } from "@/lib/monnify"
 import axios from "axios"
 
-interface MonnifySubAccount {
-  subAccountCode: string
-  bankName?: string
-  accountNumber?: string
-  accountName?: string
-  defaultSplitPercentage?: number
-}
+import { MonnifySubAccount } from "@/types/vendor"
 
 export const dynamic = "force-dynamic"
 

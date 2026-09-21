@@ -2,20 +2,32 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import { customerSignupSchema } from "@/lib/schemas"
 import { registerOrClaimCustomer } from "@/lib/services/customerService"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
-    await dbConnect()
-
     const body = await request.json()
     const parsedBody = customerSignupSchema.safeParse(body)
-
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: parsedBody.error.format() },
         { status: 400 }
       )
     }
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `signup_${parsedBody.data.email}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
+
+    await dbConnect()
 
     const result = await registerOrClaimCustomer(parsedBody.data)
 

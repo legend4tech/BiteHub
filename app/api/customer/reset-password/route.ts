@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
 import { resetPasswordSchema } from "@/lib/schemas"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,18 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, token, password } = parsed.data
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `reset_password_${email}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
 
     await dbConnect()
 

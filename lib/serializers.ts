@@ -33,6 +33,25 @@ export type LeanWalletTransaction = LeanDoc<
 export type LeanPlatformWithdrawal = LeanDoc<
   import("@/models/PlatformWithdrawal").IPlatformWithdrawal
 >
+export type LeanVendorFeedback = LeanDoc<
+  import("@/models/VendorFeedback").IVendorFeedback
+>
+export type LeanMenuItemFeedback = LeanDoc<
+  import("@/models/MenuItemFeedback").IMenuItemFeedback
+>
+export type LeanAdminUser = LeanDoc<import("@/models/AdminUser").IAdminUser>
+export type LeanPlatformFeedback = LeanDoc<
+  import("@/models/PlatformFeedback").IPlatformFeedback
+>
+
+export type PopulatedVendorFeedback = LeanVendorFeedback & {
+  vendorId: {
+    _id: Types.ObjectId
+    name: string
+    image?: { url: string }
+    slug: string
+  } | null
+}
 
 // Safely parse dates which might come back as strings or be missing in raw DB docs
 const safeDate = (val: unknown): string => {
@@ -137,6 +156,8 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
     ),
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
+    rating: (doc as unknown as { rating?: number }).rating ?? 0,
+    ratingCount: (doc as unknown as { ratingCount?: number }).ratingCount ?? 0,
     // vendorName, vendorWhatsappNumber, tag — merged at route level
   }
 }
@@ -149,7 +170,10 @@ export function serializeOrder(doc: LeanOrder | null) {
   return {
     id: doc._id?.toString() || "",
     orderId: doc.orderId || "",
-    vendorId: doc.vendorId?.toString() || "",
+    vendorId:
+      doc.vendorId && typeof doc.vendorId === "object" && "_id" in doc.vendorId
+        ? String((doc.vendorId as unknown as { _id: unknown })._id)
+        : String(doc.vendorId || ""),
     vendorName: doc.vendorName || "Unknown Vendor",
     vendorWhatsappNumber: doc.vendorWhatsappNumber || "",
     vendorPrepTime: doc.vendorPrepTime ?? "",
@@ -162,6 +186,7 @@ export function serializeOrder(doc: LeanOrder | null) {
           name: item.name || "Item",
           price: Number(item.price) || 0,
           quantity: Number(item.quantity) || 1,
+          image: item.image || undefined,
         }))
       : [],
     notes: doc.notes ?? "",
@@ -291,6 +316,79 @@ export function serializeSubLandmark(doc: LeanSubLandmark | null) {
     name: doc.name,
     defaultDeliveryFee: doc.defaultDeliveryFee ?? null,
     isActive: doc.isActive,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+
+export function serializeVendorFeedback(doc: LeanVendorFeedback | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    vendorId: doc.vendorId.toString(),
+    customerId: doc.customerId.toString(),
+    orderId: doc.isAnonymous ? "Anonymous" : doc.orderId,
+    rating: doc.rating,
+    isAnonymous: doc.isAnonymous ?? false,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+export function serializeMenuItemFeedback(doc: LeanMenuItemFeedback | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    menuItemId: doc.menuItemId.toString(),
+    orderId: doc.orderId,
+    customerId: doc.customerId.toString(),
+    vendorId: doc.vendorId.toString(),
+    rating: doc.rating,
+    title: doc.title ?? "",
+    comments: doc.comments ?? null,
+    isAnonymous: doc.isAnonymous ?? false,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Admin User ───────────────────────────────────────────────────────────────
+
+/**
+ * Never expose the hashed password to the client.
+ * .lean() skips the toJSON transform that deletes it — so we must do it here.
+ */
+export function serializeAdminUser(doc: LeanAdminUser | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    email: doc.email,
+    role: doc.role,
+    isActive: doc.isActive,
+    lastLoginAt: doc.lastLoginAt ? safeDate(doc.lastLoginAt) : null,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+    // password is intentionally omitted
+  }
+}
+
+// ─── Platform Feedback ────────────────────────────────────────────────────────
+
+export function serializePlatformFeedback(doc: LeanPlatformFeedback | null) {
+  if (!doc) return null
+
+  return {
+    id: doc._id.toString(),
+    rating: doc.rating,
+    comments: doc.comments ?? null,
+    orderId: doc.orderId ?? null,
+    vendorId: doc.vendorId ? doc.vendorId.toString() : null,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

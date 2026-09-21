@@ -1,49 +1,23 @@
 import { NextResponse } from "next/server"
-import dbConnect from "@/lib/db"
-import PlatformFeedback from "@/models/PlatformFeedback"
-import VendorFeedback from "@/models/VendorFeedback"
-import Vendor from "@/models/Vendor"
-import Order from "@/models/Order"
-import { syncVendorMenuScores } from "@/lib/services/scoreService"
+import { auth } from "@/auth"
+import { feedbackSchema } from "@/lib/schemas"
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
-import { z } from "zod"
-
-const feedbackSchema = z
-  .object({
-    orderId: z.string().optional(),
-    vendorId: z.string().optional(), // For vendor giving platform feedback
-    platform: z
-      .object({
-        rating: z.number().min(1).max(5),
-        comments: z
-          .string()
-          .min(3, "Comments must be at least 3 characters long"),
-      })
-      .optional(),
-    vendor: z
-      .object({
-        vendorId: z.string().min(1, "Vendor ID is required"),
-        rating: z.number().min(1).max(5),
-        comments: z
-          .string()
-          .min(3, "Comments must be at least 3 characters long"),
-        isAnonymous: z.boolean().optional(),
-      })
-      .optional(),
-  })
-  .refine((data) => data.platform || data.vendor, {
-    message: "At least one feedback (platform or vendor) must be provided",
-    path: ["platform", "vendor"],
-  })
+import {
+  submitCustomerFeedback,
+  submitPlatformFeedback,
+} from "@/lib/services/feedbackService"
 
 export async function POST(request: Request) {
   try {
-    await dbConnect()
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-    // Rate limiting
+    // Rate limiting by User ID
     if (isRateLimitingEnabled) {
-      const ip = request.headers.get("x-forwarded-for") || "127.0.0.1"
-      const { success } = await strictRateLimiter.limit(`feedback_${ip}`)
+      const userId = session.user.id
+      const { success } = await strictRateLimiter.limit(`feedback_${userId}`)
       if (!success) {
         return NextResponse.json(
           { error: "Too many requests. Please try again later." },
@@ -62,68 +36,36 @@ export async function POST(request: Request) {
       )
     }
 
-    const { orderId, vendorId, platform, vendor } = parsedBody.data
+    const { orderId, vendorId, platform, customerReview } = parsedBody.data
 
-    // Check if feedback already exists for this orderId to prevent duplicates
-    if (orderId) {
-      const existingVendorFeedback = await VendorFeedback.findOne({ orderId })
-      const existingPlatformFeedback = await PlatformFeedback.findOne({
-        orderId,
-      })
-
-      if (existingVendorFeedback || existingPlatformFeedback) {
+    // ─── Legacy Platform Feedback ──────────────────────────────────────────
+    if (platform) {
+      const result = await submitPlatformFeedback(platform, orderId, vendorId)
+      if (result.error) {
         return NextResponse.json(
-          { error: "Feedback has already been submitted for this order." },
-          { status: 400 }
+          { error: result.error },
+          { status: result.status }
         )
       }
+      return NextResponse.json({ success: true }, { status: 201 })
     }
 
-    // Save Platform Feedback if provided
-    if (platform) {
-      await PlatformFeedback.create({
-        orderId,
-        vendorId, // Will be present if a vendor is giving feedback
-        rating: platform.rating,
-        comments: platform.comments,
-      })
-    }
-
-    // Save Vendor Feedback if provided
-    if (vendor) {
-      await VendorFeedback.create({
-        orderId,
-        vendorId: vendor.vendorId,
-        rating: vendor.rating,
-        comments: vendor.comments,
-        isAnonymous: vendor.isAnonymous,
-      })
-
-      // Update Vendor aggregate rating atomically
-      const vendorDoc = await Vendor.findById(vendor.vendorId)
-      if (vendorDoc) {
-        const currentRating = vendorDoc.rating || 0
-        const currentCount = vendorDoc.ratingCount || 0
-
-        const newCount = currentCount + 1
-        const newRating =
-          (currentRating * currentCount + vendor.rating) / newCount
-
-        vendorDoc.rating = newRating
-        vendorDoc.ratingCount = newCount
-        await vendorDoc.save()
-        await syncVendorMenuScores(vendor.vendorId)
+    // ─── New Customer Review Flow ─────────────────────────────────────────
+    if (customerReview && session.user?.role === "customer") {
+      const customerId = session.user.id
+      const result = await submitCustomerFeedback(customerReview, customerId)
+      if (result.error) {
+        return NextResponse.json(
+          { error: result.error },
+          { status: result.status }
+        )
       }
+      return NextResponse.json({ success: true }, { status: 201 })
     }
 
-    // Mark order as rated if applicable
-    if (orderId) {
-      await Order.findOneAndUpdate({ orderId }, { $set: { isRated: true } })
-    }
-
-    return NextResponse.json({ success: true }, { status: 201 })
+    return NextResponse.json({ error: "Invalid payload." }, { status: 400 })
   } catch (error) {
-    console.error("[POST /api/feedback] Error saving feedback:", error)
+    console.error("[POST /api/feedback]", error)
     return NextResponse.json(
       { error: "Failed to save feedback" },
       { status: 500 }

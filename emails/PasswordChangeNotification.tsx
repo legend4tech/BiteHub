@@ -1,19 +1,8 @@
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Link,
-  Hr,
-  Heading,
-  Img,
-} from "@react-email/components"
+import { Link, Section, Text, Heading } from "@react-email/components"
 import * as React from "react"
 import { CONTACT_EMAIL } from "@/lib/constants"
 import { EMAIL_THEME } from "@/lib/email-theme"
+import { EmailLayout } from "./EmailLayout"
 
 interface PasswordChangeNotificationProps {
   vendorName: string
@@ -23,137 +12,37 @@ export const PasswordChangeNotification = ({
   vendorName,
 }: PasswordChangeNotificationProps) => {
   return (
-    <Html>
-      <Head />
-      <Preview>Security Alert: Your BiteHub password has been changed</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          {/* Logo / Header */}
-          <Section style={headerSection}>
-            <Img
-              src="https://bitehubapp.com/brand_logo.png"
-              alt="BiteHub"
-              width="48"
-              height="48"
-              style={logoImg}
-            />
-            <Heading style={logoText}>
-              Bite<span style={logoHighlight}>Hub</span>
-            </Heading>
-            <Text style={subHeader}>Security Alert</Text>
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Content */}
-          <Section style={contentSection}>
-            <Heading style={heading}>Password Changed Successfully</Heading>
-            <Text style={text}>Hello {vendorName || "Vendor"},</Text>
-            <Text style={text}>
-              This email is to confirm that the password for your BiteHub vendor
-              account was recently changed.
-            </Text>
-            <Text style={text}>
-              As a security precaution, any active sessions on other devices
-              have been automatically signed out.
-            </Text>
-
-            <Text style={warningText}>
-              <strong>{"Didn't make this change?"}</strong>
-              <br />
-              If you did not authorize this password change, your account may be
-              compromised. Please reset your password immediately using the{" "}
-              {'"Forgot Password"'} link on the login page or contact support at{" "}
-              <Link href={`mailto:{CONTACT_EMAIL}`} style={link}>
-                {CONTACT_EMAIL}
-              </Link>
-              .
-            </Text>
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Footer */}
-          <Section style={footerSection}>
-            <Text style={footerText}>
-              BiteHub — Smart Food Ordering for Everyone
-            </Text>
-            <Text style={footerText}>
-              This is an automated message. Please do not reply to this email.
-            </Text>
-            <Text style={footerText}>
-              <Link href="https://bitehubapp.com" style={footerLink}>
-                bitehubapp.com
-              </Link>
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      preview="Security Alert: Your BiteHub password has been changed"
+      subheader="Security Alert"
+    >
+      <Heading style={heading}>Password Changed Successfully</Heading>
+      <Text style={text}>Hello {vendorName || "Vendor"},</Text>
+      <Text style={text}>
+        This email is to confirm that the password for your BiteHub vendor
+        account was recently changed.
+      </Text>
+      <Text style={text}>
+        As a security precaution, any active sessions on other devices have been
+        automatically signed out.
+      </Text>
+      <Section style={warningBox}>
+        <Text style={warningText}>
+          <strong>{"Didn't change your password?"}</strong>
+          <br />
+          If you did not make this change, your account may be compromised.
+          Contact us immediately at{" "}
+          <Link href={`mailto:${CONTACT_EMAIL}`} style={link}>
+            {CONTACT_EMAIL}
+          </Link>
+          .
+        </Text>
+      </Section>
+    </EmailLayout>
   )
 }
 
 export default PasswordChangeNotification
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const main = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-}
-
-const container = {
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  maxWidth: "580px",
-  backgroundColor: EMAIL_THEME.colors.background,
-  border: `1px solid ${EMAIL_THEME.colors.border}`,
-  borderRadius: "16px",
-  marginTop: "40px",
-  overflow: "hidden",
-}
-
-const headerSection = {
-  padding: "32px 40px 10px 40px",
-  textAlign: "center" as const,
-}
-
-const logoImg = {
-  borderRadius: "12px",
-  margin: "0 auto 12px auto",
-  display: "block",
-}
-
-const logoText = {
-  margin: "0",
-  fontSize: "28px",
-  fontWeight: "900",
-  letterSpacing: "-0.05em",
-  color: EMAIL_THEME.colors.foreground,
-}
-
-const logoHighlight = {
-  color: EMAIL_THEME.colors.primary,
-}
-
-const subHeader = {
-  margin: "4px 0 0 0",
-  fontSize: "13px",
-  fontWeight: "600",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.08em",
-  color: EMAIL_THEME.colors.textMuted,
-}
-
-const divider = {
-  borderColor: EMAIL_THEME.colors.border,
-  margin: "20px 0",
-}
-
-const contentSection = {
-  padding: "0 40px",
-}
 
 const heading = {
   fontSize: "20px",
@@ -161,43 +50,20 @@ const heading = {
   color: EMAIL_THEME.colors.foreground,
   marginBottom: "16px",
 }
-
 const text = {
   fontSize: "15px",
   lineHeight: "24px",
   color: EMAIL_THEME.colors.foreground,
   margin: "0 0 16px 0",
 }
-
+const warningBox = { margin: "16px 0" }
 const warningText = {
-  fontSize: "13px",
+  fontSize: "14px",
   lineHeight: "20px",
-  color: `${EMAIL_THEME.colors.destructive}`,
-  backgroundColor: `${EMAIL_THEME.colors.destructiveBackground}`,
-  padding: "16px",
+  color: EMAIL_THEME.colors.warning,
+  backgroundColor: EMAIL_THEME.colors.warningBackground,
+  padding: "20px",
   borderRadius: "8px",
-  margin: "20px 0",
-  border: `1px solid ${EMAIL_THEME.colors.destructive}`,
+  border: `1px solid ${EMAIL_THEME.colors.warning}`,
 }
-
-const link = {
-  color: EMAIL_THEME.colors.primary,
-  textDecoration: "underline",
-}
-
-const footerSection = {
-  padding: "0 40px",
-  textAlign: "center" as const,
-}
-
-const footerText = {
-  fontSize: "12px",
-  lineHeight: "18px",
-  color: EMAIL_THEME.colors.textMuted,
-  margin: "0 0 6px 0",
-}
-
-const footerLink = {
-  color: EMAIL_THEME.colors.textMuted,
-  textDecoration: "underline",
-}
+const link = { color: EMAIL_THEME.colors.warning, textDecoration: "underline" }

@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { serializeOrder } from "@/lib/serializers"
 import { createOrderSchema } from "@/lib/schemas"
 import { processCheckout } from "@/lib/services/checkoutService"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function GET(request: Request) {
   try {
@@ -53,6 +54,20 @@ export async function POST(request: Request) {
     }
 
     const session = await auth()
+
+    if (isRateLimitingEnabled) {
+      const rateLimitKey = session?.user?.id
+        ? `order_user_${session.user.id}`
+        : `order_email_${parsedBody.data.customerEmail}`
+
+      const { success } = await strictRateLimiter.limit(rateLimitKey)
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
 
     // Connect to DB only AFTER validation and auth (Rule 8)
     await dbConnect()

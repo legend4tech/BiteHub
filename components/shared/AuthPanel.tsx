@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
@@ -90,10 +91,12 @@ export function AuthPanel({
         href="/"
         className="group relative z-10 flex w-fit items-center gap-2.5"
       >
-        <img
+        <Image
           src={APP_LOGO_URL}
           alt={APP_NAME}
-          className="h-12 w-auto rounded-xl object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
+          width={48}
+          height={48}
+          className="rounded-xl object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
         />
         <div className="flex flex-col -space-y-1">
           <span className="font-heading text-2xl leading-none font-black tracking-tight text-white">

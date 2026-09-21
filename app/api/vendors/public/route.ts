@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic"
 import { NextResponse } from "next/server"
-import { z } from "zod"
 import { getVendorsForFilter } from "@/lib/services/vendorService"
 
 // ── GET /api/vendors/public ───────────────────────────────────────────────────

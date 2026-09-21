@@ -242,3 +242,50 @@ export function CustomerSettingsSkeleton() {
     </div>
   )
 }
+
+export function CustomerReviewsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="mb-2 h-8 w-40" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+
+      <div className="mb-6 flex w-full max-w-md gap-2">
+        <Skeleton className="h-10 flex-1 rounded-md" />
+        <Skeleton className="h-10 flex-1 rounded-md" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-[20px] border border-border bg-card p-5 shadow-sm"
+          >
+            <Skeleton className="mb-2 h-4 w-24" />
+            <Skeleton className="mb-4 h-6 w-32" />
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function CustomerReviewNewSkeleton() {
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Skeleton className="size-10 rounded-md" />
+        <div>
+          <Skeleton className="mb-2 h-8 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </div>
+
+      <Skeleton className="h-64 rounded-[24px]" />
+      <Skeleton className="h-96 rounded-[24px]" />
+      <Skeleton className="h-14 rounded-md" />
+    </div>
+  )
+}

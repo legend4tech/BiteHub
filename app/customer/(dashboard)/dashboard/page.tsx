@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import {
   Wallet as WalletIcon,
   ShoppingBag,
@@ -47,9 +48,11 @@ export default async function CustomerDashboardPage() {
       <div className="flex items-center gap-4">
         {customer.image ? (
           <div className="size-16 shrink-0 overflow-hidden rounded-full border-2 border-border shadow-sm">
-            <img
+            <Image
               src={customer.image}
               alt={customer.name}
+              width={64}
+              height={64}
               className="size-full object-cover"
             />
           </div>

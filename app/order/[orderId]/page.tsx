@@ -26,15 +26,21 @@ import {
   useVerifyOrderPayment,
 } from "@/hooks/shared/usePublicMutations"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
 import {
-  FeedbackModal,
-  FEEDBACK_SNOOZE_DURATION,
-} from "@/components/shared/FeedbackModal"
-import { ORDER_STATUS } from "@/lib/constants"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Star } from "lucide-react"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export default function OrderPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const { data: session } = useSession()
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false)
 
   const { data: order, isLoading, isError, error, refetch } = useOrder(orderId)
   const [isRetryingPayment, setIsRetryingPayment] = useState(false)
@@ -46,7 +52,10 @@ export default function OrderPage() {
 
   // Immediately verify the source of truth with Monnify on page load
   useEffect(() => {
-    if (order?.paymentStatus === "pending" && !hasVerified.current) {
+    if (
+      order?.paymentStatus === PAYMENT_STATUS.PENDING &&
+      !hasVerified.current
+    ) {
       hasVerified.current = true
       // Verification is already in progress (isVerifyingDirectly initialized to true)
       verifyPaymentMutation.mutate(orderId, {
@@ -100,20 +109,7 @@ export default function OrderPage() {
     })
   }
 
-  useEffect(() => {
-    if (order?.status === ORDER_STATUS.COMPLETED) {
-      const handled = localStorage.getItem(`feedback_handled_${orderId}`)
-      const snoozedAt = localStorage.getItem(`feedback_snoozed_${orderId}`)
-
-      const now = new Date().getTime()
-      const isSnoozed =
-        snoozedAt && now - parseInt(snoozedAt) < FEEDBACK_SNOOZE_DURATION
-
-      if (!handled && !isSnoozed) {
-        setTimeout(() => setShowFeedbackModal(true), 0)
-      }
-    }
-  }, [order?.status, orderId])
+  // Removed automatic FeedbackModal trigger
 
   const handleRefresh = async () => {
     await refetch()
@@ -215,7 +211,7 @@ export default function OrderPage() {
         <OrderHeroCard order={order} />
 
         {/* ── Payment verification banner ─────────────────────────── */}
-        {order.paymentStatus === "pending" &&
+        {order.paymentStatus === PAYMENT_STATUS.PENDING &&
           (!isStalePayment || isVerifyingDirectly) && (
             <div className="flex items-center gap-3 rounded-[20px] border border-warning/20 bg-warning/10 px-5 py-4">
               <Loader2 className="size-4 shrink-0 animate-spin text-warning" />
@@ -232,7 +228,7 @@ export default function OrderPage() {
           )}
 
         {/* ── Payment recovery banner ─────────────────────────────── */}
-        {order.paymentStatus === "pending" &&
+        {order.paymentStatus === PAYMENT_STATUS.PENDING &&
           order.status !== ORDER_STATUS.CANCELLED &&
           isStalePayment &&
           !isVerifyingDirectly && (
@@ -296,16 +292,64 @@ export default function OrderPage() {
 
         <OrderItemsBreakdown order={order} />
 
-        {/* ── Feedback Modal for completed orders ────────────────── */}
-        {order && (
-          <FeedbackModal
-            open={showFeedbackModal}
-            onOpenChange={setShowFeedbackModal}
-            orderId={orderId}
-            vendorName={order.vendorName}
-            vendorId={order.vendorId}
-          />
+        {/* ── Review Action Button ───────────────────────────────── */}
+        {order?.status === ORDER_STATUS.COMPLETED && !order.isRated && (
+          <div className="mt-8 rounded-[28px] border border-border bg-card p-7 text-center shadow-sm sm:p-8">
+            <h3 className="mb-2 font-heading text-lg font-bold">
+              How was your food?
+            </h3>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Help {order.vendorName} and other students by sharing your
+              experience.
+            </p>
+            {session?.user?.role === "customer" ? (
+              <Button asChild className="w-full sm:w-auto" size="lg">
+                <Link href={`/customer/reviews/new/${orderId}`}>
+                  <Star className="mr-2 size-4 fill-primary-foreground text-primary-foreground" />
+                  Leave a Review
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowGuestPrompt(true)}
+                className="w-full sm:w-auto"
+                size="lg"
+              >
+                <Star className="mr-2 size-4 fill-primary-foreground text-primary-foreground" />
+                Leave a Review
+              </Button>
+            )}
+          </div>
         )}
+
+        {/* ── Guest Review Prompt Dialog ───────────────────────────── */}
+        <Dialog open={showGuestPrompt} onOpenChange={setShowGuestPrompt}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Join BiteHub to Review</DialogTitle>
+              <DialogDescription>
+                Create an account or log in to leave a review and earn rewards.
+                It only takes a minute!
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" asChild>
+                <Link
+                  href={`/customer/signup?redirect=/customer/reviews/new/${orderId}`}
+                >
+                  Create Account
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link
+                  href={`/customer/login?redirect=/customer/reviews/new/${orderId}`}
+                >
+                  Log In
+                </Link>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </main>
   )

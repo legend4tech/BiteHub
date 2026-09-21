@@ -22,6 +22,8 @@ export interface IMenuItem extends Document {
   preorderDeliveryInfo?: string
   lowStockAlertSent?: boolean
   baseDiscoveryScore: number
+  rating: number
+  ratingCount: number
 }
 
 const MenuItemSchema: Schema = new Schema(
@@ -75,6 +77,8 @@ const MenuItemSchema: Schema = new Schema(
       type: Number,
       default: 0,
     },
+    rating: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,

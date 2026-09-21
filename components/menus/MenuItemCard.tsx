@@ -9,6 +9,7 @@ import {
   UtensilsCrossed,
   Clock,
   Trash2,
+  Star,
 } from "lucide-react"
 import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/types/vendor"
@@ -219,6 +220,13 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
           <h3 className="font-heading text-sm leading-snug font-semibold">
             {item.name}
           </h3>
+          {(item.rating ?? 0) > 0 && (
+            <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+              <Star className="size-3 fill-warning text-warning" />
+              <span className="text-foreground">{item.rating?.toFixed(1)}</span>
+              <span className="font-normal">({item.ratingCount})</span>
+            </div>
+          )}
         </Link>
 
         {item.isPreorder &&

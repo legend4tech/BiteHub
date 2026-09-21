@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   Store,
@@ -173,9 +174,11 @@ export function AdminVendors({
                     {/* Avatar */}
                     <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
                       {vendor.image?.url ? (
-                        <img
+                        <Image
                           src={vendor.image.url}
                           alt={vendor.name}
+                          width={40}
+                          height={40}
                           className="h-full w-full object-cover"
                         />
                       ) : (

@@ -3,7 +3,6 @@ import crypto from "crypto"
 import dbConnect from "@/lib/db"
 import VendorUserModel from "@/models/VendorUser"
 import bcrypt from "bcryptjs"
-import { z } from "zod"
 import { resetPasswordSchema } from "@/lib/schemas"
 
 export async function POST(req: NextRequest) {

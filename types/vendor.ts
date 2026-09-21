@@ -68,6 +68,8 @@ export interface MenuItem {
   vendorDeliveryFee?: number
   vendorPrepTime?: string
   tag?: string | null
+  rating?: number
+  ratingCount?: number
 }
 
 export type MenuItemPayload = Omit<
@@ -88,9 +90,16 @@ export interface SubLandmark {
 }
 
 export interface Feedback {
-  _id: string
+  id: string
   rating: number
-  comments?: string
+  isAnonymous?: boolean
+  itemReviews?: Array<{
+    id: string
+    menuItemName: string
+    rating: number
+    title?: string
+    comments?: string
+  }>
   orderId?: string
   createdAt: string
 }
@@ -155,6 +164,22 @@ export interface DeliveryZone {
   name: string
   fee: number
   subLandmarks: { id: string; name: string; fee: number }[]
+}
+
+export interface MonnifySubAccount {
+  subAccountCode: string
+  bankName?: string
+  accountNumber?: string
+  accountName?: string
+  defaultSplitPercentage?: number
+}
+
+export interface ItemFeedbackUI {
+  id: string
+  menuItemName: string
+  rating: number
+  title?: string
+  comments?: string
 }
 
 export interface DeliveryZonesResponse {

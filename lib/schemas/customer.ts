@@ -75,6 +75,7 @@ export const orderItemSchema = z.object({
     .int()
     .min(1, "Quantity must be at least 1")
     .max(100, "Quantity cannot exceed 100 per item"),
+  image: z.string().optional(),
 })
 export type OrderItemValues = z.infer<typeof orderItemSchema>
 
@@ -178,3 +179,23 @@ export const walletActivationSchema = z.object({
     .length(11, "A valid 11-digit NIN is required to activate your wallet."),
 })
 export type WalletActivationValues = z.infer<typeof walletActivationSchema>
+
+export const customerReviewsTabSchema = z.enum(["pending", "completed"])
+export type CustomerReviewsTab = z.infer<typeof customerReviewsTabSchema>
+
+export const customerReviewFormSchema = z.object({
+  vendorRating: z.number().min(1, "Please rate the vendor"),
+  isAnonymous: z.boolean(),
+  itemReviews: z.array(
+    z.object({
+      menuItemId: z.string(),
+      rating: z.number().min(1, "Please rate the food"),
+      title: z.string().min(1, "Title is required for the review."),
+      comments: z
+        .string()
+        .max(500, "Your comment is too long (max 500 characters).")
+        .optional(),
+    })
+  ),
+})
+export type CustomerReviewFormValues = z.infer<typeof customerReviewFormSchema>

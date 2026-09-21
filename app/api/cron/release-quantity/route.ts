@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import MenuItem from "@/models/MenuItem"
-import { ORDER_STATUS } from "@/lib/constants"
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     // Find orders that are pending and have expired
     const expiredOrders = await Order.find({
       status: ORDER_STATUS.PENDING,
-      paymentStatus: "pending",
+      paymentStatus: PAYMENT_STATUS.PENDING,
       expiresAt: { $lt: new Date() },
     })
 

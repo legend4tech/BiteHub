@@ -1,17 +1,7 @@
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Hr,
-  Heading,
-  Img,
-} from "@react-email/components"
+import { Text, Heading } from "@react-email/components"
 import * as React from "react"
 import { EMAIL_THEME } from "@/lib/email-theme"
+import { EmailLayout } from "./EmailLayout"
 
 interface ContactEmailProps {
   senderName: string
@@ -27,145 +17,49 @@ export const ContactEmail = ({
   message,
 }: ContactEmailProps) => {
   return (
-    <Html>
-      <Head />
-      <Preview>New contact message: {subject}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          {/* Header */}
-          <Section style={headerSection}>
-            <Img
-              src="https://bitehubapp.com/brand_logo.png"
-              alt="BiteHub"
-              width="48"
-              height="48"
-              style={logoImg}
-            />
-            <Heading style={logoText}>
-              Bite<span style={logoHighlight}>Hub</span>
-            </Heading>
-            <Text style={subHeader}>New Contact Form Message</Text>
-          </Section>
+    <EmailLayout
+      preview={`New contact message: ${subject}`}
+      subheader="New Contact Form Message"
+    >
+      <Heading style={heading}>{"You've received a new message"}</Heading>
 
-          <Hr style={divider} />
+      <div style={metaBox}>
+        <Text style={metaRow}>
+          <span style={metaLabel}>From:</span> {senderName}
+        </Text>
+        <Text style={metaRow}>
+          <span style={metaLabel}>Email:</span> {senderEmail}
+        </Text>
+        <Text style={metaRow}>
+          <span style={metaLabel}>Subject:</span> {subject}
+        </Text>
+      </div>
 
-          {/* Message Details */}
-          <Section style={contentSection}>
-            <Heading style={heading}>{"You've received a new message"}</Heading>
+      <Text style={sectionLabel}>Message:</Text>
+      <div style={messageBox}>
+        <Text style={messageText}>{message}</Text>
+      </div>
 
-            <div style={metaBox}>
-              <Text style={metaRow}>
-                <span style={metaLabel}>From:</span> {senderName}
-              </Text>
-              <Text style={metaRow}>
-                <span style={metaLabel}>Email:</span> {senderEmail}
-              </Text>
-              <Text style={metaRow}>
-                <span style={metaLabel}>Subject:</span> {subject}
-              </Text>
-            </div>
+      <Text style={replyNote}>
+        Reply directly to this email to respond to {senderName} at{" "}
+        <strong>{senderEmail}</strong>.
+      </Text>
 
-            <Text style={sectionLabel}>Message:</Text>
-            <div style={messageBox}>
-              <Text style={messageText}>{message}</Text>
-            </div>
-
-            <Text style={replyNote}>
-              Reply directly to this email to respond to {senderName} at{" "}
-              <strong>{senderEmail}</strong>.
-            </Text>
-
-            {/* ⚠️ Warning for admin — must delete quoted email before replying */}
-            <div style={deleteWarning}>
-              <Text style={deleteWarningText}>
-                ⚠️ <strong>IMPORTANT:</strong> Before hitting Send on your
-                reply, scroll down and{" "}
-                <strong>DELETE everything below the dashed line</strong> (this
-                notification email). If you don&apos;t, the customer will see
-                this internal message in your reply.
-              </Text>
-            </div>
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Footer */}
-          <Section style={footerSection}>
-            <Text style={footerText}>
-              BiteHub — Smart Food Ordering for Everyone
-            </Text>
-            <Text style={footerText}>
-              This message was sent via the BiteHub contact form at
-              bitehubapp.com
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      {/* ⚠️ Warning for admin — must delete quoted email before replying */}
+      <div style={deleteWarning}>
+        <Text style={deleteWarningText}>
+          ⚠️ <strong>IMPORTANT:</strong> Before hitting Send on your reply,
+          scroll down and{" "}
+          <strong>DELETE everything below the dashed line</strong> (this
+          notification email). If you don&apos;t, the customer will see this
+          internal message in your reply.
+        </Text>
+      </div>
+    </EmailLayout>
   )
 }
 
 export default ContactEmail
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const main = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-}
-
-const container = {
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  maxWidth: "580px",
-  backgroundColor: EMAIL_THEME.colors.background,
-  border: `1px solid ${EMAIL_THEME.colors.border}`,
-  borderRadius: "16px",
-  marginTop: "40px",
-  overflow: "hidden",
-}
-
-const headerSection = {
-  padding: "32px 40px 10px 40px",
-  textAlign: "center" as const,
-}
-
-const logoImg = {
-  borderRadius: "12px",
-  margin: "0 auto 12px auto",
-  display: "block",
-}
-
-const logoText = {
-  margin: "0",
-  fontSize: "28px",
-  fontWeight: "900",
-  letterSpacing: "-0.05em",
-  color: EMAIL_THEME.colors.foreground,
-}
-
-const logoHighlight = {
-  color: EMAIL_THEME.colors.primary,
-}
-
-const subHeader = {
-  margin: "4px 0 0 0",
-  fontSize: "13px",
-  fontWeight: "600",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.08em",
-  color: EMAIL_THEME.colors.textMuted,
-}
-
-const divider = {
-  borderColor: EMAIL_THEME.colors.border,
-  margin: "20px 0",
-}
-
-const contentSection = {
-  padding: "0 40px",
-}
 
 const heading = {
   fontSize: "20px",
@@ -173,7 +67,6 @@ const heading = {
   color: EMAIL_THEME.colors.foreground,
   marginBottom: "16px",
 }
-
 const metaBox = {
   backgroundColor: EMAIL_THEME.colors.background,
   border: `1px solid ${EMAIL_THEME.colors.border}`,
@@ -181,19 +74,13 @@ const metaBox = {
   padding: "16px",
   marginBottom: "20px",
 }
-
 const metaRow = {
   fontSize: "14px",
   lineHeight: "22px",
   color: EMAIL_THEME.colors.foreground,
   margin: "0 0 4px 0",
 }
-
-const metaLabel = {
-  fontWeight: "700",
-  color: EMAIL_THEME.colors.foreground,
-}
-
+const metaLabel = { fontWeight: "700", color: EMAIL_THEME.colors.foreground }
 const sectionLabel = {
   fontSize: "13px",
   fontWeight: "700",
@@ -202,7 +89,6 @@ const sectionLabel = {
   letterSpacing: "0.05em",
   margin: "0 0 8px 0",
 }
-
 const messageBox = {
   backgroundColor: `${EMAIL_THEME.colors.background}7ed`,
   border: "1px solid #fed7aa",
@@ -211,7 +97,6 @@ const messageBox = {
   padding: "16px",
   marginBottom: "20px",
 }
-
 const messageText = {
   fontSize: "15px",
   lineHeight: "24px",
@@ -219,7 +104,6 @@ const messageText = {
   margin: "0",
   whiteSpace: "pre-wrap" as const,
 }
-
 const replyNote = {
   fontSize: "13px",
   lineHeight: "20px",
@@ -229,19 +113,6 @@ const replyNote = {
   borderRadius: "8px",
   margin: "0 0 20px 0",
 }
-
-const footerSection = {
-  padding: "0 40px",
-  textAlign: "center" as const,
-}
-
-const footerText = {
-  fontSize: "12px",
-  lineHeight: "18px",
-  color: EMAIL_THEME.colors.textMuted,
-  margin: "0 0 6px 0",
-}
-
 const deleteWarning = {
   backgroundColor: `${EMAIL_THEME.colors.destructiveBackground}`,
   border: "2px solid #ef4444",
@@ -249,7 +120,6 @@ const deleteWarning = {
   padding: "12px 16px",
   margin: "0 0 20px 0",
 }
-
 const deleteWarningText = {
   fontSize: "13px",
   lineHeight: "20px",

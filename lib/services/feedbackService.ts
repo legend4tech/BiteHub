@@ -8,16 +8,17 @@
 import dbConnect from "@/lib/db"
 import PlatformFeedback from "@/models/PlatformFeedback"
 import VendorFeedback from "@/models/VendorFeedback"
-import MenuItemFeedback from "@/models/MenuItemFeedback"
+import MenuItemFeedback, { IMenuItemFeedback } from "@/models/MenuItemFeedback"
 import Vendor from "@/models/Vendor"
 import MenuItem from "@/models/MenuItem"
-import Order, { IOrderItem } from "@/models/Order"
+import Order from "@/models/Order"
 import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import { ORDER_STATUS } from "@/lib/constants"
 import { serializeOrder, serializeVendorFeedback } from "@/lib/serializers"
 import type { LeanOrder, PopulatedVendorFeedback } from "@/lib/serializers"
 import type { Types } from "mongoose"
 import type { FeedbackValues } from "@/lib/schemas"
+import { sendVendorNewReviewEmail } from "@/lib/vendorAlertMail"
 
 // ─── Section: Customer Feedback ──────────────────────────────────────────
 
@@ -52,8 +53,8 @@ export async function submitCustomerFeedback(
 
   if (existingVendorFeedback) {
     existingVendorFeedback.rating = customerReview.vendorRating
-    existingVendorFeedback.comments = customerReview.comments
     existingVendorFeedback.orderId = customerReview.orderId
+    existingVendorFeedback.isAnonymous = customerReview.isAnonymous || false
     await existingVendorFeedback.save()
   } else {
     await VendorFeedback.create({
@@ -61,7 +62,7 @@ export async function submitCustomerFeedback(
       customerId,
       orderId: customerReview.orderId,
       rating: customerReview.vendorRating,
-      comments: customerReview.comments,
+      isAnonymous: customerReview.isAnonymous || false,
     })
   }
 
@@ -83,49 +84,89 @@ export async function submitCustomerFeedback(
     await syncVendorMenuScores(customerReview.vendorId)
   }
 
-  // Upsert MenuItem Feedback (Overwrite Rule) for every unique item in the order
-  const uniqueItemIds = Array.from(
-    new Set(order.items.map((item: IOrderItem) => item.menuItemId))
-  )
-
-  for (const itemId of uniqueItemIds) {
-    const existingItemFeedback = await MenuItemFeedback.findOne({
-      menuItemId: itemId,
-      customerId,
-    })
-
-    if (existingItemFeedback) {
-      existingItemFeedback.rating = customerReview.foodRating
-      existingItemFeedback.orderId = customerReview.orderId
-      await existingItemFeedback.save()
-    } else {
-      await MenuItemFeedback.create({
-        menuItemId: itemId,
-        orderId: customerReview.orderId,
+  // Upsert MenuItem Feedback for each reviewed item
+  if (customerReview.itemReviews && customerReview.itemReviews.length > 0) {
+    for (const itemReview of customerReview.itemReviews) {
+      const existingItemFeedback = await MenuItemFeedback.findOne({
+        menuItemId: itemReview.menuItemId,
         customerId,
-        vendorId: customerReview.vendorId,
-        rating: customerReview.foodRating,
       })
-    }
 
-    // Recalculate MenuItem Aggregate Rating
-    const allItemFeedback = await MenuItemFeedback.find({ menuItemId: itemId })
-      .select("rating")
-      .lean()
-    if (allItemFeedback.length > 0) {
-      const totalItemRating = allItemFeedback.reduce(
-        (sum: number, f: { rating: number }) => sum + f.rating,
-        0
-      )
-      const avgItemRating = totalItemRating / allItemFeedback.length
-      await MenuItem.findByIdAndUpdate(itemId, {
-        $set: { rating: avgItemRating, ratingCount: allItemFeedback.length },
+      if (existingItemFeedback) {
+        existingItemFeedback.rating = itemReview.rating
+        existingItemFeedback.title = itemReview.title
+        existingItemFeedback.comments = itemReview.comments
+        existingItemFeedback.isAnonymous = customerReview.isAnonymous || false
+        existingItemFeedback.orderId = customerReview.orderId
+        await existingItemFeedback.save()
+      } else {
+        await MenuItemFeedback.create({
+          menuItemId: itemReview.menuItemId,
+          orderId: customerReview.orderId,
+          customerId,
+          vendorId: customerReview.vendorId,
+          rating: itemReview.rating,
+          title: itemReview.title,
+          comments: itemReview.comments,
+          isAnonymous: customerReview.isAnonymous || false,
+        })
+      }
+
+      // Recalculate MenuItem Aggregate Rating
+      const allItemFeedback = await MenuItemFeedback.find({
+        menuItemId: itemReview.menuItemId,
       })
+        .select("rating")
+        .lean()
+      if (allItemFeedback.length > 0) {
+        const totalItemRating = allItemFeedback.reduce(
+          (sum: number, f: { rating: number }) => sum + f.rating,
+          0
+        )
+        const avgItemRating = totalItemRating / allItemFeedback.length
+        await MenuItem.findByIdAndUpdate(itemReview.menuItemId, {
+          $set: { rating: avgItemRating, ratingCount: allItemFeedback.length },
+        })
+      }
     }
+  } else {
+    // Fallback if no item reviews are provided (shouldn't happen with updated schema)
+    // We could leave it empty or do nothing.
   }
 
   // Lock the order
   await Order.findByIdAndUpdate(order._id, { $set: { isRated: true } })
+
+  // Send email to vendor
+  const vendor = await Vendor.findById(customerReview.vendorId)
+    .select("name")
+    .lean()
+  if (vendor) {
+    let emailItemReviews = undefined
+    if (customerReview.itemReviews && customerReview.itemReviews.length > 0) {
+      const itemIds = customerReview.itemReviews.map((ir) => ir.menuItemId)
+      const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
+        .select("name")
+        .lean()
+      const itemMap = new Map(
+        menuItems.map((item) => [item._id.toString(), item.name])
+      )
+
+      emailItemReviews = customerReview.itemReviews.map((ir) => ({
+        itemName: itemMap.get(ir.menuItemId) || "Unknown Item",
+        rating: ir.rating,
+        title: ir.title,
+        comments: ir.comments,
+      }))
+    }
+
+    sendVendorNewReviewEmail(
+      customerReview.vendorId,
+      vendor.name,
+      customerReview.vendorRating,
+      emailItemReviews
+    ).catch((err) => console.error("Error sending vendor review email:", err))
+  }
 
   return { success: true }
 }
@@ -252,4 +293,40 @@ export async function getOrderForReview(orderId: string, customerId: string) {
         }
       : null,
   }
+}
+
+export async function getMenuItemReviews(menuItemId: string) {
+  await dbConnect()
+
+  // After .populate(), customerId is projected to { name, image } at runtime.
+  // We define a local type to capture this rather than using any[].
+  type PopulatedReview = Omit<IMenuItemFeedback, "customerId"> & {
+    _id: import("mongoose").Types.ObjectId
+    customerId: { name: string; image?: string } | null
+    createdAt?: Date
+  }
+
+  const reviews = (await MenuItemFeedback.find({ menuItemId })
+    .populate("customerId", "name image")
+    .sort({ createdAt: -1 })
+    .lean()) as unknown as PopulatedReview[]
+
+  return reviews.map((r) => ({
+    id: r._id.toString(),
+    rating: r.rating,
+    title: r.title,
+    comments: r.comments,
+    isAnonymous: r.isAnonymous,
+    createdAt: r.createdAt
+      ? r.createdAt.toISOString()
+      : new Date().toISOString(),
+    customer:
+      r.isAnonymous || !r.customerId
+        ? null
+        : {
+            name: r.customerId.name,
+            // Customer.image is stored as a plain string; wrap as { url } to match Review type
+            image: r.customerId.image ? { url: r.customerId.image } : undefined,
+          },
+  }))
 }

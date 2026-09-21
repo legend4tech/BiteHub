@@ -8,6 +8,14 @@ import { analyticsQuerySchema } from "@/lib/schemas/admin"
 
 const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
+import {
+  AnalyticsPrevAgg,
+  AnalyticsTimeSeriesItem,
+  AnalyticsDowItem,
+  AnalyticsTopVendorItem,
+  AnalyticsTopZoneItem,
+} from "@/types/admin"
+
 export async function GET(request: Request) {
   try {
     const session = await auth()
@@ -217,8 +225,7 @@ export async function GET(request: Request) {
     // ── 3. Previous Period KPIs (growth %) ─────────────────────────────────
     const hasPrevPeriod =
       previousEndDate.getTime() > previousStartDate.getTime()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let prevAgg: any[] = [{ kpis: [] }]
+    let prevAgg: AnalyticsPrevAgg[] = [{ kpis: [] }]
     if (hasPrevPeriod) {
       prevAgg = await OrderModel.aggregate([
         {
@@ -324,18 +331,22 @@ export async function GET(request: Request) {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const chartData = (paidResult.timeSeries || []).map((item: any) => {
-      const d = new Date(item.firstDate)
-      return {
-        date: isDaily
-          ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-          : d.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
-        orders: item.orders,
-        gmv: item.gmv,
-        profit: item.profit,
+    const chartData = (paidResult.timeSeries || []).map(
+      (item: AnalyticsTimeSeriesItem) => {
+        const d = new Date(item.firstDate)
+        return {
+          date: isDaily
+            ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+            : d.toLocaleDateString("en-US", {
+                month: "short",
+                year: "numeric",
+              }),
+          orders: item.orders,
+          gmv: item.gmv,
+          profit: item.profit,
+        }
       }
-    })
+    )
 
     const dowMap = new Map<
       number,
@@ -344,9 +355,7 @@ export async function GET(request: Request) {
     DOW_LABELS.forEach((label, i) =>
       dowMap.set(i, { day: label, gmv: 0, orders: 0 })
     )
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(paidResult.dow || []).forEach((item: any) => {
+    ;(paidResult.dow || []).forEach((item: AnalyticsDowItem) => {
       // $dayOfWeek is 1-indexed starting Sunday
       const dow = item._id - 1
       if (dow >= 0 && dow <= 6) {
@@ -379,16 +388,16 @@ export async function GET(request: Request) {
         repeatOrders: allCounts.repeat,
         guestOrders: allCounts.guest,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      topVendors: (paidResult.topVendors || []).map((v: any) => ({
-        id: String(v._id),
-        name: v.vendorName,
-        gmv: v.gmv,
-        vendorRevenue: v.vendorRevenue,
-        ordersCount: v.ordersCount,
-      })),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      topZones: (allResult.topZones || []).map((z: any) => ({
+      topVendors: (paidResult.topVendors || []).map(
+        (v: AnalyticsTopVendorItem) => ({
+          id: String(v._id),
+          name: v.vendorName,
+          gmv: v.gmv,
+          vendorRevenue: v.vendorRevenue,
+          ordersCount: v.ordersCount,
+        })
+      ),
+      topZones: (allResult.topZones || []).map((z: AnalyticsTopZoneItem) => ({
         zone: z._id || "Unknown",
         orders: z.orders as number,
       })),

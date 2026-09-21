@@ -16,10 +16,9 @@ import {
   useVendorUpdateOrderPayment,
 } from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
-import { ArrowRight, Star, Banknote, AlertCircle, Share2 } from "lucide-react"
+import { ArrowRight, Star, AlertCircle, Share2 } from "lucide-react"
 import Link from "next/link"
-import { formatPrice } from "@/lib/format"
-import { APP_NAME, CURRENT_TERMS_VERSION } from "@/lib/constants"
+import { CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { useVendorOrders } from "@/hooks/vendor/useVendorOrders"
 import { useVendorStats } from "@/hooks/vendor/useVendorStats"
 import type { VendorStats } from "@/types/vendor"
@@ -238,7 +237,7 @@ export default function VendorDashboardPage() {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={`order-skel-${i}`}
-                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/40 p-5"
+                  className="flex flex-col gap-4 rounded-[2rem] border border-border/50 bg-card/40 p-5"
                 >
                   <div className="flex items-start justify-between">
                     <div className="h-11 w-11 animate-pulse rounded-2xl bg-muted" />
@@ -255,7 +254,7 @@ export default function VendorDashboardPage() {
               {Array.from({ length: 2 }).map((_, i) => (
                 <div
                   key={`fin-skel-${i}`}
-                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/40 p-5"
+                  className="flex flex-col gap-4 rounded-[2rem] border border-border/50 bg-card/40 p-5"
                 >
                   <div className="flex items-start justify-between">
                     <div className="h-11 w-11 animate-pulse rounded-2xl bg-muted" />
@@ -270,7 +269,7 @@ export default function VendorDashboardPage() {
             </div>
           </div>
         ) : isStatsError ? (
-          <div className="rounded-3xl border border-border/50 bg-card py-10">
+          <div className="rounded-[2rem] border border-border/50 bg-card py-10">
             <FetchError
               title="Couldn't load stats"
               onRetry={() => refetchStats()}
@@ -290,7 +289,7 @@ export default function VendorDashboardPage() {
         )}
 
         {/* Recent orders — capped at 10, full list is at /vendor/orders */}
-        <div className="rounded-2xl border border-border bg-card">
+        <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="font-heading text-base font-bold">

@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils"
-import { ORDER_STATUS_CONFIG } from "@/lib/constants"
+import {
+  ORDER_STATUS_CONFIG,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+} from "@/lib/constants"
 import type { OrderStatus } from "@/types/shared"
 
 interface StatusBadgeProps {
@@ -22,7 +26,8 @@ export function StatusBadge({
         className
       )}
     >
-      {status === "pending" && paymentStatus === "pending"
+      {status === ORDER_STATUS.PENDING &&
+      paymentStatus === PAYMENT_STATUS.PENDING
         ? "Awaiting Payment"
         : config.label}
     </span>

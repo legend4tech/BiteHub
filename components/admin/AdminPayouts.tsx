@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { RefreshCcw, Activity, AlertTriangle, Banknote } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -118,9 +119,11 @@ export function AdminPayouts({
                     {/* Avatar */}
                     <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
                       {vendor.image?.url ? (
-                        <img
+                        <Image
                           src={vendor.image.url}
                           alt={vendor.name}
+                          width={40}
+                          height={40}
                           className="h-full w-full object-cover"
                         />
                       ) : (

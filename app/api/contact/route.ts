@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import React from "react"
-import { z } from "zod"
 import ContactAutoReply from "@/emails/ContactAutoReply"
 import { CONTACT_EMAIL } from "@/lib/constants"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 import { contactSchema } from "@/lib/schemas"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +20,16 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, email, subject, message } = parsed.data
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(`contact_${email}`)
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
 
     if (!process.env.RESEND_API_KEY) {
       console.warn("⚠️ RESEND_API_KEY not set. Contact email not sent.")

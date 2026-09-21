@@ -6,6 +6,7 @@ import type { Order } from "@/types/shared"
 import {
   ORDER_STATUS_CONFIG,
   ORDER_STATUS,
+  PAYMENT_STATUS,
   VALID_ORDER_STATUSES,
 } from "@/lib/constants"
 import type { OrderStatus } from "@/types/shared"
@@ -310,7 +311,7 @@ export function OrderTable({
                       <Check className="size-4" /> Paid securely via Monnify
                     </div>
                   )}
-                  {order.paymentStatus === "pending" &&
+                  {order.paymentStatus === PAYMENT_STATUS.PENDING &&
                     order.status !== ORDER_STATUS.CANCELLED && (
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-center gap-1.5 rounded-xl bg-warning/10 py-2 text-sm font-semibold text-warning dark:text-warning">
@@ -332,7 +333,7 @@ export function OrderTable({
                         </button>
                       </div>
                     )}
-                  {order.paymentStatus === "pending" &&
+                  {order.paymentStatus === PAYMENT_STATUS.PENDING &&
                     order.status === ORDER_STATUS.CANCELLED && (
                       <div className="flex items-center justify-center gap-1.5 rounded-xl bg-muted/50 py-2 text-sm font-semibold text-muted-foreground">
                         <AlertCircle className="size-4" /> No Payment Made
@@ -398,7 +399,7 @@ export function OrderTable({
                         const isCancelled = s === ORDER_STATUS.CANCELLED
 
                         const isPendingPayment =
-                          order.paymentStatus === "pending"
+                          order.paymentStatus === PAYMENT_STATUS.PENDING
                         const isDisabled =
                           (isBackwards && !isCancelled) ||
                           (isPendingPayment && !isCancelled)

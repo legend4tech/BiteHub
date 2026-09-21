@@ -11,6 +11,7 @@ import {
   Gift,
   Settings,
   LogOut,
+  Star,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -45,6 +46,7 @@ const navItems: {
 }[] = [
   { section: "dashboard", label: "Overview", icon: LayoutDashboard },
   { section: "orders", label: "My Orders", icon: ShoppingBag },
+  { section: "reviews", label: "Reviews", icon: Star },
   { section: "wallet", label: "Wallet", icon: Wallet },
   { section: "transactions", label: "Transactions", icon: Receipt },
   { section: "rewards", label: "Rewards", icon: Gift },
@@ -129,6 +131,7 @@ function SidebarContent({
       <div className="relative flex min-h-[76px] shrink-0 items-center justify-center border-b border-border/50 px-4 py-5">
         {!collapsed && (
           <Link href="/" className="group flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={APP_LOGO_URL}
               alt={APP_NAME}
@@ -147,6 +150,7 @@ function SidebarContent({
 
         {collapsed && (
           <Link href="/" className="group flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={APP_LOGO_URL}
               alt={APP_NAME}
@@ -250,7 +254,7 @@ function SidebarContent({
                       await signOut({ redirect: false })
                       toast.success("Successfully logged out")
                       window.location.href = "/customer/login"
-                    } catch (error) {
+                    } catch {
                       toast.error("Network error. Could not log out.")
                     }
                   }}

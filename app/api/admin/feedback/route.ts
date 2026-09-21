@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import PlatformFeedback from "@/models/PlatformFeedback"
 import { auth } from "@/auth"
+import {
+  serializePlatformFeedback,
+  type LeanPlatformFeedback,
+} from "@/lib/serializers"
 
 export async function GET() {
   try {
@@ -22,7 +26,11 @@ export async function GET() {
       .limit(100)
       .lean()
 
-    return NextResponse.json(feedbacks)
+    return NextResponse.json(
+      feedbacks.map((f) =>
+        serializePlatformFeedback(f as unknown as LeanPlatformFeedback)
+      )
+    )
   } catch (error) {
     console.error("[admin/feedback]", error)
     return NextResponse.json(

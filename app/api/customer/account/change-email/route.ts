@@ -114,6 +114,8 @@ export async function POST(req: NextRequest) {
         subject: "Security Alert: Email change requested",
         react: React.createElement(EmailChangeNotification, {
           vendorName: customerName,
+          oldEmail: currentEmail,
+          newEmail,
         }),
       }),
       // 2. Send confirmation to NEW email

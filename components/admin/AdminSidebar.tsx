@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import {
@@ -151,10 +152,12 @@ function SidebarContent({
       <div className="relative flex min-h-[76px] shrink-0 items-center justify-center border-b border-border/50 px-4 py-5">
         {!collapsed && (
           <Link href="/" className="group flex items-center gap-2.5">
-            <img
+            <Image
               src={APP_LOGO_URL}
               alt={APP_NAME}
-              className="h-10 w-10 shrink-0 rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
+              width={40}
+              height={40}
+              className="shrink-0 rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
             />
             <div className="flex flex-col -space-y-0.5">
               <span className="font-heading text-xl leading-none font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
@@ -169,10 +172,12 @@ function SidebarContent({
 
         {collapsed && (
           <Link href="/" className="group flex items-center justify-center">
-            <img
+            <Image
               src={APP_LOGO_URL}
               alt={APP_NAME}
-              className="h-9 w-9 rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
+              width={36}
+              height={36}
+              className="rounded-lg object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
             />
           </Link>
         )}

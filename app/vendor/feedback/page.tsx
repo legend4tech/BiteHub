@@ -80,35 +80,76 @@ export default function VendorFeedbackPage() {
               <div className="space-y-4">
                 {feedbacks.map((feedback: Feedback) => (
                   <div
-                    key={feedback._id}
-                    className="flex flex-col gap-1 rounded-xl border border-border bg-muted/30 p-4"
+                    key={feedback.id}
+                    className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`size-3.5 ${feedback.rating >= star ? "fill-rating text-warning" : "text-muted-foreground"}`}
-                          />
-                        ))}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                          Vendor Service
+                        </span>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={`service-${star}`}
+                              className={`size-3.5 ${feedback.rating >= star ? "fill-rating text-warning" : "text-muted-foreground"}`}
+                            />
+                          ))}
+                        </div>
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {new Date(feedback.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    {feedback.comments && (
-                      <p className="text-sm leading-relaxed text-foreground">
-                        {feedback.comments}
-                      </p>
-                    )}
+
+                    {/* Item Reviews */}
+                    {feedback.itemReviews &&
+                      feedback.itemReviews.length > 0 && (
+                        <div className="mt-2 flex flex-col gap-3">
+                          <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                            Ordered Items
+                          </span>
+                          {feedback.itemReviews.map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-lg border border-border/50 bg-card p-3 shadow-sm"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold">
+                                  {item.menuItemName}
+                                </span>
+                                <div className="flex gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={`item-${item.id}-${star}`}
+                                      className={`size-3 ${item.rating >= star ? "fill-rating text-warning" : "text-muted-foreground"}`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              {item.title && (
+                                <p className="mt-2 text-sm font-medium">
+                                  {item.title}
+                                </p>
+                              )}
+                              {item.comments && (
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                  {item.comments}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                     {feedback.orderId === "Anonymous" ? (
-                      <div className="mt-1">
+                      <div className="mt-2">
                         <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           Anonymous Review
                         </span>
                       </div>
                     ) : (
-                      <p className="font-mono text-xs text-muted-foreground">
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
                         Order: {feedback.orderId}
                       </p>
                     )}

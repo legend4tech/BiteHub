@@ -89,3 +89,27 @@ export function isItemAvailableNow(
 
   return true
 }
+
+/**
+ * Formats a date string or object into a human-readable time (e.g., "02:30 PM")
+ */
+export function formatTime(date: Date | string | number): string {
+  if (!date) return ""
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(date))
+}
+
+/**
+ * Formats a date string or object into a human-readable date (e.g., "May 31, 2026")
+ */
+export function formatDate(date: Date | string | number): string {
+  if (!date) return ""
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date))
+}

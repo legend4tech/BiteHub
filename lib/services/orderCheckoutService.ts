@@ -1,4 +1,10 @@
-import Vendor, { IVendor } from "@/models/Vendor"
+/**
+ * orderCheckoutService.ts
+ *
+ * Provides utility methods for calculating order totals, fees, and stock
+ * checking during the checkout process.
+ */
+import type { IVendor } from "@/models/Vendor"
 import MenuItem, { IMenuItem } from "@/models/MenuItem"
 import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"

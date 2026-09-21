@@ -4,6 +4,7 @@ import AdminUserModel from "@/models/AdminUser"
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
 import { createStaffSchema } from "@/lib/schemas"
+import { serializeAdminUser, type LeanAdminUser } from "@/lib/serializers"
 
 // GET — List all staff
 export async function GET() {
@@ -24,7 +25,10 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .lean()
 
-    return NextResponse.json(staff)
+    // .lean() skips toJSON which normally deletes password — serializer guarantees it
+    return NextResponse.json(
+      staff.map((s) => serializeAdminUser(s as unknown as LeanAdminUser))
+    )
   } catch (error) {
     console.error("[admin/staff GET]", error)
     return NextResponse.json(

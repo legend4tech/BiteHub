@@ -83,3 +83,41 @@ export const getLandmarksQuerySchema = z.object({
   campus: z.string().min(1, "Campus is required"),
 })
 export type GetLandmarksQueryValues = z.infer<typeof getLandmarksQuerySchema>
+
+export const feedbackSchema = z
+  .object({
+    orderId: z.string().optional(),
+    vendorId: z.string().optional(), // For vendor giving platform feedback
+    platform: z
+      .object({
+        rating: z.number().min(1).max(5),
+        comments: z
+          .string()
+          .min(3, "Comments must be at least 3 characters long"),
+      })
+      .optional(),
+    // The new unified review format for customers
+    customerReview: z
+      .object({
+        orderId: z.string(),
+        vendorId: z.string(),
+        vendorRating: z.number().min(1).max(5),
+        isAnonymous: z.boolean().optional(),
+        itemReviews: z.array(
+          z.object({
+            menuItemId: z.string(),
+            rating: z.number().min(1).max(5),
+            title: z.string().min(1, "Title is required"),
+            comments: z.string().optional(),
+          })
+        ),
+      })
+      .optional(),
+  })
+  .refine((data) => data.platform || data.customerReview, {
+    message:
+      "At least one feedback (platform or customerReview) must be provided",
+    path: ["platform", "customerReview"],
+  })
+
+export type FeedbackValues = z.infer<typeof feedbackSchema>

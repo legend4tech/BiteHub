@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Upload, X, Image as ImageIcon } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
@@ -98,11 +99,7 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
     <div className="w-full space-y-4">
       {currentUrl ? (
         <div className="group relative aspect-video w-full overflow-hidden rounded-xl border border-border">
-          <img
-            src={currentUrl}
-            alt="Preview"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <Image src={currentUrl} alt="Preview" fill className="object-cover" />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
               type="button"

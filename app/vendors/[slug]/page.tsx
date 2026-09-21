@@ -11,17 +11,13 @@ import {
 import Link from "next/link"
 import { RatingBadge } from "@/components/shared/RatingBadge"
 import { VendorMenu } from "@/components/public-vendors/VendorMenu"
-import { VendorRecentReviews } from "@/components/public-vendors/VendorRecentReviews"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import Image from "next/image"
-import {
-  getVendorDataBySlug,
-  getVendorReviews,
-} from "@/lib/services/vendorService"
+import { getVendorDataBySlug } from "@/lib/services/vendorService"
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -31,17 +27,8 @@ interface Props {
 async function getVendorData(slug: string, category?: string, q?: string) {
   try {
     return await getVendorDataBySlug(slug, { category, q })
-  } catch (error) {
+  } catch {
     return null
-  }
-}
-
-async function getVendorRecentReviewsData(slug: string) {
-  try {
-    return await getVendorReviews(slug, { limit: 5 })
-  } catch (error) {
-    console.error("Failed to fetch recent reviews:", error)
-    return { reviews: [] }
   }
 }
 
@@ -99,10 +86,7 @@ export default async function VendorDetailPage({
   const q =
     typeof resolvedSearchParams.q === "string" ? resolvedSearchParams.q : ""
 
-  const [data, reviewsData] = await Promise.all([
-    getVendorData(slug, category, q),
-    getVendorRecentReviewsData(slug),
-  ])
+  const data = await getVendorData(slug, category, q)
 
   if (!data || !data.vendor) notFound()
 
@@ -267,13 +251,6 @@ export default async function VendorDetailPage({
             </div>
           </div>
         </div>
-
-        {/* Recent Reviews Carousel */}
-        <VendorRecentReviews
-          reviews={reviewsData.reviews || []}
-          vendorSlug={vendor.slug}
-          totalReviews={vendor.ratingCount}
-        />
 
         {/* VendorMenu owns: category tabs, grid, cart, conflict dialog */}
         <Suspense

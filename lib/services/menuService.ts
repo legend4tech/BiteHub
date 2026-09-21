@@ -167,6 +167,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
         { isPreorder: true, preorderEndDate: { $gt: now } },
         // 2. Regular items follow the daily/time schedule
         {
+          isPreorder: { $ne: true },
           $and: [
             {
               $or: [

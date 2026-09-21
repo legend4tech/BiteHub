@@ -1,3 +1,9 @@
+/**
+ * scoreService.ts
+ *
+ * Calculates and synchronizes discovery scores and ratings for vendors
+ * and their menu items based on feedback.
+ */
 import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import MenuItem from "@/models/MenuItem"

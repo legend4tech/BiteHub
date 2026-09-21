@@ -197,7 +197,7 @@ export async function sendOrderCompletedEmail(
   vendorName: string
 ) {
   if (!process.env.RESEND_API_KEY) return missingKey()
-  const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/order/${orderId}`
+  const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/customer/reviews/new/${orderId}`
   try {
     const { data, error } = await resend.emails.send({
       from: resolveFrom(),
@@ -207,7 +207,7 @@ export async function sendOrderCompletedEmail(
         customerName,
         orderId,
         vendorName,
-        trackingUrl,
+        reviewUrl,
       }),
     })
     if (error) {

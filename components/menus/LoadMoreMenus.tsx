@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useMenuItems } from "@/hooks/shared/useMenuItems"
 import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
-import { PageSkeleton } from "@/components/shared/PageSkeleton"
+
 import { FetchError } from "@/components/shared/FetchError"
 import type { MenuItem } from "@/types/vendor"
 import { useCart } from "@/hooks/useCart"
@@ -11,11 +11,13 @@ import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger
 
 interface LoadMoreMenusProps {
   initialPage: number
+  limit?: number
   searchParams: { [key: string]: string | undefined }
 }
 
 export function LoadMoreMenus({
   initialPage,
+  limit = 20,
   searchParams,
 }: LoadMoreMenusProps) {
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
@@ -51,6 +53,7 @@ export function LoadMoreMenus({
     availableOnly: isAvailableOnly,
     sortBy: sortBy || undefined,
     vendorId: vendorId || undefined,
+    limit,
     initialPage: initialPage + 1,
     enabled: true,
   })
@@ -70,11 +73,11 @@ export function LoadMoreMenus({
         </div>
       )}
 
-      {(hasNextPage || isFetchingNextPage) && (
+      {(hasNextPage || isFetchingNextPage || status === "pending") && (
         <div className="mt-8">
           <InfiniteScrollTrigger
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage || status === "pending"}
+            isFetchingNextPage={isFetchingNextPage || status === "pending"}
             fetchNextPage={fetchNextPage}
             skeletonVariant="menu-item-grid"
             skeletonCount={5}

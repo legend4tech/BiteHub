@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { uploadStream, deleteFromCloudinary } from "@/lib/cloudinary"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `upload_post_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     const formData = await request.formData()
@@ -58,6 +71,18 @@ export async function DELETE(request: Request) {
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `upload_del_${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     const { publicId } = await request.json()

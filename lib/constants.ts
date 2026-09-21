@@ -4,7 +4,11 @@ import type { MenuCategory, OrderStatus } from "@/types/shared"
 // ─── App Constants ────────────────────────────────────────────────────────────
 
 export const APP_NAME = "BiteHub"
+export const APP_TAGLINE = "Food right when you need it."
+export const APP_BASE_URL = "https://bitehubapp.com"
 export const APP_LOGO_URL = "/brand_logo.png"
+/** Full absolute URL for use inside email templates (must be publicly hosted). */
+export const APP_LOGO_EMAIL_URL = `${APP_BASE_URL}/brand_logo.png`
 export const CURRENT_TERMS_VERSION = "2026-05-27"
 export const SUPPORT_EMAIL = "contact@bitehubapp.com"
 export const CONTACT_EMAIL = "contact@bitehubapp.com"

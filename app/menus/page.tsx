@@ -7,7 +7,7 @@ import { MenuGrid } from "@/components/menus/MenuGrid"
 import { SearchInput } from "@/components/shared/SearchInput"
 import { LoadMoreMenus } from "@/components/menus/LoadMoreMenus"
 import { FadeIn } from "@/components/FadeIn"
-import { SlidersHorizontal, ArrowUpDown } from "lucide-react"
+import { ArrowUpDown } from "lucide-react"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { Suspense } from "react"
@@ -42,6 +42,9 @@ export const metadata: Metadata = {
   },
 }
 
+// ── Page-size constant — must match on server AND client ────────────────────
+const PAGE_LIMIT = 20
+
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function MenuListContent({
   q,
@@ -67,7 +70,7 @@ async function MenuListContent({
     campus,
     sortBy: sortBy !== "none" ? sortBy : undefined,
     availableOnly: availableOnly ? true : undefined,
-    limit: 20,
+    limit: PAGE_LIMIT,
     vendorId: vendorId || undefined,
   })
 
@@ -77,9 +80,10 @@ async function MenuListContent({
         {totalItems} items available
       </p>
       <MenuGrid initialItems={items} activeCategory={category} />
-      {items.length === 20 && (
+      {items.length === PAGE_LIMIT && (
         <LoadMoreMenus
           initialPage={1}
+          limit={PAGE_LIMIT}
           searchParams={{
             q: q || undefined,
             category: category !== "all" ? category : undefined,

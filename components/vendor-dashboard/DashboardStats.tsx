@@ -67,7 +67,7 @@ export function DashboardStats(props: DashboardStatsProps) {
               {props.pending}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Ready to prep</p>
-            <p className="text-warning dark:text-warning mt-2 text-xs">
+            <p className="mt-2 text-xs text-warning dark:text-warning">
               Unpaid orders auto-cancel after 30 mins
             </p>
           </div>
@@ -94,7 +94,7 @@ export function DashboardStats(props: DashboardStatsProps) {
         {/* Completed */}
         <div className="col-span-2 flex transform-gpu flex-col justify-between rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md md:col-span-1">
           <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
               <CheckCircle2 className="size-5" />
             </div>
           </div>
@@ -115,7 +115,7 @@ export function DashboardStats(props: DashboardStatsProps) {
       {/* Financial Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         <div className="flex items-center gap-5 rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-emerald-500/10 text-emerald-500">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-success/10 text-success">
             <Banknote className="size-8" />
           </div>
           <div>
@@ -125,14 +125,14 @@ export function DashboardStats(props: DashboardStatsProps) {
             <p className="mt-1 font-heading text-3xl font-bold text-foreground">
               {formatPriceExact(props.monnifyDisbursed || 0)}
             </p>
-            <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <p className="mt-1 text-xs font-medium text-success">
               Successfully deposited
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-5 rounded-[2rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="bg-warning/10 text-warning flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem]">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-warning/10 text-warning">
             <Wallet className="size-8" />
           </div>
           <div>
@@ -142,7 +142,7 @@ export function DashboardStats(props: DashboardStatsProps) {
             <p className="mt-1 font-heading text-3xl font-bold text-foreground">
               {formatPriceExact(props.monnifyPending || 0)}
             </p>
-            <p className="text-warning dark:text-warning mt-1 text-xs font-medium">
+            <p className="mt-1 text-xs font-medium text-warning dark:text-warning">
               Arriving 10pm today
             </p>
           </div>

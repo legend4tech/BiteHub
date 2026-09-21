@@ -1,17 +1,7 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components"
+import { Button, Section, Text } from "@react-email/components"
 import * as React from "react"
-import { EMAIL_THEME } from "../lib/email-theme"
+import { EMAIL_THEME } from "@/lib/email-theme"
+import { EmailLayout } from "./EmailLayout"
 
 interface VendorLowStockAlertEmailProps {
   vendorName: string
@@ -27,78 +17,53 @@ export const VendorLowStockAlertEmail = ({
   dashboardUrl = "https://bitehubapp.com/vendor/dashboard",
 }: VendorLowStockAlertEmailProps) => {
   return (
-    <Html>
-      <Head />
-      <Preview>Low Stock Alert: {itemName} is running out!</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={heading}>Low Stock Alert</Heading>
-          <Text style={text}>Hello {vendorName},</Text>
-          <Text style={text}>
-            This is an automated alert to let you know that{" "}
-            <strong>{itemName}</strong> is running low. You only have{" "}
-            <strong>{remainingQuantity}</strong> portions left in stock.
-          </Text>
-          <Section style={alertSection}>
-            <Text style={alertText}>
-              <strong>Item:</strong> {itemName}
-              <br />
-              <strong>Remaining Stock:</strong> {remainingQuantity}
-            </Text>
-          </Section>
-          <Text style={text}>
-            If you have cooked a fresh batch, please log into your vendor
-            dashboard and update the quantity so you don&apos;t miss out on
-            sales!
-          </Text>
-          <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
-              Update Menu Stock
-            </Button>
-          </Section>
-          <Hr style={hr} />
-          <Text style={footer}>BiteHub • Your Campus Food Companion</Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      preview={`Low Stock Alert: ${itemName} is running out!`}
+      subheader="Stock Alert"
+    >
+      <Text style={text}>Hello {vendorName},</Text>
+      <Text style={text}>
+        This is an automated alert to let you know that{" "}
+        <strong>{itemName}</strong> is running low. You only have{" "}
+        <strong>{remainingQuantity}</strong> portions left in stock.
+      </Text>
+
+      <Section style={alertSection}>
+        <Text style={alertText}>
+          <strong>Item:</strong> {itemName}
+          <br />
+          <strong>Remaining Stock:</strong> {remainingQuantity}
+        </Text>
+      </Section>
+
+      <Text style={text}>
+        If you have cooked a fresh batch, please log into your vendor dashboard
+        and update the quantity so you don&apos;t miss out on sales!
+      </Text>
+
+      <Section style={buttonContainer}>
+        <Button style={button} href={dashboardUrl}>
+          Update Menu Stock
+        </Button>
+      </Section>
+    </EmailLayout>
   )
 }
 
-const main = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  fontFamily: EMAIL_THEME.fonts.sans,
-}
-
-const container = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  borderRadius: "12px",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-}
-
-const heading = {
-  fontSize: "24px",
-  fontWeight: "600",
-  textAlign: "center" as const,
-  padding: "0 48px",
-  color: EMAIL_THEME.colors.foreground,
-}
+export default VendorLowStockAlertEmail
 
 const text = {
   color: EMAIL_THEME.colors.textMuted,
   fontSize: "16px",
   lineHeight: "24px",
   textAlign: "left" as const,
-  padding: "0 48px",
 }
 
 const alertSection = {
   padding: "24px",
   backgroundColor: EMAIL_THEME.colors.warningBackground,
   borderRadius: "8px",
-  margin: "24px 48px",
+  margin: "24px 0",
   borderLeft: `4px solid ${EMAIL_THEME.colors.warning}`,
 }
 
@@ -126,16 +91,3 @@ const button = {
   display: "inline-block",
   padding: "14px 28px",
 }
-
-const hr = {
-  borderColor: EMAIL_THEME.colors.border,
-  margin: "20px 0",
-}
-
-const footer = {
-  color: EMAIL_THEME.colors.textLight,
-  fontSize: "12px",
-  textAlign: "center" as const,
-}
-
-export default VendorLowStockAlertEmail

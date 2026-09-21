@@ -1,18 +1,7 @@
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Hr,
-  Heading,
-  Img,
-  Button,
-} from "@react-email/components"
+import { Button, Section, Text, Heading, Hr } from "@react-email/components"
 import * as React from "react"
 import { EMAIL_THEME } from "@/lib/email-theme"
+import { EmailLayout } from "./EmailLayout"
 
 interface OrderItem {
   name: string
@@ -56,9 +45,7 @@ export const VendorNewOrderEmail = ({
   deliveryLocation,
   items = [],
   deliveryFee = 0,
-  serviceFee = 0,
   platformCommission = 0,
-  totalAmount,
   vendorRevenue,
   notes,
   dashboardUrl,
@@ -66,181 +53,101 @@ export const VendorNewOrderEmail = ({
   const itemsSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
 
   return (
-    <Html>
-      <Head />
-      <Preview>
-        New order {orderId} from {customerName} — {fmt(vendorRevenue)} earnings
-      </Preview>
-      <Body style={main}>
-        <Container style={container}>
-          {/* Header */}
-          <Section style={headerSection}>
-            <Img
-              src="https://bitehubapp.com/brand_logo.png"
-              alt="BiteHub"
-              width="48"
-              height="48"
-              style={logoImg}
-            />
-            <Heading style={logoText}>
-              Bite<span style={logoHighlight}>Hub</span>
-            </Heading>
-            <Text style={subHeader}>New Order Alert</Text>
-          </Section>
+    <EmailLayout
+      preview={`New order ${orderId} from ${customerName} — ${fmt(vendorRevenue)} earnings`}
+      subheader="New Order Alert"
+    >
+      <Heading style={heading}>You have a new order!</Heading>
+      <Text style={text}>
+        Hi <strong>{vendorName}</strong>, a new order has just been placed and
+        paid for on BiteHub. Here are the details:
+      </Text>
 
-          <Hr style={divider} />
+      {/* Order ID pill */}
+      <Section style={orderIdSection}>
+        <Text style={orderIdLabel}>Order ID</Text>
+        <Text style={orderIdValue}>{orderId}</Text>
+      </Section>
 
-          <Section style={contentSection}>
-            <Heading style={heading}>You have a new order!</Heading>
-            <Text style={text}>
-              Hi <strong>{vendorName}</strong>, a new order has just been placed
-              and paid for on BiteHub. Here are the details:
+      {/* Customer info */}
+      <Section style={detailsSection}>
+        <Text style={sectionTitle}>Customer Details</Text>
+        <div style={infoRow}>
+          <Text style={infoLabel}>Name</Text>
+          <Text style={infoValue}>{customerName}</Text>
+        </div>
+        <div style={infoRow}>
+          <Text style={infoLabel}>Phone</Text>
+          <Text style={infoValue}>{customerPhone}</Text>
+        </div>
+        <div style={infoRow}>
+          <Text style={infoLabel}>Deliver to</Text>
+          <Text style={infoValue}>{deliveryLocation}</Text>
+        </div>
+      </Section>
+
+      {/* Items */}
+      <Section style={detailsSection}>
+        <Text style={sectionTitle}>Order Items</Text>
+        {items.map((item, index) => (
+          <div key={index} style={itemRow}>
+            <Text style={itemText}>
+              <span style={itemQty}>{item.quantity}x</span> {item.name}
             </Text>
+            <Text style={itemPrice}>{fmt(item.price * item.quantity)}</Text>
+          </div>
+        ))}
 
-            {/* Order ID pill */}
-            <Section style={orderIdSection}>
-              <Text style={orderIdLabel}>Order ID</Text>
-              <Text style={orderIdValue}>{orderId}</Text>
-            </Section>
+        <Hr style={summaryDivider} />
 
-            {/* Customer info */}
-            <Section style={detailsSection}>
-              <Text style={sectionTitle}>Customer Details</Text>
-              <div style={infoRow}>
-                <Text style={infoLabel}>Name</Text>
-                <Text style={infoValue}>{customerName}</Text>
-              </div>
-              <div style={infoRow}>
-                <Text style={infoLabel}>Phone</Text>
-                <Text style={infoValue}>{customerPhone}</Text>
-              </div>
-              <div style={infoRow}>
-                <Text style={infoLabel}>Deliver to</Text>
-                <Text style={infoValue}>{deliveryLocation}</Text>
-              </div>
-            </Section>
+        <div style={summaryRow}>
+          <Text style={summaryLabel}>Items subtotal</Text>
+          <Text style={summaryValue}>{fmt(itemsSubtotal)}</Text>
+        </div>
+        {deliveryFee > 0 && (
+          <div style={summaryRow}>
+            <Text style={summaryLabel}>Delivery Fee</Text>
+            <Text style={summaryValue}>{fmt(deliveryFee)}</Text>
+          </div>
+        )}
+        {platformCommission > 0 && (
+          <div style={summaryRow}>
+            <Text style={summaryLabel}>Platform Commission</Text>
+            <Text style={summaryValue}>{fmt(platformCommission)}</Text>
+          </div>
+        )}
 
-            {/* Items */}
-            <Section style={detailsSection}>
-              <Text style={sectionTitle}>Order Items</Text>
-              {items.map((item, index) => (
-                <div key={index} style={itemRow}>
-                  <Text style={itemText}>
-                    <span style={itemQty}>{item.quantity}x</span> {item.name}
-                  </Text>
-                  <Text style={itemPrice}>
-                    {fmt(item.price * item.quantity)}
-                  </Text>
-                </div>
-              ))}
+        {/* Earnings highlight */}
+        <div style={earningsRow}>
+          <Text style={earningsLabel}>Your earnings</Text>
+          <Text style={earningsValue}>{fmt(vendorRevenue)}</Text>
+        </div>
+      </Section>
 
-              <Hr style={summaryDivider} />
+      {/* Notes */}
+      {notes && (
+        <Section style={notesSection}>
+          <Text style={sectionTitle}>Customer Note</Text>
+          <Text style={notesText}>{notes}</Text>
+        </Section>
+      )}
 
-              <div style={summaryRow}>
-                <Text style={summaryLabel}>Items subtotal</Text>
-                <Text style={summaryValue}>{fmt(itemsSubtotal)}</Text>
-              </div>
-              {deliveryFee > 0 && (
-                <div style={summaryRow}>
-                  <Text style={summaryLabel}>Delivery Fee</Text>
-                  <Text style={summaryValue}>{fmt(deliveryFee)}</Text>
-                </div>
-              )}
-              {platformCommission > 0 && (
-                <div style={summaryRow}>
-                  <Text style={summaryLabel}>Platform Commission</Text>
-                  <Text style={summaryValue}>{fmt(platformCommission)}</Text>
-                </div>
-              )}
+      <Section style={buttonContainer}>
+        <Button href={dashboardUrl} style={button}>
+          View Order on Dashboard
+        </Button>
+      </Section>
 
-              {/* Earnings highlight */}
-              <div style={earningsRow}>
-                <Text style={earningsLabel}>Your earnings</Text>
-                <Text style={earningsValue}>{fmt(vendorRevenue)}</Text>
-              </div>
-            </Section>
-
-            {/* Notes */}
-            {notes && (
-              <Section style={notesSection}>
-                <Text style={sectionTitle}>Customer Note</Text>
-                <Text style={notesText}>{notes}</Text>
-              </Section>
-            )}
-
-            <Section style={buttonContainer}>
-              <Button href={dashboardUrl} style={button}>
-                View Order on Dashboard
-              </Button>
-            </Section>
-
-            <Text style={text}>
-              Please prepare this order promptly and update its status on your
-              dashboard as it progresses.
-            </Text>
-          </Section>
-
-          <Hr style={divider} />
-
-          <Section style={footerSection}>
-            <Text style={footerText}>
-              BiteHub — Order Campus Food, Fast &amp; Easy
-            </Text>
-            <Text style={footerText}>
-              This is an automated message. Do not reply to this email.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Text style={text}>
+        Please prepare this order promptly and update its status on your
+        dashboard as it progresses.
+      </Text>
+    </EmailLayout>
   )
 }
 
 export default VendorNewOrderEmail
 
-// ─── Styles ─────────────────────────────────────────────────────────────
-
-const main = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-}
-const container = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  margin: "40px auto",
-  padding: "0",
-  borderRadius: "16px",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-  maxWidth: "600px",
-  overflow: "hidden",
-}
-const headerSection = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  padding: "32px 40px",
-  textAlign: "center" as const,
-}
-const logoImg = { margin: "0 auto", display: "block" }
-const logoText = {
-  fontSize: "24px",
-  fontWeight: "800",
-  letterSpacing: "-0.5px",
-  margin: "12px 0 4px",
-  color: EMAIL_THEME.colors.foreground,
-}
-const logoHighlight = { color: EMAIL_THEME.colors.primary }
-const subHeader = {
-  fontSize: "14px",
-  fontWeight: "600",
-  color: EMAIL_THEME.colors.primary,
-  margin: "0",
-  textTransform: "uppercase" as const,
-  letterSpacing: "1px",
-}
-const divider = {
-  borderTop: `1px solid ${EMAIL_THEME.colors.border}`,
-  margin: "0",
-}
-const contentSection = { padding: "40px" }
 const heading = {
   fontSize: "24px",
   fontWeight: "700",
@@ -386,14 +293,4 @@ const button = {
   textAlign: "center" as const,
   display: "inline-block",
   padding: "14px 28px",
-}
-const footerSection = {
-  backgroundColor: EMAIL_THEME.colors.primaryLight,
-  padding: "28px 40px",
-  textAlign: "center" as const,
-}
-const footerText = {
-  fontSize: "13px",
-  color: EMAIL_THEME.colors.textMuted,
-  margin: "0 0 6px",
 }

@@ -1,18 +1,7 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Hr,
-  Heading,
-  Img,
-} from "@react-email/components"
+import { Button, Section, Text, Heading } from "@react-email/components"
 import * as React from "react"
 import { EMAIL_THEME } from "@/lib/email-theme"
+import { EmailLayout } from "./EmailLayout"
 
 interface VendorWelcomeEmailProps {
   vendorName: string
@@ -28,145 +17,51 @@ export const VendorWelcomeEmail = ({
   dashboardUrl,
 }: VendorWelcomeEmailProps) => {
   return (
-    <Html>
-      <Head />
-      <Preview>Welcome to BiteHub! Here are your login details.</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          {/* Logo / Header */}
-          <Section style={headerSection}>
-            <Img
-              src="https://bitehubapp.com/brand_logo.png"
-              alt="BiteHub"
-              width="48"
-              height="48"
-              style={logoImg}
-            />
-            <Heading style={logoText}>
-              Bite<span style={logoHighlight}>Hub</span>
-            </Heading>
-            <Text style={subHeader}>Vendor Account Created</Text>
-          </Section>
+    <EmailLayout
+      preview="Welcome to BiteHub! Here are your login details."
+      subheader="Vendor Account Created"
+    >
+      <Heading style={heading}>Welcome aboard, {vendorName}! 🎉</Heading>
+      <Text style={text}>
+        Your BiteHub vendor account has been successfully created by an
+        administrator. You can now log in to manage your store, upload your
+        menu, and start receiving orders.
+      </Text>
 
-          <Hr style={divider} />
+      <Section style={credentialsBox}>
+        <Text style={credentialsHeading}>Your Login Credentials</Text>
+        <Text style={credentialItem}>
+          <strong>Email:</strong> {email}
+        </Text>
+        <Text style={credentialItem}>
+          <strong>Temporary Password:</strong> {passwordPlain}
+        </Text>
+      </Section>
 
-          {/* Content */}
-          <Section style={contentSection}>
-            <Heading style={heading}>Welcome aboard, {vendorName}! 🎉</Heading>
-            <Text style={text}>
-              Your BiteHub vendor account has been successfully created by an
-              administrator. You can now log in to manage your store, upload
-              your menu, and start receiving orders.
-            </Text>
+      <Text style={warningText}>
+        <strong>⚠️ Important Next Steps:</strong>
+        <br />
+        <br />
+        1. <strong>Change your password:</strong> Please log in and change your
+        temporary password immediately from your Profile Settings.
+        <br />
+        <br />
+        2. <strong>Set up your menu:</strong> Navigate to the Menu section to
+        add your items, prices, and categories so customers can start ordering.
+        <br />
+        <br />
+        3. <strong>Bank Details:</strong> Don&apos;t forget to set up your
+        payout bank details in settings so you can receive your funds!
+      </Text>
 
-            <Section style={credentialsBox}>
-              <Text style={credentialsHeading}>Your Login Credentials</Text>
-              <Text style={credentialItem}>
-                <strong>Email:</strong> {email}
-              </Text>
-              <Text style={credentialItem}>
-                <strong>Temporary Password:</strong> {passwordPlain}
-              </Text>
-            </Section>
-
-            <Text style={warningText}>
-              <strong>⚠️ Important Next Steps:</strong>
-              <br />
-              <br />
-              1. <strong>Change your password:</strong> Please log in and change
-              your temporary password immediately from your Profile Settings.
-              <br />
-              <br />
-              2. <strong>Set up your menu:</strong> Navigate to the Menu section
-              to add your items, prices, and categories so customers can start
-              ordering.
-              <br />
-              <br />
-              3. <strong>Bank Details:</strong> Don&apos;t forget to set up your
-              payout bank details in settings so you can receive your funds!
-            </Text>
-
-            <Button href={dashboardUrl} style={button}>
-              Log In to Vendor Dashboard
-            </Button>
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Footer */}
-          <Section style={footerSection}>
-            <Text style={footerText}>BiteHub Vendor Success Team</Text>
-            <Text style={footerText}>
-              Need help? Reply to this email or contact our support team.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Button href={dashboardUrl} style={button}>
+        Log In to Vendor Dashboard
+      </Button>
+    </EmailLayout>
   )
 }
 
 export default VendorWelcomeEmail
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const main = {
-  backgroundColor: EMAIL_THEME.colors.background,
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-}
-
-const container = {
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  maxWidth: "580px",
-  backgroundColor: EMAIL_THEME.colors.background,
-  border: `1px solid ${EMAIL_THEME.colors.border}`,
-  borderRadius: "16px",
-  marginTop: "40px",
-  overflow: "hidden",
-}
-
-const headerSection = {
-  padding: "32px 40px 10px 40px",
-  textAlign: "center" as const,
-}
-
-const logoImg = {
-  borderRadius: "12px",
-  margin: "0 auto 12px auto",
-  display: "block",
-}
-
-const logoText = {
-  margin: "0",
-  fontSize: "28px",
-  fontWeight: "900",
-  letterSpacing: "-0.05em",
-  color: EMAIL_THEME.colors.foreground,
-}
-
-const logoHighlight = {
-  color: EMAIL_THEME.colors.primary,
-}
-
-const subHeader = {
-  margin: "4px 0 0 0",
-  fontSize: "13px",
-  fontWeight: "600",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.08em",
-  color: EMAIL_THEME.colors.textMuted,
-}
-
-const divider = {
-  borderColor: EMAIL_THEME.colors.border,
-  margin: "20px 0",
-}
-
-const contentSection = {
-  padding: "0 40px",
-}
 
 const heading = {
   fontSize: "20px",
@@ -225,16 +120,4 @@ const button = {
   margin: "16px 0",
   textAlign: "center" as const,
   width: "100%",
-}
-
-const footerSection = {
-  padding: "0 40px",
-  textAlign: "center" as const,
-}
-
-const footerText = {
-  fontSize: "12px",
-  lineHeight: "18px",
-  color: EMAIL_THEME.colors.textMuted,
-  margin: "0 0 6px 0",
 }

@@ -32,6 +32,8 @@ import {
   CustomerWalletSkeleton,
   CustomerRewardsSkeleton,
   CustomerSettingsSkeleton,
+  CustomerReviewsSkeleton,
+  CustomerReviewNewSkeleton,
 } from "./skeletons/CustomerDashboardSkeletons"
 
 // ─── PageSkeleton ─────────────────────────────────────────────────────────────
@@ -69,6 +71,8 @@ type SkeletonVariant =
   | "customer-wallet"
   | "customer-rewards"
   | "customer-settings"
+  | "customer-reviews"
+  | "customer-review-new"
 
 interface PageSkeletonProps {
   variant: SkeletonVariant
@@ -87,6 +91,10 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <CustomerRewardsSkeleton />
     case "customer-settings":
       return <CustomerSettingsSkeleton />
+    case "customer-reviews":
+      return <CustomerReviewsSkeleton />
+    case "customer-review-new":
+      return <CustomerReviewNewSkeleton />
     case "menu-item-grid":
       return <MenuItemGridSkeleton count={count} />
     case "vendor-list":

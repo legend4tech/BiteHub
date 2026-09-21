@@ -25,7 +25,12 @@ export interface OrderRecord {
   paymentStatus?: string
   location: string
   createdAt: string | Date
-  items: Array<{ name: string; quantity: number; price: number }>
+  items: Array<{
+    name: string
+    quantity: number
+    price: number
+    image?: string
+  }>
 }
 
 export interface Transaction {
@@ -59,4 +64,37 @@ export interface CustomerProfile {
   preferredExactLocation?: string
   image?: string
   imagePublicId?: string
+}
+
+export interface CustomerReviewOrder {
+  id: string
+  orderId: string
+  vendorId: string
+  vendorName: string
+  vendor: {
+    id: string
+    name: string
+    image?: { url: string }
+    slug: string
+  } | null
+  items: {
+    menuItemId: string
+    name: string
+    price: number
+    quantity: number
+    image?: string
+  }[]
+  totalAmount: number
+  createdAt: string
+  status: string
+  isRated: boolean
+}
+
+export interface CustomerReviewRecord {
+  id: string
+  vendor: { id: string; name: string; image?: { url: string }; slug: string }
+  rating: number
+  comments: string | null
+  updatedAt: string
+  orderId: string
 }

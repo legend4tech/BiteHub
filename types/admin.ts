@@ -162,3 +162,40 @@ export interface AdminVendor {
   monnifyBankCode?: string
   monnifyAccountNumber?: string
 }
+
+export interface AnalyticsKPIs {
+  totalOrders: number
+  totalGMV: number
+  totalProfit: number
+}
+
+export interface AnalyticsPrevAgg {
+  kpis: AnalyticsKPIs[]
+}
+
+export interface AnalyticsTimeSeriesItem {
+  _id: string
+  orders: number
+  gmv: number
+  profit: number
+  firstDate: string | Date
+}
+
+export interface AnalyticsDowItem {
+  _id: number
+  orders: number
+  gmv: number
+}
+
+export interface AnalyticsTopVendorItem {
+  _id: string
+  vendorName: string
+  gmv: number
+  vendorRevenue: number
+  ordersCount: number
+}
+
+export interface AnalyticsTopZoneItem {
+  _id: string
+  orders: number
+}

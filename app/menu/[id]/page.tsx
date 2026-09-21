@@ -8,6 +8,7 @@ import {
   Tag,
   ExternalLink,
   UtensilsCrossed,
+  Star,
 } from "lucide-react"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
@@ -15,11 +16,13 @@ import { getMenuItemById } from "@/lib/services/menuService"
 import { formatPrice } from "@/lib/format"
 import { formatPrepTime } from "@/lib/format"
 import { SingleItemCartControls } from "@/components/menus/SingleItemCartControls"
-import { MenuItemCard } from "@/components/menus/MenuItemCard"
+
 import { FadeIn } from "@/components/FadeIn"
 import { ClientCartWrapper } from "./ClientCartWrapper"
 import { RelatedItemsGrid } from "./RelatedItemsGrid"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
+import { getMenuItemReviews } from "@/lib/services/feedbackService"
+import { MenuItemReviews } from "@/components/menus/MenuItemReviews"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -63,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: [imageUrl],
       },
     }
-  } catch (error) {
+  } catch {
     return { title: "Item Not Found" }
   }
 }
@@ -71,14 +74,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SingleMenuPage({ params }: Props) {
   const { id } = await params
   let data
-
+  let reviews: Awaited<ReturnType<typeof getMenuItemReviews>> = []
   try {
     data = await getMenuItemById(id)
-  } catch (error) {
+  } catch {
     notFound()
   }
 
   if (!data) notFound()
+
+  try {
+    reviews = await getMenuItemReviews(id)
+  } catch {
+    console.error("Failed to load reviews")
+    reviews = []
+  }
 
   const { mainItem, relatedItems, vendor } = data
 
@@ -180,6 +190,17 @@ export default async function SingleMenuPage({ params }: Props) {
                       <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                         {mainItem.name}
                       </h1>
+                      {(mainItem.rating ?? 0) > 0 && (
+                        <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                          <Star className="size-4 fill-warning text-warning" />
+                          <span className="text-base text-foreground">
+                            {mainItem.rating?.toFixed(1)}
+                          </span>
+                          <span className="font-normal">
+                            ({mainItem.ratingCount} reviews)
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <ShareButton
                       urlPath={`/menu/${mainItem.id}`}
@@ -243,6 +264,9 @@ export default async function SingleMenuPage({ params }: Props) {
               </div>
             </div>
           </FadeIn>
+
+          {/* Reviews section */}
+          <MenuItemReviews reviews={reviews || []} />
 
           {/* More from this vendor */}
           {relatedItems.length > 0 && (

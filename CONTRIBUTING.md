@@ -268,13 +268,14 @@ export async function GET(req: Request) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // 2. Parse + validate query params or body via Zod
-    // 3. Connect to DB only AFTER auth and validation succeed
+    // 2. Rate Limiting — Do this SECOND (by session.user.id if auth'd, else IP)
+    // 3. Parse + validate query params or body via Zod
+    // 4. Connect to DB only AFTER auth, rate limiting, and validation succeed
     await dbConnect();
 
-    // 4. Call service or model
-    // 5. Serialize result
-    // 6. Return response
+    // 5. Call service or model
+    // 6. Serialize result
+    // 7. Return response
 
     return NextResponse.json(data);
   } catch (error) {
@@ -697,7 +698,10 @@ export function normaliseNigerianPhone(raw: string): string { ... }
 
 - **Never trust client-sent prices or totals.** Always recalculate server-side from DB records.
 - **Never expose vendor WhatsApp numbers** from client state to an API body — source from DB server-side.
-- **Rate-limit sensitive endpoints** (auth, OTP, contact) using `lib/rate-limit.ts`.
+- **Rate-limit sensitive endpoints** (auth, OTP, contact, user actions) using `lib/rate-limit.ts`. 
+  - For **authenticated routes**, always rate limit by **User ID** (`session.user.id`) to prevent cross-user limiting on shared campus IPs.
+  - For **unauthenticated routes**, rate limit by **IP address**.
+  - Rate limiting must execute **BEFORE** `await dbConnect()` to protect the database from connection exhaustion during an attack.
 - **Protect vendor/admin routes** — verify the session and ownership before any mutation.
 - **Never log sensitive data** — no passwords, tokens, or full phone numbers in `console.log`.
 - **Always validate server-side** via Zod even when client-side validation exists.

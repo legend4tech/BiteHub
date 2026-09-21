@@ -1,4 +1,10 @@
-import crypto from "crypto"
+/**
+ * checkoutService.ts
+ *
+ * Handles core checkout operations, calculating totals, verifying stock,
+ * and creating orders.
+ */
+
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import Customer from "@/models/Customer"

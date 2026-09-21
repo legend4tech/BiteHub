@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, ArrowLeft, Wallet } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
+
 import { useCart } from "@/hooks/useCart"
 import { orderFormInputSchema, type OrderFormInputValues } from "@/lib/schemas"
 import { normaliseNigerianPhone } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller, type Resolver } from "react-hook-form"
 import { toast } from "sonner"
-import { formatPriceExact } from "@/lib/format"
+
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { PLATFORM_FLAT_FEE } from "@/lib/constants"
 import apiClient from "@/lib/axios"
@@ -21,7 +21,7 @@ import { useCreateOrder } from "@/hooks/shared/usePublicMutations"
 import { CustomerDetailsFields } from "@/components/cart/CustomerDetailsFields"
 import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 import { useCustomerWallet } from "@/hooks/customer/useCustomerWallet"
-import type { CustomerProfile } from "@/types/customer"
+
 import { useVendorFee } from "@/hooks/vendor/useVendorFee"
 import { useVendorDeliveryZones } from "@/hooks/vendor/useVendorDeliveryZones"
 import Link from "next/link"
@@ -99,7 +99,7 @@ export function CheckoutForm() {
         try {
           const parsed = JSON.parse(saved)
           form.reset({ ...form.getValues(), ...parsed, notes: "" })
-        } catch (e) {}
+        } catch {}
       }
     }
   }, [profileData, isProfileLoading, form])
@@ -225,6 +225,10 @@ export function CheckoutForm() {
           name: ci.menuItem.name,
           price: ci.menuItem.price,
           quantity: ci.quantity,
+          image:
+            typeof ci.menuItem.image === "string"
+              ? ci.menuItem.image
+              : ci.menuItem.image?.url || "",
         })),
         customerName: values.name,
         customerEmail: values.email,
