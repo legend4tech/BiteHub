@@ -11,7 +11,7 @@ import VendorFeedback from "@/models/VendorFeedback"
 import MenuItemFeedback, { IMenuItemFeedback } from "@/models/MenuItemFeedback"
 import Vendor from "@/models/Vendor"
 import MenuItem from "@/models/MenuItem"
-import Order from "@/models/Order"
+import Order, { IOrderItem } from "@/models/Order"
 import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import { ORDER_STATUS } from "@/lib/constants"
 import { serializeOrder, serializeVendorFeedback } from "@/lib/serializers"
@@ -42,51 +42,68 @@ export async function submitCustomerFeedback(
   }
 
   if (order.isRated) {
-    return { error: "This order has already been reviewed.", status: 409 }
+    return { error: "This order has already been fully reviewed.", status: 409 }
   }
 
-  // Upsert Vendor Feedback (Overwrite Rule)
-  const existingVendorFeedback = await VendorFeedback.findOne({
-    vendorId: customerReview.vendorId,
-    customerId,
-  })
+  const validItemReviews = (customerReview.itemReviews || []).filter(
+    (ir) => ir.rating && ir.rating > 0
+  )
+  const validVendorRating =
+    customerReview.vendorRating && customerReview.vendorRating > 0
 
-  if (existingVendorFeedback) {
-    existingVendorFeedback.rating = customerReview.vendorRating
-    existingVendorFeedback.orderId = customerReview.orderId
-    existingVendorFeedback.isAnonymous = customerReview.isAnonymous || false
-    await existingVendorFeedback.save()
-  } else {
-    await VendorFeedback.create({
+  if (!validVendorRating && validItemReviews.length === 0) {
+    return {
+      error: "Please rate at least one item or the vendor.",
+      status: 400,
+    }
+  }
+
+  // Upsert Vendor Feedback (if provided)
+  if (validVendorRating) {
+    const existingVendorFeedback = await VendorFeedback.findOne({
       vendorId: customerReview.vendorId,
       customerId,
-      orderId: customerReview.orderId,
-      rating: customerReview.vendorRating,
-      isAnonymous: customerReview.isAnonymous || false,
     })
-  }
 
-  // Recalculate Vendor Aggregate Rating
-  const allVendorFeedback = await VendorFeedback.find({
-    vendorId: customerReview.vendorId,
-  })
-    .select("rating")
-    .lean()
-  if (allVendorFeedback.length > 0) {
-    const totalRating = allVendorFeedback.reduce(
-      (sum: number, f: { rating: number }) => sum + f.rating,
-      0
-    )
-    const avgRating = totalRating / allVendorFeedback.length
-    await Vendor.findByIdAndUpdate(customerReview.vendorId, {
-      $set: { rating: avgRating, ratingCount: allVendorFeedback.length },
+    if (existingVendorFeedback) {
+      existingVendorFeedback.rating = customerReview.vendorRating
+      existingVendorFeedback.orderId = customerReview.orderId
+      existingVendorFeedback.isAnonymous = customerReview.isAnonymous || false
+      await existingVendorFeedback.save()
+    } else {
+      await VendorFeedback.create({
+        vendorId: customerReview.vendorId,
+        customerId,
+        orderId: customerReview.orderId,
+        rating: customerReview.vendorRating,
+        isAnonymous: customerReview.isAnonymous || false,
+      })
+    }
+
+    // Recalculate Vendor Aggregate Rating
+    const allVendorFeedback = await VendorFeedback.find({
+      vendorId: customerReview.vendorId,
     })
-    await syncVendorMenuScores(customerReview.vendorId)
+      .select("rating")
+      .lean()
+    if (allVendorFeedback.length > 0) {
+      const totalRating = allVendorFeedback.reduce(
+        (sum: number, f: { rating: number }) => sum + f.rating,
+        0
+      )
+      const avgRating = totalRating / allVendorFeedback.length
+      await Vendor.findByIdAndUpdate(customerReview.vendorId, {
+        $set: { rating: avgRating, ratingCount: allVendorFeedback.length },
+      })
+      await syncVendorMenuScores(customerReview.vendorId)
+    }
+
+    order.isVendorRated = true
   }
 
   // Upsert MenuItem Feedback for each reviewed item
-  if (customerReview.itemReviews && customerReview.itemReviews.length > 0) {
-    for (const itemReview of customerReview.itemReviews) {
+  if (validItemReviews.length > 0) {
+    for (const itemReview of validItemReviews) {
       const existingItemFeedback = await MenuItemFeedback.findOne({
         menuItemId: itemReview.menuItemId,
         customerId,
@@ -128,44 +145,108 @@ export async function submitCustomerFeedback(
           $set: { rating: avgItemRating, ratingCount: allItemFeedback.length },
         })
       }
+
+      if (!order.ratedItems) {
+        order.ratedItems = []
+      }
+      if (!order.ratedItems.includes(itemReview.menuItemId)) {
+        order.ratedItems.push(itemReview.menuItemId)
+      }
     }
-  } else {
-    // Fallback if no item reviews are provided (shouldn't happen with updated schema)
-    // We could leave it empty or do nothing.
   }
 
-  // Lock the order
-  await Order.findByIdAndUpdate(order._id, { $set: { isRated: true } })
+  // Check if order is fully rated
+  const allItemsRated = order.items.every((item: IOrderItem) =>
+    order.ratedItems?.includes(item.menuItemId)
+  )
 
-  // Send email to vendor
-  const vendor = await Vendor.findById(customerReview.vendorId)
-    .select("name")
-    .lean()
-  if (vendor) {
-    let emailItemReviews = undefined
-    if (customerReview.itemReviews && customerReview.itemReviews.length > 0) {
-      const itemIds = customerReview.itemReviews.map((ir) => ir.menuItemId)
-      const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
-        .select("name")
-        .lean()
-      const itemMap = new Map(
-        menuItems.map((item) => [item._id.toString(), item.name])
-      )
+  if (order.isVendorRated && allItemsRated) {
+    order.isRated = true
+  }
 
-      emailItemReviews = customerReview.itemReviews.map((ir) => ({
-        itemName: itemMap.get(ir.menuItemId) || "Unknown Item",
-        rating: ir.rating,
-        title: ir.title,
-        comments: ir.comments,
-      }))
+  // Use updateOne with strict: false to bypass any hot-reload cached schema issues
+  // that would silently strip out newly added fields (like isVendorRated).
+  await Order.updateOne(
+    { _id: order._id },
+    {
+      $set: {
+        isVendorRated: order.isVendorRated,
+        isRated: order.isRated,
+        ratedItems: order.ratedItems,
+      },
+    },
+    { strict: false }
+  )
+  // ─── Email 1: Vendor just rated ──────────────────────────────────────────
+  // Fires immediately when the customer submits their vendor rating.
+  if (validVendorRating && order.isVendorRated) {
+    const vendor = await Vendor.findById(customerReview.vendorId)
+      .select("name")
+      .lean()
+    if (vendor) {
+      sendVendorNewReviewEmail(
+        customerReview.vendorId,
+        vendor.name,
+        customerReview.vendorRating,
+        undefined // No item reviews yet at this point
+      ).catch((err) => console.error("Error sending vendor rating email:", err))
     }
+  }
 
-    sendVendorNewReviewEmail(
-      customerReview.vendorId,
-      vendor.name,
-      customerReview.vendorRating,
-      emailItemReviews
-    ).catch((err) => console.error("Error sending vendor review email:", err))
+  // ─── Email 2: All items rated ─────────────────────────────────────────────
+  // Fires only when the customer has finished rating every item in the order.
+  if (allItemsRated && validItemReviews.length > 0) {
+    const vendor = await Vendor.findById(customerReview.vendorId)
+      .select("name")
+      .lean()
+    if (vendor) {
+      // Fetch the real stored vendor rating — the incoming vendorRating may be 0
+      // if the customer submitted items without re-rating the vendor.
+      const vendorFeedback = await VendorFeedback.findOne({
+        orderId: customerReview.orderId,
+        vendorId: customerReview.vendorId,
+      })
+        .select("rating")
+        .lean()
+
+      const allItemFeedback = await MenuItemFeedback.find({
+        orderId: customerReview.orderId,
+        vendorId: customerReview.vendorId,
+      })
+        .select("menuItemId rating title comments")
+        .lean()
+
+      let emailItemReviews:
+        | {
+            itemName: string
+            rating: number
+            title: string
+            comments?: string
+          }[]
+        | undefined
+      if (allItemFeedback.length > 0) {
+        const itemIds = allItemFeedback.map((f) => f.menuItemId)
+        const menuItems = await MenuItem.find({ _id: { $in: itemIds } })
+          .select("name")
+          .lean()
+        const itemMap = new Map(
+          menuItems.map((item) => [item._id.toString(), item.name])
+        )
+        emailItemReviews = allItemFeedback.map((f) => ({
+          itemName: itemMap.get(f.menuItemId.toString()) || "Unknown Item",
+          rating: f.rating,
+          title: f.title ?? "",
+          comments: f.comments,
+        }))
+      }
+
+      sendVendorNewReviewEmail(
+        customerReview.vendorId,
+        vendor.name,
+        vendorFeedback?.rating ?? 0,
+        emailItemReviews
+      ).catch((err) => console.error("Error sending item reviews email:", err))
+    }
   }
 
   return { success: true }
@@ -282,6 +363,20 @@ export async function getOrderForReview(orderId: string, customerId: string) {
 
   const order = rawOrder as unknown as PopulatedReviewOrder
 
+  // Fetch existing item reviews to allow editing
+  const existingItemReviewsRaw = await MenuItemFeedback.find({
+    orderId,
+    customerId,
+  }).lean()
+  const existingItemReviews = existingItemReviewsRaw.map((r) => ({
+    menuItemId: r.menuItemId.toString(),
+    rating: r.rating,
+    title: r.title,
+    comments: r.comments,
+    isAnonymous: r.isAnonymous,
+    createdAt: r.createdAt ? r.createdAt.toISOString() : undefined,
+  }))
+
   return {
     ...serializeOrder(order as unknown as LeanOrder),
     vendor: order.vendorId
@@ -292,41 +387,6 @@ export async function getOrderForReview(orderId: string, customerId: string) {
           slug: order.vendorId.slug,
         }
       : null,
+    existingItemReviews,
   }
-}
-
-export async function getMenuItemReviews(menuItemId: string) {
-  await dbConnect()
-
-  // After .populate(), customerId is projected to { name, image } at runtime.
-  // We define a local type to capture this rather than using any[].
-  type PopulatedReview = Omit<IMenuItemFeedback, "customerId"> & {
-    _id: import("mongoose").Types.ObjectId
-    customerId: { name: string; image?: string } | null
-    createdAt?: Date
-  }
-
-  const reviews = (await MenuItemFeedback.find({ menuItemId })
-    .populate("customerId", "name image")
-    .sort({ createdAt: -1 })
-    .lean()) as unknown as PopulatedReview[]
-
-  return reviews.map((r) => ({
-    id: r._id.toString(),
-    rating: r.rating,
-    title: r.title,
-    comments: r.comments,
-    isAnonymous: r.isAnonymous,
-    createdAt: r.createdAt
-      ? r.createdAt.toISOString()
-      : new Date().toISOString(),
-    customer:
-      r.isAnonymous || !r.customerId
-        ? null
-        : {
-            name: r.customerId.name,
-            // Customer.image is stored as a plain string; wrap as { url } to match Review type
-            image: r.customerId.image ? { url: r.customerId.image } : undefined,
-          },
-  }))
 }

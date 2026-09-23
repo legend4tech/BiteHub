@@ -168,9 +168,18 @@ function CustomerReviewsContent() {
                         </div>
                       </div>
 
-                      <div className="mt-5 flex items-center gap-2 text-xs text-muted-foreground/80">
-                        <Clock className="size-3.5 shrink-0" />
-                        <span>Ordered at {formatTime(order.createdAt!)}</span>
+                      <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground/80">
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-3.5 shrink-0" />
+                          <span>Ordered at {formatTime(order.createdAt!)}</span>
+                        </div>
+                        <Link
+                          href={`/order/${order.orderId}`}
+                          className="font-mono text-[10px] font-semibold text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+                          title="Track Order"
+                        >
+                          #{order.orderId.substring(0, 10)}
+                        </Link>
                       </div>
                     </div>
 
@@ -288,18 +297,34 @@ function CustomerReviewsContent() {
                     </div>
                   )}
 
-                  <div className="mt-6 flex items-center justify-between border-t border-border/30 pt-5">
-                    <span className="font-mono text-[10px] font-medium text-muted-foreground/80 uppercase">
-                      #{review.orderId.substring(0, 8)}
-                    </span>
+                  <div className="mt-6 flex flex-col gap-5 border-t border-border/30 pt-5">
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/order/${review.orderId}`}
+                        className="font-mono text-xs font-semibold text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+                        title="Track Order"
+                      >
+                        #{review.orderId.substring(0, 10)}
+                      </Link>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs font-semibold hover:text-primary"
+                        asChild
+                      >
+                        <Link href={`/vendors/${review.vendor?.slug}`}>
+                          View Vendor
+                        </Link>
+                      </Button>
+                    </div>
+
                     <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs font-semibold hover:text-primary"
                       asChild
+                      variant="outline"
+                      className="w-full rounded-xl border-primary/20 bg-primary/5 font-semibold text-primary transition-all hover:bg-primary/10 hover:text-primary"
                     >
-                      <Link href={`/vendors/${review.vendor?.slug}`}>
-                        View Vendor
+                      <Link href={`/customer/reviews/new/${review.orderId}`}>
+                        View My Reviews
                       </Link>
                     </Button>
                   </div>

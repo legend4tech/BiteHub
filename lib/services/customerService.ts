@@ -13,6 +13,38 @@ import { sendCustomerWelcomeEmail } from "@/lib/authMail"
 import dbConnect from "@/lib/db"
 import { serializeWallet, serializeWalletTransaction } from "@/lib/serializers"
 
+/**
+ * Generates a unique username based on the customer's name.
+ */
+export async function generateUniqueUsername(name: string): Promise<string> {
+  const baseName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .substring(0, 10)
+
+  let isUnique = false
+  let username = ""
+  let attempts = 0
+
+  while (!isUnique && attempts < 10) {
+    const randomSuffix = crypto.randomBytes(2).toString("hex") // 4 chars
+    username = `bh-${baseName}-${randomSuffix}`
+
+    const existing = await Customer.findOne({ username }).lean()
+    if (!existing) {
+      isUnique = true
+    }
+    attempts++
+  }
+
+  if (!isUnique) {
+    // Fallback if somehow 10 attempts failed
+    username = `bh-${baseName}-${Date.now().toString(36)}`
+  }
+
+  return username
+}
+
 export async function registerOrClaimCustomer(data: CustomerSignupValues) {
   await dbConnect()
   const { name, email, phone, password, school, campus, referredBy } = data
@@ -46,6 +78,9 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
         school,
         campus,
       }
+      if (!existingCustomer.username) {
+        updateData.username = await generateUniqueUsername(name)
+      }
       if (referredBy && !existingCustomer.referredBy) {
         updateData.referredBy = referredBy
       }
@@ -67,9 +102,11 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
   // New Customer creation
   const randomReferral = crypto.randomBytes(4).toString("hex")
   const referralCode = `REF-${randomReferral.toUpperCase()}`
+  const username = await generateUniqueUsername(name)
 
   await Customer.create({
     name,
+    username,
     email,
     phone,
     password: hashedPassword,

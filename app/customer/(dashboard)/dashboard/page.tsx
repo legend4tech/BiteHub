@@ -23,6 +23,8 @@ import {
   getRecentCustomerOrders,
   getCustomerOrdersCount,
 } from "@/lib/services/orderService"
+import { CURRENT_TERMS_VERSION } from "@/lib/constants"
+import { CustomerTermsChecker } from "@/components/customer/dashboard/CustomerTermsChecker"
 
 export default async function CustomerDashboardPage() {
   const session = await auth()
@@ -45,6 +47,10 @@ export default async function CustomerDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <CustomerTermsChecker
+        initialAcceptedVersion={customer.acceptedTermsVersion}
+        currentVersion={CURRENT_TERMS_VERSION}
+      />
       <div className="flex items-center gap-4">
         {customer.image ? (
           <div className="size-16 shrink-0 overflow-hidden rounded-full border-2 border-border shadow-sm">

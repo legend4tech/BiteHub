@@ -264,15 +264,15 @@ export async function getVendorReviews(
     { $limit: limit },
     {
       $lookup: {
-        from: "orders",
-        localField: "orderId",
-        foreignField: "orderId",
-        as: "orderData",
+        from: "customers",
+        localField: "customerId",
+        foreignField: "_id",
+        as: "customerData",
       },
     },
     {
       $unwind: {
-        path: "$orderData",
+        path: "$customerData",
         preserveNullAndEmptyArrays: true,
       },
     },
@@ -288,7 +288,14 @@ export async function getVendorReviews(
           $cond: {
             if: { $eq: ["$isAnonymous", true] },
             then: "Anonymous",
-            else: { $ifNull: ["$orderData.customerName", "Verified Buyer"] },
+            else: { $ifNull: ["$customerData.name", "Verified Buyer"] },
+          },
+        },
+        customerImage: {
+          $cond: {
+            if: { $eq: ["$isAnonymous", true] },
+            then: null,
+            else: "$customerData.image",
           },
         },
       },

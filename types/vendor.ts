@@ -195,6 +195,7 @@ export interface VendorReview {
   createdAt: string
   isAnonymous: boolean
   customerName: string
+  customerImage?: string
 }
 
 export interface RatingStatisticsData {

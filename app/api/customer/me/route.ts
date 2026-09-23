@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       name: customer.name,
+      username: customer.username,
       email: customer.email,
       phone: customer.phone,
       school: customer.school,
@@ -62,6 +63,7 @@ export async function PATCH(req: NextRequest) {
 
     const {
       name,
+      username,
       phone,
       school,
       campus,
@@ -73,6 +75,19 @@ export async function PATCH(req: NextRequest) {
     } = parsedBody.data
 
     await dbConnect()
+
+    if (username) {
+      const usernameExists = await Customer.findOne({
+        username,
+        email: { $ne: session.user.email },
+      }).lean()
+      if (usernameExists) {
+        return NextResponse.json(
+          { error: "This username is already taken. Please choose another." },
+          { status: 400 }
+        )
+      }
+    }
 
     const existingCustomer = await Customer.findOne({
       email: session.user.email,
@@ -101,6 +116,7 @@ export async function PATCH(req: NextRequest) {
       {
         $set: {
           ...(name && { name }),
+          ...(username && { username }),
           ...(phone && { phone }),
           ...(school && { school }),
           ...(campus && { campus }),
@@ -124,6 +140,7 @@ export async function PATCH(req: NextRequest) {
       success: true,
       customer: {
         name: updatedCustomer.name,
+        username: updatedCustomer.username,
         email: updatedCustomer.email,
         phone: updatedCustomer.phone,
         school: updatedCustomer.school,

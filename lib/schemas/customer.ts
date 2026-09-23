@@ -148,6 +148,17 @@ export const customerProfileUpdateSchema = z.object({
     .trim()
     .min(2, "Name must be at least 2 characters.")
     .optional(),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters.")
+    .max(20, "Username cannot exceed 20 characters.")
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Username can only contain lowercase letters, numbers, and hyphens."
+    )
+    .optional(),
   phone: z
     .string()
     .trim()
@@ -184,18 +195,46 @@ export const customerReviewsTabSchema = z.enum(["pending", "completed"])
 export type CustomerReviewsTab = z.infer<typeof customerReviewsTabSchema>
 
 export const customerReviewFormSchema = z.object({
-  vendorRating: z.number().min(1, "Please rate the vendor"),
-  isAnonymous: z.boolean(),
-  itemReviews: z.array(
-    z.object({
-      menuItemId: z.string(),
-      rating: z.number().min(1, "Please rate the food"),
-      title: z.string().min(1, "Title is required for the review."),
-      comments: z
-        .string()
-        .max(500, "Your comment is too long (max 500 characters).")
-        .optional(),
-    })
-  ),
+  vendorRating: z.number().optional().default(0),
+  isAnonymous: z.boolean().default(false),
+  itemReviews: z
+    .array(
+      z
+        .object({
+          menuItemId: z.string(),
+          rating: z.number().optional().default(0),
+          title: z.string().optional().default(""),
+          comments: z
+            .string()
+            .max(500, "Your comment is too long (max 500 characters).")
+            .optional(),
+        })
+        .refine(
+          (data) => (data.rating > 0 ? data.title.trim().length > 0 : true),
+          {
+            message: "Title is required if you rate this item.",
+            path: ["title"],
+          }
+        )
+    )
+    .optional()
+    .default([]),
 })
 export type CustomerReviewFormValues = z.infer<typeof customerReviewFormSchema>
+
+export const singleVendorReviewSchema = z.object({
+  vendorRating: z.number().min(1, "Please rate the vendor"),
+  isAnonymous: z.boolean(),
+})
+export type SingleVendorReviewValues = z.infer<typeof singleVendorReviewSchema>
+
+export const singleItemReviewSchema = z.object({
+  rating: z.number().min(1, "Please provide a rating"),
+  title: z.string().min(1, "Title is required for the review."),
+  comments: z
+    .string()
+    .max(500, "Your comment is too long (max 500 characters).")
+    .optional(),
+  isAnonymous: z.boolean(),
+})
+export type SingleItemReviewValues = z.infer<typeof singleItemReviewSchema>

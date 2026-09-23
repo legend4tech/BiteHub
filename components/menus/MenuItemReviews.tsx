@@ -2,6 +2,9 @@ import { Star, User, MessageSquareOff } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
 import { EmptyState } from "@/components/shared/EmptyState"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
 
 interface Review {
   id: string
@@ -15,9 +18,10 @@ interface Review {
 
 interface MenuItemReviewsProps {
   reviews: Review[]
+  menuItemId: string
 }
 
-export function MenuItemReviews({ reviews }: MenuItemReviewsProps) {
+export function MenuItemReviews({ reviews, menuItemId }: MenuItemReviewsProps) {
   if (!reviews || reviews.length === 0) {
     return (
       <div className="mt-20">
@@ -36,9 +40,20 @@ export function MenuItemReviews({ reviews }: MenuItemReviewsProps) {
 
   return (
     <div className="mt-20">
-      <h2 className="mb-8 font-heading text-2xl font-bold">
-        Reviews & Ratings
-      </h2>
+      <div className="mb-8 flex items-center justify-between">
+        <h2 className="font-heading text-2xl font-bold">Reviews & Ratings</h2>
+        {reviews.length > 0 && (
+          <Button
+            variant="ghost"
+            className="text-primary hover:text-primary"
+            asChild
+          >
+            <Link href={`/menu/${menuItemId}/reviews`}>
+              View all reviews <ArrowRight className="ml-2 size-4" />
+            </Link>
+          </Button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {reviews.map((review) => (

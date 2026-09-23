@@ -7,7 +7,12 @@ import type { MenuItem } from "@/types/vendor"
 import { MENU_CATEGORIES } from "@/lib/constants"
 import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import { formatPrice, formatTime, formatPrepTime } from "@/lib/format"
+import {
+  formatPrice,
+  formatTime,
+  formatPrepTime,
+  formatPreorderDeliveryDate,
+} from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
 
@@ -157,9 +162,9 @@ export function MenuItemCard({
         (item.preorderDeliveryInfo || item.preorderEndDate) ? (
           <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-primary">
             <Clock className="size-3 shrink-0" />
-            <span className="font-semibold capitalize">
+            <span className="truncate font-semibold capitalize">
               {item.preorderDeliveryInfo ||
-                `Delivery on ${new Date(item.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
+                formatPreorderDeliveryDate(item.preorderEndDate!)}
             </span>
           </div>
         ) : (

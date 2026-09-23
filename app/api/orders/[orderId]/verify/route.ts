@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import Customer from "@/models/Customer"
 import crypto from "crypto"
+import { generateUniqueUsername } from "@/lib/services/customerService"
 import { sendOrderReceiptEmail } from "@/lib/mail"
 import { sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
@@ -85,8 +86,12 @@ export async function POST(
 
         if (!existingCustomer) {
           const randomReferral = crypto.randomBytes(4).toString("hex")
+          const username = await generateUniqueUsername(
+            updatedOrder.customerName
+          )
           await Customer.create({
             name: updatedOrder.customerName,
+            username,
             email: updatedOrder.customerEmail.toLowerCase(),
             phone: updatedOrder.customerPhone,
             referralCode: `REF-${randomReferral.toUpperCase()}`,

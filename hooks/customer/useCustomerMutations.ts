@@ -68,3 +68,12 @@ export function useCustomerResetPassword() {
     },
   })
 }
+
+export function useCustomerAcceptTerms() {
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post("/customer/accept-terms")
+      return res.data
+    },
+  })
+}

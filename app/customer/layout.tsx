@@ -7,6 +7,7 @@ import {
 } from "@/components/customer/CustomerSidebar"
 import { SessionProvider, useSession } from "next-auth/react"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { Loader2 } from "lucide-react"
 
 const pageTitles: Record<string, string> = {
@@ -24,6 +25,20 @@ function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
   // We remove the blocking loading spinner here so that the layout
   // (sidebar, top bar) renders immediately. The individual page content
   // will use loading.tsx skeletons while NextAuth and database fetch data.
+
+  const isAuthPage =
+    pathname === "/customer/login" ||
+    pathname === "/customer/signup" ||
+    pathname === "/customer/forgot-password" ||
+    (status !== "authenticated" && pathname === "/customer/reset-password")
+
+  if (status === "loading" && pathname === "/customer/reset-password") {
+    return <PageSkeleton variant="auth" />
+  }
+
+  if (isAuthPage) {
+    return <>{children}</>
+  }
 
   const pageTitle = pageTitles[pathname] ?? "Customer Dashboard"
 

@@ -41,8 +41,41 @@ export function useSubmitReview() {
       const response = await apiClient.post("/feedback", payload)
       return response.data
     },
-    onSuccess: () => {
+    onSuccess: (_, payload) => {
       queryClient.invalidateQueries({ queryKey: ["customer-reviews"] })
+
+      // Optimistically update the specific order cache to prevent UI flicker
+      queryClient.setQueryData(
+        ["order", payload.orderId],
+        (
+          oldData: { isVendorRated: boolean; ratedItems: string[] } | undefined
+        ) => {
+          if (!oldData) return oldData
+
+          const isVendorRated =
+            (payload.customerReview?.vendorRating || 0) > 0
+              ? true
+              : oldData.isVendorRated
+
+          const newRatedItems = [...(oldData.ratedItems || [])]
+          if (payload.customerReview?.itemReviews) {
+            payload.customerReview.itemReviews.forEach((item) => {
+              if (!newRatedItems.includes(item.menuItemId)) {
+                newRatedItems.push(item.menuItemId)
+              }
+            })
+          }
+
+          return {
+            ...oldData,
+            isVendorRated,
+            ratedItems: newRatedItems,
+          }
+        }
+      )
+
+      // Also invalidate it so it refetches in the background to sync with the server
+      queryClient.invalidateQueries({ queryKey: ["order", payload.orderId] })
     },
   })
 }

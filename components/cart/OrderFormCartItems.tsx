@@ -1,9 +1,13 @@
 "use client"
 
 import { Minus, Plus, X, Clock } from "lucide-react"
-import { formatPrice, isItemAvailableToday } from "@/lib/format"
+import {
+  formatPrice,
+  isItemAvailableToday,
+  formatPrepTime,
+  formatPreorderDeliveryDate,
+} from "@/lib/format"
 import { useCart } from "@/hooks/useCart"
-import { formatPrepTime } from "@/lib/format"
 import { toast } from "sonner"
 
 interface OrderFormCartItemsProps {
@@ -121,7 +125,7 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
             <span className="capitalize">
               {maxPrepItem.preorderDeliveryInfo ||
                 (maxPrepItem.preorderEndDate
-                  ? `Delivery on ${new Date(maxPrepItem.preorderEndDate).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+                  ? formatPreorderDeliveryDate(maxPrepItem.preorderEndDate)
                   : "Delivery as scheduled by vendor")}
             </span>
           </div>

@@ -27,10 +27,12 @@ export function CustomerProfileForm() {
   } = useForm({
     values: {
       name: profile?.name || "",
+      username: profile?.username || "",
       phone: profile?.phone ? formatFromWhatsapp(profile.phone) : "",
     },
     defaultValues: {
       name: "",
+      username: "",
       phone: "",
     },
   })
@@ -59,7 +61,11 @@ export function CustomerProfileForm() {
     }
   }, [error])
 
-  const onSubmit = async (values: { name: string; phone: string }) => {
+  const onSubmit = async (values: {
+    name: string
+    username: string
+    phone: string
+  }) => {
     let finalImageUrl = profile?.image || ""
     let finalPublicId = profile?.imagePublicId || ""
 
@@ -95,6 +101,7 @@ export function CustomerProfileForm() {
     updateProfile.mutate(
       {
         name: values.name,
+        username: values.username || undefined,
         phone: values.phone,
         image: finalImageUrl,
         imagePublicId: finalPublicId,
@@ -152,6 +159,51 @@ export function CustomerProfileForm() {
                   id={field.name}
                   aria-invalid={fieldState.invalid}
                 />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="username"
+            control={control}
+            rules={{
+              minLength: {
+                value: 3,
+                message: "Username must be at least 3 characters",
+              },
+              maxLength: {
+                value: 20,
+                message: "Username cannot exceed 20 characters",
+              },
+              pattern: {
+                value: /^[a-z0-9-]+$/,
+                message:
+                  "Username can only contain lowercase letters, numbers, and hyphens",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <label className="text-sm font-medium" htmlFor={field.name}>
+                  Username
+                </label>
+                <div className="relative">
+                  <span className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+                    @
+                  </span>
+                  <Input
+                    {...field}
+                    id={field.name}
+                    placeholder="e.g. johndoe"
+                    className="pl-8"
+                    aria-invalid={fieldState.invalid}
+                    onChange={(e) =>
+                      field.onChange(e.target.value.toLowerCase())
+                    }
+                  />
+                </div>
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
                 )}

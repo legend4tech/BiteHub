@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose"
 
 export interface ICustomer extends Document {
   name: string
+  username?: string // Used for wallet transfers and profile links
   email: string
   phone: string
   password?: string // Optional because first-time guests might not have one immediately
@@ -26,11 +27,20 @@ export interface ICustomer extends Document {
   lastPasswordChangeAt?: Date
   resetPasswordToken?: string
   resetPasswordExpires?: Date
+  acceptedTermsVersion?: string
+  acceptedTermsAt?: Date
 }
 
 const CustomerSchema = new Schema<ICustomer>(
   {
     name: { type: String, required: true },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
     email: {
       type: String,
       required: true,
@@ -59,6 +69,8 @@ const CustomerSchema = new Schema<ICustomer>(
     lastPasswordChangeAt: { type: Date },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    acceptedTermsVersion: { type: String, default: "" },
+    acceptedTermsAt: { type: Date },
   },
   {
     timestamps: true,

@@ -107,7 +107,7 @@ export function SharedResetPassword({
           const errorMsg =
             err.response?.data?.message ||
             "Failed to reset password. Link may be expired."
-          toast.error(errorMsg)
+          toast.error(errorMsg, { id: "reset-error" })
         },
         onSettled: () => {
           setLoading(false)

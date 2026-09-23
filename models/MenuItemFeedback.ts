@@ -9,6 +9,8 @@ export interface IMenuItemFeedback extends Document {
   title: string
   comments?: string
   isAnonymous?: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 const MenuItemFeedbackSchema: Schema = new Schema(

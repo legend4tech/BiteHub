@@ -37,7 +37,7 @@ export function RatingStatistics({
                 key={star}
                 className={`size-5 ${
                   Math.round(averageRating) >= star
-                    ? "fill-rating text-rating"
+                    ? "fill-warning text-warning"
                     : "text-muted-foreground/30"
                 }`}
               />
@@ -69,16 +69,16 @@ export function RatingStatistics({
                 aria-pressed={isActive}
                 aria-label={`Filter by ${level} stars`}
               >
-                <div className="flex w-12 shrink-0 items-center gap-1 font-medium transition-colors group-hover:text-primary">
+                <div className="flex w-12 shrink-0 items-center gap-1 font-medium transition-colors group-hover:text-warning">
                   {level}{" "}
                   <Star
-                    className={`size-3.5 ${isActive ? "fill-primary text-primary" : "fill-rating text-rating group-hover:fill-primary group-hover:text-primary"}`}
+                    className={`size-3.5 ${isActive ? "fill-warning text-warning" : "fill-muted text-muted group-hover:fill-warning group-hover:text-warning"}`}
                   />
                 </div>
 
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
-                    className={`h-full rounded-full transition-all duration-1000 ease-out ${isActive ? "bg-primary" : "bg-rating group-hover:bg-primary"}`}
+                    className={`h-full rounded-full transition-all duration-1000 ease-out ${isActive ? "bg-warning" : "bg-warning/40 group-hover:bg-warning"}`}
                     style={{ width: `${percentage}%` }}
                   />
                 </div>

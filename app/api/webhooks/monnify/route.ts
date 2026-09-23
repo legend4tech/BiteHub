@@ -3,7 +3,9 @@ import { revalidatePath } from "next/cache"
 import crypto from "crypto"
 import Order from "@/models/Order"
 import Customer from "@/models/Customer"
+import Vendor from "@/models/Vendor"
 import dbConnect from "@/lib/db"
+import { generateUniqueUsername } from "@/lib/services/customerService"
 import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendWalletTopupEmail } from "@/lib/walletMail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
@@ -171,8 +173,10 @@ async function processSuccessfulTransaction(paymentReference: string) {
 
     if (!existingCustomer) {
       const randomReferral = crypto.randomBytes(4).toString("hex")
+      const username = await generateUniqueUsername(updatedOrder.customerName)
       await Customer.create({
         name: updatedOrder.customerName,
+        username,
         email: updatedOrder.customerEmail.toLowerCase(),
         phone: updatedOrder.customerPhone,
         referralCode: `REF-${randomReferral.toUpperCase()}`,

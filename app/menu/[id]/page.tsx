@@ -13,15 +13,18 @@ import {
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { getMenuItemById } from "@/lib/services/menuService"
-import { formatPrice } from "@/lib/format"
-import { formatPrepTime } from "@/lib/format"
+import {
+  formatPrice,
+  formatPrepTime,
+  formatPreorderDeliveryDate,
+} from "@/lib/format"
 import { SingleItemCartControls } from "@/components/menus/SingleItemCartControls"
 
 import { FadeIn } from "@/components/FadeIn"
 import { ClientCartWrapper } from "./ClientCartWrapper"
 import { RelatedItemsGrid } from "./RelatedItemsGrid"
 import { ShareButton } from "@/components/public-vendors/ShareButton"
-import { getMenuItemReviews } from "@/lib/services/feedbackService"
+import { getMenuItemReviews } from "@/lib/services/menuItemReviewService"
 import { MenuItemReviews } from "@/components/menus/MenuItemReviews"
 
 interface Props {
@@ -162,7 +165,9 @@ export default async function SingleMenuPage({ params }: Props) {
                             <Clock className="size-3" />
                             <span>
                               {mainItem.preorderDeliveryInfo ||
-                                `Delivery on ${new Date(mainItem.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
+                                formatPreorderDeliveryDate(
+                                  mainItem.preorderEndDate!
+                                )}
                             </span>
                           </span>
                         ) : (
@@ -266,7 +271,7 @@ export default async function SingleMenuPage({ params }: Props) {
           </FadeIn>
 
           {/* Reviews section */}
-          <MenuItemReviews reviews={reviews || []} />
+          <MenuItemReviews reviews={reviews || []} menuItemId={id} />
 
           {/* More from this vendor */}
           {relatedItems.length > 0 && (

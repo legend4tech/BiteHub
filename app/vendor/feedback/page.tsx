@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react"
 import { useVendorFeedback } from "@/hooks/vendor/useVendorFeedback"
 import type { Feedback } from "@/types/vendor"
-import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { FetchError } from "@/components/shared/FetchError"
@@ -20,9 +19,7 @@ export default function VendorFeedbackPage() {
     refetch,
   } = useVendorFeedback(isReady)
 
-  if (status === "loading") {
-    return <PageSkeleton variant="dashboard" />
-  }
+  const isLoadingAny = status === "loading" || loadingFeedback
 
   const now = new Date()
   const greeting =
@@ -53,7 +50,7 @@ export default function VendorFeedbackPage() {
         {/* Feedback List */}
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="p-5">
-            {loadingFeedback ? (
+            {isLoadingAny ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div
@@ -142,7 +139,7 @@ export default function VendorFeedbackPage() {
                         </div>
                       )}
 
-                    {feedback.orderId === "Anonymous" ? (
+                    {feedback.isAnonymous ? (
                       <div className="mt-2">
                         <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                           Anonymous Review

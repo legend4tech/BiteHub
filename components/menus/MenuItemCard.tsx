@@ -19,6 +19,7 @@ import {
   formatTime,
   formatPrepTime,
   isItemAvailableToday,
+  formatPreorderDeliveryDate,
 } from "@/lib/format"
 import { toast } from "sonner"
 
@@ -141,7 +142,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
             </span>
             {item.preorderEndDate && (
               <span className="rounded-md bg-black/75 px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-sm backdrop-blur-md">
-                Closes:{" "}
+                {isPreorderClosed ? "Closed: " : "Closes: "}
                 {new Date(item.preorderEndDate).toLocaleDateString("en-US", {
                   weekday: "short",
                   month: "short",
@@ -233,9 +234,9 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
         (item.preorderDeliveryInfo || item.preorderEndDate) ? (
           <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
             <Clock className="size-3 text-primary" />
-            <span className="font-semibold text-primary capitalize">
+            <span className="truncate font-semibold text-primary capitalize">
               {item.preorderDeliveryInfo ||
-                `Delivery on ${new Date(item.preorderEndDate!).toLocaleString("en-US", { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`}
+                formatPreorderDeliveryDate(item.preorderEndDate!)}
             </span>
           </div>
         ) : (item.prepTimeValue && item.prepTimeUnit) || item.vendorPrepTime ? (

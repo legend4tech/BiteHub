@@ -109,3 +109,16 @@ export function isItemAvailableToday(availableDays?: string[] | null): boolean {
   })
   return availableDays.includes(currentDayOfWeek)
 }
+
+export function formatPreorderDeliveryDate(dateString: string | Date): string {
+  const date = new Date(dateString)
+  const isPast = date.getTime() < Date.now()
+  const formatted = date.toLocaleString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+  return `${isPast ? "Delivered on" : "Delivery on"} ${formatted}`
+}

@@ -55,6 +55,7 @@ export interface CustomerOrdersPageData {
 
 export interface CustomerProfile {
   name: string
+  username?: string
   email: string
   phone: string
   school?: string
@@ -64,6 +65,7 @@ export interface CustomerProfile {
   preferredExactLocation?: string
   image?: string
   imagePublicId?: string
+  acceptedTermsVersion?: string
 }
 
 export interface CustomerReviewOrder {
@@ -88,6 +90,16 @@ export interface CustomerReviewOrder {
   createdAt: string
   status: string
   isRated: boolean
+  isVendorRated: boolean
+  ratedItems: string[]
+  existingItemReviews?: {
+    menuItemId: string
+    rating: number
+    title: string
+    comments?: string
+    isAnonymous: boolean
+    createdAt?: string
+  }[]
 }
 
 export interface CustomerReviewRecord {

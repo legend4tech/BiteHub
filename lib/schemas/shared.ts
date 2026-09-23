@@ -101,16 +101,19 @@ export const feedbackSchema = z
       .object({
         orderId: z.string(),
         vendorId: z.string(),
-        vendorRating: z.number().min(1).max(5),
+        vendorRating: z.number().optional().default(0),
         isAnonymous: z.boolean().optional(),
-        itemReviews: z.array(
-          z.object({
-            menuItemId: z.string(),
-            rating: z.number().min(1).max(5),
-            title: z.string().min(1, "Title is required"),
-            comments: z.string().optional(),
-          })
-        ),
+        itemReviews: z
+          .array(
+            z.object({
+              menuItemId: z.string(),
+              rating: z.number().optional().default(0),
+              title: z.string().optional().default(""),
+              comments: z.string().optional(),
+            })
+          )
+          .optional()
+          .default([]),
       })
       .optional(),
   })

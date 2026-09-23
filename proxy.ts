@@ -204,17 +204,14 @@ export default auth(async (req) => {
   }
 
   // Redirect logged-in users away from auth pages
+  // (We allow them to visit forgot-password and reset-password in case they click an email link while still having an active session)
   else if (
     isLoggedIn &&
     (isAdminLoginRoute ||
       isVendorManagerLoginRoute ||
       pathname === "/vendor/login" ||
-      pathname === "/vendor/forgot-password" ||
-      pathname === "/vendor/reset-password" ||
       pathname === "/customer/login" ||
-      pathname === "/customer/signup" ||
-      pathname === "/customer/forgot-password" ||
-      pathname === "/customer/reset-password")
+      pathname === "/customer/signup")
   ) {
     if (role === "admin" || role === "superadmin") {
       res = NextResponse.redirect(new URL("/admin", req.nextUrl))

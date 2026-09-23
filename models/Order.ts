@@ -39,6 +39,8 @@ export interface IOrder extends Document {
   isDisbursed?: boolean
   expiresAt?: Date
   isRated?: boolean
+  isVendorRated?: boolean
+  ratedItems?: string[]
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -104,6 +106,8 @@ const OrderSchema = new Schema<IOrder>(
     isDisbursed: { type: Boolean, default: false },
     expiresAt: { type: Date },
     isRated: { type: Boolean, default: false },
+    isVendorRated: { type: Boolean, default: false },
+    ratedItems: { type: [String], default: [] },
   },
   {
     timestamps: true,
