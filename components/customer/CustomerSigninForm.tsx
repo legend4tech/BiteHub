@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,14 +11,15 @@ import { useForm, Controller, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { customerLoginSchema, type CustomerLoginValues } from "@/lib/schemas"
+import { SuspendedAlert } from "@/components/shared/SuspendedAlert"
 
 export function CustomerSigninForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/"
 
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isSuspended, setIsSuspended] = useState(false)
 
   const form = useForm<CustomerLoginValues>({
     resolver: zodResolver(
@@ -34,6 +35,7 @@ export function CustomerSigninForm() {
     }
 
     setLoading(true)
+    setIsSuspended(false)
     try {
       const res = await signIn("customer-login", {
         redirect: false,
@@ -42,21 +44,23 @@ export function CustomerSigninForm() {
       })
 
       if (res?.error) {
-        if (res.error.includes("Too Many Requests")) {
-          // Rate limit message from auth.ts — pass through as-is (already user-friendly)
-          toast.error(res.error)
+        const resCode = (res as { code?: string }).code
+
+        if (resCode === "AccountSuspended") {
+          setIsSuspended(true)
+          return
+        }
+        if (resCode === "RateLimitExceeded") {
+          toast.error(
+            "Too many login attempts. Please wait a minute and try again."
+          )
         } else if (
           res.error === "Configuration" ||
           res.error === "AccessDenied"
         ) {
           toast.error("Authentication service error. Please try again.")
-        } else if (
-          res.error === "CredentialsSignin" ||
-          res.error === "Invalid credentials"
-        ) {
-          toast.error("Invalid email or password.")
         } else {
-          toast.error(res.error || "Something went wrong. Please try again.")
+          toast.error("Invalid email or password.")
         }
       } else if (!res?.ok && res?.status === 429) {
         // Proxy-level IP rate limit — signIn() received 429 from middleware
@@ -69,7 +73,7 @@ export function CustomerSigninForm() {
         )
       } else {
         toast.success("Login successful. Welcome back!")
-        router.replace(redirect)
+        window.location.assign(redirect)
       }
     } catch (error: unknown) {
       const err = error as { message?: string }
@@ -95,6 +99,7 @@ export function CustomerSigninForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {isSuspended && <SuspendedAlert type="customer" />}
       <Controller
         name="email"
         control={form.control}

@@ -115,6 +115,17 @@ export async function PATCH(
     if (order.customerEmail && status !== oldStatus) {
       if (status === ORDER_STATUS.COMPLETED) {
         const { sendOrderCompletedEmail } = await import("@/lib/mail")
+        // Gamification trigger
+        const { processOrderCompleted } =
+          await import("@/lib/services/gamificationService")
+        if (order.customerId) {
+          void processOrderCompleted(
+            order.orderId,
+            order.customerId.toString(),
+            order.totalAmount
+          )
+        }
+
         // Fire and forget
         void sendOrderCompletedEmail(
           order.customerEmail,
@@ -149,10 +160,20 @@ export async function PATCH(
           const { default: WalletTransaction } =
             await import("@/models/WalletTransaction")
 
+          const promoRefund = order.walletPromoAmountUsed || 0
+          const depositRefund =
+            order.walletDepositAmountUsed || order.totalAmount - promoRefund
+
           // Atomic Wallet Refund to prevent race conditions
           const updatedWallet = await Wallet.findOneAndUpdate(
             { customerId: customer._id },
-            { $inc: { balance: order.totalAmount } },
+            {
+              $inc: {
+                balance: order.totalAmount,
+                promoBalance: promoRefund,
+                depositBalance: depositRefund,
+              },
+            },
             { new: true }
           )
 

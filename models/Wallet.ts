@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from "mongoose"
 export interface IWallet extends Document {
   customerId: mongoose.Types.ObjectId
   balance: number
+  depositBalance: number
+  promoBalance: number
   monnifyReservedAccountRef?: string
   accountName?: string
   accountNumber?: string
@@ -23,6 +25,16 @@ const WalletSchema = new Schema<IWallet>(
       type: Number,
       default: 0,
       min: [0, "Balance cannot be negative"],
+    },
+    depositBalance: {
+      type: Number,
+      default: 0,
+      min: [0, "Deposit balance cannot be negative"],
+    },
+    promoBalance: {
+      type: Number,
+      default: 0,
+      min: [0, "Promo balance cannot be negative"],
     },
     monnifyReservedAccountRef: { type: String },
     accountName: { type: String },

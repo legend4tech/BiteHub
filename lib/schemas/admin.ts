@@ -122,3 +122,65 @@ export const adminVendorAccountSchema = z.object({
 })
 
 export type AdminVendorAccountValues = z.infer<typeof adminVendorAccountSchema>
+
+// ─── Gamification ─────────────────────────────────────────────────────────────
+
+export const rewardCampaignFormSchema = z
+  .object({
+    title: z.string().trim().min(3, "Title must be at least 3 characters"),
+    description: z.string().trim().optional(),
+
+    actionType: z.enum([
+      "REFERRAL_SIGNUP",
+      "REFERRAL_FIRST_ORDER",
+      "ORDER_COMPLETED",
+    ]),
+    targetCount: z.number().min(1, "Target count must be at least 1"),
+    minOrderValue: z.number().optional(),
+
+    rewardType: z.enum(["BITEHUB_COINS", "FREE_MEAL"]),
+    rewardValue: z.number().optional(),
+
+    vendorId: z.string().optional(),
+    menuItemId: z.string().optional(),
+
+    targetSchool: z.string().optional(),
+    targetCampus: z.string().optional(),
+
+    maxBeneficiaries: z.number().min(1, "Max beneficiaries must be at least 1"),
+    budgetAllocated: z.number().min(0, "Budget cannot be negative"),
+
+    isActive: z.boolean().default(true),
+    startDate: z.string().or(z.date()),
+    endDate: z.string().or(z.date()).optional(),
+
+    maxCompletionsPerUser: z.number().min(0).default(1),
+  })
+  .superRefine((data, ctx) => {
+    if (data.rewardType === "BITEHUB_COINS") {
+      if (!data.rewardValue || data.rewardValue <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Reward value is required for BiteHub Coins",
+          path: ["rewardValue"],
+        })
+      }
+    } else if (data.rewardType === "FREE_MEAL") {
+      if (!data.vendorId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select a vendor",
+          path: ["vendorId"],
+        })
+      }
+      if (!data.menuItemId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select a menu item",
+          path: ["menuItemId"],
+        })
+      }
+    }
+  })
+
+export type RewardCampaignFormValues = z.infer<typeof rewardCampaignFormSchema>

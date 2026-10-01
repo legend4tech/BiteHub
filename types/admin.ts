@@ -148,6 +148,7 @@ export interface AdminVendor {
   description: string
   category: string
   whatsappNumber: string
+  school: string
   campus: string
   isActive: boolean
   isFeatured: boolean

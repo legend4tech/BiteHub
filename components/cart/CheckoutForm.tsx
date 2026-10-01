@@ -238,6 +238,7 @@ export function CheckoutForm() {
         notes: values.notes,
         paymentMethod: values.paymentMethod,
         total: finalTotal,
+        appliedVoucherCode: cart.appliedVoucherCode || undefined,
       },
       {
         onSuccess: (data: { checkoutUrl: string }) => {

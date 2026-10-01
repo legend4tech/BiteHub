@@ -43,6 +43,15 @@ export type LeanAdminUser = LeanDoc<import("@/models/AdminUser").IAdminUser>
 export type LeanPlatformFeedback = LeanDoc<
   import("@/models/PlatformFeedback").IPlatformFeedback
 >
+export type LeanRewardCampaign = LeanDoc<
+  import("@/models/RewardCampaign").IRewardCampaign
+>
+export type LeanCampaignProgress = LeanDoc<
+  import("@/models/CampaignProgress").ICampaignProgress
+>
+export type LeanRewardVoucher = LeanDoc<
+  import("@/models/RewardVoucher").IRewardVoucher
+>
 
 export type PopulatedVendorFeedback = LeanVendorFeedback & {
   vendorId: {
@@ -202,6 +211,8 @@ export function serializeOrder(doc: LeanOrder | null) {
     isRated: doc.isRated ?? false,
     isVendorRated: doc.isVendorRated ?? false,
     ratedItems: Array.isArray(doc.ratedItems) ? doc.ratedItems : [],
+    walletPromoAmountUsed: Number(doc.walletPromoAmountUsed) || 0,
+    walletDepositAmountUsed: Number(doc.walletDepositAmountUsed) || 0,
     expiresAt: doc.expiresAt ? safeDate(doc.expiresAt) : null,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
@@ -244,6 +255,8 @@ export function serializeWallet(doc: LeanWallet | null) {
     id: doc._id.toString(),
     customerId: doc.customerId.toString(),
     balance: doc.balance,
+    depositBalance: doc.depositBalance ?? 0,
+    promoBalance: doc.promoBalance ?? 0,
     monnifyReservedAccountRef: doc.monnifyReservedAccountRef ?? null,
     accountName: doc.accountName ?? null,
     accountNumber: doc.accountNumber ?? null,
@@ -394,6 +407,71 @@ export function serializePlatformFeedback(doc: LeanPlatformFeedback | null) {
     comments: doc.comments ?? null,
     orderId: doc.orderId ?? null,
     vendorId: doc.vendorId ? doc.vendorId.toString() : null,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+// ─── Gamification ─────────────────────────────────────────────────────────────
+
+export function serializeRewardCampaign(doc: LeanRewardCampaign | null) {
+  if (!doc) return null
+  return {
+    id: doc._id.toString(),
+    title: doc.title,
+    description: doc.description ?? null,
+    actionType: doc.actionType,
+    targetCount: doc.targetCount,
+    minOrderValue: doc.minOrderValue ?? null,
+    rewardType: doc.rewardType,
+    rewardValue: doc.rewardValue ?? null,
+    vendorId: doc.vendorId?.toString() ?? null,
+    menuItemId: doc.menuItemId ?? null,
+    maxBeneficiaries: doc.maxBeneficiaries,
+    currentBeneficiaries: doc.currentBeneficiaries,
+    budgetAllocated: doc.budgetAllocated,
+    budgetSpent: doc.budgetSpent,
+    isActive: doc.isActive,
+    startDate: safeDate(doc.startDate),
+    endDate: doc.endDate ? safeDate(doc.endDate) : null,
+    targetSchool: doc.targetSchool ?? null,
+    targetCampus: doc.targetCampus ?? null,
+    maxCompletionsPerUser: doc.maxCompletionsPerUser,
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+export function serializeCampaignProgress(doc: LeanCampaignProgress | null) {
+  if (!doc) return null
+  return {
+    id: doc._id.toString(),
+    customerId: doc.customerId.toString(),
+    campaignId: doc.campaignId.toString(),
+    currentCount: doc.currentCount,
+    timesCompleted: doc.timesCompleted,
+    isFullyCompleted: doc.isFullyCompleted,
+    trackedEntityIds: Array.isArray(doc.trackedEntityIds)
+      ? doc.trackedEntityIds
+      : [],
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+export function serializeRewardVoucher(doc: LeanRewardVoucher | null) {
+  if (!doc) return null
+  return {
+    id: doc._id.toString(),
+    code: doc.code,
+    customerId: doc.customerId.toString(),
+    campaignId: doc.campaignId.toString(),
+    vendorId: doc.vendorId.toString(),
+    menuItemId: doc.menuItemId,
+    isUsed: doc.isUsed,
+    usedAt: doc.usedAt ? safeDate(doc.usedAt) : null,
+    usedOrderId: doc.usedOrderId ?? null,
+    expiresAt: safeDate(doc.expiresAt),
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

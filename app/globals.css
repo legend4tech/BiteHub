@@ -196,3 +196,11 @@
     @apply font-sans;
     }
 }
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-\\[shimmer_3s_infinite\\] {
+  animation: shimmer 3s infinite;
+}

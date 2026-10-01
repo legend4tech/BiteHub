@@ -7,32 +7,14 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  ArrowLeft,
-  User,
-  ShoppingBag,
-  Star,
-  Gift,
-} from "lucide-react"
+import { Loader2, ArrowLeft, User, ShoppingBag, Star, Gift } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { AuthPanel } from "@/components/shared/AuthPanel"
-import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 import Image from "next/image"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { getSchoolOptions, getCampusOptions } from "@/lib/config/campus"
 import {
   customerSignupFormSchema,
   type CustomerSignupFormValues,
@@ -45,8 +27,6 @@ export default function CustomerSignupForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/"
 
-  const [showPw, setShowPw] = useState(false)
-  const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
   const [direction, setDirection] = useState(1)
   const signupMutation = useCustomerSignup()
@@ -109,7 +89,7 @@ export default function CustomerSignupForm() {
         )
         router.push(`/customer/login?redirect=${encodeURIComponent(redirect)}`)
       } else {
-        router.replace(redirect)
+        window.location.href = redirect
       }
     } catch (error: unknown) {
       const err = error as {

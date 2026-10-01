@@ -9,6 +9,7 @@
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
 import VendorFeedback from "@/models/VendorFeedback"
+import { escapeRegex } from "@/lib/utils"
 import MenuItem from "@/models/MenuItem"
 import {
   serializeVendor,
@@ -59,11 +60,12 @@ export async function getVendors(options: GetVendorsOptions = {}) {
   const finalQuery: Record<string, unknown> = { ...query }
 
   if (q) {
+    const escapedQ = escapeRegex(q)
     finalQuery.$or = [
-      { name: { $regex: q, $options: "i" } },
-      { description: { $regex: q, $options: "i" } },
-      { tags: { $regex: q, $options: "i" } },
-      { category: { $regex: q, $options: "i" } },
+      { name: { $regex: escapedQ, $options: "i" } },
+      { description: { $regex: escapedQ, $options: "i" } },
+      { tags: { $regex: escapedQ, $options: "i" } },
+      { category: { $regex: escapedQ, $options: "i" } },
     ]
   }
 
@@ -379,9 +381,10 @@ export async function getVendorDataBySlug(
   }
 
   if (options.q) {
+    const escapedQ = escapeRegex(options.q)
     menuQuery.$or = [
-      { name: { $regex: options.q, $options: "i" } },
-      { description: { $regex: options.q, $options: "i" } },
+      { name: { $regex: escapedQ, $options: "i" } },
+      { description: { $regex: escapedQ, $options: "i" } },
     ]
   }
 

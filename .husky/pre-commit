@@ -1,1 +1,15 @@
+BANNED_COMMENTS="eslint-disable.*@typescript-eslint/no-explicit-any|eslint-disable.*@typescript-eslint/no-unused-vars"
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$' || true)
+
+if [ -n "$STAGED_FILES" ]; then
+  for file in $STAGED_FILES; do
+    if grep -q -E "$BANNED_COMMENTS" "$file"; then
+      echo "❌ Error: Bypassing ESLint rules is not allowed in $file"
+      echo "Please remove the eslint-disable comment for no-explicit-any or no-unused-vars."
+      exit 1
+    fi
+  done
+fi
+
 pnpm exec lint-staged

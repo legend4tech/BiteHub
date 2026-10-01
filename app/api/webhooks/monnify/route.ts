@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache"
 import crypto from "crypto"
 import Order from "@/models/Order"
 import Customer from "@/models/Customer"
-import Vendor from "@/models/Vendor"
+
 import dbConnect from "@/lib/db"
 import { generateUniqueUsername } from "@/lib/services/customerService"
 import { sendOrderReceiptEmail, sendVendorNewOrderEmail } from "@/lib/mail"
@@ -52,7 +52,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
 
         const updatedWallet = await Wallet.findOneAndUpdate(
           { _id: wallet._id },
-          { $inc: { balance: amount } },
+          { $inc: { balance: amount, depositBalance: amount } },
           { new: true }
         )
 
@@ -74,7 +74,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
             // Rollback wallet increment if transaction already exists (another process beat us)
             await Wallet.findOneAndUpdate(
               { _id: wallet._id },
-              { $inc: { balance: -amount } }
+              { $inc: { balance: -amount, depositBalance: -amount } }
             )
             return NextResponse.json({ status: "Duplicate event" })
           }

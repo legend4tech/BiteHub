@@ -10,6 +10,7 @@ import Order from "@/models/Order"
 import Customer from "@/models/Customer"
 import MenuItem from "@/models/MenuItem"
 import GlobalSettings from "@/models/GlobalSettings"
+import mongoose from "mongoose"
 import type { IMenuItem } from "@/models/MenuItem"
 import {
   ORDER_STATUS,
@@ -20,7 +21,6 @@ import {
 } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
-import { sendOrderInitiatedEmail } from "@/lib/mail"
 import { sendVendorLowStockAlertEmail } from "@/lib/vendorAlertMail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import {
@@ -45,6 +45,7 @@ export async function processCheckout(
     exactLocation: string
     notes?: string
     paymentMethod: string
+    appliedVoucherCode?: string
   },
   session: Session | null
 ) {
@@ -58,6 +59,7 @@ export async function processCheckout(
     exactLocation,
     notes,
     paymentMethod,
+    appliedVoucherCode,
   } = parsedData
 
   // Fetch existing customer record (if any)
@@ -136,13 +138,47 @@ export async function processCheckout(
     }
   }
 
-  const targetAmountToReceive = calculatedTotal + PLATFORM_FLAT_FEE
+  let sponsoredDiscountAmount = 0
+  let isRewardSponsored = false
+  let rewardVoucherId: mongoose.Types.ObjectId | undefined = undefined
+
+  if (appliedVoucherCode) {
+    if (!existingCustomer) {
+      return { error: "You must be logged in to use a voucher.", status: 401 }
+    }
+    const RewardVoucher = (await import("@/models/RewardVoucher")).default
+    const voucher = await RewardVoucher.findOne({ code: appliedVoucherCode })
+
+    if (!voucher) {
+      return { error: "Invalid voucher code.", status: 400 }
+    }
+    if (voucher.isUsed) {
+      return { error: "This voucher has already been used.", status: 400 }
+    }
+    if (voucher.expiresAt < new Date()) {
+      return { error: "This voucher has expired.", status: 400 }
+    }
+    const itemInCart = items.find((i) => i.menuItemId === voucher.menuItemId)
+    if (!itemInCart) {
+      return {
+        error: "The meal for this voucher is not in your cart.",
+        status: 400,
+      }
+    }
+
+    sponsoredDiscountAmount = itemInCart.price
+    isRewardSponsored = true
+    rewardVoucherId = voucher._id
+  }
+
+  const baseCustomerPayment = calculatedTotal - sponsoredDiscountAmount
+  const targetAmountToReceive = baseCustomerPayment + PLATFORM_FLAT_FEE
   const monnifyFee =
     paymentMethod === "wallet"
       ? 0
       : computeMonnifyServiceFee(targetAmountToReceive)
   const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
-  const finalTotal = calculatedTotal + serviceFee
+  const finalTotal = baseCustomerPayment + serviceFee
 
   const settings = await GlobalSettings.findOne()
   const platformFeePercentage = settings
@@ -223,140 +259,217 @@ export async function processCheckout(
     }
   }
 
-  // Reserve quantity by decrementing immediately
-  const bulkOps = items.map(
-    (item: {
-      menuItemId: string
-      name: string
-      quantity: number
-      price: number
-    }) => {
-      const dbItem = dbMenuItemsMap.get(item.menuItemId)
-      const updateDoc: {
-        $inc: { quantityAvailable: number }
-        $set?: { lowStockAlertSent: boolean }
-      } = { $inc: { quantityAvailable: -item.quantity } }
+  const mongooseSession = await mongoose.startSession()
+  let transactionError: string | null = null
+  let orderResponse: typeof Order.prototype | null = null
 
-      if (
-        dbItem &&
-        dbItem.quantityAvailable !== null &&
-        dbItem.quantityAvailable !== undefined
-      ) {
-        const newQuantity = dbItem.quantityAvailable - item.quantity
-        if (newQuantity <= LOW_STOCK_THRESHOLD && !dbItem.lowStockAlertSent) {
-          updateDoc.$set = { lowStockAlertSent: true }
-          // Fire-and-forget
-          sendVendorLowStockAlertEmail(
-            vendorId,
-            finalVendorName,
-            dbItem.name || "Unknown Item",
-            newQuantity
-          ).catch((err) =>
-            console.error("[POST /api/orders] Low stock alert failed:", err)
-          )
+  try {
+    await mongooseSession.withTransaction(async () => {
+      // 1. Lock and mark voucher as used (if applied)
+      if (appliedVoucherCode) {
+        const RewardVoucher = (await import("@/models/RewardVoucher")).default
+        const lockedVoucher = await RewardVoucher.findOne({
+          code: appliedVoucherCode,
+        }).session(mongooseSession)
+        if (
+          !lockedVoucher ||
+          lockedVoucher.isUsed ||
+          lockedVoucher.expiresAt < new Date()
+        ) {
+          transactionError = "Voucher became invalid during checkout."
+          throw new Error("Voucher invalid")
         }
+        lockedVoucher.isUsed = true
+        lockedVoucher.usedAt = new Date()
+        await lockedVoucher.save({ session: mongooseSession })
+
+        const RewardCampaign = (await import("@/models/RewardCampaign")).default
+        await RewardCampaign.findByIdAndUpdate(
+          lockedVoucher.campaignId,
+          { $inc: { budgetSpent: sponsoredDiscountAmount } },
+          { session: mongooseSession }
+        )
       }
 
-      return {
-        updateOne: {
-          filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
-          update: updateDoc,
-        },
-      }
-    }
-  )
-  if (bulkOps.length > 0) {
-    await MenuItem.bulkWrite(bulkOps).catch((err) => {
-      console.error("[POST /api/orders] Failed to decrement quantity:", err)
-    })
-  }
-
-  const order = await Order.create({
-    orderId,
-    vendorId,
-    vendorName: finalVendorName,
-    vendorWhatsappNumber: finalWhatsapp,
-    vendorPrepTime: maxHours !== -1 ? maxItemPrepTime : vendor.prepTime || "",
-    items,
-    customerName,
-    customerEmail,
-    customerPhone,
-    location: `${exactLocation} (${location})`,
-    notes: notes || "",
-    deliveryFee,
-    serviceFee,
-    platformCommission,
-    vendorRevenue,
-    totalAmount: finalTotal,
-    status: orderStatus,
-    paymentMethod,
-    paymentStatus,
-    monnifyReference:
-      paymentMethod === "monnify" ? paymentReference : undefined,
-    expiresAt: new Date(Date.now() + 30 * 60000), // 30 minutes from now
-  })
-
-  if (paymentMethod === "wallet" && customerForWallet) {
-    const Wallet = (await import("@/models/Wallet")).default
-    const updatedWallet = await Wallet.findOneAndUpdate(
-      { customerId: customerForWallet._id, balance: { $gte: finalTotal } },
-      { $inc: { balance: -finalTotal } },
-      { new: true }
-    )
-
-    if (!updatedWallet) {
-      await Order.findByIdAndDelete(order._id)
-
-      const reverseOps = items.map(
+      // Reserve quantity by decrementing immediately
+      const bulkOps = items.map(
         (item: {
           menuItemId: string
           name: string
           quantity: number
           price: number
-        }) => ({
-          updateOne: {
-            filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
-            update: { $inc: { quantityAvailable: item.quantity } },
-          },
-        })
+        }) => {
+          const dbItem = dbMenuItemsMap.get(item.menuItemId)
+          const updateDoc: {
+            $inc: { quantityAvailable: number }
+            $set?: { lowStockAlertSent: boolean }
+          } = { $inc: { quantityAvailable: -item.quantity } }
+
+          if (
+            dbItem &&
+            dbItem.quantityAvailable !== null &&
+            dbItem.quantityAvailable !== undefined
+          ) {
+            const newQuantity = dbItem.quantityAvailable - item.quantity
+            if (
+              newQuantity <= LOW_STOCK_THRESHOLD &&
+              !dbItem.lowStockAlertSent
+            ) {
+              updateDoc.$set = { lowStockAlertSent: true }
+              // Fire-and-forget
+              sendVendorLowStockAlertEmail(
+                vendorId,
+                finalVendorName,
+                dbItem.name || "Unknown Item",
+                newQuantity
+              ).catch((err) =>
+                console.error("[POST /api/orders] Low stock alert failed:", err)
+              )
+            }
+          }
+
+          return {
+            updateOne: {
+              filter: {
+                _id: item.menuItemId,
+                quantityAvailable: { $ne: null },
+              },
+              update: updateDoc,
+            },
+          }
+        }
       )
-      if (reverseOps.length > 0) {
-        await MenuItem.bulkWrite(reverseOps).catch(console.error)
+      if (bulkOps.length > 0) {
+        await MenuItem.bulkWrite(bulkOps, { session: mongooseSession }).catch(
+          (err) => {
+            console.error(
+              "[POST /api/orders] Failed to decrement quantity:",
+              err
+            )
+          }
+        )
       }
 
+      const [order] = await Order.create(
+        [
+          {
+            orderId,
+            vendorId,
+            vendorName: finalVendorName,
+            vendorWhatsappNumber: finalWhatsapp,
+            vendorPrepTime:
+              maxHours !== -1 ? maxItemPrepTime : vendor.prepTime || "",
+            items,
+            customerName,
+            customerEmail,
+            customerPhone,
+            location: `${exactLocation} (${location})`,
+            notes: notes || "",
+            deliveryFee,
+            serviceFee,
+            platformCommission,
+            vendorRevenue,
+            totalAmount: finalTotal,
+            status: orderStatus,
+            paymentMethod,
+            paymentStatus,
+            monnifyReference:
+              paymentMethod === "monnify" ? paymentReference : undefined,
+            expiresAt: new Date(Date.now() + 30 * 60000), // 30 minutes from now
+            isRewardSponsored,
+            sponsoredDiscountAmount,
+            rewardVoucherId,
+          },
+        ],
+        { session: mongooseSession }
+      )
+
+      if (paymentMethod === "wallet" && customerForWallet) {
+        const Wallet = (await import("@/models/Wallet")).default
+        const lockedWallet = await Wallet.findOne({
+          customerId: customerForWallet._id,
+          balance: { $gte: finalTotal },
+        }).session(mongooseSession)
+
+        if (!lockedWallet) {
+          transactionError =
+            "Insufficient wallet balance during checkout. Order cancelled."
+          throw new Error("Insufficient balance")
+        }
+
+        const promoDeduction = Math.min(
+          lockedWallet.promoBalance || 0,
+          finalTotal
+        )
+        const depositDeduction = finalTotal - promoDeduction
+
+        lockedWallet.promoBalance -= promoDeduction
+        lockedWallet.depositBalance =
+          (lockedWallet.depositBalance || 0) - depositDeduction
+        lockedWallet.balance -= finalTotal
+
+        await lockedWallet.save({ session: mongooseSession })
+        const updatedWallet = lockedWallet
+
+        const WalletTransaction = (await import("@/models/WalletTransaction"))
+          .default
+        await WalletTransaction.create(
+          [
+            {
+              customerId: customerForWallet._id,
+              type: "order_payment",
+              amount: finalTotal,
+              balanceAfter: updatedWallet.balance,
+              direction: "debit",
+              reference: `ORD-${orderId}`,
+              description: `Payment for order ${orderId}`,
+            },
+          ],
+          { session: mongooseSession }
+        )
+
+        await Vendor.findByIdAndUpdate(
+          vendor._id,
+          {
+            $inc: { pendingWalletBalance: vendorRevenue },
+          },
+          { session: mongooseSession }
+        )
+
+        order.walletPromoAmountUsed = promoDeduction
+        order.walletDepositAmountUsed = depositDeduction
+        order.status = ORDER_STATUS.CONFIRMED
+        order.paymentStatus = PAYMENT_STATUS.PAID
+        await order.save({ session: mongooseSession })
+      }
+
+      orderResponse = order
+    })
+  } catch (error) {
+    if (!transactionError) {
+      console.error("[POST /api/orders] Checkout transaction aborted:", error)
       return {
-        error: "Insufficient wallet balance during checkout. Order cancelled.",
-        status: 400,
+        error: "An error occurred during checkout processing.",
+        status: 500,
       }
     }
+  } finally {
+    mongooseSession.endSession()
+  }
 
-    const WalletTransaction = (await import("@/models/WalletTransaction"))
-      .default
-    await WalletTransaction.create({
-      customerId: customerForWallet._id,
-      type: "order_payment",
-      amount: finalTotal,
-      balanceAfter: updatedWallet.balance,
-      direction: "debit",
-      reference: `ORD-${orderId}`,
-      description: `Payment for order ${orderId}`,
-    })
+  if (transactionError) {
+    return { error: transactionError, status: 400 }
+  }
 
-    await Vendor.findByIdAndUpdate(vendor._id, {
-      $inc: { pendingWalletBalance: vendorRevenue },
-    })
+  const order = orderResponse
 
-    order.status = ORDER_STATUS.CONFIRMED
-    order.paymentStatus = PAYMENT_STATUS.PAID
-    await order.save()
-
+  if (paymentMethod === "wallet" && customerForWallet) {
     const { sendOrderReceiptEmail, sendVendorNewOrderEmail } =
       await import("@/lib/mail")
-
     sendOrderReceiptEmail(
       customerEmail,
       customerName,
-      orderId,
+      order.orderId,
       finalVendorName,
       finalTotal,
       deliveryFee,
@@ -369,7 +482,7 @@ export async function processCheckout(
       sendVendorOrderNotification(
         finalWhatsapp,
         customerName,
-        orderId,
+        order.orderId,
         vendorRevenue
       ).catch(console.error)
     }
@@ -377,7 +490,7 @@ export async function processCheckout(
     sendVendorNewOrderEmail(
       String(vendorId),
       finalVendorName,
-      orderId,
+      order.orderId,
       customerName,
       customerPhone,
       location,
@@ -390,6 +503,7 @@ export async function processCheckout(
       notes || undefined
     ).catch(console.error)
   } else {
+    const { sendOrderInitiatedEmail } = await import("@/lib/mail")
     sendOrderInitiatedEmail(
       customerEmail,
       customerName,

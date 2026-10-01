@@ -91,6 +91,17 @@ export default async function CustomerTransactionsPage(props: {
             <Link href="/customer/transactions?filter=debit">Debits</Link>
           )}
         </Button>
+        <Button
+          variant={filter === "rewards" ? "default" : "outline"}
+          size="sm"
+          asChild={filter !== "rewards"}
+        >
+          {filter === "rewards" ? (
+            <span>Rewards</span>
+          ) : (
+            <Link href="/customer/transactions?filter=rewards">Rewards</Link>
+          )}
+        </Button>
       </div>
 
       {transactions.length === 0 ? (

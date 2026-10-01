@@ -9,6 +9,7 @@ import {
 } from "@/lib/format"
 import { useCart } from "@/hooks/useCart"
 import { toast } from "sonner"
+import { useCustomerVouchers } from "@/hooks/customer/useCustomerVouchers"
 
 interface OrderFormCartItemsProps {
   loading: boolean
@@ -19,10 +20,15 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
     cart,
     updateQuantity,
     removeItem,
-    total,
     maxPrepItem,
     isPreorderCart,
+    appliedVoucherCode,
   } = useCart()
+
+  const { data: vouchers } = useCustomerVouchers()
+  const appliedVoucher = vouchers?.find(
+    (v: { code: string }) => v.code === appliedVoucherCode
+  )
 
   return (
     <div className="space-y-2">
@@ -103,9 +109,23 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
                 <Plus className="size-3" />
               </button>
             </div>
-            <p className="w-16 shrink-0 text-right text-sm font-bold">
-              {formatPrice(ci.menuItem.price * ci.quantity)}
-            </p>
+            <div className="flex w-16 shrink-0 flex-col items-end text-right">
+              {appliedVoucher &&
+              appliedVoucher.menuItem?.id === ci.menuItem.id ? (
+                <>
+                  <span className="text-xs font-bold text-muted-foreground line-through">
+                    {formatPrice(ci.menuItem.price * ci.quantity)}
+                  </span>
+                  <span className="animate-pulse text-sm font-black text-green-600">
+                    FREE!
+                  </span>
+                </>
+              ) : (
+                <p className="text-sm font-bold">
+                  {formatPrice(ci.menuItem.price * ci.quantity)}
+                </p>
+              )}
+            </div>
             <button
               type="button"
               disabled={loading}

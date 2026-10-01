@@ -18,6 +18,7 @@ interface CartState {
   vendorDeliveryFee: number
   vendorPrepTime: string | null
   vendorMonnifySubaccountCode: string | null
+  appliedVoucherCode: string | null
 }
 
 const EMPTY_CART: CartState = {
@@ -28,6 +29,7 @@ const EMPTY_CART: CartState = {
   vendorDeliveryFee: 0,
   vendorPrepTime: null,
   vendorMonnifySubaccountCode: null,
+  appliedVoucherCode: null,
 }
 
 const CART_EVENT = "cb:cart:update"
@@ -147,6 +149,7 @@ export function useCart() {
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
+        appliedVoucherCode: current.appliedVoucherCode,
       })
 
       return { success: true }
@@ -164,6 +167,7 @@ export function useCart() {
         vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: null, // Will be synced by checkout effect
+        appliedVoucherCode: null,
       })
     },
     [persist]
@@ -234,6 +238,19 @@ export function useCart() {
     },
     [persist]
   )
+
+  const applyVoucher = useCallback(
+    (code: string) => {
+      const current = readCart()
+      persist({ ...current, appliedVoucherCode: code })
+    },
+    [persist]
+  )
+
+  const removeVoucher = useCallback(() => {
+    const current = readCart()
+    persist({ ...current, appliedVoucherCode: null })
+  }, [persist])
 
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
 
@@ -310,5 +327,8 @@ export function useCart() {
     maxPrepItem,
     isPreorderCart,
     isHydrated,
+    applyVoucher,
+    removeVoucher,
+    appliedVoucherCode: cart.appliedVoucherCode,
   }
 }

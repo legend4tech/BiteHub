@@ -13,6 +13,7 @@ import { serializeMenuItem } from "@/lib/serializers"
 import type { LeanVendor, LeanMenuItem } from "@/lib/serializers"
 import type mongoose from "mongoose"
 import type { SortOrder } from "mongoose"
+import { escapeRegex } from "@/lib/utils"
 
 // Tag logic — single definition for the entire codebase
 export function getItemTag(price: number): string | null {
@@ -139,10 +140,11 @@ export async function getMenus(options: GetMenusOptions = {}) {
   }
 
   if (q) {
+    const escapedQ = escapeRegex(q)
     baseQuery.$or = [
-      { name: { $regex: q, $options: "i" } },
-      { description: { $regex: q, $options: "i" } },
-      { category: { $regex: q, $options: "i" } },
+      { name: { $regex: escapedQ, $options: "i" } },
+      { description: { $regex: escapedQ, $options: "i" } },
+      { category: { $regex: escapedQ, $options: "i" } },
     ]
   }
 
@@ -356,7 +358,7 @@ export async function getVendorMenuItems(
 
   // Fetch filtered items for rendering
   const filter: Record<string, unknown> = { vendorId }
-  if (search) filter.name = { $regex: search, $options: "i" }
+  if (search) filter.name = { $regex: escapeRegex(search), $options: "i" }
   if (category && category !== "all") filter.category = category
 
   const filteredDocs = await MenuItem.find(filter)

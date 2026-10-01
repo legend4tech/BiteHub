@@ -9,9 +9,15 @@ import type { CustomerSignupValues } from "@/lib/schemas"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { sendCustomerWelcomeEmail } from "@/lib/authMail"
+import { processReferralSignup } from "@/lib/services/gamificationService"
 
 import dbConnect from "@/lib/db"
-import { serializeWallet, serializeWalletTransaction } from "@/lib/serializers"
+import {
+  serializeWallet,
+  serializeWalletTransaction,
+  serializeCustomer,
+} from "@/lib/serializers"
+import { escapeRegex } from "@/lib/utils"
 
 /**
  * Generates a unique username based on the customer's name.
@@ -92,8 +98,26 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
         }
       )
 
+      if (updateData.referredBy) {
+        try {
+          await processReferralSignup(
+            existingCustomer._id.toString(),
+            updateData.referredBy as string
+          )
+        } catch (error) {
+          console.error("Error processing referral for claimed account:", error)
+        }
+      }
+
       // Dispatch welcome email asynchronously
       sendCustomerWelcomeEmail(email, name).catch(console.error)
+
+      // Smart Retroactive Linking: Link any past guest orders matching exactly this email
+      const Order = (await import("@/models/Order")).default
+      await Order.updateMany(
+        { customerEmail: email, customerId: { $exists: false } },
+        { $set: { customerId: existingCustomer._id } }
+      )
 
       return { claimed: true }
     }
@@ -104,7 +128,7 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
   const referralCode = `REF-${randomReferral.toUpperCase()}`
   const username = await generateUniqueUsername(name)
 
-  await Customer.create({
+  const customer = await Customer.create({
     name,
     username,
     email,
@@ -117,8 +141,23 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
     campus,
   })
 
+  if (referredBy) {
+    try {
+      await processReferralSignup(customer._id.toString(), referredBy)
+    } catch (error) {
+      console.error("Error processing referral for new account:", error)
+    }
+  }
+
   // Dispatch welcome email asynchronously
   sendCustomerWelcomeEmail(email, name).catch(console.error)
+
+  // Smart Retroactive Linking: Link any past guest orders matching exactly this email
+  const Order = (await import("@/models/Order")).default
+  await Order.updateMany(
+    { customerEmail: email, customerId: { $exists: false } },
+    { $set: { customerId: customer._id } }
+  )
 
   return { claimed: false }
 }
@@ -167,6 +206,8 @@ export async function getCustomerTransactionsList(
     query.direction = "credit"
   } else if (filter === "debit") {
     query.direction = "debit"
+  } else if (filter === "rewards") {
+    query.type = "reward"
   }
 
   const skip = (page - 1) * limit
@@ -190,5 +231,47 @@ export async function getCustomerTransactionsList(
     totalPages: Math.ceil(totalTransactions / limit),
     totalTransactions,
     hasMore: skip + transactions.length < totalTransactions,
+  }
+}
+
+export async function getCustomerReferralCode(
+  email: string
+): Promise<string | null> {
+  await dbConnect()
+  const customer = await Customer.findOne({ email })
+    .select("referralCode")
+    .lean()
+  return customer ? (customer.referralCode as string) : null
+}
+
+export async function getAdminCustomers(
+  page: number = 1,
+  limit: number = 20,
+  search: string = ""
+) {
+  await dbConnect()
+
+  const query: Record<string, unknown> = {}
+  if (search) {
+    const escapedSearch = escapeRegex(search)
+    query.$or = [
+      { email: { $regex: escapedSearch, $options: "i" } },
+      { phone: { $regex: escapedSearch, $options: "i" } },
+      { name: { $regex: escapedSearch, $options: "i" } },
+      { referralCode: { $regex: escapedSearch, $options: "i" } },
+    ]
+  }
+
+  const skip = (page - 1) * limit
+  const [customers, total] = await Promise.all([
+    Customer.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Customer.countDocuments(query),
+  ])
+
+  return {
+    customers: customers.map(serializeCustomer),
+    total,
+    pages: Math.ceil(total / limit),
+    currentPage: page,
   }
 }

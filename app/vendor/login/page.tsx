@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,21 +16,21 @@ import {
   Star,
   TrendingUp,
 } from "lucide-react"
-import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { AuthPanel } from "@/components/shared/AuthPanel"
 import { toast } from "sonner"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
+import { SuspendedAlert } from "@/components/shared/SuspendedAlert"
 import Image from "next/image"
 
 import { vendorLoginSchema, type VendorLoginValues } from "@/lib/schemas"
 
 export default function VendorLoginPage() {
-  const router = useRouter()
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isSuspended, setIsSuspended] = useState(false)
 
   const form = useForm<VendorLoginValues>({
     resolver: zodResolver(
@@ -46,6 +46,7 @@ export default function VendorLoginPage() {
     }
 
     setLoading(true)
+    setIsSuspended(false)
     try {
       const res = await signIn("vendor-login", {
         redirect: false,
@@ -54,22 +55,23 @@ export default function VendorLoginPage() {
       })
 
       if (res?.error) {
-        if (res.error.includes("Too Many Requests")) {
-          // Rate limit message — pass through as-is (already user-friendly)
-          toast.error(res.error)
+        const resCode = (res as { code?: string }).code
+
+        if (resCode === "AccountSuspended") {
+          setIsSuspended(true)
+          return
+        }
+        if (resCode === "RateLimitExceeded") {
+          toast.error(
+            "Too many login attempts. Please wait a minute and try again."
+          )
         } else if (
           res.error === "Configuration" ||
           res.error === "AccessDenied"
         ) {
           toast.error("Authentication service error. Please try again.")
-        } else if (
-          res.error === "CredentialsSignin" ||
-          res.error === "Invalid credentials"
-        ) {
-          // NextAuth may return the raw class name in some edge cases
-          toast.error("Invalid email or password.")
         } else {
-          toast.error(res.error || "Something went wrong. Please try again.")
+          toast.error("Invalid email or password.")
         }
       } else if (!res?.ok && res?.status === 429) {
         // Proxy-level IP rate limit — signIn() received 429 from middleware
@@ -83,7 +85,7 @@ export default function VendorLoginPage() {
         )
       } else {
         toast.success("Login successful. Welcome back!")
-        router.replace("/vendor/dashboard")
+        window.location.assign("/vendor/dashboard")
       }
     } catch (error: unknown) {
       const err = error as { message?: string }
@@ -168,6 +170,7 @@ export default function VendorLoginPage() {
 
             {/* Form */}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {isSuspended && <SuspendedAlert type="vendor" />}
               <Controller
                 name="email"
                 control={form.control}

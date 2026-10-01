@@ -8,21 +8,19 @@ import VendorUserModel from "@/models/VendorUser"
 import VendorModel from "@/models/Vendor"
 import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
-import { z } from "zod"
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
 import type { JWT } from "next-auth/jwt"
 
-// ─── Custom error class ───────────────────────────────────────────────────────
-// NextAuth masks error messages by default, returning the class name instead.
-// Subclassing CredentialsSignin and storing the message in `code` preserves it.
-class CustomAuthError extends CredentialsSignin {
-  // Declare `code` as a class field so it overrides the parent's default
-  // "CredentialsSignin" value regardless of transpiler field-init order.
-  code = "CredentialsSignin"
-  constructor(message: string) {
-    super(message)
-    this.code = message // Always wins
-  }
+class AccountSuspendedError extends CredentialsSignin {
+  code = "AccountSuspended"
+}
+
+class RateLimitExceededError extends CredentialsSignin {
+  code = "RateLimitExceeded"
+}
+
+class InvalidCredentialsError extends CredentialsSignin {
+  code = "InvalidCredentials"
 }
 
 import { adminLoginSchema as credentialsSchema } from "@/lib/schemas"
@@ -30,17 +28,11 @@ import { adminLoginSchema as credentialsSchema } from "@/lib/schemas"
 // ─── Rate limit helper ────────────────────────────────────────────────────────
 async function checkRateLimit(email: string) {
   if (!isRateLimitingEnabled) return
-  const { success, reset } = await strictRateLimiter.limit(
+  const { success } = await strictRateLimiter.limit(
     `login_email_${email.toLowerCase()}`
   )
   if (!success) {
-    const seconds = Math.ceil((reset - Date.now()) / 1000)
-    const minutes = Math.ceil(seconds / 60)
-    const msg =
-      seconds < 60
-        ? `Too Many Requests, try again in ${seconds} seconds`
-        : `Too Many Requests, try again in ${minutes} minute${minutes > 1 ? "s" : ""}`
-    throw new CustomAuthError(msg)
+    throw new RateLimitExceededError()
   }
 }
 
@@ -107,7 +99,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         try {
           const parsed = credentialsSchema.safeParse(credentials)
-          if (!parsed.success) throw new CustomAuthError("Invalid inputs")
+          if (!parsed.success) throw new InvalidCredentialsError()
 
           const { email, password } = parsed.data
           await checkRateLimit(email)
@@ -116,11 +108,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const user = await VendorUserModel.findOne({
             email: email.toLowerCase(),
           })
-          if (!user || !user.isActive)
-            throw new CustomAuthError("Invalid credentials")
+          if (!user) throw new InvalidCredentialsError()
 
           const passwordsMatch = await bcrypt.compare(password, user.password)
-          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials")
+          if (!passwordsMatch) throw new InvalidCredentialsError()
+
+          if (!user.isActive) throw new AccountSuspendedError()
 
           // Update last login (fire and forget — non-blocking)
           VendorUserModel.findByIdAndUpdate(user._id, {
@@ -144,9 +137,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error
           console.error("[vendor-login authorize]", error)
-          throw new CustomAuthError(
-            "Database or network error during authentication."
-          )
+          throw new Error("Database or network error during authentication.")
         }
       },
     }),
@@ -162,18 +153,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         try {
           const parsed = credentialsSchema.safeParse(credentials)
-          if (!parsed.success) throw new CustomAuthError("Invalid inputs")
+          if (!parsed.success) throw new InvalidCredentialsError()
 
           const { email, password } = parsed.data
           await checkRateLimit(email)
           await dbConnect()
 
           const user = await AdminUser.findOne({ email: email.toLowerCase() })
-          if (!user || !user.isActive)
-            throw new CustomAuthError("Invalid credentials")
+          if (!user) throw new InvalidCredentialsError()
 
           const passwordsMatch = await bcrypt.compare(password, user.password)
-          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials")
+          if (!passwordsMatch) throw new InvalidCredentialsError()
+
+          if (!user.isActive) throw new AccountSuspendedError()
 
           // Update last login (fire and forget — non-blocking)
           AdminUser.findByIdAndUpdate(user._id, {
@@ -191,9 +183,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error
           console.error("[admin-login authorize]", error)
-          throw new CustomAuthError(
-            "Database or network error during authentication."
-          )
+          throw new Error("Database or network error during authentication.")
         }
       },
     }),
@@ -209,7 +199,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         try {
           const parsed = credentialsSchema.safeParse(credentials)
-          if (!parsed.success) throw new CustomAuthError("Invalid inputs")
+          if (!parsed.success) throw new InvalidCredentialsError()
 
           const { email, password } = parsed.data
           await checkRateLimit(email)
@@ -218,12 +208,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const user = await CustomerModel.findOne({
             email: email.toLowerCase(),
           })
-          if (!user || !user.isActive || !user.password) {
-            throw new CustomAuthError("Invalid credentials")
+          if (!user || !user.password) {
+            throw new InvalidCredentialsError()
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password)
-          if (!passwordsMatch) throw new CustomAuthError("Invalid credentials")
+          if (!passwordsMatch) throw new InvalidCredentialsError()
+
+          if (!user.isActive) {
+            throw new AccountSuspendedError()
+          }
 
           // Update last login (fire and forget — non-blocking)
           CustomerModel.findByIdAndUpdate(user._id, {
@@ -241,9 +235,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           if (error instanceof CredentialsSignin) throw error
           console.error("[customer-login authorize]", error)
-          throw new CustomAuthError(
-            "Database or network error during authentication."
-          )
+          throw new Error("Database or network error during authentication.")
         }
       },
     }),

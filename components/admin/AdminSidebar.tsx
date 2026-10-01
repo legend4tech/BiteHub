@@ -18,8 +18,10 @@ import {
   MapPin,
   ShoppingCart,
   Users,
+  User,
   TrendingUp,
   Banknote,
+  Gift,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -56,9 +58,11 @@ const navItems: {
   { section: "analytics", label: "Analytics", icon: TrendingUp },
   { section: "orders", label: "Orders", icon: ShoppingCart },
   { section: "vendors", label: "Vendors", icon: Store },
+  { section: "customers", label: "Customers", icon: User },
   { section: "payouts", label: "Payouts", icon: Banknote },
+  { section: "campaigns", label: "Campaigns", icon: Gift },
   { section: "feedback", label: "Feedback", icon: Star },
-  { section: "staff", label: "Staff", icon: Users },
+  { section: "staff", label: "Staff Users", icon: Users },
   { section: "delivery-zones", label: "Delivery Zones", icon: MapPin },
   { section: "settings", label: "Settings", icon: Settings },
 ]
@@ -301,7 +305,7 @@ function SidebarContent({
                       await signOut({ redirect: false })
                       toast.success("Successfully logged out")
                       window.location.href = "/admin/login"
-                    } catch (error) {
+                    } catch {
                       toast.error("Network error. Could not log out.")
                     }
                   }}

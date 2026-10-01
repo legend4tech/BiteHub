@@ -93,6 +93,7 @@ export const createOrderSchema = z.object({
   notes: z.string().optional(),
   paymentMethod: z.enum(["monnify", "wallet"]).default("monnify"),
   total: z.number().optional(), // We accept it but ignore it for calculation
+  appliedVoucherCode: z.string().optional(),
 })
 export type CreateOrderValues = z.infer<typeof createOrderSchema>
 
@@ -238,3 +239,11 @@ export const singleItemReviewSchema = z.object({
   isAnonymous: z.boolean(),
 })
 export type SingleItemReviewValues = z.infer<typeof singleItemReviewSchema>
+
+// ─── Gamification ─────────────────────────────────────────────────────────────
+
+export const applyVoucherSchema = z.object({
+  code: z.string().trim().min(5, "Invalid voucher code"),
+  orderId: z.string().optional(),
+})
+export type ApplyVoucherValues = z.infer<typeof applyVoucherSchema>

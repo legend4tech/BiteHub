@@ -41,6 +41,13 @@ export interface IOrder extends Document {
   isRated?: boolean
   isVendorRated?: boolean
   ratedItems?: string[]
+
+  // Gamification Fields
+  rewardVoucherId?: Types.ObjectId
+  isRewardSponsored?: boolean
+  sponsoredDiscountAmount?: number
+  walletPromoAmountUsed?: number
+  walletDepositAmountUsed?: number
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -108,6 +115,13 @@ const OrderSchema = new Schema<IOrder>(
     isRated: { type: Boolean, default: false },
     isVendorRated: { type: Boolean, default: false },
     ratedItems: { type: [String], default: [] },
+
+    // Gamification Fields
+    rewardVoucherId: { type: Schema.Types.ObjectId, ref: "RewardVoucher" },
+    isRewardSponsored: { type: Boolean, default: false },
+    sponsoredDiscountAmount: { type: Number, default: 0 },
+    walletPromoAmountUsed: { type: Number, default: 0 },
+    walletDepositAmountUsed: { type: Number, default: 0 },
   },
   {
     timestamps: true,

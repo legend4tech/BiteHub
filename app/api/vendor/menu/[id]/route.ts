@@ -123,7 +123,7 @@ export async function PATCH(
     const item = await MenuItem.findOneAndUpdate(
       { _id: id, vendorId },
       { $set: body },
-      { new: true }
+      { returnDocument: "after" }
     ).lean()
 
     if (!item) {

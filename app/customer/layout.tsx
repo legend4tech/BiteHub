@@ -8,7 +8,7 @@ import {
 import { SessionProvider, useSession } from "next-auth/react"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
-import { Loader2 } from "lucide-react"
+import { FloatingBumpTracker } from "@/components/customer/rewards/FloatingBumpTracker"
 
 const pageTitles: Record<string, string> = {
   "/customer/dashboard": "Overview",
@@ -65,6 +65,7 @@ function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
         </main>
       </div>
+      <FloatingBumpTracker />
     </div>
   )
 }

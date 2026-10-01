@@ -13,6 +13,7 @@ import { serializeOrder, type LeanOrder } from "@/lib/serializers"
 import { Types } from "mongoose"
 import type mongoose from "mongoose"
 import type { Order as OrderType } from "@/types/shared"
+import { escapeRegex } from "@/lib/utils"
 
 export interface GetVendorOrdersOptions {
   vendorId: string | mongoose.Types.ObjectId
@@ -46,7 +47,7 @@ export async function getVendorOrdersPaginated(
   const baseMatch: Record<string, unknown> = { vendorId: vendorObjectId }
 
   if (q) {
-    const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const escapedQuery = escapeRegex(q)
     baseMatch.$or = [
       { orderId: { $regex: escapedQuery, $options: "i" } },
       { customerName: { $regex: escapedQuery, $options: "i" } },

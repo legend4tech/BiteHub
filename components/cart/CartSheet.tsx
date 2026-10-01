@@ -7,6 +7,7 @@ import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { formatPriceExact } from "@/lib/format"
 import { OrderFormCartItems } from "@/components/cart/OrderFormCartItems"
+import { CheckoutVoucherBanner } from "@/components/customer/rewards/CheckoutVoucherBanner"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -162,6 +163,8 @@ export function CartSheet({ open, onClose }: CartSheetProps) {
                 </p>
                 <p className="font-bold">{cart.vendorName}</p>
               </div>
+
+              <CheckoutVoucherBanner />
 
               <OrderFormCartItems loading={false} />
             </div>
