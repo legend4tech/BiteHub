@@ -119,11 +119,27 @@ export async function PATCH(
         const { processOrderCompleted } =
           await import("@/lib/services/gamificationService")
         if (order.customerId) {
-          void processOrderCompleted(
+          // Update lastOrderAt for dormant customer re-engagement
+          const { default: Customer } = await import("@/models/Customer")
+          await Customer.findByIdAndUpdate(order.customerId, {
+            $set: { lastOrderAt: new Date() },
+          }).catch(console.error)
+
+          processOrderCompleted(
             order.orderId,
             order.customerId.toString(),
             order.totalAmount
-          )
+          ).catch(async (err: Error) => {
+            const { default: GamificationFailureLog } =
+              await import("@/models/GamificationFailureLog")
+            await GamificationFailureLog.create({
+              orderId: order.orderId,
+              customerId: order.customerId?.toString(),
+              errorMessage: err.message,
+              errorStack: err.stack,
+              context: "processOrderCompleted",
+            }).catch(console.error)
+          })
         }
 
         // Fire and forget

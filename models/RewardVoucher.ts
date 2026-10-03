@@ -57,6 +57,7 @@ const RewardVoucherSchema = new Schema<IRewardVoucher>(
 
 RewardVoucherSchema.index({ customerId: 1, isUsed: 1 }) // Fast lookup for a customer's active vouchers
 RewardVoucherSchema.index({ code: 1 }, { unique: true })
+RewardVoucherSchema.index({ isUsed: 1 }) // Fast lookup for analytics (Free Meals Redeemed)
 
 export default mongoose.models.RewardVoucher ||
   mongoose.model<IRewardVoucher>("RewardVoucher", RewardVoucherSchema)

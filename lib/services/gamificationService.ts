@@ -270,6 +270,7 @@ async function processCampaignProgress(
           customerId.toString(),
           campaign.rewardValue,
           campaign.title,
+          campaign.rewardExpiryDays ?? 90,
           session
         )
       } else if (campaign.rewardType === "FREE_MEAL") {
@@ -278,6 +279,8 @@ async function processCampaignProgress(
           campaign._id,
           campaign.vendorId!,
           campaign.menuItemId!,
+          campaign.title,
+          campaign.rewardExpiryDays ?? 90,
           session
         )
       }
@@ -299,6 +302,7 @@ async function issueCoins(
   customerId: string,
   amount: number,
   campaignTitle: string,
+  expiryDays: number,
   session: mongoose.mongo.ClientSession
 ) {
   const wallet = await Wallet.findOneAndUpdate(
@@ -318,6 +322,9 @@ async function issueCoins(
   wallet.promoBalance = (wallet.promoBalance || 0) + amount
   await wallet.save({ session })
 
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + expiryDays)
+
   await WalletTransaction.create(
     [
       {
@@ -326,12 +333,27 @@ async function issueCoins(
         direction: "credit",
         amount,
         balanceAfter: wallet.balance,
+        expiresAt,
+        isExpired: false,
         reference: `REWARD-${crypto.randomBytes(4).toString("hex").toUpperCase()}`,
         description: `Reward for completing: ${campaignTitle}`,
       },
     ],
     { session }
   )
+
+  const customer = await Customer.findById(customerId)
+    .select("email name")
+    .lean()
+  if (customer && customer.email) {
+    const { sendRewardEarnedEmail } = await import("@/lib/rewardMail")
+    sendRewardEarnedEmail(
+      customer.email,
+      customer.name,
+      campaignTitle,
+      `${amount} BHC`
+    ).catch(console.error)
+  }
 }
 
 /**
@@ -342,10 +364,12 @@ async function issueVoucher(
   campaignId: mongoose.Types.ObjectId,
   vendorId: mongoose.Types.ObjectId,
   menuItemId: string,
+  campaignTitle: string,
+  expiryDays: number,
   session: mongoose.mongo.ClientSession
 ) {
   const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 30) // Vouchers expire in 30 days
+  expiresAt.setDate(expiresAt.getDate() + expiryDays)
 
   await RewardVoucher.create(
     [
@@ -360,6 +384,19 @@ async function issueVoucher(
     ],
     { session }
   )
+
+  const customer = await Customer.findById(customerId)
+    .select("email name")
+    .lean()
+  if (customer && customer.email) {
+    const { sendRewardEarnedEmail } = await import("@/lib/rewardMail")
+    sendRewardEarnedEmail(
+      customer.email,
+      customer.name,
+      campaignTitle,
+      "Free Meal Voucher"
+    ).catch(console.error)
+  }
 }
 
 // ── Admin Services ─────────────────────────────────────────────────────────────

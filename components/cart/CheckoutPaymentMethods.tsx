@@ -1,5 +1,5 @@
 import { Controller, type Control } from "react-hook-form"
-import { Wallet } from "lucide-react"
+import { Wallet, Lock } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatPriceExact } from "@/lib/format"
 import type { OrderFormInputValues } from "@/lib/schemas"
@@ -7,6 +7,7 @@ import type { OrderFormInputValues } from "@/lib/schemas"
 interface CustomerWalletData {
   wallet?: {
     balance: number
+    depositBalance: number
   }
 }
 
@@ -18,6 +19,7 @@ interface CheckoutPaymentMethodsProps {
   targetAmountToReceive: number
   serviceFee: number
   router: { push: (url: string) => void }
+  isRewardApplied: boolean
 }
 
 export function CheckoutPaymentMethods({
@@ -28,6 +30,7 @@ export function CheckoutPaymentMethods({
   targetAmountToReceive,
   serviceFee,
   router,
+  isRewardApplied,
 }: CheckoutPaymentMethodsProps) {
   return (
     <Controller
@@ -39,22 +42,34 @@ export function CheckoutPaymentMethods({
         >
           <button
             type="button"
-            onClick={() => field.onChange("monnify")}
+            onClick={() => {
+              if (!isRewardApplied) field.onChange("monnify")
+            }}
+            disabled={isRewardApplied}
             className={`flex flex-col items-center justify-center rounded-xl border p-6 transition-all ${
               field.value === "monnify"
                 ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-2"
-                : "border-border hover:bg-muted"
+                : isRewardApplied
+                  ? "cursor-not-allowed border-border bg-muted/20 opacity-50"
+                  : "border-border hover:bg-muted"
             }`}
           >
             <div className="mb-2 flex h-8 items-center rounded border border-border bg-white px-2 shadow-sm">
               <span className="font-bold text-primary">monnify</span>
             </div>
             <span className="font-bold">Pay with Monnify</span>
-            <span className="mt-1 text-center text-sm text-muted-foreground">
-              {field.value === "monnify"
-                ? `(+${formatPriceExact(serviceFee)} fee)`
-                : "Secure, automated"}
-            </span>
+            {isRewardApplied ? (
+              <span className="mt-1 text-center text-[11px] leading-tight font-medium text-destructive">
+                <Lock className="mr-0.5 mb-[2px] inline-block size-3" /> Locked.
+                Remove rewards <br /> to use Monnify.
+              </span>
+            ) : (
+              <span className="mt-1 text-center text-sm text-muted-foreground">
+                {field.value === "monnify"
+                  ? `(+${formatPriceExact(serviceFee)} fee)`
+                  : "Secure, automated"}
+              </span>
+            )}
           </button>
           {isCustomer && (
             <button
@@ -63,7 +78,7 @@ export function CheckoutPaymentMethods({
                 if (
                   isWalletLoading ||
                   !customerWallet?.wallet ||
-                  customerWallet.wallet.balance < targetAmountToReceive
+                  customerWallet.wallet.depositBalance < targetAmountToReceive
                 )
                   return
                 field.onChange("wallet")
@@ -74,7 +89,8 @@ export function CheckoutPaymentMethods({
                   : isWalletLoading
                     ? "cursor-not-allowed border-border bg-muted/10"
                     : !customerWallet?.wallet ||
-                        customerWallet.wallet.balance < targetAmountToReceive
+                        customerWallet.wallet.depositBalance <
+                          targetAmountToReceive
                       ? "cursor-not-allowed border-border bg-muted/30 opacity-80"
                       : "border-border hover:border-primary/50 hover:bg-primary/5"
               }`}
@@ -107,9 +123,11 @@ export function CheckoutPaymentMethods({
               ) : (
                 <div className="mt-1 flex flex-col items-center text-sm text-muted-foreground">
                   <span>
-                    Bal: {formatPriceExact(customerWallet.wallet.balance)}
+                    Bal:{" "}
+                    {formatPriceExact(customerWallet.wallet.depositBalance)}
                   </span>
-                  {customerWallet.wallet.balance < targetAmountToReceive ? (
+                  {customerWallet.wallet.depositBalance <
+                  targetAmountToReceive ? (
                     <div className="mt-1 flex flex-col items-center">
                       <span className="mb-2 text-center text-[10px] leading-tight font-medium text-destructive">
                         Insufficient funds <br /> for this order

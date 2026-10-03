@@ -70,3 +70,13 @@ export function useToggleCampaignStatus() {
     },
   })
 }
+
+export function useGamificationAnalytics() {
+  return useQuery({
+    queryKey: ["admin-gamification-analytics"],
+    queryFn: async () => {
+      const response = await apiClient.get("/admin/gamification/analytics")
+      return response.data.data
+    },
+  })
+}

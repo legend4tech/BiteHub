@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { getSchoolName, getCampusName } from "@/lib/config/campus"
 import { useRouter } from "next/navigation"
+import { AvailableRewards } from "./AvailableRewards"
 
 interface OrderSummaryCardProps {
   cart: {
@@ -30,6 +31,13 @@ interface OrderSummaryCardProps {
   serverError?: string | null
   requiresLogin?: boolean
   requiresSignup?: boolean
+  applyVoucher: (code: string) => void
+  removeVoucher: () => void
+  appliedVoucherCode: string | null
+  useBHC: boolean
+  setUseBHC: (value: boolean) => void
+  customerWallet: { wallet: { promoBalance: number } } | null
+  isInsufficientFunds?: boolean
 }
 
 export function OrderSummaryCard({
@@ -39,7 +47,6 @@ export function OrderSummaryCard({
   finalTotal,
   loading,
   isSyncing,
-  selectedLocation,
   isValidLocation,
   noZonesAvailable,
   isCrossCampus,
@@ -49,8 +56,21 @@ export function OrderSummaryCard({
   serverError,
   requiresLogin,
   requiresSignup,
+  applyVoucher,
+  removeVoucher,
+  appliedVoucherCode,
+  useBHC,
+  setUseBHC,
+  customerWallet,
+  isInsufficientFunds,
 }: OrderSummaryCardProps) {
   const router = useRouter()
+
+  const promoBalance = customerWallet?.wallet?.promoBalance ?? 0
+  const discountedTotal =
+    useBHC && promoBalance > 0
+      ? Math.max(0, finalTotal - Math.min(promoBalance, finalTotal))
+      : finalTotal
 
   return (
     <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -102,11 +122,30 @@ export function OrderSummaryCard({
           <span>Service Fee</span>
           <span>{formatPriceExact(serviceFee)}</span>
         </div>
+        {useBHC && promoBalance > 0 && (
+          <div className="flex justify-between font-medium text-primary">
+            <span>BiteHub Coins Applied</span>
+            <span>-{formatPriceExact(Math.min(promoBalance, finalTotal))}</span>
+          </div>
+        )}
       </div>
+
+      <AvailableRewards
+        cart={cart as never}
+        customerWallet={customerWallet}
+        applyVoucher={applyVoucher}
+        removeVoucher={removeVoucher}
+        appliedVoucherCode={appliedVoucherCode}
+        useBHC={useBHC}
+        setUseBHC={setUseBHC}
+        finalTotalWithoutBHC={finalTotal}
+      />
 
       <div className="mb-6 flex justify-between border-t border-border pt-6 font-heading text-xl font-bold">
         <span>Total</span>
-        <span className="text-primary">{formatPriceExact(finalTotal)}</span>
+        <span className="text-primary">
+          {formatPriceExact(discountedTotal)}
+        </span>
       </div>
 
       {serverError && (
@@ -142,25 +181,37 @@ export function OrderSummaryCard({
         </div>
       )}
 
-      <Button
-        type="submit"
-        variant="hero"
-        size="xl"
-        className="w-full text-lg"
-        disabled={
-          loading ||
-          isSyncing ||
-          cart.items.length === 0 ||
-          !isValidLocation ||
-          noZonesAvailable
-        }
-      >
-        {loading || isSyncing ? (
-          <Loader2 className="size-5 animate-spin" />
-        ) : (
-          `Pay ${formatPriceExact(finalTotal)}`
-        )}
-      </Button>
+      {isInsufficientFunds ? (
+        <Button
+          type="button"
+          variant="destructive"
+          size="xl"
+          className="w-full text-lg"
+          onClick={() => router.push("/customer/wallet")}
+        >
+          Insufficient Funds - Top Up
+        </Button>
+      ) : (
+        <Button
+          type="submit"
+          variant="hero"
+          size="xl"
+          className="w-full text-lg"
+          disabled={
+            loading ||
+            isSyncing ||
+            cart.items.length === 0 ||
+            !isValidLocation ||
+            noZonesAvailable
+          }
+        >
+          {loading || isSyncing ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            `Pay ${formatPriceExact(discountedTotal)}`
+          )}
+        </Button>
+      )}
 
       {isCrossCampus && (
         <p className="mt-3 text-center text-xs text-muted-foreground">

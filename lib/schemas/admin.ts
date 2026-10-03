@@ -140,6 +140,10 @@ export const rewardCampaignFormSchema = z
 
     rewardType: z.enum(["BITEHUB_COINS", "FREE_MEAL"]),
     rewardValue: z.number().optional(),
+    rewardExpiryDays: z
+      .number()
+      .min(1, "Expiry must be at least 1 day")
+      .default(90),
 
     vendorId: z.string().optional(),
     menuItemId: z.string().optional(),

@@ -17,6 +17,8 @@ export interface ICustomer extends Document {
   image?: string
   imagePublicId?: string
   lastLoginAt?: Date
+  lastOrderAt?: Date
+  sentReEngagementAt?: Date
   createdAt: Date
   updatedAt: Date
 
@@ -61,6 +63,8 @@ const CustomerSchema = new Schema<ICustomer>(
     image: { type: String },
     imagePublicId: { type: String },
     lastLoginAt: { type: Date },
+    lastOrderAt: { type: Date },
+    sentReEngagementAt: { type: Date },
 
     // Security / Account Recovery
     pendingEmail: { type: String, lowercase: true, trim: true },
@@ -90,6 +94,9 @@ const CustomerSchema = new Schema<ICustomer>(
 
 // Analytics: new customers count for a date range
 CustomerSchema.index({ createdAt: -1 })
+
+// Gamification / Re-engagement: find dormant active customers
+CustomerSchema.index({ lastOrderAt: 1, isActive: 1 })
 
 export default mongoose.models.Customer ||
   mongoose.model<ICustomer>("Customer", CustomerSchema)

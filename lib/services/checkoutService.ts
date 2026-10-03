@@ -46,6 +46,7 @@ export async function processCheckout(
     notes?: string
     paymentMethod: string
     appliedVoucherCode?: string
+    useBHC?: boolean
   },
   session: Session | null
 ) {
@@ -60,6 +61,7 @@ export async function processCheckout(
     notes,
     paymentMethod,
     appliedVoucherCode,
+    useBHC,
   } = parsedData
 
   // Fetch existing customer record (if any)
@@ -68,11 +70,17 @@ export async function processCheckout(
   }).lean()
 
   if (existingCustomer) {
+    const isCustomerRole = session?.user?.role === "customer"
     const isAuthenticatedCustomer =
-      session?.user?.role === "customer" &&
+      isCustomerRole &&
       session.user?.email?.toLowerCase() === customerEmail.toLowerCase()
 
-    if (!isAuthenticatedCustomer) {
+    const isOwnEmailDifferentRole =
+      session?.user &&
+      session.user.role !== "customer" &&
+      session.user.email?.toLowerCase() === customerEmail.toLowerCase()
+
+    if (!isAuthenticatedCustomer && !isOwnEmailDifferentRole) {
       const hasPassword = !!existingCustomer.password
       return {
         error: hasPassword
@@ -143,6 +151,13 @@ export async function processCheckout(
   let rewardVoucherId: mongoose.Types.ObjectId | undefined = undefined
 
   if (appliedVoucherCode) {
+    if (paymentMethod !== "wallet") {
+      return {
+        error:
+          "You must use your BiteHub Wallet to pay when using rewards. Please select Wallet as your payment method.",
+        status: 400,
+      }
+    }
     if (!existingCustomer) {
       return { error: "You must be logged in to use a voucher.", status: 401 }
     }
@@ -397,11 +412,16 @@ export async function processCheckout(
           throw new Error("Insufficient balance")
         }
 
-        const promoDeduction = Math.min(
-          lockedWallet.promoBalance || 0,
-          finalTotal
-        )
+        const promoDeduction = useBHC
+          ? Math.min(lockedWallet.promoBalance || 0, finalTotal)
+          : 0
         const depositDeduction = finalTotal - promoDeduction
+
+        if ((lockedWallet.depositBalance || 0) < depositDeduction) {
+          transactionError =
+            "Insufficient deposit balance to cover the total without using BiteHub Coins."
+          throw new Error("Insufficient balance")
+        }
 
         lockedWallet.promoBalance -= promoDeduction
         lockedWallet.depositBalance =

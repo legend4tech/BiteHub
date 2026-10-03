@@ -13,6 +13,7 @@ export interface IRewardCampaign extends Document {
   // What is the reward?
   rewardType: "BITEHUB_COINS" | "FREE_MEAL"
   rewardValue?: number // e.g., 500 coins
+  rewardExpiryDays: number // How many days until the reward expires?
 
   // If FREE_MEAL, what is it?
   vendorId?: Types.ObjectId
@@ -59,6 +60,7 @@ const RewardCampaignSchema = new Schema<IRewardCampaign>(
       required: true,
     },
     rewardValue: { type: Number }, // Only needed for COINS
+    rewardExpiryDays: { type: Number, required: true, default: 90 },
 
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
     menuItemId: { type: String }, // For FREE_MEAL

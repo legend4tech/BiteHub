@@ -30,7 +30,18 @@ import { OrderSummaryCard } from "@/components/cart/OrderSummaryCard"
 import { CheckoutPaymentMethods } from "@/components/cart/CheckoutPaymentMethods"
 
 export function CheckoutForm() {
-  const { cart, clearCart, syncVendorDetails, total, isHydrated } = useCart()
+  const {
+    cart,
+    clearCart,
+    syncVendorDetails,
+    total,
+    isHydrated,
+    applyVoucher,
+    removeVoucher,
+    appliedVoucherCode,
+    useBHC,
+    setUseBHC,
+  } = useCart()
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [requiresLogin, setRequiresLogin] = useState(false)
@@ -160,6 +171,13 @@ export function CheckoutForm() {
   ])
 
   const paymentMethod = form.watch("paymentMethod")
+  const isRewardApplied = !!appliedVoucherCode || useBHC
+
+  useEffect(() => {
+    if (isRewardApplied && paymentMethod !== "wallet") {
+      form.setValue("paymentMethod", "wallet")
+    }
+  }, [isRewardApplied, paymentMethod, form])
 
   const isValidLocation = deliveryZones.some(
     (z) =>
@@ -189,6 +207,15 @@ export function CheckoutForm() {
       : computeMonnifyServiceFee(targetAmountToReceive)
   const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
   const finalTotal = calculatedTotal + serviceFee
+  const bhcDiscount = useBHC
+    ? Math.min(customerWallet?.wallet?.promoBalance || 0, finalTotal)
+    : 0
+  const finalPayableAmount = finalTotal - bhcDiscount
+
+  const isInsufficientFunds =
+    paymentMethod === "wallet" &&
+    !isWalletLoading &&
+    (customerWallet?.wallet?.depositBalance ?? 0) < finalPayableAmount
 
   const createOrderMutation = useCreateOrder()
 
@@ -238,7 +265,8 @@ export function CheckoutForm() {
         notes: values.notes,
         paymentMethod: values.paymentMethod,
         total: finalTotal,
-        appliedVoucherCode: cart.appliedVoucherCode || undefined,
+        appliedVoucherCode: appliedVoucherCode || undefined,
+        useBHC: useBHC,
       },
       {
         onSuccess: (data: { checkoutUrl: string }) => {
@@ -390,9 +418,10 @@ export function CheckoutForm() {
               isCustomer={isCustomer}
               isWalletLoading={isWalletLoading}
               customerWallet={customerWallet}
-              targetAmountToReceive={targetAmountToReceive}
+              targetAmountToReceive={finalPayableAmount}
               serviceFee={serviceFee}
               router={router}
+              isRewardApplied={isRewardApplied}
             />
           </div>
         </div>
@@ -416,6 +445,13 @@ export function CheckoutForm() {
             serverError={serverError}
             requiresLogin={requiresLogin}
             requiresSignup={requiresSignup}
+            applyVoucher={applyVoucher}
+            removeVoucher={removeVoucher}
+            appliedVoucherCode={appliedVoucherCode}
+            useBHC={useBHC}
+            setUseBHC={setUseBHC}
+            customerWallet={customerWallet}
+            isInsufficientFunds={isInsufficientFunds}
           />
         </div>
       </form>

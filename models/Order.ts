@@ -161,5 +161,8 @@ OrderSchema.index({ customerEmail: 1, createdAt: -1 })
 // Eliminates full collection scans on every analytics page load.
 OrderSchema.index({ paymentStatus: 1, createdAt: -1 })
 
+// Gamification Analytics index for BHC Spent
+OrderSchema.index({ status: 1, walletPromoAmountUsed: -1 })
+
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", OrderSchema)

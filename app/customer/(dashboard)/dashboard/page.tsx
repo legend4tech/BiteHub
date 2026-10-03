@@ -1,18 +1,19 @@
 import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+
 import Image from "next/image"
 import {
   Wallet as WalletIcon,
   ShoppingBag,
   Gift,
-  ChevronRight,
   User,
+  ArrowRight,
 } from "lucide-react"
 import { formatPriceExact } from "@/lib/format"
 import Link from "next/link"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { MilestonesProgress } from "@/components/customer/rewards/MilestonesProgress"
 import type { OrderStatus } from "@/types/shared"
 import type { OrderRecord } from "@/types/customer"
 import {
@@ -43,6 +44,7 @@ export default async function CustomerDashboardPage() {
   const recentOrders = await getRecentCustomerOrders(session.user.email, 3)
 
   const walletBalance = wallet ? wallet.balance : 0
+  const promoBalance = wallet ? wallet.promoBalance || 0 : 0
   const orderCount = await getCustomerOrdersCount(session.user.email)
 
   return (
@@ -105,7 +107,9 @@ export default async function CustomerDashboardPage() {
                 size="sm"
                 className="w-full text-primary hover:bg-primary/5 hover:text-primary/80"
               >
-                <Link href="/customer/wallet">Fund Wallet &rarr;</Link>
+                <Link href="/customer/wallet" className="flex items-center">
+                  Fund Wallet <ArrowRight className="ml-1 size-4" />
+                </Link>
               </Button>
             )}
           </div>
@@ -131,7 +135,9 @@ export default async function CustomerDashboardPage() {
               size="sm"
               className="w-full text-info hover:bg-info/5 hover:text-info"
             >
-              <Link href="/customer/orders">View History &rarr;</Link>
+              <Link href="/customer/orders" className="flex items-center">
+                View History <ArrowRight className="ml-1 size-4" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -147,7 +153,7 @@ export default async function CustomerDashboardPage() {
                 BiteHub Coins
               </p>
               <h3 className="text-2xl font-bold">
-                0{" "}
+                {promoBalance}{" "}
                 <span className="text-sm font-normal text-muted-foreground">
                   BHC
                 </span>
@@ -161,74 +167,132 @@ export default async function CustomerDashboardPage() {
               size="sm"
               className="w-full text-status-ready hover:bg-status-ready/5 hover:text-status-ready"
             >
-              <Link href="/customer/rewards">Earn More &rarr;</Link>
+              <Link href="/customer/rewards" className="flex items-center">
+                Earn More <ArrowRight className="ml-1 size-4" />
+              </Link>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Recent Orders List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-lg font-bold">Recent Orders</h2>
-          <Link
-            href="/customer/orders"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            View all
-          </Link>
-        </div>
-
-        {recentOrders.length === 0 ? (
-          <EmptyState
-            size="sm"
-            title="No orders yet"
-            description="Start ordering your favorite meals!"
-            action={{ label: "Order Food", href: "/" }}
-            className="rounded-xl border border-dashed border-border bg-card/50"
-          />
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            {recentOrders.map((order: OrderRecord, i: number) => (
-              <div
-                key={order.id}
-                className={`flex items-center justify-between p-4 ${
-                  i !== 0 ? "border-t border-border" : ""
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="rounded-lg bg-muted p-2">
-                    <ShoppingBag className="size-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">
-                      <span className="font-normal text-muted-foreground">
-                        Ordered from:
-                      </span>{" "}
-                      {order.vendorName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()} •{" "}
-                      {order.items.length} items
-                    </p>
-                  </div>
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            {/* Header Banner */}
+            <div className="flex items-center justify-between border-b border-border bg-primary/5 px-6 py-4">
+              <div className="flex items-center gap-4">
+                <div className="relative size-12 shrink-0 sm:size-16">
+                  <Image
+                    src="/avatars/header_mascot.png"
+                    alt="Rewards Mascot"
+                    fill
+                    className="object-contain"
+                  />
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-primary">
-                    {formatPriceExact(order.totalAmount)}
+                <div>
+                  <h2 className="flex items-center gap-2 font-heading text-lg font-bold text-foreground">
+                    <Gift className="size-5 text-primary" />
+                    Active Milestones
+                  </h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                    Complete challenges to earn Free Meals!
                   </p>
-                  <div className="mt-1 flex justify-end">
-                    <StatusBadge
-                      status={order.status as OrderStatus}
-                      paymentStatus={order.paymentStatus}
-                      className="px-2 py-0.5 text-[10px] uppercase"
-                    />
-                  </div>
                 </div>
               </div>
-            ))}
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="hidden shrink-0 text-primary hover:bg-primary/10 sm:flex"
+              >
+                <Link href="/customer/rewards" className="flex items-center">
+                  Rewards Hub <ArrowRight className="ml-1 size-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Content Area */}
+            <div className="p-6">
+              <div className="mb-6 flex justify-end sm:hidden">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-primary hover:bg-primary/10"
+                >
+                  <Link href="/customer/rewards" className="flex items-center">
+                    Rewards Hub <ArrowRight className="ml-1 size-4" />
+                  </Link>
+                </Button>
+              </div>
+              <MilestonesProgress />
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Right Column: Recent Orders */}
+        <div className="space-y-4 lg:col-span-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-lg font-bold">Recent Orders</h2>
+            <Link
+              href="/customer/orders"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+
+          {recentOrders.length === 0 ? (
+            <EmptyState
+              size="sm"
+              title="No orders yet"
+              description="Start ordering your favorite meals!"
+              action={{ label: "Order Food", href: "/" }}
+              className="rounded-xl border border-dashed border-border bg-card/50"
+            />
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              {recentOrders.map((order: OrderRecord, i: number) => (
+                <div
+                  key={order.id}
+                  className={`flex items-center justify-between p-4 ${
+                    i !== 0 ? "border-t border-border" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-muted p-2">
+                      <ShoppingBag className="size-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">
+                        <span className="font-normal text-muted-foreground">
+                          Ordered from:
+                        </span>{" "}
+                        {order.vendorName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()} •{" "}
+                        {order.items.length} items
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-primary">
+                      {formatPriceExact(order.totalAmount)}
+                    </p>
+                    <div className="mt-1 flex justify-end">
+                      <StatusBadge
+                        status={order.status as OrderStatus}
+                        paymentStatus={order.paymentStatus}
+                        className="px-2 py-0.5 text-[10px] uppercase"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

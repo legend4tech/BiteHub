@@ -19,6 +19,7 @@ interface CartState {
   vendorPrepTime: string | null
   vendorMonnifySubaccountCode: string | null
   appliedVoucherCode: string | null
+  useBHC: boolean
 }
 
 const EMPTY_CART: CartState = {
@@ -30,6 +31,7 @@ const EMPTY_CART: CartState = {
   vendorPrepTime: null,
   vendorMonnifySubaccountCode: null,
   appliedVoucherCode: null,
+  useBHC: false,
 }
 
 const CART_EVENT = "cb:cart:update"
@@ -150,6 +152,7 @@ export function useCart() {
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
         appliedVoucherCode: current.appliedVoucherCode,
+        useBHC: current.useBHC,
       })
 
       return { success: true }
@@ -168,6 +171,7 @@ export function useCart() {
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: null, // Will be synced by checkout effect
         appliedVoucherCode: null,
+        useBHC: false,
       })
     },
     [persist]
@@ -252,6 +256,14 @@ export function useCart() {
     persist({ ...current, appliedVoucherCode: null })
   }, [persist])
 
+  const setUseBHC = useCallback(
+    (value: boolean) => {
+      const current = readCart()
+      persist({ ...current, useBHC: value })
+    },
+    [persist]
+  )
+
   const clearCart = useCallback(() => persist(EMPTY_CART), [persist])
 
   const syncVendorDetails = useCallback(
@@ -330,5 +342,7 @@ export function useCart() {
     applyVoucher,
     removeVoucher,
     appliedVoucherCode: cart.appliedVoucherCode,
+    useBHC: cart.useBHC,
+    setUseBHC,
   }
 }

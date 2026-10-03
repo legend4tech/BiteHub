@@ -52,6 +52,9 @@ export type LeanCampaignProgress = LeanDoc<
 export type LeanRewardVoucher = LeanDoc<
   import("@/models/RewardVoucher").IRewardVoucher
 >
+export type LeanGamificationFailureLog = LeanDoc<
+  import("@/models/GamificationFailureLog").IGamificationFailureLog
+>
 
 export type PopulatedVendorFeedback = LeanVendorFeedback & {
   vendorId: {
@@ -239,6 +242,10 @@ export function serializeCustomer(doc: LeanCustomer | null) {
     preferredSubLandmark: doc.preferredSubLandmark ?? null,
     preferredExactLocation: doc.preferredExactLocation ?? null,
     lastLoginAt: doc.lastLoginAt ? safeDate(doc.lastLoginAt) : null,
+    lastOrderAt: doc.lastOrderAt ? safeDate(doc.lastOrderAt) : null,
+    sentReEngagementAt: doc.sentReEngagementAt
+      ? safeDate(doc.sentReEngagementAt)
+      : null,
     acceptedTermsVersion: doc.acceptedTermsVersion ?? null,
     acceptedTermsAt: doc.acceptedTermsAt ? safeDate(doc.acceptedTermsAt) : null,
     createdAt: safeDate(doc.createdAt),
@@ -280,6 +287,8 @@ export function serializeWalletTransaction(doc: LeanWalletTransaction | null) {
     direction: doc.direction,
     reference: doc.reference,
     description: doc.description,
+    expiresAt: doc.expiresAt ? safeDate(doc.expiresAt) : null,
+    isExpired: doc.isExpired ?? false,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }
@@ -425,6 +434,7 @@ export function serializeRewardCampaign(doc: LeanRewardCampaign | null) {
     minOrderValue: doc.minOrderValue ?? null,
     rewardType: doc.rewardType,
     rewardValue: doc.rewardValue ?? null,
+    rewardExpiryDays: doc.rewardExpiryDays ?? 90,
     vendorId: doc.vendorId?.toString() ?? null,
     menuItemId: doc.menuItemId ?? null,
     maxBeneficiaries: doc.maxBeneficiaries,
@@ -472,6 +482,24 @@ export function serializeRewardVoucher(doc: LeanRewardVoucher | null) {
     usedAt: doc.usedAt ? safeDate(doc.usedAt) : null,
     usedOrderId: doc.usedOrderId ?? null,
     expiresAt: safeDate(doc.expiresAt),
+    createdAt: safeDate(doc.createdAt),
+    updatedAt: safeDate(doc.updatedAt),
+  }
+}
+
+export function serializeGamificationFailureLog(
+  doc: LeanGamificationFailureLog | null
+) {
+  if (!doc) return null
+  return {
+    id: doc._id.toString(),
+    orderId: doc.orderId ?? null,
+    customerId: doc.customerId?.toString() ?? null,
+    campaignId: doc.campaignId?.toString() ?? null,
+    errorMessage: doc.errorMessage,
+    errorStack: doc.errorStack ?? null,
+    context: doc.context,
+    resolved: doc.resolved,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

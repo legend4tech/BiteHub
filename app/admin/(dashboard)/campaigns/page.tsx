@@ -4,6 +4,7 @@ import { useState } from "react"
 import {
   useCampaigns,
   useToggleCampaignStatus,
+  useGamificationAnalytics,
 } from "@/hooks/admin/useCampaigns"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -20,6 +21,8 @@ import {
   Gift,
   PauseCircle,
   PlayCircle,
+  TrendingUp,
+  Ticket,
 } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { toast } from "sonner"
@@ -28,6 +31,8 @@ import Link from "next/link"
 
 export default function AdminCampaignsPage() {
   const { data: campaigns, isLoading, isError, refetch } = useCampaigns()
+  const { data: analytics, isLoading: analyticsLoading } =
+    useGamificationAnalytics()
   const { mutateAsync: toggleCampaign } = useToggleCampaignStatus()
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
@@ -75,7 +80,7 @@ export default function AdminCampaignsPage() {
       </div>
 
       {/* Analytics Cards */}
-      {!isLoading && (
+      {!isLoading && !analyticsLoading && (
         <div className="grid gap-6 md:grid-cols-3">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -131,6 +136,63 @@ export default function AdminCampaignsPage() {
             </div>
             <p className="mt-2 text-4xl font-black text-foreground">
               {formatPrice(totalBudgetSpent)}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-col gap-2 rounded-3xl border border-border bg-card p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <DollarSign className="size-5" />
+              </div>
+              <p className="font-semibold text-muted-foreground">
+                Total BHC Issued (All Time)
+              </p>
+            </div>
+            <p className="mt-2 text-4xl font-black text-foreground">
+              {formatPrice(analytics?.totalIssuedAllTime || 0)}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="flex flex-col gap-2 rounded-3xl border border-border bg-card p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <TrendingUp className="size-5" />
+              </div>
+              <p className="font-semibold text-muted-foreground">
+                Redemption Rate (All Time)
+              </p>
+            </div>
+            <p className="mt-2 text-4xl font-black text-foreground">
+              {analytics?.redemptionRate || 0}%
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex flex-col gap-2 rounded-3xl border border-border bg-card p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-destructive/10 p-2.5 text-destructive">
+                <Ticket className="size-5" />
+              </div>
+              <p className="font-semibold text-muted-foreground">
+                Free Meals Redeemed
+              </p>
+            </div>
+            <p className="mt-2 text-4xl font-black text-foreground">
+              {analytics?.vouchersUsedCount || 0}
             </p>
           </motion.div>
         </div>

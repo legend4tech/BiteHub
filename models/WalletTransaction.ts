@@ -14,6 +14,9 @@ export interface IWalletTransaction extends Document {
   direction: "credit" | "debit"
   reference: string
   description: string
+  expiresAt?: Date
+  isExpired?: boolean
+  warningEmailSentAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -42,6 +45,9 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
     direction: { type: String, enum: ["credit", "debit"], required: true },
     reference: { type: String, required: true, unique: true },
     description: { type: String, required: true },
+    expiresAt: { type: Date },
+    isExpired: { type: Boolean, default: false },
+    warningEmailSentAt: { type: Date },
   },
   {
     timestamps: true,
@@ -49,6 +55,8 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
 )
 
 WalletTransactionSchema.index({ customerId: 1, createdAt: -1 })
+WalletTransactionSchema.index({ type: 1, expiresAt: 1, isExpired: 1 })
+WalletTransactionSchema.index({ type: 1, direction: 1 }) // Fast lookup for analytics (Total BHC Issued)
 
 export default mongoose.models.WalletTransaction ||
   mongoose.model<IWalletTransaction>(

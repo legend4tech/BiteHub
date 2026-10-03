@@ -93,6 +93,8 @@ export function CampaignForm({
   const watchMaxBeneficiaries = form.watch("maxBeneficiaries")
   const watchRewardValue = form.watch("rewardValue")
   const watchMenuItemId = form.watch("menuItemId")
+  const watchActionType = form.watch("actionType")
+  const watchMaxCompletions = form.watch("maxCompletionsPerUser")
 
   const fetchMenuItems = async (currentPage = 1) => {
     if (!selectedVendorId) {
@@ -207,7 +209,12 @@ export function CampaignForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper">
-              <SelectItem value="REFERRAL_SIGNUP">Referral (Signup)</SelectItem>
+              <SelectItem value="REFERRAL_SIGNUP">
+                Referral (Signup)
+                <span className="ml-2 rounded-full bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-600 uppercase">
+                  Advanced
+                </span>
+              </SelectItem>
               <SelectItem value="REFERRAL_FIRST_ORDER">
                 Referral (First Order)
               </SelectItem>
@@ -218,6 +225,13 @@ export function CampaignForm({
             <span className="text-xs text-destructive">
               {form.formState.errors.actionType.message as string}
             </span>
+          )}
+          {watchActionType === "REFERRAL_SIGNUP" && (
+            <div className="mt-2 rounded-lg bg-blue-50 p-3 text-xs text-blue-800">
+              <span className="font-semibold">Info:</span> Signup campaigns
+              reward any referral. Pair with a tight Max Beneficiaries limit to
+              control cost.
+            </div>
           )}
         </div>
 
@@ -457,6 +471,26 @@ export function CampaignForm({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <Label className="text-sm font-semibold">
+                Reward Expiry (Days) <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="number"
+                {...form.register("rewardExpiryDays", { valueAsNumber: true })}
+                className="h-12 rounded-xl bg-muted/50"
+              />
+              {form.formState.errors.rewardExpiryDays && (
+                <span className="text-xs text-destructive">
+                  {form.formState.errors.rewardExpiryDays.message as string}
+                </span>
+              )}
+              <p className="text-xs font-medium text-muted-foreground">
+                How many days until the coins/voucher expire?
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-6 border-t pt-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">
                 Max Beneficiaries <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -497,6 +531,14 @@ export function CampaignForm({
               <p className="text-xs font-medium text-muted-foreground">
                 How many times can a single user claim it? (0 = unlimited)
               </p>
+              {watchMaxCompletions === 0 &&
+                (watchActionType === "REFERRAL_SIGNUP" ||
+                  watchActionType === "REFERRAL_FIRST_ORDER") && (
+                  <div className="mt-2 rounded-lg bg-yellow-50 p-3 text-xs text-yellow-800">
+                    ⚠️ <span className="font-semibold">Unlimited claims</span> —
+                    set a Max Beneficiaries cap to control total spend.
+                  </div>
+                )}
             </div>
           </div>
         </div>

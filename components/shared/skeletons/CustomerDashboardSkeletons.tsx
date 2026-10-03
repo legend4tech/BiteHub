@@ -30,33 +30,54 @@ export function CustomerDashboardSkeleton() {
         ))}
       </div>
 
-      {/* Recent Orders List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-4 w-16" />
+      {/* Bottom Section */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Milestones Skeleton */}
+        <div className="space-y-6 lg:col-span-7">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-9 rounded-lg" />
+                <Skeleton className="h-6 w-40" />
+              </div>
+              <Skeleton className="h-8 w-24 rounded-md" />
+            </div>
+            <Skeleton className="mb-4 h-4 w-3/4" />
+            <div className="space-y-4">
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex items-center justify-between p-4 ${
-                i !== 0 ? "border-t border-border" : ""
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <Skeleton className="size-10 rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-3 w-40" />
+
+        {/* Recent Orders List */}
+        <div className="space-y-4 lg:col-span-5">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex items-center justify-between p-4 ${
+                  i !== 0 ? "border-t border-border" : ""
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <Skeleton className="size-10 rounded-lg" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </div>
+                <div className="flex flex-col items-end space-y-2">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
                 </div>
               </div>
-              <div className="flex flex-col items-end space-y-2">
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-4 w-16 rounded-full" />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

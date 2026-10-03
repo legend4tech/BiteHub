@@ -104,8 +104,17 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
             existingCustomer._id.toString(),
             updateData.referredBy as string
           )
-        } catch (error) {
+        } catch (error: unknown) {
           console.error("Error processing referral for claimed account:", error)
+          const err = error as Error
+          const { default: GamificationFailureLog } =
+            await import("@/models/GamificationFailureLog")
+          await GamificationFailureLog.create({
+            customerId: existingCustomer._id,
+            errorMessage: err.message,
+            errorStack: err.stack,
+            context: "processReferralSignup (claimed account)",
+          }).catch(console.error)
         }
       }
 
@@ -144,8 +153,17 @@ export async function registerOrClaimCustomer(data: CustomerSignupValues) {
   if (referredBy) {
     try {
       await processReferralSignup(customer._id.toString(), referredBy)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error processing referral for new account:", error)
+      const err = error as Error
+      const { default: GamificationFailureLog } =
+        await import("@/models/GamificationFailureLog")
+      await GamificationFailureLog.create({
+        customerId: customer._id,
+        errorMessage: err.message,
+        errorStack: err.stack,
+        context: "processReferralSignup (new account)",
+      }).catch(console.error)
     }
   }
 
