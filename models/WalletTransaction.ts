@@ -16,6 +16,7 @@ export interface IWalletTransaction extends Document {
   description: string
   expiresAt?: Date
   isExpired?: boolean
+  remainingAmount?: number
   warningEmailSentAt?: Date
   createdAt: Date
   updatedAt: Date
@@ -47,6 +48,7 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
     description: { type: String, required: true },
     expiresAt: { type: Date },
     isExpired: { type: Boolean, default: false },
+    remainingAmount: { type: Number },
     warningEmailSentAt: { type: Date },
   },
   {

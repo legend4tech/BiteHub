@@ -21,6 +21,7 @@ import {
   getCustomerReferralCode,
   getCustomerWalletData,
 } from "@/lib/services/customerService"
+import { ExpiringRewardsBanner } from "@/components/customer/rewards/ExpiringRewardsBanner"
 
 export default async function CustomerRewardsPage() {
   const session = await auth()
@@ -29,7 +30,9 @@ export default async function CustomerRewardsPage() {
   }
 
   const referralCode = await getCustomerReferralCode(session.user.email)
-  const { wallet } = await getCustomerWalletData(session.user.id)
+  const { wallet, expiringRewards } = await getCustomerWalletData(
+    session.user.id
+  )
   const availableCoins = wallet?.promoBalance || 0
 
   await dbConnect()
@@ -119,6 +122,9 @@ export default async function CustomerRewardsPage() {
             <p className="mt-2 text-sm font-medium text-muted-foreground">
               1 BHC = ₦1. Join active campaigns to score coins and level up!
             </p>
+            <div className="mt-4 max-w-sm">
+              <ExpiringRewardsBanner rewards={expiringRewards} />
+            </div>
           </div>
 
           <div className="mt-8 flex w-full gap-3 lg:mt-0 lg:w-auto lg:gap-4">

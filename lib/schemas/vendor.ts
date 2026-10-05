@@ -125,7 +125,9 @@ export const vendorDeliverySettingsUpdateSchema = z.object({
     .array(
       z.object({
         landmarkId: z.string().min(1, "Landmark ID is required"),
-        fee: z.number().min(0, "Fee must be a positive number"),
+        fee: z
+          .number({ message: "Please enter a valid number" })
+          .min(0, "Fee must be a positive number"),
       })
     )
     .optional(),
@@ -133,7 +135,9 @@ export const vendorDeliverySettingsUpdateSchema = z.object({
     .array(
       z.object({
         subLandmarkId: z.string().min(1, "Sub-landmark ID is required"),
-        fee: z.number().min(0, "Fee must be a positive number"),
+        fee: z
+          .number({ message: "Please enter a valid number" })
+          .min(0, "Fee must be a positive number"),
       })
     )
     .optional(),
@@ -184,8 +188,19 @@ export type VendorCreationValues = z.infer<typeof vendorCreationSchema>
 export const vendorsPublicQuerySchema = z.object({
   school: z.string().optional(),
   campus: z.string().optional(),
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+  page: z.coerce
+    .number({ message: "Please enter a valid number" })
+    .int()
+    .positive()
+    .optional()
+    .default(1),
+  limit: z.coerce
+    .number({ message: "Please enter a valid number" })
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(20),
 })
 export type VendorsPublicQueryValues = z.infer<typeof vendorsPublicQuerySchema>
 

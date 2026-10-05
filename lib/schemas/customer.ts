@@ -69,9 +69,11 @@ export type OrderFormValues = z.infer<typeof orderFormSchema>
 export const orderItemSchema = z.object({
   menuItemId: z.string().min(1, "Menu item ID is required"),
   name: z.string().min(1, "Name is required"),
-  price: z.number().min(0, "Price must be non-negative"),
+  price: z
+    .number({ message: "Please enter a valid number" })
+    .min(0, "Price must be non-negative"),
   quantity: z
-    .number()
+    .number({ message: "Please enter a valid number" })
     .int()
     .min(1, "Quantity must be at least 1")
     .max(100, "Quantity cannot exceed 100 per item"),
@@ -92,7 +94,7 @@ export const createOrderSchema = z.object({
   exactLocation: z.string().min(1, "Exact location is required"),
   notes: z.string().optional(),
   paymentMethod: z.enum(["monnify", "wallet"]).default("monnify"),
-  total: z.number().optional(), // We accept it but ignore it for calculation
+  total: z.number({ message: "Please enter a valid number" }).optional(), // We accept it but ignore it for calculation
   appliedVoucherCode: z.string().optional(),
   useBHC: z.boolean().optional(),
 })
@@ -197,14 +199,20 @@ export const customerReviewsTabSchema = z.enum(["pending", "completed"])
 export type CustomerReviewsTab = z.infer<typeof customerReviewsTabSchema>
 
 export const customerReviewFormSchema = z.object({
-  vendorRating: z.number().optional().default(0),
+  vendorRating: z
+    .number({ message: "Please enter a valid number" })
+    .optional()
+    .default(0),
   isAnonymous: z.boolean().default(false),
   itemReviews: z
     .array(
       z
         .object({
           menuItemId: z.string(),
-          rating: z.number().optional().default(0),
+          rating: z
+            .number({ message: "Please enter a valid number" })
+            .optional()
+            .default(0),
           title: z.string().optional().default(""),
           comments: z
             .string()
@@ -225,13 +233,17 @@ export const customerReviewFormSchema = z.object({
 export type CustomerReviewFormValues = z.infer<typeof customerReviewFormSchema>
 
 export const singleVendorReviewSchema = z.object({
-  vendorRating: z.number().min(1, "Please rate the vendor"),
+  vendorRating: z
+    .number({ message: "Please enter a valid number" })
+    .min(1, "Please rate the vendor"),
   isAnonymous: z.boolean(),
 })
 export type SingleVendorReviewValues = z.infer<typeof singleVendorReviewSchema>
 
 export const singleItemReviewSchema = z.object({
-  rating: z.number().min(1, "Please provide a rating"),
+  rating: z
+    .number({ message: "Please enter a valid number" })
+    .min(1, "Please provide a rating"),
   title: z.string().min(1, "Title is required for the review."),
   comments: z
     .string()

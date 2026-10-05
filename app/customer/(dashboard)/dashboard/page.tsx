@@ -26,6 +26,7 @@ import {
 } from "@/lib/services/orderService"
 import { CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { CustomerTermsChecker } from "@/components/customer/dashboard/CustomerTermsChecker"
+import { ExpiringRewardsBanner } from "@/components/customer/rewards/ExpiringRewardsBanner"
 
 export default async function CustomerDashboardPage() {
   const session = await auth()
@@ -38,13 +39,16 @@ export default async function CustomerDashboardPage() {
     return null
   }
 
-  const { wallet } = await getCustomerWalletData(customer._id.toString())
+  const { wallet, expiringRewards } = await getCustomerWalletData(
+    customer._id.toString()
+  )
 
   // Fetch last 3 orders
   const recentOrders = await getRecentCustomerOrders(session.user.email, 3)
 
   const walletBalance = wallet ? wallet.balance : 0
   const promoBalance = wallet ? wallet.promoBalance || 0 : 0
+  const depositBalance = wallet ? wallet.depositBalance || 0 : 0
   const orderCount = await getCustomerOrdersCount(session.user.email)
 
   return (
@@ -95,6 +99,22 @@ export default async function CustomerDashboardPage() {
               </h3>
             </div>
           </div>
+          {wallet && (
+            <div className="mt-4 space-y-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Deposited</span>
+                <span className="font-semibold">
+                  {formatPriceExact(depositBalance)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Promo (BHC)</span>
+                <span className="font-semibold text-primary">
+                  {formatPriceExact(promoBalance)}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="mt-4 border-t border-border pt-4">
             {!wallet ? (
               <Button asChild variant="outline" size="sm" className="w-full">
@@ -158,6 +178,7 @@ export default async function CustomerDashboardPage() {
                   BHC
                 </span>
               </h3>
+              <ExpiringRewardsBanner rewards={expiringRewards} />
             </div>
           </div>
           <div className="mt-4 border-t border-border pt-4">

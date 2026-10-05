@@ -289,6 +289,7 @@ export function serializeWalletTransaction(doc: LeanWalletTransaction | null) {
     description: doc.description,
     expiresAt: doc.expiresAt ? safeDate(doc.expiresAt) : null,
     isExpired: doc.isExpired ?? false,
+    remainingAmount: doc.remainingAmount,
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }

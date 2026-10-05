@@ -23,6 +23,7 @@ import {
   PlayCircle,
   TrendingUp,
   Ticket,
+  Clock,
 } from "lucide-react"
 import { formatPrice } from "@/lib/format"
 import { toast } from "sonner"
@@ -258,17 +259,26 @@ export default function AdminCampaignsPage() {
                         </div>
                       </td>
                       <td className="p-5">
-                        <div className="flex items-center gap-1.5 font-bold">
-                          {campaign.rewardType === "BITEHUB_COINS" ? (
-                            <span className="flex items-center gap-1.5 text-primary">
-                              <DollarSign className="size-4" />{" "}
-                              {campaign.rewardValue} BHC
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-primary">
-                              <Gift className="size-4" /> Free Meal
-                            </span>
-                          )}
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            {campaign.rewardType === "BITEHUB_COINS" ? (
+                              <span className="flex items-center gap-1.5 text-primary">
+                                <DollarSign className="size-4" />{" "}
+                                {campaign.rewardValue} BHC
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5 text-primary">
+                                <Gift className="size-4" /> Free Meal
+                              </span>
+                            )}
+                          </div>
+                          {campaign.rewardType === "BITEHUB_COINS" &&
+                            campaign.rewardExpiryDays && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="size-3" />
+                                Expires in {campaign.rewardExpiryDays} days
+                              </div>
+                            )}
                         </div>
                       </td>
                       <td className="p-5">

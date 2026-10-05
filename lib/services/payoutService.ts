@@ -51,56 +51,59 @@ export async function processWalletDisbursements() {
     accountNumber: vendor.monnifyAccountNumber,
   }))
 
-  // Execute Bulk Disbursement via Monnify
-  const bulkResult = await executeBulkDisbursement({
-    batchReference,
-    title: "BiteHub Daily Wallet Payouts",
-    narration: "Automated wallet payouts to vendors",
-    transactions,
-  })
-
-  let totalDisbursedAmount = 0
-  let processedCount = 0
-
-  // If API call didn't throw, we assume success. Update local DB.
-  for (const vendor of vendorsToPay) {
-    const amountPaid = vendor.pendingWalletBalance
-
-    await Vendor.findByIdAndUpdate(vendor._id, {
-      $set: { isDisbursing: false },
-      $inc: {
-        walletTotalDisbursed: amountPaid,
-        pendingWalletBalance: -amountPaid,
-      },
+  let bulkResult
+  try {
+    // Execute Bulk Disbursement via Monnify
+    bulkResult = await executeBulkDisbursement({
+      batchReference,
+      title: "BiteHub Daily Wallet Payouts",
+      narration: "Automated wallet payouts to vendors",
+      transactions,
     })
 
-    // Mark the corresponding wallet orders as disbursed
-    await Order.updateMany(
-      {
-        vendorId: vendor._id,
-        paymentMethod: "wallet",
-        paymentStatus: "paid",
-        isDisbursed: { $ne: true },
-      },
-      { $set: { isDisbursed: true } }
+    let totalDisbursedAmount = 0
+    let processedCount = 0
+
+    // If API call didn't throw, we assume success. Update local DB.
+    for (const vendor of vendorsToPay) {
+      const amountPaid = vendor.pendingWalletBalance
+
+      await Vendor.findByIdAndUpdate(vendor._id, {
+        $set: { isDisbursing: false },
+        $inc: {
+          walletTotalDisbursed: amountPaid,
+          pendingWalletBalance: -amountPaid,
+        },
+      })
+
+      // Mark the corresponding wallet orders as disbursed
+      await Order.updateMany(
+        {
+          vendorId: vendor._id,
+          paymentMethod: "wallet",
+          paymentStatus: "paid",
+          isDisbursed: { $ne: true },
+        },
+        { $set: { isDisbursed: true } }
+      )
+
+      totalDisbursedAmount += amountPaid
+      processedCount++
+    }
+
+    return {
+      message: "Wallet Disbursement successful",
+      batchReference,
+      processed: processedCount,
+      totalAmount: totalDisbursedAmount,
+      bulkResult,
+    }
+  } finally {
+    // ALWAYS unlock any vendors that might have been locked but somehow not processed
+    // (e.g. if the Monnify API failed, threw an error, or if we had 0 pending balance)
+    await Vendor.updateMany(
+      { isDisbursing: true },
+      { $set: { isDisbursing: false } }
     )
-
-    totalDisbursedAmount += amountPaid
-    processedCount++
-  }
-
-  // Unlock any vendors that might have been locked but somehow not processed
-  // (e.g. if their pendingWalletBalance was 0 after the lock)
-  await Vendor.updateMany(
-    { isDisbursing: true },
-    { $set: { isDisbursing: false } }
-  )
-
-  return {
-    message: "Wallet Disbursement successful",
-    batchReference,
-    processed: processedCount,
-    totalAmount: totalDisbursedAmount,
-    bulkResult,
   }
 }

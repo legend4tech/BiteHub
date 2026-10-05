@@ -16,7 +16,10 @@ export const adminPasswordSchema = z.object({
 export type AdminPasswordValues = z.infer<typeof adminPasswordSchema>
 
 export const globalSettingsSchema = z.object({
-  platformFeePercentage: z.number().min(0).max(100),
+  platformFeePercentage: z
+    .number({ message: "Please enter a valid number" })
+    .min(0)
+    .max(100),
   maintenanceMode: z.boolean(),
 })
 
@@ -27,7 +30,7 @@ export const adminLandmarkSchema = z.object({
   school: z.string().trim().min(1, "School is required"),
   campus: z.string().trim().min(1, "Campus is required"),
   defaultDeliveryFee: z
-    .number()
+    .number({ message: "Please enter a valid number" })
     .min(0, "Default delivery fee must be a positive number"),
   isActive: z.boolean().optional().default(true),
 })
@@ -37,7 +40,10 @@ export type AdminLandmarkValues = z.infer<typeof adminLandmarkSchema>
 export const adminSubLandmarkSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   landmarkId: z.string().trim().min(1, "Landmark ID is required"),
-  defaultDeliveryFee: z.number().min(0).optional(),
+  defaultDeliveryFee: z
+    .number({ message: "Please enter a valid number" })
+    .min(0)
+    .optional(),
   isActive: z.boolean().optional().default(true),
 })
 
@@ -73,7 +79,7 @@ export type UpdateAdminProfileValues = z.infer<typeof updateAdminProfileSchema>
 // ─── Platform Withdrawals ──────────────────────────────────────────────────────
 
 export const withdrawalSchema = z.object({
-  amount: z.number().positive(),
+  amount: z.number({ message: "Please enter a valid number" }).positive(),
   reference: z.string().min(1),
   note: z.string().optional(),
 })
@@ -135,13 +141,19 @@ export const rewardCampaignFormSchema = z
       "REFERRAL_FIRST_ORDER",
       "ORDER_COMPLETED",
     ]),
-    targetCount: z.number().min(1, "Target count must be at least 1"),
-    minOrderValue: z.number().optional(),
+    targetCount: z
+      .number({ message: "Please enter a valid number" })
+      .min(1, "Target count must be at least 1"),
+    minOrderValue: z
+      .number({ message: "Please enter a valid number" })
+      .optional(),
 
     rewardType: z.enum(["BITEHUB_COINS", "FREE_MEAL"]),
-    rewardValue: z.number().optional(),
+    rewardValue: z
+      .number({ message: "Please enter a valid number" })
+      .optional(),
     rewardExpiryDays: z
-      .number()
+      .number({ message: "Please enter a valid number" })
       .min(1, "Expiry must be at least 1 day")
       .default(90),
 
@@ -151,14 +163,21 @@ export const rewardCampaignFormSchema = z
     targetSchool: z.string().optional(),
     targetCampus: z.string().optional(),
 
-    maxBeneficiaries: z.number().min(1, "Max beneficiaries must be at least 1"),
-    budgetAllocated: z.number().min(0, "Budget cannot be negative"),
+    maxBeneficiaries: z
+      .number({ message: "Please enter a valid number" })
+      .min(1, "Max beneficiaries must be at least 1"),
+    budgetAllocated: z
+      .number({ message: "Please enter a valid number" })
+      .min(0, "Budget cannot be negative"),
 
     isActive: z.boolean().default(true),
     startDate: z.string().or(z.date()),
     endDate: z.string().or(z.date()).optional(),
 
-    maxCompletionsPerUser: z.number().min(0).default(1),
+    maxCompletionsPerUser: z
+      .number({ message: "Please enter a valid number" })
+      .min(0)
+      .default(1),
   })
   .superRefine((data, ctx) => {
     if (data.rewardType === "BITEHUB_COINS") {

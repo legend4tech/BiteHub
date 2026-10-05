@@ -44,6 +44,8 @@ export interface Transaction {
   status?: string
   reference: string
   createdAt: string | Date
+  remainingAmount?: number
+  expiresAt?: string | Date
 }
 
 export interface CustomerOrdersPageData {

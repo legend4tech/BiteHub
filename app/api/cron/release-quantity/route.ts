@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
+import mongoose from "mongoose"
 import Order from "@/models/Order"
 import MenuItem from "@/models/MenuItem"
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
@@ -31,29 +32,45 @@ export async function GET(request: Request) {
     let releasedItemCount = 0
 
     // Release the locked inventory for each expired order
+    const session = await mongoose.startSession()
+
     for (const order of expiredOrders) {
-      const bulkOps = order.items.map(
-        (item: { menuItemId: string; quantity: number }) => ({
-          updateOne: {
-            filter: { _id: item.menuItemId, quantityAvailable: { $ne: null } },
-            update: { $inc: { quantityAvailable: item.quantity } },
-          },
+      try {
+        await session.withTransaction(async () => {
+          const bulkOps = order.items.map(
+            (item: { menuItemId: string; quantity: number }) => ({
+              updateOne: {
+                filter: {
+                  _id: item.menuItemId,
+                  quantityAvailable: { $ne: null },
+                },
+                update: { $inc: { quantityAvailable: item.quantity } },
+              },
+            })
+          )
+
+          if (bulkOps.length > 0) {
+            await MenuItem.bulkWrite(bulkOps, { session })
+            releasedItemCount += bulkOps.length
+          }
+
+          // Mark order as cancelled/expired so we don't process it again
+          order.status = ORDER_STATUS.CANCELLED
+          order.paymentStatus = "failed"
+          order.notes =
+            (order.notes ? order.notes + " | " : "") +
+            "Cancelled due to checkout timeout."
+          await order.save({ session, validateModifiedOnly: true })
         })
-      )
-
-      if (bulkOps.length > 0) {
-        await MenuItem.bulkWrite(bulkOps)
-        releasedItemCount += bulkOps.length
+      } catch (err) {
+        console.error(
+          `[CRON release-quantity] Failed to process order ${order._id}:`,
+          err
+        )
       }
-
-      // Mark order as cancelled/expired so we don't process it again
-      order.status = ORDER_STATUS.CANCELLED
-      order.paymentStatus = "failed"
-      order.notes =
-        (order.notes ? order.notes + " | " : "") +
-        "Cancelled due to checkout timeout."
-      await order.save({ validateModifiedOnly: true })
     }
+
+    await session.endSession()
 
     return NextResponse.json({
       status: "success",

@@ -335,6 +335,7 @@ async function issueCoins(
         balanceAfter: wallet.balance,
         expiresAt,
         isExpired: false,
+        remainingAmount: amount,
         reference: `REWARD-${crypto.randomBytes(4).toString("hex").toUpperCase()}`,
         description: `Reward for completing: ${campaignTitle}`,
       },

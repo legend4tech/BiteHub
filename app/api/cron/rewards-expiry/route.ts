@@ -36,6 +36,10 @@ export async function POST(req: Request) {
       direction: "credit",
       isExpired: false,
       expiresAt: { $lt: now },
+      $or: [
+        { remainingAmount: { $gt: 0 } },
+        { remainingAmount: { $exists: false } },
+      ],
     }).lean()
 
     const expiredTransactions = rawExpiredTransactions
@@ -50,7 +54,10 @@ export async function POST(req: Request) {
       const expiredByCustomer: Record<string, number> =
         expiredTransactions.reduce((acc: Record<string, number>, tx) => {
           const id = tx.customerId
-          acc[id] = (acc[id] || 0) + tx.amount
+          const amountToExpire = tx.remainingAmount ?? tx.amount
+          if (amountToExpire > 0) {
+            acc[id] = (acc[id] || 0) + amountToExpire
+          }
           return acc
         }, {})
 
@@ -63,16 +70,16 @@ export async function POST(req: Request) {
             const wallet = await Wallet.findOne({ customerId }).session(session)
             if (!wallet) return
 
-            // Safety check: Never deduct more than the current balance
-            const deductionAmount = Math.min(wallet.balance, totalExpiredAmount)
+            // Safety check: Never deduct more than the current PROMO balance.
+            // We should not touch their depositBalance if promoBalance is out of sync.
+            const deductionAmount = Math.min(
+              wallet.promoBalance || 0,
+              totalExpiredAmount
+            )
 
             if (deductionAmount > 0) {
+              wallet.promoBalance -= deductionAmount
               wallet.balance -= deductionAmount
-              // We also deduct from promoBalance safely
-              wallet.promoBalance = Math.max(
-                0,
-                (wallet.promoBalance || 0) - deductionAmount
-              )
               await wallet.save({ session })
 
               // Create a debit transaction to explain the deduction
@@ -101,7 +108,7 @@ export async function POST(req: Request) {
                 isExpired: false,
                 expiresAt: { $lt: now },
               },
-              { $set: { isExpired: true } },
+              { $set: { isExpired: true, remainingAmount: 0 } },
               { session }
             )
 
@@ -130,6 +137,10 @@ export async function POST(req: Request) {
       isExpired: false,
       warningEmailSentAt: { $exists: false },
       expiresAt: { $gt: now, $lt: sevenDaysFromNow },
+      $or: [
+        { remainingAmount: { $gt: 0 } },
+        { remainingAmount: { $exists: false } },
+      ],
     }).lean()
 
     const warningTransactions = rawWarningTransactions
@@ -143,7 +154,10 @@ export async function POST(req: Request) {
       const warningByCustomer = warningTransactions.reduce(
         (acc: Record<string, number>, tx) => {
           const id = tx.customerId
-          acc[id] = (acc[id] || 0) + tx.amount
+          const warningAmt = tx.remainingAmount ?? tx.amount
+          if (warningAmt > 0) {
+            acc[id] = (acc[id] || 0) + warningAmt
+          }
           return acc
         },
         {}

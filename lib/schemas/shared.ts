@@ -1,5 +1,17 @@
 import { z } from "zod"
 
+// Globally override Zod's default NaN error message
+z.setErrorMap((issue) => {
+  if (issue.code === z.ZodIssueCode.invalid_type) {
+    if (
+      issue.expected === "number" &&
+      (issue.received === "nan" || issue.received === "NaN")
+    ) {
+      return { message: "Please enter a valid number" }
+    }
+  }
+})
+
 export const strongPasswordSchema = z
   .string()
   .trim()
@@ -90,7 +102,10 @@ export const feedbackSchema = z
     vendorId: z.string().optional(), // For vendor giving platform feedback
     platform: z
       .object({
-        rating: z.number().min(1).max(5),
+        rating: z
+          .number({ message: "Please enter a valid number" })
+          .min(1)
+          .max(5),
         comments: z
           .string()
           .min(3, "Comments must be at least 3 characters long"),
@@ -101,13 +116,19 @@ export const feedbackSchema = z
       .object({
         orderId: z.string(),
         vendorId: z.string(),
-        vendorRating: z.number().optional().default(0),
+        vendorRating: z
+          .number({ message: "Please enter a valid number" })
+          .optional()
+          .default(0),
         isAnonymous: z.boolean().optional(),
         itemReviews: z
           .array(
             z.object({
               menuItemId: z.string(),
-              rating: z.number().optional().default(0),
+              rating: z
+                .number({ message: "Please enter a valid number" })
+                .optional()
+                .default(0),
               title: z.string().optional().default(""),
               comments: z.string().optional(),
             })

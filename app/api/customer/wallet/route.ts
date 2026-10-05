@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import {
   getCustomerByEmail,
   getCustomerWalletData,
 } from "@/lib/services/customerService"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await auth()
 
@@ -18,13 +18,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
-    const { wallet, transactions } = await getCustomerWalletData(
-      customer._id.toString()
-    )
+    const { wallet, transactions, expiringRewards } =
+      await getCustomerWalletData(customer._id.toString())
 
     return NextResponse.json({
       wallet,
       transactions,
+      expiringRewards,
     })
   } catch (error) {
     console.error("[CUSTOMER_WALLET_GET]", error)

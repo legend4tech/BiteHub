@@ -195,6 +195,8 @@ export async function getCustomerWalletData(
 
   const wallet = await Wallet.findOne({ customerId }).lean()
   let transactions: import("@/types/customer").Transaction[] = []
+  let expiringRewards: import("@/types/customer").Transaction[] = []
+
   if (wallet) {
     const rawTransactions = await WalletTransaction.find({ customerId })
       .sort({ createdAt: -1 })
@@ -204,9 +206,26 @@ export async function getCustomerWalletData(
     transactions = rawTransactions
       .map(serializeWalletTransaction)
       .filter(Boolean) as import("@/types/customer").Transaction[]
+
+    const rawExpiringRewards = await WalletTransaction.find({
+      customerId,
+      type: "reward",
+      direction: "credit",
+      isExpired: false,
+      $or: [
+        { remainingAmount: { $gt: 0 } },
+        { remainingAmount: { $exists: false } },
+      ],
+    })
+      .sort({ expiresAt: 1 })
+      .lean()
+
+    expiringRewards = rawExpiringRewards
+      .map(serializeWalletTransaction)
+      .filter(Boolean) as import("@/types/customer").Transaction[]
   }
 
-  return { wallet: serializeWallet(wallet), transactions }
+  return { wallet: serializeWallet(wallet), transactions, expiringRewards }
 }
 
 export async function getCustomerTransactionsList(

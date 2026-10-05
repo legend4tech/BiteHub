@@ -433,6 +433,31 @@ export async function processCheckout(
 
         const WalletTransaction = (await import("@/models/WalletTransaction"))
           .default
+
+        // FIFO Deduction Logic
+        if (promoDeduction > 0) {
+          const activeRewards = await WalletTransaction.find({
+            customerId: customerForWallet._id,
+            type: "reward",
+            direction: "credit",
+            isExpired: false,
+            remainingAmount: { $gt: 0 },
+          })
+            .sort({ expiresAt: 1 })
+            .session(mongooseSession)
+
+          let leftToDeduct = promoDeduction
+          for (const reward of activeRewards) {
+            if (leftToDeduct <= 0) break
+            const deduct = Math.min(reward.remainingAmount, leftToDeduct)
+            reward.remainingAmount -= deduct
+            if (reward.remainingAmount === 0) {
+              reward.isExpired = true // Fully used up
+            }
+            await reward.save({ session: mongooseSession })
+            leftToDeduct -= deduct
+          }
+        }
         await WalletTransaction.create(
           [
             {
