@@ -12,7 +12,6 @@ import { Suspense } from "react"
 import { getMenus } from "@/lib/services/menuService"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
 import { cookies } from "next/headers"
-
 export const metadata: Metadata = {
   title: "BiteHub — Campus food, ordered fast",
   description:
@@ -33,7 +32,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 }
-
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function LandingMenuSection({
   category,
@@ -45,10 +43,8 @@ async function LandingMenuSection({
   campus: string
 }) {
   const { items } = await getMenus({ category, school, campus, limit: 10 })
-
   return <AllProducts initialItems={items} activeCategory={category} />
 }
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default async function Page({
   searchParams,
@@ -60,21 +56,20 @@ export default async function Page({
     typeof resolvedSearchParams.category === "string"
       ? resolvedSearchParams.category
       : "all"
-      
+
   // Read fallback from cookie if URL search params are missing
   const cookieStore = await cookies()
   const campusCookie = cookieStore.get("bitehub_campus_preference")
   let cookieSchool = DEFAULT_SCHOOL_ID
   let cookieCampus = DEFAULT_CAMPUS_ID
-  
+
   if (campusCookie?.value) {
     try {
       const parsed = JSON.parse(campusCookie.value)
       if (parsed.schoolId) cookieSchool = parsed.schoolId
       if (parsed.campusId) cookieCampus = parsed.campusId
-    } catch (e) {}
+    } catch {}
   }
-
   const school =
     typeof resolvedSearchParams.school === "string"
       ? resolvedSearchParams.school
@@ -83,7 +78,6 @@ export default async function Page({
     typeof resolvedSearchParams.campus === "string"
       ? resolvedSearchParams.campus
       : cookieCampus
-
   return (
     <>
       {/* Navbar must be outside main to avoid overflow-x-hidden breaking sticky */}
@@ -112,7 +106,6 @@ export default async function Page({
             />
           </Suspense>
         </SectionErrorBoundary>
-
         {/* Featured vendors — self-contained async component with its own DB call */}
         <SectionErrorBoundary
           title="Couldn't load featured vendors"
@@ -131,7 +124,6 @@ export default async function Page({
             <FeaturedVendors school={school} campus={campus} />
           </Suspense>
         </SectionErrorBoundary>
-
         {/* Always render — no data dependency */}
         <HowItWorks />
         <VendorCTA />

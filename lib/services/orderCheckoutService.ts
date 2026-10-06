@@ -20,7 +20,7 @@ export async function resolveDeliveryFee(
   location: string
 ): Promise<number> {
   await dbConnect()
-  let deliveryFee = vendor.deliveryFee || 0
+  let defaultDeliveryFeeInKobo = vendor.defaultDeliveryFeeInKobo || 0
 
   const landmarks = await Landmark.find({
     school: { $regex: new RegExp(`^${vendor.school}$`, "i") },
@@ -37,13 +37,13 @@ export async function resolveDeliveryFee(
   for (const lm of landmarks) {
     if (location === lm.name) {
       const vendorLmOverride = vendor.landmarkOverrides?.find(
-        (o: { landmarkId: unknown; fee: number }) =>
+        (o: { landmarkId: unknown; feeInKobo: number }) =>
           String(o.landmarkId) === String(lm._id)
       )
       if (vendorLmOverride) {
-        deliveryFee = vendorLmOverride.fee
+        defaultDeliveryFeeInKobo = vendorLmOverride.feeInKobo
       } else {
-        deliveryFee = lm.defaultDeliveryFee
+        defaultDeliveryFeeInKobo = lm.defaultDeliveryFeeInKobo
       }
       deliveryZoneMatched = true
       break
@@ -55,25 +55,25 @@ export async function resolveDeliveryFee(
         location === `${lm.name} - ${sub.name}`
       ) {
         const vendorSubOverride = vendor.subLandmarkOverrides?.find(
-          (o: { subLandmarkId: unknown; fee: number }) =>
+          (o: { subLandmarkId: unknown; feeInKobo: number }) =>
             String(o.subLandmarkId) === String(sub._id)
         )
         const vendorLmOverride = vendor.landmarkOverrides?.find(
-          (o: { landmarkId: unknown; fee: number }) =>
+          (o: { landmarkId: unknown; feeInKobo: number }) =>
             String(o.landmarkId) === String(lm._id)
         )
 
         if (vendorSubOverride) {
-          deliveryFee = vendorSubOverride.fee
+          defaultDeliveryFeeInKobo = vendorSubOverride.feeInKobo
         } else if (vendorLmOverride) {
-          deliveryFee = vendorLmOverride.fee
+          defaultDeliveryFeeInKobo = vendorLmOverride.feeInKobo
         } else if (
-          sub.defaultDeliveryFee !== undefined &&
-          sub.defaultDeliveryFee !== null
+          sub.defaultDeliveryFeeInKobo !== undefined &&
+          sub.defaultDeliveryFeeInKobo !== null
         ) {
-          deliveryFee = sub.defaultDeliveryFee
+          defaultDeliveryFeeInKobo = sub.defaultDeliveryFeeInKobo
         } else {
-          deliveryFee = lm.defaultDeliveryFee
+          defaultDeliveryFeeInKobo = lm.defaultDeliveryFeeInKobo
         }
         deliveryZoneMatched = true
         break
@@ -82,7 +82,7 @@ export async function resolveDeliveryFee(
     if (deliveryZoneMatched) break
   }
 
-  return deliveryFee
+  return defaultDeliveryFeeInKobo
 }
 
 export async function validateOrderItemsAndCalculateTotal(
@@ -90,13 +90,13 @@ export async function validateOrderItemsAndCalculateTotal(
     menuItemId: string
     name: string
     quantity: number
-    price?: number
+    priceInKobo?: number
   }>,
   vendorId: string,
-  deliveryFee: number
+  defaultDeliveryFeeInKobo: number
 ) {
   await dbConnect()
-  let calculatedTotal = deliveryFee
+  let calculatedTotalInKobo = defaultDeliveryFeeInKobo
   const itemIds = items.map((item) => item.menuItemId)
   const dbMenuItems = await MenuItem.find({
     _id: { $in: itemIds },
@@ -184,12 +184,12 @@ export async function validateOrderItemsAndCalculateTotal(
       }
     }
 
-    calculatedTotal += (dbItem.price || 0) * item.quantity
-    item.price = dbItem.price || 0
+    calculatedTotalInKobo += (dbItem.priceInKobo || 0) * item.quantity
+    item.priceInKobo = dbItem.priceInKobo || 0
   }
 
   return {
-    calculatedTotal,
+    calculatedTotal: calculatedTotalInKobo,
     maxHours,
     maxItemPrepTime,
     dbMenuItemsMap,

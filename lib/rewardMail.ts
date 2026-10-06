@@ -55,7 +55,7 @@ export async function sendRewardEarnedEmail(
 export async function sendRewardWarningEmail(
   email: string,
   customerName: string,
-  expiringAmount: string
+  expiringItems: string
 ) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("⚠️ RESEND_API_KEY is not defined in env. Email skipped.")
@@ -68,10 +68,10 @@ export async function sendRewardWarningEmail(
     const { data, error } = await resend.emails.send({
       from: resolveFrom(),
       to: email,
-      subject: "Your coins are expiring soon! ⏳",
+      subject: "Your rewards are expiring soon! ⏳",
       react: React.createElement(RewardWarningEmail, {
         customerName,
-        expiringAmount,
+        expiringItems,
         rewardsUrl,
       }),
     })

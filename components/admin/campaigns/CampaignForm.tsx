@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   rewardCampaignFormSchema,
@@ -59,11 +59,11 @@ export function CampaignForm({
       description: defaultValues?.description || "",
       actionType: defaultValues?.actionType || "ORDER_COMPLETED",
       targetCount: defaultValues?.targetCount || 1,
-      minOrderValue: defaultValues?.minOrderValue || 0,
+      minOrderValueInKobo: defaultValues?.minOrderValueInKobo || 0,
       rewardType: defaultValues?.rewardType || "BITEHUB_COINS",
-      rewardValue: defaultValues?.rewardValue ?? 0,
+      rewardValueInKobo: defaultValues?.rewardValueInKobo ?? 0,
       maxBeneficiaries: defaultValues?.maxBeneficiaries ?? 10,
-      budgetAllocated: defaultValues?.budgetAllocated ?? 0,
+      budgetAllocatedInKobo: defaultValues?.budgetAllocatedInKobo ?? 0,
       isActive:
         defaultValues?.isActive !== undefined ? defaultValues.isActive : true,
       maxCompletionsPerUser: defaultValues?.maxCompletionsPerUser ?? 1,
@@ -80,8 +80,14 @@ export function CampaignForm({
     },
   })
 
-  const watchTargetSchool = form.watch("targetSchool")
-  const watchTargetCampus = form.watch("targetCampus")
+  const watchTargetSchool = useWatch({
+    control: form.control,
+    name: "targetSchool",
+  })
+  const watchTargetCampus = useWatch({
+    control: form.control,
+    name: "targetCampus",
+  })
 
   const filteredVendors = vendors?.filter((vendor) => {
     if (watchTargetSchool && vendor.school !== watchTargetSchool) return false
@@ -89,12 +95,34 @@ export function CampaignForm({
     return true
   })
 
-  const watchRewardType = form.watch("rewardType")
-  const watchMaxBeneficiaries = form.watch("maxBeneficiaries")
-  const watchRewardValue = form.watch("rewardValue")
-  const watchMenuItemId = form.watch("menuItemId")
-  const watchActionType = form.watch("actionType")
-  const watchMaxCompletions = form.watch("maxCompletionsPerUser")
+  const watchRewardType = useWatch({
+    control: form.control,
+    name: "rewardType",
+  })
+  const watchMaxBeneficiaries = useWatch({
+    control: form.control,
+    name: "maxBeneficiaries",
+  })
+  const watchRewardValue = useWatch({
+    control: form.control,
+    name: "rewardValueInKobo",
+  })
+  const watchMenuItemId = useWatch({
+    control: form.control,
+    name: "menuItemId",
+  })
+  const watchActionType = useWatch({
+    control: form.control,
+    name: "actionType",
+  })
+  const watchMaxCompletions = useWatch({
+    control: form.control,
+    name: "maxCompletionsPerUser",
+  })
+  const watchBudgetAllocated = useWatch({
+    control: form.control,
+    name: "budgetAllocatedInKobo",
+  })
 
   const fetchMenuItems = async (currentPage = 1) => {
     if (!selectedVendorId) {
@@ -122,8 +150,11 @@ export function CampaignForm({
 
   // Fetch menu items when vendor is selected
   useEffect(() => {
-    setPage(1)
-    fetchMenuItems(1)
+    setTimeout(() => {
+      setPage(1)
+      fetchMenuItems(1)
+    }, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVendorId])
 
   const handleLoadMore = () => {
@@ -138,12 +169,13 @@ export function CampaignForm({
   useEffect(() => {
     if (watchRewardType === "BITEHUB_COINS") {
       const budget = (watchRewardValue || 0) * (watchMaxBeneficiaries || 0)
-      form.setValue("budgetAllocated", budget)
+      form.setValue("budgetAllocatedInKobo", budget)
     } else if (watchRewardType === "FREE_MEAL" && watchMenuItemId) {
       const selectedItem = menuItems.find((item) => item.id === watchMenuItemId)
       if (selectedItem) {
-        const budget = (selectedItem.price || 0) * (watchMaxBeneficiaries || 0)
-        form.setValue("budgetAllocated", budget)
+        const budget =
+          (selectedItem.priceInKobo || 0) * (watchMaxBeneficiaries || 0)
+        form.setValue("budgetAllocatedInKobo", budget)
       }
     }
   }, [
@@ -356,12 +388,12 @@ export function CampaignForm({
             </Label>
             <Input
               type="number"
-              {...form.register("rewardValue", { valueAsNumber: true })}
+              {...form.register("rewardValueInKobo", { valueAsNumber: true })}
               className="h-12 rounded-xl bg-muted/50"
             />
-            {form.formState.errors.rewardValue && (
+            {form.formState.errors.rewardValueInKobo && (
               <span className="text-xs text-destructive">
-                {form.formState.errors.rewardValue.message as string}
+                {form.formState.errors.rewardValueInKobo.message as string}
               </span>
             )}
           </div>
@@ -440,7 +472,7 @@ export function CampaignForm({
                       )}
                       {menuItems.map((item: MenuItem) => (
                         <SelectItem key={item.id} value={item.id}>
-                          {item.name} — {formatPrice(item.price)}
+                          {item.name} — {formatPrice(item.priceInKobo)}
                         </SelectItem>
                       ))}
                       {menuItems.length > 0 && hasMore && (
@@ -548,7 +580,7 @@ export function CampaignForm({
             Auto-Calculated Budget (Total Liability)
           </Label>
           <p className="text-3xl font-black text-primary">
-            {formatPrice(form.watch("budgetAllocated"))}
+            {formatPrice(watchBudgetAllocated)}
           </p>
           <p className="text-xs font-medium text-primary/70">
             This is the maximum BiteHub will spend on this campaign.

@@ -123,7 +123,7 @@ export function MenuItemCard({
         <div className="flex items-start justify-between gap-2">
           <p className="flex-1 truncate text-sm font-semibold">{item.name}</p>
           <span className="shrink-0 text-sm font-bold text-primary">
-            {formatPrice(item.price)}
+            {formatPrice(item.priceInKobo)}
           </span>
         </div>
 

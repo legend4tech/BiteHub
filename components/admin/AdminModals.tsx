@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { Loader2, X, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -7,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { toast } from "sonner"
-import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -15,16 +13,10 @@ import {
   useAdminAddVendor,
 } from "@/hooks/admin/useAdminMutations"
 import type { AdminVendor } from "@/types/admin"
-import {
-  strongPasswordSchema,
-  addLoginSchema,
-  quickAddVendorSchema,
-} from "@/lib/schemas"
+import { addLoginSchema, quickAddVendorSchema } from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import type { AddLoginValues, QuickAddVendorValues } from "@/lib/schemas"
-
 // ─── Add Login Modal ──────────────────────────────────────────────────────────
-
 export function AddLoginModal({
   vendor,
   onClose,
@@ -40,9 +32,7 @@ export function AddLoginModal({
     resolver: zodResolver(addLoginSchema as never),
     defaultValues: { email: "", password: "" },
   })
-
   const addLoginMutation = useAdminAddLogin()
-
   const onSubmit = async (values: AddLoginValues) => {
     setSubmitting(true)
     try {
@@ -56,7 +46,6 @@ export function AddLoginModal({
       setSubmitting(false)
     }
   }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -163,9 +152,7 @@ export function AddLoginModal({
     </div>
   )
 }
-
 // ─── Add Vendor Modal ─────────────────────────────────────────────────────────
-
 export function AddVendorModal({
   onClose,
   onSuccess,
@@ -179,9 +166,7 @@ export function AddVendorModal({
     resolver: zodResolver(quickAddVendorSchema as never),
     defaultValues: { name: "", whatsappNumber: "", email: "", password: "" },
   })
-
   const addVendorMutation = useAdminAddVendor()
-
   const onSubmit = async (values: QuickAddVendorValues) => {
     setSubmitting(true)
     try {
@@ -201,7 +186,6 @@ export function AddVendorModal({
       setSubmitting(false)
     }
   }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div

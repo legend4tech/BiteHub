@@ -264,7 +264,7 @@ export default function AdminCampaignsPage() {
                             {campaign.rewardType === "BITEHUB_COINS" ? (
                               <span className="flex items-center gap-1.5 text-primary">
                                 <DollarSign className="size-4" />{" "}
-                                {campaign.rewardValue} BHC
+                                {campaign.rewardValueInKobo} BHC
                               </span>
                             ) : (
                               <span className="flex items-center gap-1.5 text-primary">
@@ -284,7 +284,7 @@ export default function AdminCampaignsPage() {
                       <td className="p-5">
                         <div className="flex flex-col gap-0.5 text-xs">
                           <span className="font-bold text-foreground">
-                            {formatPrice(campaign.budgetAllocated)}
+                            {formatPrice(campaign.budgetAllocatedInKobo)}
                           </span>
                           <span className="text-muted-foreground">
                             Spent: {formatPrice(campaign.budgetSpent)}

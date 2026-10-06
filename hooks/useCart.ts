@@ -15,10 +15,11 @@ interface CartState {
   vendorId: string | null
   vendorName: string | null
   vendorWhatsappNumber: string | null
-  vendorDeliveryFee: number
+  defaultDeliveryFeeInKobo: number
   vendorPrepTime: string | null
   vendorMonnifySubaccountCode: string | null
   appliedVoucherCode: string | null
+  appliedVoucherMenuItemId: string | null
   useBHC: boolean
 }
 
@@ -27,10 +28,11 @@ const EMPTY_CART: CartState = {
   vendorId: null,
   vendorName: null,
   vendorWhatsappNumber: null,
-  vendorDeliveryFee: 0,
+  defaultDeliveryFeeInKobo: 0,
   vendorPrepTime: null,
   vendorMonnifySubaccountCode: null,
   appliedVoucherCode: null,
+  appliedVoucherMenuItemId: null,
   useBHC: false,
 }
 
@@ -43,7 +45,7 @@ function readCart(): CartState {
   if (typeof window === "undefined") return EMPTY_CART
   try {
     const raw = localStorage.getItem(LS_CART)
-    cachedCart = raw ? JSON.parse(raw) : EMPTY_CART
+    cachedCart = raw ? { ...EMPTY_CART, ...JSON.parse(raw) } : EMPTY_CART
     return cachedCart!
   } catch {
     return EMPTY_CART
@@ -148,10 +150,11 @@ export function useCart() {
         // pass the full item object which includes vendorWhatsappNumber when mapped
         // from the API response in the vendor detail page.
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
-        vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+        defaultDeliveryFeeInKobo: menuItem.vendorDeliveryFeeInKobo ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
         appliedVoucherCode: current.appliedVoucherCode,
+        appliedVoucherMenuItemId: current.appliedVoucherMenuItemId,
         useBHC: current.useBHC,
       })
 
@@ -167,10 +170,11 @@ export function useCart() {
         vendorId: menuItem.vendorId,
         vendorName: menuItem.vendorName ?? null,
         vendorWhatsappNumber: menuItem.vendorWhatsappNumber ?? null,
-        vendorDeliveryFee: menuItem.vendorDeliveryFee ?? 0,
+        defaultDeliveryFeeInKobo: menuItem.vendorDeliveryFeeInKobo ?? 0,
         vendorPrepTime: menuItem.vendorPrepTime ?? null,
         vendorMonnifySubaccountCode: null, // Will be synced by checkout effect
         appliedVoucherCode: null,
+        appliedVoucherMenuItemId: null,
         useBHC: false,
       })
     },
@@ -226,7 +230,7 @@ export function useCart() {
       )
       if (existing) {
         if (
-          existing.menuItem.price !== menuItem.price ||
+          existing.menuItem.priceInKobo !== menuItem.priceInKobo ||
           existing.menuItem.name !== menuItem.name ||
           existing.menuItem.quantityAvailable !== menuItem.quantityAvailable ||
           existing.menuItem.isAvailable !== menuItem.isAvailable
@@ -244,16 +248,24 @@ export function useCart() {
   )
 
   const applyVoucher = useCallback(
-    (code: string) => {
+    (code: string, menuItemId: string) => {
       const current = readCart()
-      persist({ ...current, appliedVoucherCode: code })
+      persist({
+        ...current,
+        appliedVoucherCode: code,
+        appliedVoucherMenuItemId: menuItemId,
+      })
     },
     [persist]
   )
 
   const removeVoucher = useCallback(() => {
     const current = readCart()
-    persist({ ...current, appliedVoucherCode: null })
+    persist({
+      ...current,
+      appliedVoucherCode: null,
+      appliedVoucherMenuItemId: null,
+    })
   }, [persist])
 
   const setUseBHC = useCallback(
@@ -269,21 +281,21 @@ export function useCart() {
   const syncVendorDetails = useCallback(
     (
       vendorId: string,
-      deliveryFee: number,
+      defaultDeliveryFeeInKobo: number,
       prepTime?: string,
       monnifySubaccountCode?: string
     ) => {
       const current = readCart()
       if (
         current.vendorId === vendorId &&
-        (current.vendorDeliveryFee !== deliveryFee ||
+        (current.defaultDeliveryFeeInKobo !== defaultDeliveryFeeInKobo ||
           (prepTime !== undefined && current.vendorPrepTime !== prepTime) ||
           (monnifySubaccountCode !== undefined &&
             current.vendorMonnifySubaccountCode !== monnifySubaccountCode))
       ) {
         persist({
           ...current,
-          vendorDeliveryFee: deliveryFee,
+          defaultDeliveryFeeInKobo: defaultDeliveryFeeInKobo,
           vendorPrepTime:
             prepTime !== undefined ? prepTime : current.vendorPrepTime,
           vendorMonnifySubaccountCode:
@@ -297,7 +309,7 @@ export function useCart() {
   )
 
   const total = cart.items.reduce(
-    (sum, ci) => sum + ci.menuItem.price * ci.quantity,
+    (sum, ci) => sum + ci.menuItem.priceInKobo * ci.quantity,
     0
   )
   const count = cart.items.reduce((sum, ci) => sum + ci.quantity, 0)
@@ -342,6 +354,7 @@ export function useCart() {
     applyVoucher,
     removeVoucher,
     appliedVoucherCode: cart.appliedVoucherCode,
+    appliedVoucherMenuItemId: cart.appliedVoucherMenuItemId,
     useBHC: cart.useBHC,
     setUseBHC,
   }

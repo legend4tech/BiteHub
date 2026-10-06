@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatPriceExact } from "@/lib/format"
 import { computeMonnifyServiceFee } from "@/lib/fees"
+import { nairaToKobo } from "@/lib/money"
 import { toast } from "sonner"
 
 const QUICK_AMOUNTS = [100, 500, 1000, 3500, 5000, 10000]
@@ -94,7 +95,7 @@ export function FundWalletFlow({
                     Amount to credit
                   </span>
                   <span className="font-semibold">
-                    {formatPriceExact(desiredAmount)}
+                    {formatPriceExact(nairaToKobo(desiredAmount))}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -102,7 +103,7 @@ export function FundWalletFlow({
                     Processing Fee (Monnify)
                   </span>
                   <span className="font-semibold text-destructive">
-                    {formatPriceExact(calculatedFee)}
+                    {formatPriceExact(nairaToKobo(calculatedFee))}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-3">
@@ -110,7 +111,7 @@ export function FundWalletFlow({
                     Total to Transfer
                   </span>
                   <span className="text-lg font-bold text-primary">
-                    {formatPriceExact(totalToTransfer)}
+                    {formatPriceExact(nairaToKobo(totalToTransfer))}
                   </span>
                 </div>
               </div>
@@ -164,7 +165,7 @@ export function FundWalletFlow({
                 <h2 className="text-2xl font-bold text-foreground">
                   Transfer exactly{" "}
                   <span className="text-primary">
-                    {formatPriceExact(totalToTransfer)}
+                    {formatPriceExact(nairaToKobo(totalToTransfer))}
                   </span>
                 </h2>
               </div>
@@ -209,8 +210,9 @@ export function FundWalletFlow({
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Transfers reflect almost instantly. To cover Monnify&apos;s
                   processing charges, we auto-deduct the{" "}
-                  {formatPriceExact(calculatedFee)} fee and credit your wallet
-                  with exactly {formatPriceExact(desiredAmount)}.
+                  {formatPriceExact(nairaToKobo(calculatedFee))} fee and credit
+                  your wallet with exactly{" "}
+                  {formatPriceExact(nairaToKobo(desiredAmount))}.
                 </p>
               </div>
             </div>

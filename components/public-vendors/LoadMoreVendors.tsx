@@ -1,23 +1,18 @@
 "use client"
-
 import { useVendors } from "@/hooks/vendor/useVendors"
 import { VendorCard } from "@/components/public-vendors/VendorCard"
-import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { FadeIn } from "@/components/FadeIn"
 import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger"
-
 interface LoadMoreVendorsProps {
   initialPage: number
   searchParams: { [key: string]: string | undefined }
 }
-
 export function LoadMoreVendors({
   initialPage,
   searchParams,
 }: LoadMoreVendorsProps) {
   const searchQuery = typeof searchParams.q === "string" ? searchParams.q : ""
-
   const {
     data,
     error,
@@ -34,10 +29,8 @@ export function LoadMoreVendors({
     limit: 20,
     enabled: true,
   })
-
   // Combine all pages of vendors into a single array
   const vendors = data ? data.pages.flatMap((page) => page.vendors) : []
-
   return (
     <>
       {vendors.length > 0 && (
@@ -49,7 +42,6 @@ export function LoadMoreVendors({
           ))}
         </div>
       )}
-
       {(hasNextPage || isFetchingNextPage) && (
         <div className="mt-8">
           <InfiniteScrollTrigger
@@ -63,7 +55,6 @@ export function LoadMoreVendors({
           />
         </div>
       )}
-
       {status === "error" && (
         <FetchError
           size="sm"

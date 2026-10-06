@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { useAdminDeliveryZones } from "@/hooks/admin/useAdminDeliveryZones"
 import type { Landmark } from "@/types/admin"
@@ -30,33 +29,28 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Plus, Trash2, Edit2, Map } from "lucide-react"
+import { MapPin, Plus, Trash2, Edit2 } from "lucide-react"
 import { formatPrice } from "@/lib/format"
-
 export function AdminDeliveryZones() {
   const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(
     null
   )
-
   // Modal states
   const [isLandmarkOpen, setIsLandmarkOpen] = useState(false)
   const [isSubLandmarkOpen, setIsSubLandmarkOpen] = useState(false)
-
   // Form states
   const [formData, setFormData] = useState({
     school: "",
     campus: "",
     name: "",
-    defaultDeliveryFee: "",
+    defaultDeliveryFeeInKobo: "",
     isActive: true,
   })
-
   const [subFormData, setSubFormData] = useState({
     name: "",
-    defaultDeliveryFee: "",
+    defaultDeliveryFeeInKobo: "",
     isActive: true,
   })
-
   const {
     data: landmarks = [],
     isPending: isLoading,
@@ -65,7 +59,6 @@ export function AdminDeliveryZones() {
     saveSubLandmarkMutation,
     deleteSubLandmarkMutation,
   } = useAdminDeliveryZones()
-
   const handleOpenLandmark = (landmark?: Landmark) => {
     if (landmark) {
       setSelectedLandmark(landmark)
@@ -73,7 +66,7 @@ export function AdminDeliveryZones() {
         school: landmark.school,
         campus: landmark.campus,
         name: landmark.name,
-        defaultDeliveryFee: String(landmark.defaultDeliveryFee),
+        defaultDeliveryFeeInKobo: String(landmark.defaultDeliveryFeeInKobo),
         isActive: landmark.isActive,
       })
     } else {
@@ -82,19 +75,17 @@ export function AdminDeliveryZones() {
         school: "coou", // default or previous
         campus: "uli",
         name: "",
-        defaultDeliveryFee: "",
+        defaultDeliveryFeeInKobo: "",
         isActive: true,
       })
     }
     setIsLandmarkOpen(true)
   }
-
   const handleOpenSubLandmark = (landmark: Landmark) => {
     setSelectedLandmark(landmark)
-    setSubFormData({ name: "", defaultDeliveryFee: "", isActive: true })
+    setSubFormData({ name: "", defaultDeliveryFeeInKobo: "", isActive: true })
     setIsSubLandmarkOpen(true)
   }
-
   const handleSaveLandmark = (e: React.FormEvent) => {
     e.preventDefault()
     saveLandmarkMutation.mutate(
@@ -102,7 +93,7 @@ export function AdminDeliveryZones() {
         id: selectedLandmark?.id,
         data: {
           ...formData,
-          defaultDeliveryFee: Number(formData.defaultDeliveryFee),
+          defaultDeliveryFeeInKobo: Number(formData.defaultDeliveryFeeInKobo),
         },
       },
       {
@@ -116,15 +107,14 @@ export function AdminDeliveryZones() {
       }
     )
   }
-
   const handleSaveSubLandmark = (e: React.FormEvent) => {
     e.preventDefault()
     saveSubLandmarkMutation.mutate(
       {
         ...subFormData,
         landmarkId: selectedLandmark?.id as string,
-        defaultDeliveryFee: subFormData.defaultDeliveryFee
-          ? Number(subFormData.defaultDeliveryFee)
+        defaultDeliveryFeeInKobo: subFormData.defaultDeliveryFeeInKobo
+          ? Number(subFormData.defaultDeliveryFeeInKobo)
           : undefined,
       },
       {
@@ -136,7 +126,6 @@ export function AdminDeliveryZones() {
       }
     )
   }
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -155,7 +144,6 @@ export function AdminDeliveryZones() {
       </div>
     )
   }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -169,7 +157,6 @@ export function AdminDeliveryZones() {
           <Plus className="size-4" /> Add Landmark
         </Button>
       </div>
-
       <div className="grid gap-6">
         {landmarks.length === 0 ? (
           <EmptyState
@@ -201,7 +188,7 @@ export function AdminDeliveryZones() {
                   <div className="text-right">
                     <p className="text-sm font-medium">Default Fee</p>
                     <span className="text-sm font-medium">
-                      {formatPrice(lm.defaultDeliveryFee)}
+                      {formatPrice(lm.defaultDeliveryFeeInKobo)}
                     </span>
                   </div>
                   <div className="ml-4 flex gap-2 border-l pl-4">
@@ -226,7 +213,6 @@ export function AdminDeliveryZones() {
                   </div>
                 </div>
               </div>
-
               {/* Sub-Landmarks */}
               <div className="pl-14">
                 <div className="mb-2 flex items-center justify-between">
@@ -242,7 +228,6 @@ export function AdminDeliveryZones() {
                     <Plus className="size-3" /> Add Sub-Landmark
                   </Button>
                 </div>
-
                 {lm.subLandmarks.length > 0 ? (
                   <div className="space-y-2">
                     {lm.subLandmarks.map((sub) => (
@@ -253,9 +238,9 @@ export function AdminDeliveryZones() {
                         <span>{sub.name}</span>
                         <div className="flex items-center gap-4">
                           <span className="text-sm text-muted-foreground">
-                            {sub.defaultDeliveryFee !== undefined
-                              ? formatPrice(sub.defaultDeliveryFee)
-                              : `Inherits (${formatPrice(lm.defaultDeliveryFee)})`}
+                            {sub.defaultDeliveryFeeInKobo !== undefined
+                              ? formatPrice(sub.defaultDeliveryFeeInKobo)
+                              : `Inherits (${formatPrice(lm.defaultDeliveryFeeInKobo)})`}
                           </span>
                           <ConfirmDialog
                             title="Delete Sub-Landmark"
@@ -288,7 +273,6 @@ export function AdminDeliveryZones() {
           ))
         )}
       </div>
-
       {/* Landmark Dialog */}
       <Dialog open={isLandmarkOpen} onOpenChange={setIsLandmarkOpen}>
         <DialogContent>
@@ -357,11 +341,11 @@ export function AdminDeliveryZones() {
               <Input
                 type="number"
                 placeholder="e.g. 1000"
-                value={formData.defaultDeliveryFee}
+                value={formData.defaultDeliveryFeeInKobo}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    defaultDeliveryFee: e.target.value,
+                    defaultDeliveryFeeInKobo: e.target.value,
                   })
                 }
                 required
@@ -384,7 +368,6 @@ export function AdminDeliveryZones() {
           </form>
         </DialogContent>
       </Dialog>
-
       {/* Sub-Landmark Dialog */}
       <Dialog open={isSubLandmarkOpen} onOpenChange={setIsSubLandmarkOpen}>
         <DialogContent>
@@ -410,17 +393,17 @@ export function AdminDeliveryZones() {
               <Input
                 type="number"
                 placeholder="Leave blank to inherit"
-                value={subFormData.defaultDeliveryFee}
+                value={subFormData.defaultDeliveryFeeInKobo}
                 onChange={(e) =>
                   setSubFormData({
                     ...subFormData,
-                    defaultDeliveryFee: e.target.value,
+                    defaultDeliveryFeeInKobo: e.target.value,
                   })
                 }
               />
               <p className="text-xs text-muted-foreground">
                 If left blank, it will inherit the main landmark fee (
-                {formatPrice(selectedLandmark?.defaultDeliveryFee || 0)}).
+                {formatPrice(selectedLandmark?.defaultDeliveryFeeInKobo || 0)}).
               </p>
             </div>
             <div className="flex items-center gap-2 pt-2">

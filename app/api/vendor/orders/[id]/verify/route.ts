@@ -114,9 +114,9 @@ export async function POST(
         updatedOrder.customerName,
         updatedOrder.orderId,
         updatedOrder.vendorName,
-        updatedOrder.totalAmount,
-        updatedOrder.deliveryFee || 0,
-        updatedOrder.serviceFee || 0,
+        updatedOrder.totalAmountInKobo,
+        updatedOrder.deliveryFeeInKobo || 0,
+        updatedOrder.serviceFeeInKobo || 0,
         updatedOrder.items,
         trackingUrl
       ).catch(console.error)
@@ -127,7 +127,7 @@ export async function POST(
         updatedOrder.vendorWhatsappNumber,
         updatedOrder.customerName,
         updatedOrder.orderId,
-        updatedOrder.vendorRevenue
+        updatedOrder.vendorRevenueInKobo
       ).catch(console.error)
     }
 
@@ -139,11 +139,11 @@ export async function POST(
       updatedOrder.customerPhone,
       updatedOrder.location,
       updatedOrder.items,
-      updatedOrder.deliveryFee || 0,
-      updatedOrder.serviceFee || 0,
-      updatedOrder.totalAmount,
-      updatedOrder.vendorRevenue,
-      updatedOrder.platformCommission || 0,
+      updatedOrder.deliveryFeeInKobo || 0,
+      updatedOrder.serviceFeeInKobo || 0,
+      updatedOrder.totalAmountInKobo,
+      updatedOrder.vendorRevenueInKobo,
+      updatedOrder.platformCommissionInKobo || 0,
       updatedOrder.notes || undefined
     ).catch(console.error)
 

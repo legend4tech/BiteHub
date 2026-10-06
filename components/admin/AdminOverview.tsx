@@ -1,5 +1,4 @@
 "use client"
-
 import {
   ShoppingBag,
   CheckCircle2,
@@ -18,19 +17,15 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import type { OrderStatus } from "@/types/shared"
+import type {} from "@/types/shared"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
 import { useAdminLogWithdrawal } from "@/hooks/admin/useAdminMutations"
 import { formatPriceExact as formatPrice } from "@/lib/format"
 import { toast } from "sonner"
-import type { AdminStats, AdminVendor, AdminOrder } from "@/types/admin"
+import type { AdminStats, AdminVendor } from "@/types/admin"
 import { StatCard, WithdrawalModal } from "./AdminOverviewWidgets"
 import { AdminRecentOrdersFeed } from "./AdminRecentOrdersFeed"
-
 // ─── Overview Section ─────────────────────────────────────────────────────────
-
 interface AdminOverviewProps {
   stats: AdminStats | undefined
   loadingStats: boolean
@@ -38,7 +33,6 @@ interface AdminOverviewProps {
   onGoToVendors: () => void
   onRefresh: () => void
 }
-
 export function AdminOverview({
   stats,
   loadingStats,
@@ -51,14 +45,12 @@ export function AdminOverview({
   const [withdrawRef, setWithdrawRef] = useState("")
   const [withdrawNote, setWithdrawNote] = useState("")
   const logWithdrawal = useAdminLogWithdrawal()
-
   async function handleLogWithdrawal() {
     const amount = parseFloat(withdrawAmount)
     if (!amount || amount <= 0 || !withdrawRef.trim()) {
       toast.error("Please enter a valid amount and reference.")
       return
     }
-
     logWithdrawal.mutate(
       {
         amount,
@@ -80,7 +72,6 @@ export function AdminOverview({
       }
     )
   }
-
   // Fetch the 5 most recent orders for the quick feed
   const {
     data: recentOrdersData,
@@ -90,7 +81,6 @@ export function AdminOverview({
   } = useAdminOrders(1, 5, undefined, undefined, {
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   })
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -109,7 +99,6 @@ export function AdminOverview({
           Refresh Stats
         </Button>
       </div>
-
       {loadingStats ? (
         <PageSkeleton variant="admin-overview-stats" count={8} />
       ) : stats ? (
@@ -142,7 +131,7 @@ export function AdminOverview({
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatCard
               label="Gross Volume (GMV)"
-              value={formatPrice(stats.grossVolume)}
+              value={formatPrice(stats.grossVolumeInKobo)}
               icon={TrendingUp}
               sub="Total money processed"
               accent
@@ -159,7 +148,6 @@ export function AdminOverview({
               sub={`of ${stats.totalVendors} total`}
             />
           </div>
-
           {/* ── Financial Health Section ──────────────────────────── */}
           <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
             <div className="flex flex-col gap-4 border-b border-border bg-gradient-to-br from-primary/5 via-transparent to-transparent px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -181,7 +169,6 @@ export function AdminOverview({
                 Log Withdrawal
               </Button>
             </div>
-
             <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-5 lg:divide-y-0">
               {/* All-time profit */}
               <div className="flex flex-col p-6 hover:bg-muted/10">
@@ -192,13 +179,12 @@ export function AdminOverview({
                   All-Time Profit
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
-                  {formatPrice(stats.allTimePlatformProfit)}
+                  {formatPrice(stats.allTimePlatformProfitInKobo)}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Total gross commission earned
                 </p>
               </div>
-
               {/* Total withdrawn */}
               <div className="flex flex-col p-6 hover:bg-muted/10">
                 <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -208,13 +194,12 @@ export function AdminOverview({
                   Total Withdrawn
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
-                  {formatPrice(stats.totalWithdrawn)}
+                  {formatPrice(stats.totalWithdrawnInKobo)}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Previously transferred to your bank
                 </p>
               </div>
-
               {/* Remaining profit */}
               <div className="flex flex-col bg-primary/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--primary)/0.1)] hover:bg-primary/10">
                 <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-primary uppercase">
@@ -224,13 +209,12 @@ export function AdminOverview({
                   Available Profit
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-primary">
-                  {formatPrice(stats.remainingProfit)}
+                  {formatPrice(stats.remainingProfitInKobo)}
                 </p>
                 <p className="mt-2 text-xs text-primary/70">
                   Safe to withdraw right now
                 </p>
               </div>
-
               {/* Customer liabilities */}
               <div className="flex flex-col bg-destructive/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--destructive)/0.1)] hover:bg-destructive/10">
                 <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-destructive uppercase">
@@ -240,13 +224,12 @@ export function AdminOverview({
                   User Wallets
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
-                  {formatPrice(stats.totalCustomerWalletLiabilities)}
+                  {formatPrice(stats.totalCustomerWalletLiabilitiesInKobo)}
                 </p>
                 <p className="mt-2 text-xs text-destructive/70">
                   Do NOT withdraw — belongs to users
                 </p>
               </div>
-
               {/* Vendor liabilities */}
               <div className="flex flex-col bg-destructive/5 p-6 shadow-[inset_1px_0_0_0_hsl(var(--destructive)/0.1)] hover:bg-destructive/10">
                 <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-destructive uppercase">
@@ -256,25 +239,25 @@ export function AdminOverview({
                   Vendor Payouts
                 </div>
                 <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
-                  {formatPrice(stats.totalPendingVendorWallet)}
+                  {formatPrice(stats.totalPendingVendorWalletInKobo)}
                 </p>
                 <p className="mt-2 text-xs text-destructive/70">
                   Do NOT withdraw — owed to vendors
                 </p>
               </div>
             </div>
-
             {/* Reconciliation health check */}
             <div className="border-t border-border bg-muted/20">
-              {stats.monnifyBalance !== null ? (
+              {stats.monnifyBalanceInKobo !== null ? (
                 (() => {
                   const expected =
-                    stats.remainingProfit +
-                    stats.totalCustomerWalletLiabilities +
-                    stats.totalPendingVendorWallet
-                  const gap = Math.abs((stats.monnifyBalance ?? 0) - expected)
+                    stats.remainingProfitInKobo +
+                    stats.totalCustomerWalletLiabilitiesInKobo +
+                    stats.totalPendingVendorWalletInKobo
+                  const gap = Math.abs(
+                    (stats.monnifyBalanceInKobo ?? 0) - expected
+                  )
                   const isHealthy = gap < 500 // within ₦500 tolerance
-
                   return (
                     <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
                       <div className="flex-1">
@@ -285,10 +268,9 @@ export function AdminOverview({
                           Live Monnify Account Balance
                         </div>
                         <p className="font-heading text-4xl font-extrabold tracking-tight">
-                          {formatPrice(stats.monnifyBalance ?? 0)}
+                          {formatPrice(stats.monnifyBalanceInKobo ?? 0)}
                         </p>
                       </div>
-
                       <div
                         className={`flex flex-1 items-center gap-4 rounded-2xl px-5 py-4 shadow-sm ${
                           isHealthy
@@ -350,7 +332,6 @@ export function AdminOverview({
               )}
             </div>
           </div>
-
           {/* ── Withdrawal Modal ──────────────────────────────────── */}
           <WithdrawalModal
             show={showWithdrawalModal}
@@ -364,7 +345,6 @@ export function AdminOverview({
             submitting={logWithdrawal.isPending}
             onSubmit={handleLogWithdrawal}
           />
-
           {noAccountVendors.length > 0 && (
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-status-pending/30 bg-status-pending/5 px-5 py-4">
               <div className="flex items-center gap-3">
@@ -391,7 +371,6 @@ export function AdminOverview({
               </Button>
             </div>
           )}
-
           <AdminRecentOrdersFeed
             loadingOrders={loadingOrders}
             error={ordersError}

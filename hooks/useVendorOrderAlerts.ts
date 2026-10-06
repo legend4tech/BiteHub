@@ -166,7 +166,7 @@ export function useVendorOrderAlerts() {
 
         // Show Sonner toast inside the app
         toast.success(
-          `🔔 New Order! ${order.orderId} from ${order.customerName} (Total: ₦${order.totalAmount})`,
+          `🔔 New Order! ${order.orderId} from ${order.customerName} (Total: ₦${order.totalAmountInKobo})`,
           {
             duration: 10000,
             action: {

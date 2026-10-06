@@ -1,7 +1,6 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { AdminOrder, OrdersResponse } from "@/types/admin"
-
+import type { OrdersResponse } from "@/types/admin"
 export function useAdminOrders(
   page: number,
   limit: number,

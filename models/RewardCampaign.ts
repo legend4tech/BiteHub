@@ -8,11 +8,11 @@ export interface IRewardCampaign extends Document {
   // What does the user have to do?
   actionType: "REFERRAL_SIGNUP" | "REFERRAL_FIRST_ORDER" | "ORDER_COMPLETED"
   targetCount: number // e.g., refer 5 people
-  minOrderValue?: number // Optional: Only orders above this amount count
+  minOrderValueInKobo?: number // Optional: Only orders above this amount count
 
   // What is the reward?
   rewardType: "BITEHUB_COINS" | "FREE_MEAL"
-  rewardValue?: number // e.g., 500 coins
+  rewardValueInKobo?: number // e.g., 500 coins
   rewardExpiryDays: number // How many days until the reward expires?
 
   // If FREE_MEAL, what is it?
@@ -26,8 +26,8 @@ export interface IRewardCampaign extends Document {
   // Budgeting & Fintech Protections
   maxBeneficiaries: number // How many users can win this? (e.g., 50)
   currentBeneficiaries: number // How many have won so far?
-  budgetAllocated: number // Total NGN BiteHub is willing to spend
-  budgetSpent: number // Total NGN spent so far
+  budgetAllocatedInKobo: number // Total NGN BiteHub is willing to spend
+  budgetSpentInKobo: number // Total NGN spent so far
 
   // Campaign Constraints
   isActive: boolean
@@ -52,14 +52,26 @@ const RewardCampaignSchema = new Schema<IRewardCampaign>(
       required: true,
     },
     targetCount: { type: Number, required: true, min: 1 },
-    minOrderValue: { type: Number },
+    minOrderValueInKobo: {
+      type: Number,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
 
     rewardType: {
       type: String,
       enum: ["BITEHUB_COINS", "FREE_MEAL"],
       required: true,
     },
-    rewardValue: { type: Number }, // Only needed for COINS
+    rewardValueInKobo: {
+      type: Number,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    }, // Only needed for COINS
     rewardExpiryDays: { type: Number, required: true, default: 90 },
 
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
@@ -70,8 +82,24 @@ const RewardCampaignSchema = new Schema<IRewardCampaign>(
 
     maxBeneficiaries: { type: Number, required: true },
     currentBeneficiaries: { type: Number, default: 0 },
-    budgetAllocated: { type: Number, required: true, min: 0 },
-    budgetSpent: { type: Number, default: 0, min: 0 },
+    budgetAllocatedInKobo: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    budgetSpentInKobo: {
+      type: Number,
+      default: 0,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
 
     isActive: { type: Boolean, default: true },
     startDate: { type: Date, default: Date.now, required: true },

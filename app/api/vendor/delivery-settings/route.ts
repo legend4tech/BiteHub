@@ -52,15 +52,15 @@ export async function GET() {
       landmarks: result,
       overrides: {
         landmarks: (vendor.landmarkOverrides || []).map(
-          (o: { landmarkId: unknown; fee: number }) => ({
+          (o: { landmarkId: unknown; feeInKobo: number }) => ({
             landmarkId: String(o.landmarkId),
-            fee: o.fee,
+            feeInKobo: o.feeInKobo,
           })
         ),
         subLandmarks: (vendor.subLandmarkOverrides || []).map(
-          (o: { subLandmarkId: unknown; fee: number }) => ({
+          (o: { subLandmarkId: unknown; feeInKobo: number }) => ({
             subLandmarkId: String(o.subLandmarkId),
-            fee: o.fee,
+            feeInKobo: o.feeInKobo,
           })
         ),
       },

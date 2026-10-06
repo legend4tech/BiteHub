@@ -34,14 +34,14 @@ async function processDisbursement(
   }
 
   if (status === "SUCCESS") {
-    updateDoc.$inc = { monnifyTotalDisbursed: amount }
+    updateDoc.$inc = { monnifyTotalDisbursedInKobo: amount }
   } else {
     console.warn(
       `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}. Rolling back optimistic deduction.`
     )
     updateDoc.$inc = {
-      walletTotalDisbursed: -amount,
-      pendingWalletBalance: amount,
+      walletTotalDisbursedInKobo: -amount,
+      pendingWalletBalanceInKobo: amount,
     }
   }
 

@@ -4,7 +4,7 @@ export interface ILandmark extends Document {
   school: string
   campus: string
   name: string
-  defaultDeliveryFee: number
+  defaultDeliveryFeeInKobo: number
   isActive: boolean
 }
 
@@ -13,7 +13,7 @@ const LandmarkSchema = new Schema<ILandmark>(
     school: { type: String, required: true, index: true },
     campus: { type: String, required: true, index: true },
     name: { type: String, required: true },
-    defaultDeliveryFee: { type: Number, required: true },
+    defaultDeliveryFeeInKobo: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
   },
   {

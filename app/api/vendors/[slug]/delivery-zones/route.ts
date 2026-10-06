@@ -38,17 +38,20 @@ export async function GET(
     // 2. Prepare Maps for fast lookup of vendor overrides
     const vendorLandmarkOverrides = new Map<string, number>()
     vendor.landmarkOverrides?.forEach(
-      (override: { landmarkId: string; fee: number }) => {
-        vendorLandmarkOverrides.set(String(override.landmarkId), override.fee)
+      (override: { landmarkId: string; feeInKobo: number }) => {
+        vendorLandmarkOverrides.set(
+          String(override.landmarkId),
+          override.feeInKobo
+        )
       }
     )
 
     const vendorSubLandmarkOverrides = new Map<string, number>()
     vendor.subLandmarkOverrides?.forEach(
-      (override: { subLandmarkId: string; fee: number }) => {
+      (override: { subLandmarkId: string; feeInKobo: number }) => {
         vendorSubLandmarkOverrides.set(
           String(override.subLandmarkId),
-          override.fee
+          override.feeInKobo
         )
       }
     )
@@ -62,7 +65,7 @@ export async function GET(
       // Priority 2: Admin Default for Landmark
       const resolvedLandmarkFee = vendorLandmarkOverrides.has(lmId)
         ? vendorLandmarkOverrides.get(lmId)!
-        : lm.defaultDeliveryFee
+        : lm.defaultDeliveryFeeInKobo
 
       // Get and Resolve SubLandmarks
       const lmSubs = subLandmarks
@@ -81,27 +84,27 @@ export async function GET(
             // Vendor has explicit override for this sub-landmark
             resolvedSubFee = vendorSubLandmarkOverrides.get(subId)!
           } else if (
-            sub.defaultDeliveryFee !== undefined &&
-            sub.defaultDeliveryFee !== null &&
+            sub.defaultDeliveryFeeInKobo !== undefined &&
+            sub.defaultDeliveryFeeInKobo !== null &&
             !vendorLandmarkOverrides.has(lmId)
           ) {
             // Admin has explicit override for this sub-landmark AND vendor didn't override the main landmark
             // (If vendor overrode main landmark, it overrides Admin's sub-landmark specific fee too to avoid confusion,
             // but if they want a different fee, they should override the sub-landmark directly).
-            resolvedSubFee = sub.defaultDeliveryFee
+            resolvedSubFee = sub.defaultDeliveryFeeInKobo
           }
 
           return {
             id: subId,
             name: sub.name,
-            fee: resolvedSubFee,
+            feeInKobo: resolvedSubFee,
           }
         })
 
       return {
         id: lmId,
         name: lm.name,
-        fee: resolvedLandmarkFee,
+        feeInKobo: resolvedLandmarkFee,
         subLandmarks: lmSubs,
       }
     })

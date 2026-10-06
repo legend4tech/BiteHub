@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       status: o.status,
       paymentMethod: o.paymentMethod,
       paymentStatus: o.paymentStatus,
-      totalAmount: o.totalAmount,
+      totalAmountInKobo: o.totalAmountInKobo,
       items: o.items,
       createdAt: o.createdAt,
     }))

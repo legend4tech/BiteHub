@@ -1,18 +1,9 @@
 "use client"
-
-import { useState, useCallback, isValidElement, cloneElement } from "react"
+import { useState, useCallback } from "react"
 import { useAdminAnalytics } from "@/hooks/admin/useAdminAnalytics"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
-import { formatPrice } from "@/lib/format"
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   PieChart,
@@ -22,18 +13,12 @@ import {
 } from "recharts"
 import {
   TrendingUp,
-  TrendingDown,
-  ShoppingBag,
-  DollarSign,
-  Wallet,
   Users,
   Store,
   Download,
   CalendarDays,
   CheckCircle2,
-  XCircle,
   MapPin,
-  CreditCard,
   BarChart3,
   RefreshCw,
 } from "lucide-react"
@@ -47,35 +32,29 @@ import {
 } from "@/components/ui/popover"
 import type { DateRange } from "react-day-picker"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { exportToCSV, GrowthBadge, KpiCard } from "./AnalyticsWidgets"
+import { exportToCSV, KpiCard } from "./AnalyticsWidgets"
 import { DashboardVendorsTab } from "./DashboardVendorsTab"
 import { DashboardOverviewTab } from "./DashboardOverviewTab"
-
 // ── CSV Export ──────────────────────────────────────────────────────────────
 // ── AnalyticsDashboard ──────────────────────────────────────────────────────
 export function AnalyticsDashboard() {
   const [range, setRange] = useState("30d")
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [calendarOpen, setCalendarOpen] = useState(false)
-
   const fromStr = dateRange?.from
     ? format(dateRange.from, "yyyy-MM-dd")
     : undefined
   const toStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined
-
   const { data, isLoading, isError, refetch } = useAdminAnalytics(
     range,
     fromStr,
     toStr
   )
-
   const handlePreset = useCallback((preset: string) => {
     setRange(preset)
     setDateRange(undefined)
     setCalendarOpen(false)
   }, [])
-
   const handleDateSelect = useCallback((selected: DateRange | undefined) => {
     setDateRange(selected)
     if (selected?.from && selected?.to) {
@@ -83,10 +62,8 @@ export function AnalyticsDashboard() {
       setCalendarOpen(false)
     }
   }, [])
-
   const rangeLabel =
     range === "custom" && fromStr && toStr ? `${fromStr}_to_${toStr}` : range
-
   const displayRange =
     range === "custom" && dateRange?.from && dateRange?.to
       ? `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d, yyyy")}`
@@ -97,13 +74,11 @@ export function AnalyticsDashboard() {
           : range === "1y"
             ? "This Year"
             : "All Time"
-
   if (isError) {
     return (
       <FetchError title="Failed to load analytics" onRetry={() => refetch()} />
     )
   }
-
   const kpis = data?.kpis
   const chartData = data?.chartData || []
   const revenueByDow = data?.revenueByDow || []
@@ -111,7 +86,6 @@ export function AnalyticsDashboard() {
   const overview = data?.overview
   const topVendors = data?.topVendors || []
   const topZones = data?.topZones || []
-
   const paymentPieData = paymentSplit
     ? [
         { name: "Monnify", value: paymentSplit.monnify },
@@ -119,7 +93,6 @@ export function AnalyticsDashboard() {
       ]
     : []
   const PIE_COLORS = ["var(--color-primary)", "var(--color-chart-2)"]
-
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
@@ -151,7 +124,6 @@ export function AnalyticsDashboard() {
                     : "All"}
             </Button>
           ))}
-
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -175,7 +147,6 @@ export function AnalyticsDashboard() {
               />
             </PopoverContent>
           </Popover>
-
           <Button
             variant="ghost"
             size="sm"
@@ -185,7 +156,6 @@ export function AnalyticsDashboard() {
           >
             <RefreshCw className="size-4" />
           </Button>
-
           <Button
             variant="outline"
             size="sm"
@@ -197,7 +167,6 @@ export function AnalyticsDashboard() {
           </Button>
         </div>
       </div>
-
       {/* ── Tabs ── */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="mb-6">
@@ -211,7 +180,6 @@ export function AnalyticsDashboard() {
             <Users className="size-3.5" /> Customers
           </TabsTrigger>
         </TabsList>
-
         {isLoading || !data || !kpis || !overview ? (
           <PageSkeleton variant="admin-analytics-dashboard" />
         ) : (
@@ -227,14 +195,12 @@ export function AnalyticsDashboard() {
                 PIE_COLORS={PIE_COLORS}
               />
             </TabsContent>
-
             <TabsContent value="vendors" className="space-y-6">
               <DashboardVendorsTab
                 overview={overview}
                 topVendors={topVendors}
               />
             </TabsContent>
-
             {/* ── Customers Tab ── */}
             <TabsContent value="customers" className="space-y-6">
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -262,7 +228,6 @@ export function AnalyticsDashboard() {
                   description="Orders without accounts"
                 />
               </div>
-
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
                 <div className="flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
                   <h3 className="mb-1 font-heading text-base font-bold">
@@ -318,7 +283,6 @@ export function AnalyticsDashboard() {
                     )}
                   </div>
                 </div>
-
                 <div className="rounded-3xl border border-border bg-card p-6 shadow-sm lg:col-span-3">
                   <h3 className="mb-1 font-heading text-base font-bold">
                     Top Delivery Zones

@@ -28,11 +28,9 @@ import {
   MapPin,
   Receipt,
   User,
-  AlertCircle,
   MessageSquare,
-  ShieldCheck,
-  Loader2,
 } from "lucide-react"
+import { OrderPaymentFlag } from "@/components/vendor-dashboard/OrderPaymentFlag"
 import { useVendorVerifyOrder } from "@/hooks/vendor/useVendorMutations"
 import { toast } from "sonner"
 
@@ -159,11 +157,11 @@ export function OrderTable({
   // Helper to fallback to manual calculation for orders created before schema update.
   // Uses exact decimals — no rounding — to match Monnify's actual deductions.
   const getEarnings = (order: Order) => {
-    if (order.vendorRevenue && order.vendorRevenue > 0)
-      return order.vendorRevenue
+    if (order.vendorRevenueInKobo && order.vendorRevenueInKobo > 0)
+      return order.vendorRevenueInKobo
     // Legacy fallback: estimate from stored totals (no rounding on platform fee)
-    const platformFee = order.totalAmount * 0.05
-    return order.totalAmount - (order.serviceFee || 0) - platformFee
+    const platformFee = order.totalAmountInKobo * 0.05
+    return order.totalAmountInKobo - (order.serviceFeeInKobo || 0) - platformFee
   }
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean
@@ -304,48 +302,11 @@ export function OrderTable({
 
             {/* Footer Actions */}
             <div className="mt-auto space-y-3 border-t border-border/50 pt-4">
-              {order.paymentMethod === "monnify" && (
-                <>
-                  {order.paymentStatus === "paid" && (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-info/10 py-2 text-sm font-semibold text-info">
-                      <Check className="size-4" /> Paid securely via Monnify
-                    </div>
-                  )}
-                  {order.paymentStatus === PAYMENT_STATUS.PENDING &&
-                    order.status !== ORDER_STATUS.CANCELLED && (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-center gap-1.5 rounded-xl bg-warning/10 py-2 text-sm font-semibold text-warning dark:text-warning">
-                          <Clock className="size-4" /> Payment Pending
-                        </div>
-                        <button
-                          onClick={() => handleVerifyPayment(order.orderId)}
-                          disabled={verifyingOrderId === order.orderId}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-all hover:border-primary/60 hover:bg-primary/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {verifyingOrderId === order.orderId ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <ShieldCheck className="size-4" />
-                          )}
-                          {verifyingOrderId === order.orderId
-                            ? "Verifying…"
-                            : "Verify Payment"}
-                        </button>
-                      </div>
-                    )}
-                  {order.paymentStatus === PAYMENT_STATUS.PENDING &&
-                    order.status === ORDER_STATUS.CANCELLED && (
-                      <div className="flex items-center justify-center gap-1.5 rounded-xl bg-muted/50 py-2 text-sm font-semibold text-muted-foreground">
-                        <AlertCircle className="size-4" /> No Payment Made
-                      </div>
-                    )}
-                  {order.paymentStatus === "failed" && (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-destructive/10 py-2 text-sm font-semibold text-destructive">
-                      <AlertCircle className="size-4" /> Payment Failed
-                    </div>
-                  )}
-                </>
-              )}
+              <OrderPaymentFlag
+                order={order}
+                verifyingOrderId={verifyingOrderId}
+                onVerifyPayment={handleVerifyPayment}
+              />
 
               {/* Order Status Select */}
               {onStatusChange && (

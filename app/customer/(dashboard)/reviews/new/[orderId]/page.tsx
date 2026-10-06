@@ -1,35 +1,26 @@
 "use client"
-
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { ChevronLeft, Store, Star } from "lucide-react"
 import Link from "next/link"
-
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
-
 import { ORDER_STATUS } from "@/lib/constants"
 import { useCustomerOrder } from "@/hooks/customer/useCustomerReviews"
 import { formatDate } from "@/lib/timeUtils"
-
 import { VendorReviewForm } from "@/components/customer/reviews/VendorReviewForm"
 import { ItemReviewForm } from "@/components/customer/reviews/ItemReviewForm"
-
 export default function WriteReviewPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const router = useRouter()
-
   const { data: order, isLoading, isError, refetch } = useCustomerOrder(orderId)
-
   // Track the index of the item being reviewed (-1 means none)
   const [currentlyReviewing, setCurrentlyReviewing] = useState<number>(-1)
-
   if (isLoading) {
     return <PageSkeleton variant="customer-review-new" />
   }
-
   if (isError || !order) {
     return (
       <FetchError
@@ -41,7 +32,6 @@ export default function WriteReviewPage() {
       />
     )
   }
-
   if (order.status !== ORDER_STATUS.COMPLETED) {
     return (
       <EmptyState
@@ -56,29 +46,24 @@ export default function WriteReviewPage() {
       />
     )
   }
-
   // Separate unrated items and rated items
   const unratedItems =
     order.items?.filter(
       (item: { menuItemId: string }) =>
         !order.ratedItems?.includes(item.menuItemId)
     ) || []
-
   const ratedItems =
     order.items?.filter((item: { menuItemId: string }) =>
       order.ratedItems?.includes(item.menuItemId)
     ) || []
-
   const handleVendorSuccess = () => {
     // Reset accordion
     setCurrentlyReviewing(-1)
   }
-
   const handleItemSuccess = () => {
     // Reset accordion
     setCurrentlyReviewing(-1)
   }
-
   return (
     <div className="mx-auto max-w-2xl space-y-6 pb-20">
       <div className="flex items-center gap-4">
@@ -96,7 +81,6 @@ export default function WriteReviewPage() {
           </p>
         </div>
       </div>
-
       {!order.isVendorRated ? (
         <div className="space-y-6">
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
@@ -113,11 +97,9 @@ export default function WriteReviewPage() {
               Vendor rating submitted! You can now rate your items.
             </p>
           </div>
-
           <h2 className="font-heading text-xl font-bold tracking-tight">
             Rate your items
           </h2>
-
           <div className="space-y-4">
             {unratedItems.map((item, index) => (
               <ItemReviewForm
@@ -134,7 +116,6 @@ export default function WriteReviewPage() {
               />
             ))}
           </div>
-
           {unratedItems.length === 0 && ratedItems.length === 0 && (
             <EmptyState
               title="No Items"
@@ -142,7 +123,6 @@ export default function WriteReviewPage() {
               className="py-10"
             />
           )}
-
           {ratedItems.length > 0 && (
             <div className="mt-8 space-y-4">
               <h2 className="font-heading text-xl font-bold tracking-tight">
@@ -152,7 +132,6 @@ export default function WriteReviewPage() {
                 const review = order.existingItemReviews?.find(
                   (r) => r.menuItemId === item.menuItemId
                 )
-
                 return (
                   <div
                     key={item.menuItemId}
@@ -161,10 +140,13 @@ export default function WriteReviewPage() {
                     <div className="flex items-start justify-between border-b border-border pb-4">
                       <div className="flex items-center gap-3">
                         {item.image ? (
-                          <img
+                          <Image
                             src={item.image}
                             alt={item.name || "Menu Item"}
+                            width={48}
+                            height={48}
                             className="size-12 shrink-0 rounded-full object-cover shadow-sm"
+                            unoptimized
                           />
                         ) : (
                           <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -194,7 +176,6 @@ export default function WriteReviewPage() {
                         <Star className="size-4 fill-warning text-warning" />
                       </div>
                     </div>
-
                     {(review?.title || review?.comments) && (
                       <div className="mt-4 space-y-2">
                         {review.title && (

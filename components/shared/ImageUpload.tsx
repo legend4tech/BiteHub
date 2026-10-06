@@ -1,11 +1,9 @@
 "use client"
-
 import { useState, useRef, useEffect } from "react"
-import { Upload, X, Image as ImageIcon } from "lucide-react"
+import { Upload, X } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-
 interface ImageUploadProps {
   value?: { url: string; publicId: string; file?: File } | string | null
   onChange: (
@@ -13,14 +11,11 @@ interface ImageUploadProps {
   ) => void
   type: "vendor" | "menu" | "customer"
 }
-
-export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
+export function ImageUpload({ value, onChange }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   // Normalize value to object or string
   const currentUrl = typeof value === "string" ? value : value?.url
-
   // Clean up Object URL on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
@@ -29,62 +24,51 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
       }
     }
   }, [currentUrl])
-
   const handleFile = (file: File) => {
     // Restrict to 1.5MB
     if (file.size > 1.5 * 1024 * 1024) {
       toast.error("File is too large. Max size is 1.5MB")
       return
     }
-
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file")
       return
     }
-
     // Revoke old object URL if we had a local preview
     if (currentUrl && currentUrl.startsWith("blob:")) {
       URL.revokeObjectURL(currentUrl)
     }
-
     // Create a local Object URL for instant preview
     const previewUrl = URL.createObjectURL(file)
-
     onChange({
       file,
       url: previewUrl,
       publicId: "",
     })
   }
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0])
     }
   }
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(true)
   }
-
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
   }
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0])
     }
   }
-
   const handleRemove = () => {
     if (currentUrl && currentUrl.startsWith("blob:")) {
       URL.revokeObjectURL(currentUrl)
@@ -94,7 +78,6 @@ export function ImageUpload({ value, onChange, type }: ImageUploadProps) {
       fileInputRef.current.value = ""
     }
   }
-
   return (
     <div className="w-full space-y-4">
       {currentUrl ? (

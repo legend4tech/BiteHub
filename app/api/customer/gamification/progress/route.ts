@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
-import { getCustomerCampaignProgress } from "@/lib/services/gamificationService"
+import { getCustomerCampaignProgress } from "@/lib/services/gamificationQueryService"
 
 export async function GET() {
   try {

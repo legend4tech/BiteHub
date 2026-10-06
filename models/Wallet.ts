@@ -2,9 +2,9 @@ import mongoose, { Schema, Document } from "mongoose"
 
 export interface IWallet extends Document {
   customerId: mongoose.Types.ObjectId
-  balance: number
-  depositBalance: number
-  promoBalance: number
+  balanceInKobo: number
+  depositBalanceInKobo: number
+  promoBalanceInKobo: number
   monnifyReservedAccountRef?: string
   accountName?: string
   accountNumber?: string
@@ -21,20 +21,32 @@ const WalletSchema = new Schema<IWallet>(
       required: true,
       unique: true,
     },
-    balance: {
+    balanceInKobo: {
       type: Number,
       default: 0,
       min: [0, "Balance cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
     },
-    depositBalance: {
+    depositBalanceInKobo: {
       type: Number,
       default: 0,
       min: [0, "Deposit balance cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
     },
-    promoBalance: {
+    promoBalanceInKobo: {
       type: Number,
       default: 0,
       min: [0, "Promo balance cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
     },
     monnifyReservedAccountRef: { type: String },
     accountName: { type: String },

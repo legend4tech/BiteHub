@@ -213,8 +213,8 @@ export async function getCustomerWalletData(
       direction: "credit",
       isExpired: false,
       $or: [
-        { remainingAmount: { $gt: 0 } },
-        { remainingAmount: { $exists: false } },
+        { remainingAmountInKobo: { $gt: 0 } },
+        { remainingAmountInKobo: { $exists: false } },
       ],
     })
       .sort({ expiresAt: 1 })

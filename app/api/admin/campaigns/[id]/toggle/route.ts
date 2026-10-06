@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
-import { toggleCampaignStatus } from "@/lib/services/gamificationService"
+import { toggleCampaignStatus } from "@/lib/services/gamificationQueryService"
 import { strictRateLimiter } from "@/lib/rate-limit"
 
 export async function PATCH(

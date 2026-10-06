@@ -35,7 +35,7 @@ export function OrderItemsBreakdown({ order }: OrderItemsBreakdownProps) {
                 </span>
               </div>
               <span className="shrink-0 text-sm font-semibold tabular-nums">
-                {formatPrice(item.price * item.quantity)}
+                {formatPrice(item.priceInKobo * item.quantity)}
               </span>
             </div>
           ))}
@@ -48,7 +48,10 @@ export function OrderItemsBreakdown({ order }: OrderItemsBreakdownProps) {
             <span>Items subtotal</span>
             <span className="tabular-nums">
               {formatPriceExact(
-                order.items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+                order.items.reduce(
+                  (sum, i) => sum + i.priceInKobo * i.quantity,
+                  0
+                )
               )}
             </span>
           </div>
@@ -57,14 +60,14 @@ export function OrderItemsBreakdown({ order }: OrderItemsBreakdownProps) {
           <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
             <span>Delivery Fee</span>
             <span className="tabular-nums">
-              {(order.deliveryFee || 0) > 0
-                ? formatPriceExact(order.deliveryFee)
+              {(order.deliveryFeeInKobo || 0) > 0
+                ? formatPriceExact(order.deliveryFeeInKobo)
                 : "Free"}
             </span>
           </div>
 
           {/* Service / processing fee — shown separately so nothing is hidden */}
-          {(order.serviceFee || 0) > 0 && (
+          {(order.serviceFeeInKobo || 0) > 0 && (
             <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 Processing Fee
@@ -73,7 +76,7 @@ export function OrderItemsBreakdown({ order }: OrderItemsBreakdownProps) {
                 </span>
               </span>
               <span className="tabular-nums">
-                {formatPriceExact(order.serviceFee)}
+                {formatPriceExact(order.serviceFeeInKobo)}
               </span>
             </div>
           )}
@@ -82,7 +85,7 @@ export function OrderItemsBreakdown({ order }: OrderItemsBreakdownProps) {
           <div className="mt-2 flex items-center justify-between rounded-2xl bg-primary/8 px-4 py-3.5">
             <span className="text-sm font-bold">Total Charged</span>
             <span className="text-lg font-extrabold text-primary tabular-nums">
-              {formatPriceExact(order.totalAmount)}
+              {formatPriceExact(order.totalAmountInKobo)}
             </span>
           </div>
         </div>

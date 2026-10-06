@@ -1,16 +1,13 @@
 export const dynamic = "force-dynamic"
 import { auth } from "@/auth"
-import { redirect } from "next/navigation"
 import Link from "next/link"
 import { formatPriceExact } from "@/lib/format"
 import {
   Wallet as WalletIcon,
   ArrowDownLeft,
   ArrowUpRight,
-  Copy,
   Landmark,
   Banknote,
-  Info,
 } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
@@ -22,25 +19,20 @@ import {
   getCustomerByEmail,
   getCustomerWalletData,
 } from "@/lib/services/customerService"
-
 export default async function CustomerWalletPage() {
   const session = await auth()
   if (!session?.user?.email) {
     return null
   }
-
   const customer = await getCustomerByEmail(session.user.email)
   if (!customer) {
     return null
   }
-
   const { wallet, transactions } = await getCustomerWalletData(
     customer._id.toString()
   )
-
-  const walletBalance = wallet ? wallet.balance : 0
+  const walletBalance = wallet ? wallet.balanceInKobo : 0
   const isActive = !!wallet?.accountNumber
-
   return (
     <div className="space-y-6">
       <WalletAutoRefresher />
@@ -50,7 +42,6 @@ export default async function CustomerWalletPage() {
           Manage your funds and deposit money for seamless checkout.
         </p>
       </div>
-
       <div className="grid items-start gap-6 lg:grid-cols-3">
         {/* Balance & Actions */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm lg:col-span-1">
@@ -67,7 +58,6 @@ export default async function CustomerWalletPage() {
               {formatPriceExact(walletBalance)}
             </h2>
           </div>
-
           <div className="mt-8 border-t border-border pt-6">
             {!isActive ? (
               <ActivateWalletForm />
@@ -85,7 +75,6 @@ export default async function CustomerWalletPage() {
             )}
           </div>
         </div>
-
         {/* Deposit Info (Monnify Virtual Account) */}
         <div className="lg:col-span-2">
           {!isActive ? (
@@ -109,7 +98,6 @@ export default async function CustomerWalletPage() {
           )}
         </div>
       </div>
-
       {/* Transaction History */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -125,7 +113,6 @@ export default async function CustomerWalletPage() {
             </Link>
           )}
         </div>
-
         {transactions.length === 0 ? (
           <EmptyState
             size="sm"
@@ -174,14 +161,14 @@ export default async function CustomerWalletPage() {
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatPriceExact(tx.amount)}
+                      {formatPriceExact(tx.amountInKobo)}
                     </p>
                     <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
                       {tx.type.replace("_", " ")}
                     </span>
-                    {tx.balanceAfter !== undefined && (
+                    {tx.balanceAfterInKobo !== undefined && (
                       <p className="mt-1 text-xs font-medium text-muted-foreground">
-                        Bal: {formatPriceExact(tx.balanceAfter)}
+                        Bal: {formatPriceExact(tx.balanceAfterInKobo)}
                       </p>
                     )}
                   </div>

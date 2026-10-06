@@ -51,36 +51,53 @@ export function WhotCardStack() {
               id: string
               code: string
               vendorId: string
-              menuItem?: { name: string; price: number } | null
+              menuItemId: string
+              menuItem?: { name: string; priceInKobo: number } | null
+              expiresAt: string
             },
             index: number
           ) => {
-            // Calculate spread for the whot card fan effect
-            const totalCards = Math.min(vouchers.length, 5) // display up to 5
-            if (index >= 5) return null
+            // Dynamic spread for any number of cards
+            const totalCards = vouchers.length
+            // A lone card has no fan to reveal, so it must stay still.
+            const isHovered = totalCards > 1 && hoveredIndex === index
 
-            const isHovered = hoveredIndex === index
-            const offset = (index - (totalCards - 1) / 2) * 15 // degrees
-            const translateX = (index - (totalCards - 1) / 2) * 20 // px
+            // Constrain the fan so it doesn't break the container
+            const maxAngle = 45 // max degrees on either side
+            const maxSpread = 120 // max pixels on either side
+
+            const angleStep =
+              totalCards > 1 ? (maxAngle * 2) / Math.max(totalCards - 1, 1) : 0
+            const translateStep =
+              totalCards > 1 ? (maxSpread * 2) / Math.max(totalCards - 1, 1) : 0
+
+            // Cap the steps so few cards don't spread too wide
+            const finalAngleStep = Math.min(angleStep, 15)
+            const finalTranslateStep = Math.min(translateStep, 30)
+
+            const offset = (index - (totalCards - 1) / 2) * finalAngleStep
+            const translateX =
+              (index - (totalCards - 1) / 2) * finalTranslateStep
 
             return (
               <div
                 key={voucher.id}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
-                className="absolute transition-all duration-300 ease-out"
+                onClick={() => setHoveredIndex(isHovered ? null : index)}
+                className="absolute cursor-pointer transition-all duration-300 ease-out"
                 style={{
                   transform: `
-                  translateX(${isHovered ? 0 : translateX}px)
-                  translateY(${isHovered ? -20 : 0}px)
-                  rotate(${isHovered ? 0 : offset}deg)
-                  scale(${isHovered ? 1.1 : 1})
+                  translateX(${translateX}px)
+                  rotate(${offset}deg)
+                  translateY(${isHovered ? -40 : 0}px)
+                  scale(${isHovered ? 1.05 : 1})
                 `,
                   zIndex: isHovered ? 50 : index,
                 }}
               >
                 <div
-                  className={`flex h-56 w-40 flex-col justify-between overflow-hidden rounded-xl border-4 border-white bg-white p-3 shadow-xl ${isHovered ? "animate-[shake_3s_ease-in-out_infinite] shadow-2xl shadow-primary/30" : ""} `}
+                  className={`flex h-56 w-40 flex-col justify-between overflow-hidden rounded-xl border-4 border-border bg-card p-3 shadow-xl transition-all duration-300 ${isHovered ? "shadow-2xl shadow-primary/30" : ""} `}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -99,9 +116,17 @@ export function WhotCardStack() {
                       {voucher.menuItem?.name || "Secret Reward"}
                     </h4>
                     <p className="mt-1 text-[10px] font-semibold text-muted-foreground line-through">
-                      {voucher.menuItem?.price
-                        ? formatPrice(voucher.menuItem.price)
+                      {voucher.menuItem?.priceInKobo
+                        ? formatPrice(voucher.menuItem.priceInKobo)
                         : ""}
+                    </p>
+
+                    <p className="mt-1.5 text-[9px] font-bold tracking-wider text-destructive uppercase">
+                      Exp:{" "}
+                      {new Date(voucher.expiresAt).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </p>
                   </div>
 
@@ -123,7 +148,7 @@ export function WhotCardStack() {
                       size="sm"
                       className="h-7 w-full text-[10px] font-bold"
                     >
-                      <Link href={`/menu/${voucher.vendorId}`}>
+                      <Link href={`/menu/${voucher.menuItemId}`}>
                         Order Now <ExternalLink className="ml-1 size-2" />
                       </Link>
                     </Button>

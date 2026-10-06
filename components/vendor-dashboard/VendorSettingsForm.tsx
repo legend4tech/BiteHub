@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, useWatch } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError } from "@/components/ui/field"
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { formatInputNumber, parseInputNumber } from "@/lib/format"
+
 import { getSchoolOptions, getCampusOptions } from "@/lib/config/campus"
 
 interface VendorSettingsFormProps {
@@ -71,6 +71,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
   })
 
   const updateSettingsMutation = useVendorUpdateSettings()
+  const watchedSchool = useWatch({ control: form.control, name: "school" })
 
   const onSubmit = async (values: VendorSettingsValues) => {
     setSaving(true)
@@ -273,13 +274,13 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
               name={field.name}
               value={field.value}
               onValueChange={field.onChange}
-              disabled={!!initial.campus || !form.watch("school")}
+              disabled={!!initial.campus || !watchedSchool}
             >
               <SelectTrigger id="campus" className="h-11 w-full rounded-xl">
                 <SelectValue placeholder="Select your campus" />
               </SelectTrigger>
               <SelectContent>
-                {getCampusOptions(form.watch("school") || "").map((opt) => (
+                {getCampusOptions(watchedSchool || "").map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>

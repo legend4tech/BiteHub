@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { useForm, type Resolver } from "react-hook-form"
+import { useForm, useWatch, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Shield, Loader2, User, Eye, EyeOff } from "lucide-react"
@@ -37,6 +37,11 @@ export function ManagerSettings() {
       newPassword: "",
       confirmPassword: "",
     },
+  })
+
+  const newPasswordValue = useWatch({
+    control: passwordForm.control,
+    name: "newPassword",
   })
 
   const profileForm = useForm<UpdateAdminProfileValues>({
@@ -170,9 +175,7 @@ export function ManagerSettings() {
                   )}
                 </button>
               </div>
-              <PasswordStrengthMeter
-                password={passwordForm.watch("newPassword") || ""}
-              />
+              <PasswordStrengthMeter password={newPasswordValue || ""} />
             </Field>
 
             <Field>

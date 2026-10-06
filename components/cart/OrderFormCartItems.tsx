@@ -114,7 +114,7 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
               appliedVoucher.menuItem?.id === ci.menuItem.id ? (
                 <>
                   <span className="text-xs font-bold text-muted-foreground line-through">
-                    {formatPrice(ci.menuItem.price * ci.quantity)}
+                    {formatPrice(ci.menuItem.priceInKobo * ci.quantity)}
                   </span>
                   <span className="animate-pulse text-sm font-black text-green-600">
                     FREE!
@@ -122,7 +122,7 @@ export function OrderFormCartItems({ loading }: OrderFormCartItemsProps) {
                 </>
               ) : (
                 <p className="text-sm font-bold">
-                  {formatPrice(ci.menuItem.price * ci.quantity)}
+                  {formatPrice(ci.menuItem.priceInKobo * ci.quantity)}
                 </p>
               )}
             </div>

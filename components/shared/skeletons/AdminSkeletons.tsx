@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton"
-
 export function AdminListSkeleton({ count }: { count: number }) {
   return (
     <div className="divide-y divide-border">
@@ -15,7 +14,6 @@ export function AdminListSkeleton({ count }: { count: number }) {
     </div>
   )
 }
-
 export function AdminOrdersSkeleton({ count }: { count: number }) {
   return (
     <div className="divide-y divide-border">
@@ -28,8 +26,7 @@ export function AdminOrdersSkeleton({ count }: { count: number }) {
     </div>
   )
 }
-
-export function AdminOverviewStatsSkeleton({ count = 4 }: { count?: number }) {
+export function AdminOverviewStatsSkeleton({}: { count?: number }) {
   return (
     <>
       <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -53,7 +50,6 @@ export function AdminOverviewStatsSkeleton({ count = 4 }: { count?: number }) {
     </>
   )
 }
-
 export function AdminAnalyticsDashboardSkeleton() {
   return (
     <div className="space-y-6 pt-4">
@@ -63,10 +59,8 @@ export function AdminAnalyticsDashboardSkeleton() {
           <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
       </div>
-
       {/* Revenue Trend Chart */}
       <Skeleton className="h-[380px] w-full rounded-3xl" />
-
       {/* Day-of-Week + Payment split row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <Skeleton className="h-[340px] rounded-3xl lg:col-span-3" />
@@ -75,7 +69,6 @@ export function AdminAnalyticsDashboardSkeleton() {
     </div>
   )
 }
-
 export function AdminFeedbackSkeleton({ count }: { count: number }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

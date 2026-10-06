@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose"
 
 export interface IPlatformWithdrawal extends Document {
-  amount: number
+  amountInKobo: number
   reference: string
   note?: string
   withdrawnBy: string // admin email
@@ -11,7 +11,7 @@ export interface IPlatformWithdrawal extends Document {
 
 const PlatformWithdrawalSchema = new Schema<IPlatformWithdrawal>(
   {
-    amount: {
+    amountInKobo: {
       type: Number,
       required: true,
       min: 0,

@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose"
 export interface ISubLandmark extends Document {
   landmarkId: Types.ObjectId
   name: string
-  defaultDeliveryFee?: number
+  defaultDeliveryFeeInKobo?: number
   isActive: boolean
 }
 
@@ -16,7 +16,7 @@ const SubLandmarkSchema = new Schema<ISubLandmark>(
       index: true,
     },
     name: { type: String, required: true },
-    defaultDeliveryFee: { type: Number },
+    defaultDeliveryFeeInKobo: { type: Number },
     isActive: { type: Boolean, default: true },
   },
   {

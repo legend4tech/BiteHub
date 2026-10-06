@@ -1,13 +1,10 @@
 "use client"
-
-import { useState } from "react"
 import Image from "next/image"
 import { RefreshCcw, Activity, AlertTriangle, Banknote } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import type { AdminVendor, AdminStats } from "@/types/admin"
-
 interface AdminPayoutsProps {
   vendors: AdminVendor[]
   stats?: AdminStats
@@ -16,7 +13,6 @@ interface AdminPayoutsProps {
   onRetryPayout: (vendor: AdminVendor) => void
   retryingId: string | null
 }
-
 export function AdminPayouts({
   vendors,
   stats,
@@ -27,9 +23,10 @@ export function AdminPayouts({
 }: AdminPayoutsProps) {
   // Filter only vendors that have a pending wallet balance
   const vendorsWithPendingPayouts = vendors.filter(
-    (v) => v.pendingWalletBalance !== undefined && v.pendingWalletBalance > 0
+    (v) =>
+      v.pendingWalletBalanceInKobo !== undefined &&
+      v.pendingWalletBalanceInKobo > 0
   )
-
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
@@ -37,7 +34,6 @@ export function AdminPayouts({
       minimumFractionDigits: 0,
     }).format(amount)
   }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -48,7 +44,6 @@ export function AdminPayouts({
           </p>
         </div>
       </div>
-
       {/* Global Stats */}
       {loadingStats ? (
         <PageSkeleton variant="admin-overview-stats" count={2} />
@@ -62,13 +57,12 @@ export function AdminPayouts({
               Global Pending Payouts
             </div>
             <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
-              {formatPrice(stats.totalPendingVendorWallet)}
+              {formatPrice(stats.totalPendingVendorWalletInKobo)}
             </p>
             <p className="mt-2 text-xs text-destructive/70">
               Total funds pending disbursement to vendors
             </p>
           </div>
-
           <div className="flex flex-col p-6 hover:bg-muted/10">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               <div className="flex size-6 items-center justify-center rounded-md bg-muted">
@@ -77,7 +71,7 @@ export function AdminPayouts({
               Lifetime Wallet Disbursements
             </div>
             <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
-              {formatPrice(stats.totalVendorWalletDisbursed)}
+              {formatPrice(stats.totalVendorWalletDisbursedInKobo)}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               Total funds successfully disbursed via Wallet
@@ -85,14 +79,12 @@ export function AdminPayouts({
           </div>
         </div>
       ) : null}
-
       <div className="overflow-hidden rounded-3xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <p className="text-sm font-semibold">
             {vendorsWithPendingPayouts.length} vendors awaiting payout
           </p>
         </div>
-
         {loadingVendors ? (
           <PageSkeleton variant="admin-list" count={4} />
         ) : vendorsWithPendingPayouts.length === 0 ? (
@@ -130,7 +122,6 @@ export function AdminPayouts({
                         initials
                       )}
                     </div>
-
                     {/* Info */}
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <p className="text-base leading-tight font-bold break-words text-foreground">
@@ -139,7 +130,6 @@ export function AdminPayouts({
                       <p className="mt-0.5 text-xs break-words text-muted-foreground">
                         {vendor.whatsappNumber} · {vendor.campus}
                       </p>
-
                       <div className="mt-1 flex flex-col gap-1 text-sm">
                         <p>
                           <span className="font-medium text-muted-foreground">
@@ -160,13 +150,11 @@ export function AdminPayouts({
                       </div>
                     </div>
                   </div>
-
                   {/* Actions & Balance */}
                   <div className="flex shrink-0 flex-col items-end gap-3 pt-2 pl-[56px] md:pt-0 md:pl-0">
                     <p className="font-heading text-xl font-bold text-destructive">
-                      {formatPrice(vendor.pendingWalletBalance || 0)}
+                      {formatPrice(vendor.pendingWalletBalanceInKobo || 0)}
                     </p>
-
                     <Button
                       variant="outline"
                       size="sm"

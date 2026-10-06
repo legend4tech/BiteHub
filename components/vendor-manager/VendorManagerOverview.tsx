@@ -1,20 +1,17 @@
 "use client"
-
 import { ShoppingBag, Clock, Users, Store, UtensilsCrossed } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
 import { useAdminStats } from "@/hooks/admin/useAdminStats"
 import { ORDER_STATUS } from "@/lib/constants"
-import type { AdminStats } from "@/types/admin"
+import type {} from "@/types/admin"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { OrderStatus } from "@/types/shared"
 import Link from "next/link"
-
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-
 function StatCard({
   label,
   value,
@@ -54,19 +51,15 @@ function StatCard({
     </div>
   )
 }
-
 // ─── Overview Section ─────────────────────────────────────────────────────────
-
 export function VendorManagerOverview() {
   const {
     data: stats,
     isLoading: loadingStats,
     refetch: refetchStats,
   } = useAdminStats()
-
   // Fetch only active orders for the live feed (confirmed, preparing, ready)
   const activeStatuses = `${ORDER_STATUS.CONFIRMED},${ORDER_STATUS.PREPARING},${ORDER_STATUS.READY}`
-
   const { data: recentOrdersData, isLoading: loadingOrders } = useAdminOrders(
     1,
     5,
@@ -76,8 +69,6 @@ export function VendorManagerOverview() {
       refetchInterval: 15000, // Auto-refresh every 15 seconds for live feed
     }
   )
-
-  const activeOrdersCount = stats?.preparingOrders ?? 0 // Currently 'preparing' or 'ready' would be active
 
   return (
     <div className="space-y-8">
@@ -97,7 +88,6 @@ export function VendorManagerOverview() {
           Refresh Stats
         </Button>
       </div>
-
       {loadingStats ? (
         <PageSkeleton variant="admin-overview-stats" count={4} />
       ) : stats ? (
@@ -134,7 +124,6 @@ export function VendorManagerOverview() {
           onRetry={() => refetchStats()}
         />
       )}
-
       {/* Actionable Alerts */}
       {stats && stats.vendorsWithoutMenus > 0 && (
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-status-pending/30 bg-status-pending/5 px-5 py-4">
@@ -163,7 +152,6 @@ export function VendorManagerOverview() {
           </Link>
         </div>
       )}
-
       {/* Recent Actionable Orders Feed */}
       <div className="mt-8 overflow-hidden rounded-3xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border bg-muted/20 px-6 py-4">

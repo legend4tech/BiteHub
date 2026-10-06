@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `${mainItem.name} from ${vendor.name} — BiteHub`
     const description =
       mainItem.description ||
-      `Order ${mainItem.name} from ${vendor.name} on BiteHub. ${formatPrice(mainItem.price)}.`
+      `Order ${mainItem.name} from ${vendor.name} on BiteHub. ${formatPrice(mainItem.priceInKobo)}.`
 
     // Fallback to vendor image or default OG image if the item doesn't have an image
     const itemImageUrl =
@@ -215,7 +215,7 @@ export default async function SingleMenuPage({ params }: Props) {
                   </div>
 
                   <p className="mb-6 text-3xl font-black text-primary tabular-nums">
-                    {formatPrice(mainItem.price)}
+                    {formatPrice(mainItem.priceInKobo)}
                   </p>
 
                   <Link

@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -14,7 +13,6 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react"
-import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
 import Image from "next/image"
@@ -27,7 +25,6 @@ import {
 } from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import type { UseMutationResult } from "@tanstack/react-query"
-
 export interface SharedResetPasswordProps {
   userType: "vendor" | "customer" | "admin"
   loginHref: string
@@ -41,7 +38,6 @@ export interface SharedResetPasswordProps {
     unknown
   >
 }
-
 export function SharedResetPassword({
   userType,
   loginHref,
@@ -55,10 +51,8 @@ export function SharedResetPassword({
   const [invalidParams, setInvalidParams] = useState(false)
   const { status } = useSession()
   const isAuth = status === "authenticated"
-
   const token = searchParams.get("token")
   const email = searchParams.get("email")
-
   useEffect(() => {
     if (!token || !email) {
       setTimeout(() => {
@@ -67,7 +61,6 @@ export function SharedResetPassword({
       }, 0)
     }
   }, [token, email])
-
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(
       resetPasswordFormSchema as never
@@ -75,15 +68,12 @@ export function SharedResetPassword({
     defaultValues: { password: "", confirmPassword: "" },
     mode: "onChange",
   })
-
   const passwordValue = useWatch({ control: form.control, name: "password" })
-
   const onSubmit = (values: ResetPasswordFormValues) => {
     if (!token || !email) {
       toast.error("Missing reset parameters. Try requesting a new link.")
       return
     }
-
     setLoading(true)
     mutation.mutate(
       {
@@ -115,7 +105,6 @@ export function SharedResetPassword({
       }
     )
   }
-
   return (
     <main
       className={
@@ -131,7 +120,6 @@ export function SharedResetPassword({
           <div className="pointer-events-none absolute right-0 bottom-0 -mr-20 -mb-20 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
         </>
       )}
-
       <div className={isAuth ? "w-full max-w-md" : "z-10 w-full max-w-[440px]"}>
         {/* Brand Header */}
         {!isAuth ? (
@@ -148,7 +136,6 @@ export function SharedResetPassword({
                 Bite<span className="text-primary">Hub</span>
               </span>
             </div>
-
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10">
               {invalidParams ? (
                 <ShieldAlert className="size-6 text-destructive" />
@@ -177,7 +164,6 @@ export function SharedResetPassword({
             </p>
           </div>
         )}
-
         {/* Form Card */}
         <div className="rounded-3xl border border-border bg-card p-8 shadow-xl shadow-primary/5">
           {invalidParams ? (
@@ -231,7 +217,6 @@ export function SharedResetPassword({
                   </Field>
                 )}
               />
-
               {/* Confirm Password */}
               <Controller
                 name="confirmPassword"
@@ -272,7 +257,6 @@ export function SharedResetPassword({
                   </Field>
                 )}
               />
-
               <Button
                 type="submit"
                 variant="hero"
@@ -285,7 +269,6 @@ export function SharedResetPassword({
             </form>
           )}
         </div>
-
         {/* Back Link */}
         {!isAuth && (
           <div className="mt-6 text-center">

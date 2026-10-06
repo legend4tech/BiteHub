@@ -157,7 +157,7 @@ function CustomerReviewsContent() {
                           </h3>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                             <span className="font-medium text-foreground">
-                              ₦{order.totalAmount.toLocaleString()}
+                              ₦{order.totalAmountInKobo.toLocaleString()}
                             </span>
                             <span className="text-[10px] opacity-50">•</span>
                             <span>

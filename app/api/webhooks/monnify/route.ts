@@ -15,6 +15,7 @@ import Wallet from "@/models/Wallet"
 import WalletTransaction from "@/models/WalletTransaction"
 import { eventBus } from "@/lib/events"
 import { formatPriceExact } from "@/lib/format"
+import { nairaToKobo } from "@/lib/money"
 
 async function processSuccessfulTransaction(paymentReference: string) {
   const monnifyData = await verifyMonnifyTransaction(paymentReference)
@@ -43,43 +44,65 @@ async function processSuccessfulTransaction(paymentReference: string) {
         reference: paymentReference,
       })
       if (!existingTx) {
-        // Use settlementAmount if available, otherwise amountPaid
-        const amount = Number(
+        const rawAmount = Number(
           monnifyData.settlementAmount ||
             monnifyData.amountPaid ||
             monnifyData.amount
         )
+        const amountInKobo = nairaToKobo(rawAmount)
 
-        const updatedWallet = await Wallet.findOneAndUpdate(
-          { _id: wallet._id },
-          { $inc: { balance: amount, depositBalance: amount } },
-          { new: true }
-        )
+        const mongoose = (await import("mongoose")).default
+        const session = await mongoose.startSession()
+        let updatedWalletBalance: number | null = null
 
         try {
-          await WalletTransaction.create({
-            customerId: wallet.customerId,
-            type: "fiat_deposit",
-            amount: amount,
-            balanceAfter: updatedWallet.balance, // Set exact correct value atomically
-            direction: "credit",
-            reference: paymentReference,
-            description: "Bank Transfer Deposit",
+          await session.withTransaction(async () => {
+            const updatedWallet = await Wallet.findOneAndUpdate(
+              { _id: wallet._id },
+              {
+                $inc: {
+                  balanceInKobo: amountInKobo,
+                  depositBalanceInKobo: amountInKobo,
+                },
+              },
+              { new: true, session }
+            )
+            if (updatedWallet) {
+              updatedWalletBalance = updatedWallet.balanceInKobo
+            }
+
+            await WalletTransaction.create(
+              [
+                {
+                  customerId: wallet.customerId,
+                  type: "fiat_deposit",
+                  amountInKobo: amountInKobo,
+                  balanceAfterInKobo: updatedWalletBalance || 0,
+                  direction: "credit",
+                  reference: paymentReference,
+                  description: "Bank Transfer Deposit",
+                },
+              ],
+              { session }
+            )
           })
         } catch (e: unknown) {
           if ((e as { code?: number }).code === 11000) {
             console.warn(
-              `[Collection Webhook] Duplicate transaction for ${paymentReference} - gracefully ignored (Idempotency catch).`
-            )
-            // Rollback wallet increment if transaction already exists (another process beat us)
-            await Wallet.findOneAndUpdate(
-              { _id: wallet._id },
-              { $inc: { balance: -amount, depositBalance: -amount } }
+              `[Collection Webhook] Duplicate transaction for ${paymentReference} caught inside transaction.`
             )
             return NextResponse.json({ status: "Duplicate event" })
           }
           throw e
+        } finally {
+          session.endSession()
         }
+
+        if (updatedWalletBalance === null)
+          return NextResponse.json(
+            { error: "Wallet update failed" },
+            { status: 500 }
+          )
 
         revalidatePath("/customer/wallet")
 
@@ -92,8 +115,8 @@ async function processSuccessfulTransaction(paymentReference: string) {
           sendWalletTopupEmail(
             customer.email,
             customer.name,
-            formatPriceExact(amount),
-            formatPriceExact(wallet.balance),
+            formatPriceExact(amountInKobo),
+            formatPriceExact(updatedWalletBalance),
             paymentReference
           ).catch(console.error)
         }
@@ -149,7 +172,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
   if (!updatedOrder) return
 
   if (typeof monnifyData.fee === "number") {
-    updatedOrder.serviceFee = monnifyData.fee
+    updatedOrder.serviceFeeInKobo = nairaToKobo(monnifyData.fee)
   }
 
   if (
@@ -158,7 +181,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
   ) {
     const vendorSplit = monnifyData.incomeSplitConfig[0]
     if (typeof vendorSplit.splitAmount === "number") {
-      updatedOrder.vendorRevenue = vendorSplit.splitAmount
+      updatedOrder.vendorRevenueInKobo = nairaToKobo(vendorSplit.splitAmount)
     }
   }
 
@@ -199,9 +222,9 @@ async function processSuccessfulTransaction(paymentReference: string) {
       updatedOrder.customerName,
       updatedOrder.orderId,
       updatedOrder.vendorName,
-      updatedOrder.totalAmount,
-      updatedOrder.deliveryFee || 0,
-      updatedOrder.serviceFee || 0,
+      updatedOrder.totalAmountInKobo,
+      updatedOrder.deliveryFeeInKobo || 0,
+      updatedOrder.serviceFeeInKobo || 0,
       updatedOrder.items,
       trackingUrl
     ).catch(console.error)
@@ -212,7 +235,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
       updatedOrder.vendorWhatsappNumber,
       updatedOrder.customerName,
       updatedOrder.orderId,
-      updatedOrder.vendorRevenue
+      updatedOrder.vendorRevenueInKobo
     ).catch(console.error)
   }
 
@@ -224,11 +247,11 @@ async function processSuccessfulTransaction(paymentReference: string) {
     updatedOrder.customerPhone,
     updatedOrder.location,
     updatedOrder.items,
-    updatedOrder.deliveryFee || 0,
-    updatedOrder.serviceFee || 0,
-    updatedOrder.totalAmount,
-    updatedOrder.vendorRevenue,
-    updatedOrder.platformCommission || 0,
+    updatedOrder.deliveryFeeInKobo || 0,
+    updatedOrder.serviceFeeInKobo || 0,
+    updatedOrder.totalAmountInKobo,
+    updatedOrder.vendorRevenueInKobo,
+    updatedOrder.platformCommissionInKobo || 0,
     updatedOrder.notes || undefined
   ).catch(console.error)
 }

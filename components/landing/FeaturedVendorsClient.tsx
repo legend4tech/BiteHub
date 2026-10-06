@@ -1,5 +1,4 @@
 "use client"
-
 import { useRef } from "react"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
@@ -10,22 +9,18 @@ import type { Vendor } from "@/types/vendor"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-
 gsap.registerPlugin(ScrollTrigger)
-
 interface FeaturedVendorsClientProps {
   fetchedVendors: Vendor[]
   school: string
   campus: string
 }
-
 export function FeaturedVendorsClient({
   fetchedVendors,
   school,
   campus,
 }: FeaturedVendorsClientProps) {
   const sectionRef = useRef<HTMLElement>(null)
-
   useGSAP(
     () => {
       // Header reveal
@@ -44,7 +39,6 @@ export function FeaturedVendorsClient({
           },
         }
       )
-
       // Staggered Cards
       gsap.fromTo(
         ".vendor-card-wrapper",
@@ -62,7 +56,6 @@ export function FeaturedVendorsClient({
           },
         }
       )
-
       // Button pop
       gsap.fromTo(
         ".vendors-cta",
@@ -82,7 +75,6 @@ export function FeaturedVendorsClient({
     },
     { scope: sectionRef }
   )
-
   return (
     <section
       ref={sectionRef}
@@ -91,7 +83,6 @@ export function FeaturedVendorsClient({
     >
       {/* Decorative background circle */}
       <div className="absolute top-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/3 -translate-y-1/2 rounded-full bg-primary/5 blur-[100px]" />
-
       <div className="mx-auto max-w-7xl px-6">
         <div className="vendors-header mb-12 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -104,7 +95,6 @@ export function FeaturedVendorsClient({
             </h2>
           </div>
         </div>
-
         {fetchedVendors.length === 0 ? (
           <EmptyState
             title="No featured vendors yet"
@@ -117,7 +107,7 @@ export function FeaturedVendorsClient({
         ) : (
           <div className="vendors-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {fetchedVendors.map(
-              (v, i) =>
+              (v) =>
                 v && (
                   <div key={v.id} className="vendor-card-wrapper h-full">
                     <VendorCard vendor={v} />
@@ -126,7 +116,6 @@ export function FeaturedVendorsClient({
             )}
           </div>
         )}
-
         <div className="vendors-cta mt-16 flex justify-center">
           <Button
             asChild

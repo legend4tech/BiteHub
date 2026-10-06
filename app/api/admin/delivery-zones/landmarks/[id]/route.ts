@@ -28,9 +28,9 @@ export async function PUT(
           name: data.name?.trim(),
           school: data.school?.trim(),
           campus: data.campus?.trim(),
-          defaultDeliveryFee:
-            data.defaultDeliveryFee !== undefined
-              ? Number(data.defaultDeliveryFee)
+          defaultDeliveryFeeInKobo:
+            data.defaultDeliveryFeeInKobo !== undefined
+              ? Number(data.defaultDeliveryFeeInKobo)
               : undefined,
           isActive: data.isActive,
         },

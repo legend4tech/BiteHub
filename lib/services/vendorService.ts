@@ -53,7 +53,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
 
   if (school) query.school = school
   if (campus) query.campus = campus
-  if (options.freeDelivery) query.deliveryFee = 0
+  if (options.freeDelivery) query.deliveryFeeInKobo = 0
   if (options.topRated) query.rating = { $gte: 4.0 }
   if (options.openNow) query.isActive = true
 
@@ -395,7 +395,7 @@ export async function getVendorDataBySlug(
 
   const mappedItems = menuItems.map((item) => ({
     ...serializeMenuItem(item),
-    tag: getItemTag(item.price),
+    tag: getItemTag(item.priceInKobo),
   }))
 
   return {

@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose"
 export interface IOrderItem {
   menuItemId: string
   name: string
-  price: number
+  priceInKobo: number
   quantity: number
   image?: string
 }
@@ -21,11 +21,11 @@ export interface IOrder extends Document {
   location: string
   items: IOrderItem[]
   notes?: string
-  deliveryFee: number
-  serviceFee: number
-  platformCommission: number
-  vendorRevenue: number
-  totalAmount: number
+  deliveryFeeInKobo: number
+  serviceFeeInKobo: number
+  platformCommissionInKobo: number
+  vendorRevenueInKobo: number
+  totalAmountInKobo: number
   status:
     | "pending"
     | "confirmed"
@@ -38,23 +38,30 @@ export interface IOrder extends Document {
   monnifyReference?: string
   isDisbursed?: boolean
   expiresAt?: Date
-  isRated?: boolean
+  isFullyRated?: boolean
   isVendorRated?: boolean
   ratedItems?: string[]
 
   // Gamification Fields
   rewardVoucherId?: Types.ObjectId
   isRewardSponsored?: boolean
-  sponsoredDiscountAmount?: number
-  walletPromoAmountUsed?: number
-  walletDepositAmountUsed?: number
+  sponsoredDiscountAmountInKobo?: number
+  walletPromoAmountUsedInKobo?: number
+  walletDepositAmountUsedInKobo?: number
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
   {
     menuItemId: { type: String, required: true },
     name: { type: String, required: true },
-    price: { type: Number, required: true },
+    priceInKobo: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     quantity: { type: Number, required: true },
     image: { type: String },
   },
@@ -82,11 +89,50 @@ const OrderSchema = new Schema<IOrder>(
     location: { type: String, required: true },
     items: { type: [OrderItemSchema], required: true },
     notes: { type: String, default: "" },
-    deliveryFee: { type: Number, required: true, default: 0 },
-    serviceFee: { type: Number, required: true, default: 0 },
-    platformCommission: { type: Number, required: true, default: 0 },
-    vendorRevenue: { type: Number, required: true, default: 0 },
-    totalAmount: { type: Number, required: true },
+    deliveryFeeInKobo: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    serviceFeeInKobo: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    platformCommissionInKobo: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    vendorRevenueInKobo: {
+      type: Number,
+      required: true,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    totalAmountInKobo: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     status: {
       type: String,
       enum: [
@@ -112,16 +158,37 @@ const OrderSchema = new Schema<IOrder>(
     monnifyReference: { type: String },
     isDisbursed: { type: Boolean, default: false },
     expiresAt: { type: Date },
-    isRated: { type: Boolean, default: false },
+    isFullyRated: { type: Boolean, default: false },
     isVendorRated: { type: Boolean, default: false },
     ratedItems: { type: [String], default: [] },
 
     // Gamification Fields
     rewardVoucherId: { type: Schema.Types.ObjectId, ref: "RewardVoucher" },
     isRewardSponsored: { type: Boolean, default: false },
-    sponsoredDiscountAmount: { type: Number, default: 0 },
-    walletPromoAmountUsed: { type: Number, default: 0 },
-    walletDepositAmountUsed: { type: Number, default: 0 },
+    sponsoredDiscountAmountInKobo: {
+      type: Number,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    walletPromoAmountUsedInKobo: {
+      type: Number,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    walletDepositAmountUsedInKobo: {
+      type: Number,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
   },
   {
     timestamps: true,
@@ -162,7 +229,7 @@ OrderSchema.index({ customerEmail: 1, createdAt: -1 })
 OrderSchema.index({ paymentStatus: 1, createdAt: -1 })
 
 // Gamification Analytics index for BHC Spent
-OrderSchema.index({ status: 1, walletPromoAmountUsed: -1 })
+OrderSchema.index({ status: 1, walletPromoAmountUsedInKobo: -1 })
 
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", OrderSchema)

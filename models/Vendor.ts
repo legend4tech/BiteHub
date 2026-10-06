@@ -11,7 +11,7 @@ export interface IVendor extends Document {
   campus: string
   isActive: boolean
   isOpen: boolean
-  deliveryFee: number
+  defaultDeliveryFeeInKobo: number
   prepTime: string
   image?: {
     url: string
@@ -21,9 +21,9 @@ export interface IVendor extends Document {
   monnifyBankCode?: string
   monnifyAccountNumber?: string
   monnifyIntegrationStatus?: "pending" | "active"
-  monnifyTotalDisbursed?: number
-  pendingWalletBalance?: number
-  walletTotalDisbursed?: number
+  monnifyTotalDisbursedInKobo?: number
+  pendingWalletBalanceInKobo?: number
+  walletTotalDisbursedInKobo?: number
   processedDisbursementRefs?: string[]
   isDisbursing?: boolean
   lastBankUpdateAt?: Date
@@ -36,11 +36,11 @@ export interface IVendor extends Document {
 
   landmarkOverrides?: {
     landmarkId: mongoose.Types.ObjectId
-    fee: number
+    feeInKobo: number
   }[]
   subLandmarkOverrides?: {
     subLandmarkId: mongoose.Types.ObjectId
-    fee: number
+    feeInKobo: number
   }[]
 
   // Virtuals
@@ -64,7 +64,7 @@ const VendorSchema: Schema = new Schema(
     campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: true },
-    deliveryFee: { type: Number, default: 0 },
+    defaultDeliveryFeeInKobo: { type: Number, default: 0 },
     prepTime: { type: String, default: "" },
     image: {
       url: { type: String },
@@ -78,9 +78,9 @@ const VendorSchema: Schema = new Schema(
       enum: ["pending", "active"],
       default: "pending",
     },
-    monnifyTotalDisbursed: { type: Number, default: 0 },
-    pendingWalletBalance: { type: Number, default: 0 },
-    walletTotalDisbursed: { type: Number, default: 0 },
+    monnifyTotalDisbursedInKobo: { type: Number, default: 0 },
+    pendingWalletBalanceInKobo: { type: Number, default: 0 },
+    walletTotalDisbursedInKobo: { type: Number, default: 0 },
     lastBankUpdateAt: { type: Date },
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
@@ -95,7 +95,7 @@ const VendorSchema: Schema = new Schema(
           ref: "Landmark",
           required: true,
         },
-        fee: { type: Number, required: true },
+        feeInKobo: { type: Number, required: true },
         _id: false,
       },
     ],
@@ -106,7 +106,7 @@ const VendorSchema: Schema = new Schema(
           ref: "SubLandmark",
           required: true,
         },
-        fee: { type: Number, required: true },
+        feeInKobo: { type: Number, required: true },
         _id: false,
       },
     ],

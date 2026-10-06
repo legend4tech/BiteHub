@@ -151,15 +151,15 @@ export default async function CustomerTransactionsPage(props: {
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatPriceExact(tx.amount)}
+                      {formatPriceExact(tx.amountInKobo)}
                     </p>
                     <div className="mt-1 flex items-center justify-end gap-2">
                       <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
                         {tx.type.replace("_", " ")}
                       </span>
-                      {tx.balanceAfter !== undefined && (
+                      {tx.balanceAfterInKobo !== undefined && (
                         <span className="text-xs font-medium text-muted-foreground">
-                          Bal: {formatPriceExact(tx.balanceAfter)}
+                          Bal: {formatPriceExact(tx.balanceAfterInKobo)}
                         </span>
                       )}
                     </div>

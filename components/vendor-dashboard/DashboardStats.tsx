@@ -8,6 +8,7 @@ import {
   Wallet,
 } from "lucide-react"
 import { formatPriceExact } from "@/lib/format"
+import { UNPAID_ORDER_EXPIRY_MINUTES } from "@/lib/constants"
 
 interface DashboardStatsProps {
   totalOrders: number
@@ -68,7 +69,7 @@ export function DashboardStats(props: DashboardStatsProps) {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Ready to prep</p>
             <p className="mt-2 text-xs text-warning dark:text-warning">
-              Unpaid orders auto-cancel after 30 mins
+              Unpaid orders auto-cancel after {UNPAID_ORDER_EXPIRY_MINUTES} mins
             </p>
           </div>
         </div>

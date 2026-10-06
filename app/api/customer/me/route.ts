@@ -4,23 +4,17 @@ import dbConnect from "@/lib/db"
 import Customer from "@/models/Customer"
 import { customerProfileUpdateSchema } from "@/lib/schemas"
 import { deleteFromCloudinary } from "@/lib/cloudinary"
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await auth()
-
     if (!session?.user?.email || session.user.role !== "customer") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     await dbConnect()
-
     const customer = await Customer.findOne({ email: session.user.email })
-
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
-
     return NextResponse.json({
       name: customer.name,
       username: customer.username,
@@ -42,25 +36,20 @@ export async function GET(req: NextRequest) {
     )
   }
 }
-
 export async function PATCH(req: NextRequest) {
   try {
     const session = await auth()
-
     if (!session?.user?.email || session.user.role !== "customer") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     const body = await req.json()
     const parsedBody = customerProfileUpdateSchema.safeParse(body)
-
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: parsedBody.error.format() },
         { status: 400 }
       )
     }
-
     const {
       name,
       username,
@@ -73,9 +62,7 @@ export async function PATCH(req: NextRequest) {
       image,
       imagePublicId,
     } = parsedBody.data
-
     await dbConnect()
-
     if (username) {
       const usernameExists = await Customer.findOne({
         username,
@@ -88,14 +75,12 @@ export async function PATCH(req: NextRequest) {
         )
       }
     }
-
     const existingCustomer = await Customer.findOne({
       email: session.user.email,
     })
     if (!existingCustomer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
-
     if (
       existingCustomer.imagePublicId &&
       imagePublicId !== undefined &&
@@ -110,7 +95,6 @@ export async function PATCH(req: NextRequest) {
         )
       }
     }
-
     const updatedCustomer = await Customer.findOneAndUpdate(
       { email: session.user.email },
       {
@@ -131,11 +115,9 @@ export async function PATCH(req: NextRequest) {
       },
       { new: true }
     )
-
     if (!updatedCustomer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
-
     return NextResponse.json({
       success: true,
       customer: {

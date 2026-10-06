@@ -63,7 +63,7 @@ export function MenuItemBasicFields({ control }: MenuItemBasicFieldsProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <Controller
-          name="price"
+          name="priceInKobo"
           control={control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>

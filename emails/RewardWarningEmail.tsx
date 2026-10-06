@@ -5,34 +5,34 @@ import { EmailLayout } from "./EmailLayout"
 
 interface RewardWarningEmailProps {
   customerName: string
-  expiringAmount: string
+  expiringItems: string
   rewardsUrl: string
 }
 
 export const RewardWarningEmail = ({
   customerName,
-  expiringAmount,
+  expiringItems,
   rewardsUrl,
 }: RewardWarningEmailProps) => {
   return (
     <EmailLayout
-      preview="Your BiteHub Coins are expiring soon! ⏳"
+      preview="Your BiteHub rewards are expiring soon! ⏳"
       subheader="Reward Expiry Warning"
     >
-      <Heading style={heading}>Use your coins before they expire! ⏳</Heading>
+      <Heading style={heading}>Use your rewards before they expire! ⏳</Heading>
       <Text style={text}>Hi {customerName},</Text>
       <Text style={text}>
-        This is a quick reminder that you have BiteHub Coins (BHC) expiring in
-        less than 7 days.
+        This is a quick reminder that you have BiteHub rewards expiring in less
+        than 7 days.
       </Text>
       <Section style={detailsBox}>
         <Text style={detailItem}>
-          <strong>Expiring Soon:</strong> {expiringAmount}
+          <strong>Expiring Soon:</strong> {expiringItems}
         </Text>
       </Section>
       <Text style={text}>
         Don&apos;t let free food go to waste! Place an order on BiteHub today
-        and apply your coins at checkout to get a discount on your meal.
+        and apply your rewards at checkout to claim your savings.
       </Text>
       <Button href={rewardsUrl} style={button}>
         Order Now

@@ -3,12 +3,13 @@ import * as React from "react"
 import { SUPPORT_EMAIL } from "@/lib/constants"
 import { EMAIL_THEME } from "@/lib/email-theme"
 import { EmailLayout } from "./EmailLayout"
+import { formatKoboToNaira as formatPrice } from "@/lib/money"
 
 interface CustomerOrderInitiatedEmailProps {
   customerName: string
   orderId: string
   vendorName: string
-  totalAmount: number
+  totalAmountInKobo: number
   trackingUrl: string
 }
 
@@ -16,17 +17,9 @@ export const CustomerOrderInitiatedEmail = ({
   customerName,
   orderId,
   vendorName,
-  totalAmount,
+  totalAmountInKobo,
   trackingUrl,
 }: CustomerOrderInitiatedEmailProps) => {
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   return (
     <EmailLayout
       preview={`Action Required: Complete your BiteHub Order ${orderId}`}
@@ -37,7 +30,7 @@ export const CustomerOrderInitiatedEmail = ({
       <Text style={text}>
         You recently initiated an order (<strong>{orderId}</strong>) from{" "}
         <strong>{vendorName}</strong> for{" "}
-        <strong>{formatPrice(totalAmount)}</strong>.
+        <strong>{formatPrice(totalAmountInKobo)}</strong>.
       </Text>
       <Text style={text}>
         If you closed the payment page by mistake or experienced a network

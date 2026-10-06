@@ -20,9 +20,9 @@
 export function computeMonnifyServiceFee(base: number): number {
   const fee = base * (0.016125 / 0.983875)
 
-  // Monnify hard cap: fee never exceeds ₦2,150 (₦2000 fee + ₦150 VAT)
-  const capped = Math.min(fee, 2150)
+  // Monnify hard cap: fee never exceeds ₦2,150 (215000 Kobo: ₦2000 fee + ₦150 VAT)
+  const capped = Math.min(fee, 215000)
 
-  // Round to the nearest kobo (2 decimal places).
-  return Math.round(capped * 100) / 100
+  // Round to nearest Kobo (no decimal places)
+  return Math.round(capped)
 }

@@ -14,11 +14,11 @@ interface WhatsAppButtonProps {
   order: {
     orderId: string
     customerName: string
-    items: { name: string; quantity: number; price: number }[]
+    items: { name: string; quantity: number; priceInKobo: number }[]
     total?: number
-    totalAmount?: number
+    totalAmountInKobo?: number
     notes?: string
-    paymentMethod?: "monnify"
+    paymentMethod?: "monnify" | "wallet"
     paymentStatus?: string
   }
   status?: OrderStatus

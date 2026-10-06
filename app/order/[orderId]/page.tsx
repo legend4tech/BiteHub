@@ -293,7 +293,7 @@ export default function OrderPage() {
         <OrderItemsBreakdown order={order} />
 
         {/* ── Review Action Button ───────────────────────────────── */}
-        {order?.status === ORDER_STATUS.COMPLETED && !order.isRated && (
+        {order?.status === ORDER_STATUS.COMPLETED && !order.isFullyRated && (
           <div className="mt-8 rounded-[28px] border border-border bg-card p-7 text-center shadow-sm sm:p-8">
             <h3 className="mb-2 font-heading text-lg font-bold">
               How was your food?

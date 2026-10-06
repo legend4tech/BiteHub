@@ -6,8 +6,8 @@ export function exportToCSV(
   chartData: Array<{
     date: string
     orders: number
-    gmv: number
-    profit: number
+    gmvInKobo: number
+    profitInKobo: number
   }>,
   rangeLabel: string
 ) {
@@ -15,8 +15,8 @@ export function exportToCSV(
   const rows = chartData.map((row) => [
     row.date,
     row.orders,
-    row.gmv.toFixed(2),
-    row.profit.toFixed(2),
+    (row.gmvInKobo / 100).toFixed(2),
+    (row.profitInKobo / 100).toFixed(2),
   ])
   const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n")
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })

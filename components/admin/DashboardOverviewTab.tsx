@@ -56,21 +56,21 @@ export function DashboardOverviewTab({
         <KpiCard
           icon={<DollarSign className="size-4" />}
           label="Gross Volume"
-          value={formatPrice(kpis.totalGMV)}
-          growth={kpis.growth.gmv}
+          value={formatPrice(kpis.totalGmvInKobo)}
+          growth={kpis.growth.gmvInKobo}
         />
         <KpiCard
           icon={<Wallet className="size-4" />}
           label="Platform Profit"
-          value={formatPrice(kpis.totalProfit)}
-          growth={kpis.growth.profit}
+          value={formatPrice(kpis.totalProfitInKobo)}
+          growth={kpis.growth.profitInKobo}
           accent
         />
         <KpiCard
           icon={<BarChart3 className="size-4" />}
           label="Avg. Order Value"
-          value={formatPrice(kpis.aov)}
-          growth={kpis.growth.aov}
+          value={formatPrice(kpis.aovInKobo)}
+          growth={kpis.growth.aovInKobo}
         />
         <div className="col-span-2 rounded-2xl border border-border bg-card p-5 shadow-sm xl:col-span-1">
           <p className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -194,8 +194,8 @@ export function DashboardOverviewTab({
               />
               <Area
                 type="monotone"
-                dataKey="profit"
-                name="profit"
+                dataKey="profitInKobo"
+                name="profitInKobo"
                 stroke="var(--color-primary)"
                 strokeWidth={3}
                 filter="url(#glow)"

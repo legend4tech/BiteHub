@@ -10,11 +10,11 @@ import { useCart } from "@/hooks/useCart"
 import { orderFormInputSchema, type OrderFormInputValues } from "@/lib/schemas"
 import { normaliseNigerianPhone } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller, type Resolver } from "react-hook-form"
+import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
 import { toast } from "sonner"
 
 import { computeMonnifyServiceFee } from "@/lib/fees"
-import { PLATFORM_FLAT_FEE } from "@/lib/constants"
+import { PLATFORM_FLAT_FEE_IN_KOBO } from "@/lib/constants"
 import apiClient from "@/lib/axios"
 import { AxiosError } from "axios"
 import { useCreateOrder } from "@/hooks/shared/usePublicMutations"
@@ -39,6 +39,7 @@ export function CheckoutForm() {
     applyVoucher,
     removeVoucher,
     appliedVoucherCode,
+    appliedVoucherMenuItemId,
     useBHC,
     setUseBHC,
   } = useCart()
@@ -89,7 +90,7 @@ export function CheckoutForm() {
   const customerProfile = profileData ?? null
 
   useEffect(() => {
-    setMounted(true)
+    setTimeout(() => setMounted(true), 0)
   }, [])
 
   useEffect(() => {
@@ -119,14 +120,19 @@ export function CheckoutForm() {
     if (cart.vendorId && vendorFee) {
       syncVendorDetails(
         cart.vendorId,
-        cart.vendorDeliveryFee, // preserve existing fee — avoids overwriting the fee set by the delivery zones effect
+        cart.defaultDeliveryFeeInKobo, // preserve existing fee — avoids overwriting the fee set by the delivery zones effect
         vendorFee.prepTime,
         vendorFee.monnifySubaccountCode
       )
     }
-  }, [cart.vendorId, cart.vendorDeliveryFee, vendorFee, syncVendorDetails])
+  }, [
+    cart.vendorId,
+    cart.defaultDeliveryFeeInKobo,
+    vendorFee,
+    syncVendorDetails,
+  ])
 
-  const selectedLocation = form.watch("location")
+  const selectedLocation = useWatch({ control: form.control, name: "location" })
 
   useEffect(() => {
     if (deliveryZones.length > 0 && selectedLocation && cart.vendorId) {
@@ -134,28 +140,30 @@ export function CheckoutForm() {
       let isValid = false
       deliveryZones.forEach((z) => {
         if (z.name === selectedLocation) {
-          fee = z.fee
+          fee = z.feeInKobo
           isValid = true
         }
         z.subLandmarks.forEach((s) => {
           if (`${z.name} - ${s.name}` === selectedLocation) {
-            fee = s.fee
+            fee = s.feeInKobo
             isValid = true
           }
         })
       })
 
       if (isValid) {
-        if (cart.vendorDeliveryFee !== fee) {
+        if (cart.defaultDeliveryFeeInKobo !== fee) {
           syncVendorDetails(cart.vendorId, fee)
         }
-        setLocationMismatch(false)
+        setTimeout(() => setLocationMismatch(false), 0)
       } else {
         // Saved location doesn't exist on this vendor's campus — reset and prompt.
         form.setValue("location", "", { shouldValidate: true })
         syncVendorDetails(cart.vendorId, 0)
-        setLocationMismatch(true)
-        setIsEditingAddress(true) // auto-open dialog so customer can pick immediately
+        setTimeout(() => {
+          setLocationMismatch(true)
+          setIsEditingAddress(true) // auto-open dialog so customer can pick immediately
+        }, 0)
         toast.warning(
           "Your saved delivery zone isn't available for this vendor. Please select one below."
         )
@@ -165,12 +173,15 @@ export function CheckoutForm() {
     deliveryZones,
     selectedLocation,
     cart.vendorId,
-    cart.vendorDeliveryFee,
+    cart.defaultDeliveryFeeInKobo,
     syncVendorDetails,
     form,
   ])
 
-  const paymentMethod = form.watch("paymentMethod")
+  const paymentMethod = useWatch({
+    control: form.control,
+    name: "paymentMethod",
+  })
   const isRewardApplied = !!appliedVoucherCode || useBHC
 
   useEffect(() => {
@@ -199,23 +210,29 @@ export function CheckoutForm() {
     !!customerProfile?.school &&
     vendorSchool.toLowerCase() !== customerProfile.school.toLowerCase()
 
-  const calculatedTotal = total + cart.vendorDeliveryFee
-  const targetAmountToReceive = calculatedTotal + PLATFORM_FLAT_FEE
+  const voucherDiscountInKobo = appliedVoucherMenuItemId
+    ? cart.items.find((i) => i.menuItem.id === appliedVoucherMenuItemId)
+        ?.menuItem.priceInKobo || 0
+    : 0
+
+  const itemSubtotal = total - voucherDiscountInKobo
+  const calculatedTotal = itemSubtotal + (cart.defaultDeliveryFeeInKobo ?? 0)
+  const targetAmountToReceive = calculatedTotal + PLATFORM_FLAT_FEE_IN_KOBO
   const monnifyFee =
     paymentMethod === "wallet"
       ? 0
       : computeMonnifyServiceFee(targetAmountToReceive)
-  const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
-  const finalTotal = calculatedTotal + serviceFee
+  const serviceFeeInKobo = monnifyFee + PLATFORM_FLAT_FEE_IN_KOBO
+  const finalTotal = calculatedTotal + serviceFeeInKobo
   const bhcDiscount = useBHC
-    ? Math.min(customerWallet?.wallet?.promoBalance || 0, finalTotal)
+    ? Math.min(customerWallet?.wallet?.promoBalanceInKobo || 0, itemSubtotal)
     : 0
   const finalPayableAmount = finalTotal - bhcDiscount
 
   const isInsufficientFunds =
     paymentMethod === "wallet" &&
     !isWalletLoading &&
-    (customerWallet?.wallet?.depositBalance ?? 0) < finalPayableAmount
+    (customerWallet?.wallet?.depositBalanceInKobo ?? 0) < finalPayableAmount
 
   const createOrderMutation = useCreateOrder()
 
@@ -250,7 +267,7 @@ export function CheckoutForm() {
         items: cart.items.map((ci) => ({
           menuItemId: ci.menuItem.id,
           name: ci.menuItem.name,
-          price: ci.menuItem.price,
+          priceInKobo: ci.menuItem.priceInKobo,
           quantity: ci.quantity,
           image:
             typeof ci.menuItem.image === "string"
@@ -419,7 +436,7 @@ export function CheckoutForm() {
               isWalletLoading={isWalletLoading}
               customerWallet={customerWallet}
               targetAmountToReceive={finalPayableAmount}
-              serviceFee={serviceFee}
+              serviceFeeInKobo={serviceFeeInKobo}
               router={router}
               isRewardApplied={isRewardApplied}
             />
@@ -431,7 +448,7 @@ export function CheckoutForm() {
           <OrderSummaryCard
             cart={cart}
             total={total}
-            serviceFee={serviceFee}
+            serviceFeeInKobo={serviceFeeInKobo}
             finalTotal={finalTotal}
             loading={loading}
             isSyncing={isSyncing}
@@ -448,6 +465,8 @@ export function CheckoutForm() {
             applyVoucher={applyVoucher}
             removeVoucher={removeVoucher}
             appliedVoucherCode={appliedVoucherCode}
+            appliedVoucherMenuItemId={appliedVoucherMenuItemId}
+            itemSubtotal={itemSubtotal}
             useBHC={useBHC}
             setUseBHC={setUseBHC}
             customerWallet={customerWallet}

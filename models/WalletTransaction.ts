@@ -9,14 +9,14 @@ export interface IWalletTransaction extends Document {
     | "refund"
     | "crypto_deposit"
     | "fiat_deposit"
-  amount: number
-  balanceAfter: number
+  amountInKobo: number
+  balanceAfterInKobo: number
   direction: "credit" | "debit"
   reference: string
   description: string
   expiresAt?: Date
   isExpired?: boolean
-  remainingAmount?: number
+  remainingAmountInKobo?: number
   warningEmailSentAt?: Date
   createdAt: Date
   updatedAt: Date
@@ -41,14 +41,34 @@ const WalletTransactionSchema = new Schema<IWalletTransaction>(
       ],
       required: true,
     },
-    amount: { type: Number, required: true },
-    balanceAfter: { type: Number, required: true },
+    amountInKobo: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    balanceAfterInKobo: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     direction: { type: String, enum: ["credit", "debit"], required: true },
     reference: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     expiresAt: { type: Date },
     isExpired: { type: Boolean, default: false },
-    remainingAmount: { type: Number },
+    remainingAmountInKobo: {
+      type: Number,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     warningEmailSentAt: { type: Date },
   },
   {

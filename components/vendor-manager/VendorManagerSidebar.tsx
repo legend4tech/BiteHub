@@ -1,5 +1,4 @@
 "use client"
-
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -15,7 +14,6 @@ import {
   ShieldCheck,
   Home,
   Settings,
-  MapPin,
   ShoppingCart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -37,13 +35,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-
 interface VendorManagerSidebarProps {
   role?: string
 }
-
 // ─── Nav Items ────────────────────────────────────────────────────────────────
-
 const navItems: {
   section: string
   label: string
@@ -55,9 +50,7 @@ const navItems: {
   { section: "feedback", label: "Feedback", icon: Star },
   { section: "settings", label: "Settings", icon: Settings },
 ]
-
 // ─── Nav Links ────────────────────────────────────────────────────────────────
-
 function NavLinks({
   collapsed = false,
   onNavigate,
@@ -66,7 +59,6 @@ function NavLinks({
   onNavigate?: () => void
 }) {
   const pathname = usePathname()
-
   return (
     <TooltipProvider delayDuration={0}>
       <nav className="flex-1 space-y-1.5 px-3 py-6">
@@ -80,7 +72,6 @@ function NavLinks({
             item.section === ""
               ? pathname === "/vendor-manager"
               : pathname.startsWith(href)
-
           return (
             <Tooltip key={item.section}>
               <TooltipTrigger asChild>
@@ -121,9 +112,7 @@ function NavLinks({
     </TooltipProvider>
   )
 }
-
 // ─── Sidebar Content ──────────────────────────────────────────────────────────
-
 function SidebarContent({
   collapsed,
   setCollapsed,
@@ -135,7 +124,6 @@ function SidebarContent({
 }) {
   const { data: session } = useSession()
   const userName = session?.user?.name || "Vendor Manager"
-
   return (
     <div className="flex h-full flex-col">
       {/* ── Brand + Collapse toggle ── */}
@@ -159,7 +147,6 @@ function SidebarContent({
             </div>
           </Link>
         )}
-
         {collapsed && (
           <Link href="/" className="group flex items-center justify-center">
             <Image
@@ -171,7 +158,6 @@ function SidebarContent({
             />
           </Link>
         )}
-
         {setCollapsed && (
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -189,7 +175,6 @@ function SidebarContent({
           </button>
         )}
       </div>
-
       {/* ── Scrollable middle: role badge + nav ── */}
       <div
         className="flex min-h-0 flex-1 flex-col overflow-y-auto"
@@ -211,11 +196,9 @@ function SidebarContent({
             </div>
           </div>
         )}
-
         {/* ── Nav ── */}
         <NavLinks collapsed={collapsed} onNavigate={onNavigate} />
       </div>
-
       {/* ── Bottom bar (always visible) ── */}
       <div
         className={cn(
@@ -244,7 +227,6 @@ function SidebarContent({
               </TooltipContent>
             )}
           </Tooltip>
-
           {/* Theme toggle row */}
           <div
             className={cn(
@@ -259,7 +241,6 @@ function SidebarContent({
             )}
             <ThemeToggle />
           </div>
-
           {/* Logout */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -285,7 +266,7 @@ function SidebarContent({
                       await signOut({ redirect: false })
                       toast.success("Successfully logged out")
                       window.location.href = "/vendor-manager/login"
-                    } catch (error) {
+                    } catch {
                       toast.error("Network error. Could not log out.")
                     }
                   }}
@@ -303,12 +284,9 @@ function SidebarContent({
     </div>
   )
 }
-
 // ─── Desktop Sidebar ──────────────────────────────────────────────────────────
-
-export function VendorManagerSidebar({ role }: VendorManagerSidebarProps) {
+export function VendorManagerSidebar() {
   const [collapsed, setCollapsed] = useState(false)
-
   return (
     <aside
       className={cn(
@@ -320,14 +298,9 @@ export function VendorManagerSidebar({ role }: VendorManagerSidebarProps) {
     </aside>
   )
 }
-
 // ─── Mobile Trigger ────────────────────────────────────────────────────────────
-
-export function VendorManagerMobileTrigger({
-  role,
-}: VendorManagerSidebarProps) {
+export function VendorManagerMobileTrigger({}: VendorManagerSidebarProps) {
   const [open, setOpen] = useState(false)
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>

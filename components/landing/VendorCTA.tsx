@@ -118,7 +118,7 @@ export function VendorCTA() {
             </div>
 
             <ul className="z-10 space-y-4 lg:pl-10">
-              {perks.map((p, i) => (
+              {perks.map((p) => (
                 <li
                   key={p}
                   className="cta-perk flex items-start gap-4 rounded-3xl border border-white/20 bg-white/10 p-5 shadow-lg backdrop-blur-md transition-colors hover:bg-white/20"

@@ -10,7 +10,7 @@ export interface Vendor {
   campus: string
   isActive: boolean
   isOpen: boolean
-  deliveryFee: number
+  defaultDeliveryFeeInKobo: number
   prepTime?: string
   image?: string | { url: string; publicId: string }
 
@@ -19,8 +19,8 @@ export interface Vendor {
   monnifyBankCode?: string
   monnifyAccountNumber?: string
   monnifyIntegrationStatus?: "pending" | "active"
-  pendingWalletBalance?: number
-  walletTotalDisbursed?: number
+  pendingWalletBalanceInKobo?: number
+  walletTotalDisbursedInKobo?: number
   lastBankUpdateAt?: string // ISO string
 
   // Computed/virtual UI properties
@@ -43,7 +43,7 @@ export interface MenuItem {
   vendorId: string
   name: string
   description: string | null
-  price: number
+  priceInKobo: number
   category: string
   image: string | { url: string; publicId: string } | null
   isAvailable: boolean
@@ -65,7 +65,7 @@ export interface MenuItem {
   vendorSlug?: string
   vendorIsActive?: boolean
   vendorWhatsappNumber?: string
-  vendorDeliveryFee?: number
+  vendorDeliveryFeeInKobo?: number
   vendorPrepTime?: string
   tag?: string | null
   rating?: number
@@ -86,7 +86,7 @@ export interface VendorSession {
 export interface SubLandmark {
   id: string
   name: string
-  fee: number
+  feeInKobo: number
 }
 
 export interface Feedback {
@@ -110,16 +110,16 @@ export interface DeliverySettingsResponse {
     school: string
     campus: string
     name: string
-    defaultDeliveryFee: number
+    defaultDeliveryFeeInKobo: number
     subLandmarks: {
       id: string
       name: string
-      defaultDeliveryFee?: number
+      defaultDeliveryFeeInKobo?: number
     }[]
   }[]
   overrides: {
-    landmarks: { landmarkId: string; fee: number }[]
-    subLandmarks: { subLandmarkId: string; fee: number }[]
+    landmarks: { landmarkId: string; feeInKobo: number }[]
+    subLandmarks: { subLandmarkId: string; feeInKobo: number }[]
   }
 }
 
@@ -134,13 +134,13 @@ export interface VendorStats {
   pending: number
   inProgress: number
   totalCompleted: number
-  totalRevenue: number
+  totalRevenueInKobo: number
   hasPaymentDetails?: boolean
   slug?: string
   acceptedTermsVersion?: string
   isNewcomer?: boolean
-  monnifyDisbursed?: number
-  monnifyPending?: number
+  monnifyDisbursedInKobo?: number
+  monnifyPendingInKobo?: number
 }
 
 export interface VendorWithMenu extends Vendor {
@@ -162,8 +162,8 @@ export interface DashboardStats {
 export interface DeliveryZone {
   id: string
   name: string
-  fee: number
-  subLandmarks: { id: string; name: string; fee: number }[]
+  feeInKobo: number
+  subLandmarks: { id: string; name: string; feeInKobo: number }[]
 }
 
 export interface MonnifySubAccount {

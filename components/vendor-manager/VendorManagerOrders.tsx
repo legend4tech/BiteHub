@@ -1,18 +1,11 @@
 "use client"
-
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
-import {
-  ShoppingCart,
-  Copy,
-  PhoneCall,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
+import { Copy, PhoneCall, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { ORDER_STATUS } from "@/lib/constants"
+import { PAYMENT_METHOD_LABEL } from "@/lib/constants"
 import Link from "next/link"
 import { formatPrice } from "@/lib/format"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -20,25 +13,21 @@ import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { OrderStatus } from "@/types/shared"
-
 export function VendorManagerOrders() {
   const { data: session } = useSession()
   const role = session?.user?.role
   const [page, setPage] = useState(1)
   const limit = 20
-
   const excludeStatus = role === "vendor_manager" ? "completed" : undefined
   const { data, isLoading, isError, refetch } = useAdminOrders(
     page,
     limit,
     excludeStatus
   )
-
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
     toast.success(`${label} copied to clipboard`)
   }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -49,14 +38,12 @@ export function VendorManagerOrders() {
           </p>
         </div>
       </div>
-
       <div className="overflow-hidden rounded-3xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <p className="text-sm font-semibold">
             {data?.pagination.total ?? 0} total orders
           </p>
         </div>
-
         {isError ? (
           <FetchError
             message="Failed to load orders."
@@ -92,7 +79,7 @@ export function VendorManagerOrders() {
                       />
                       <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                         {order.paymentStatus === "paid"
-                          ? `Paid via ${order.paymentMethod}`
+                          ? `Paid via ${PAYMENT_METHOD_LABEL[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABEL] ?? order.paymentMethod}`
                           : `Payment ${order.paymentStatus}`}
                       </span>
                       <p className="ml-auto text-xs text-muted-foreground">
@@ -102,7 +89,6 @@ export function VendorManagerOrders() {
                         })}
                       </p>
                     </div>
-
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-1 rounded-xl border border-border/50 bg-background/50 p-3">
                         <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -134,7 +120,6 @@ export function VendorManagerOrders() {
                           </a>
                         </div>
                       </div>
-
                       <div className="space-y-1 rounded-xl border border-border/50 bg-background/50 p-3">
                         <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                           Vendor
@@ -168,7 +153,6 @@ export function VendorManagerOrders() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <p>
                         <span className="font-semibold text-foreground">
@@ -177,14 +161,13 @@ export function VendorManagerOrders() {
                         — {order.items.map((i) => i.name).join(", ")}
                       </p>
                       <p className="ml-auto font-bold text-foreground">
-                        {formatPrice(order.totalAmount)}
+                        {formatPrice(order.totalAmountInKobo)}
                       </p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-
             {/* Pagination Controls */}
             {data && data.pagination.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-border px-6 py-4">

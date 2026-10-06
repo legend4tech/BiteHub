@@ -102,8 +102,8 @@ export async function GET(request: Request) {
               $group: {
                 _id: null,
                 totalOrders: { $sum: 1 },
-                totalGMV: { $sum: "$totalAmount" },
-                totalProfit: { $sum: "$platformCommission" },
+                totalGmvInKobo: { $sum: "$totalAmountInKobo" },
+                totalProfitInKobo: { $sum: "$platformCommissionInKobo" },
               },
             },
           ],
@@ -117,8 +117,8 @@ export async function GET(request: Request) {
                   },
                 },
                 orders: { $sum: 1 },
-                gmv: { $sum: { $ifNull: ["$totalAmount", 0] } },
-                profit: { $sum: { $ifNull: ["$platformCommission", 0] } },
+                gmvInKobo: { $sum: { $ifNull: ["$totalAmountInKobo", 0] } },
+                profit: { $sum: { $ifNull: ["$platformCommissionInKobo", 0] } },
                 firstDate: { $min: "$createdAt" },
               },
             },
@@ -129,7 +129,7 @@ export async function GET(request: Request) {
               $group: {
                 _id: { $dayOfWeek: "$createdAt" }, // 1 = Sun, 7 = Sat
                 orders: { $sum: 1 },
-                gmv: { $sum: { $ifNull: ["$totalAmount", 0] } },
+                gmvInKobo: { $sum: { $ifNull: ["$totalAmountInKobo", 0] } },
               },
             },
           ],
@@ -138,12 +138,14 @@ export async function GET(request: Request) {
               $group: {
                 _id: "$vendorId",
                 vendorName: { $first: "$vendorName" },
-                gmv: { $sum: { $ifNull: ["$totalAmount", 0] } },
-                vendorRevenue: { $sum: { $ifNull: ["$vendorRevenue", 0] } },
+                gmvInKobo: { $sum: { $ifNull: ["$totalAmountInKobo", 0] } },
+                vendorRevenueInKobo: {
+                  $sum: { $ifNull: ["$vendorRevenueInKobo", 0] },
+                },
                 ordersCount: { $sum: 1 },
               },
             },
-            { $sort: { gmv: -1 } },
+            { $sort: { gmvInKobo: -1 } },
             { $limit: 5 },
           ],
         },
@@ -241,8 +243,8 @@ export async function GET(request: Request) {
                 $group: {
                   _id: null,
                   totalOrders: { $sum: 1 },
-                  totalGMV: { $sum: "$totalAmount" },
-                  totalProfit: { $sum: "$platformCommission" },
+                  totalGmvInKobo: { $sum: "$totalAmountInKobo" },
+                  totalProfitInKobo: { $sum: "$platformCommissionInKobo" },
                 },
               },
             ],
@@ -275,14 +277,14 @@ export async function GET(request: Request) {
     }
     const kpis = paidResult.kpis[0] || {
       totalOrders: 0,
-      totalGMV: 0,
-      totalProfit: 0,
+      totalGmvInKobo: 0,
+      totalProfitInKobo: 0,
     }
 
     const totalOrders = kpis.totalOrders
-    const totalGMV = kpis.totalGMV
-    const totalProfit = kpis.totalProfit
-    const aov = totalOrders > 0 ? totalGMV / totalOrders : 0
+    const totalGmvInKobo = kpis.totalGmvInKobo
+    const totalProfitInKobo = kpis.totalProfitInKobo
+    const aovInKobo = totalOrders > 0 ? totalGmvInKobo / totalOrders : 0
 
     const allResult = allAgg[0] || { counts: [], topZones: [] }
     const allCounts = allResult.counts[0] || {
@@ -304,18 +306,18 @@ export async function GET(request: Request) {
         ? Number(((allCounts.cancelled / allCounts.total) * 100).toFixed(1))
         : 0
 
-    let growth = { orders: 0, gmv: 0, profit: 0, aov: 0 }
+    let growth = { orders: 0, gmvInKobo: 0, profit: 0, aovInKobo: 0 }
     if (hasPrevPeriod) {
       const prevResult = (prevAgg[0] &&
         prevAgg[0].kpis &&
         prevAgg[0].kpis[0]) || {
         totalOrders: 0,
-        totalGMV: 0,
-        totalProfit: 0,
+        totalGmvInKobo: 0,
+        totalProfitInKobo: 0,
       }
       const prevTotalOrders = prevResult.totalOrders
-      const prevGMV = prevResult.totalGMV
-      const prevProfit = prevResult.totalProfit
+      const prevGMV = prevResult.totalGmvInKobo
+      const prevProfit = prevResult.totalProfitInKobo
       const prevAOV = prevTotalOrders > 0 ? prevGMV / prevTotalOrders : 0
 
       const calcGrowth = (cur: number, prev: number) => {
@@ -325,9 +327,9 @@ export async function GET(request: Request) {
 
       growth = {
         orders: calcGrowth(totalOrders, prevTotalOrders),
-        gmv: calcGrowth(totalGMV, prevGMV),
-        profit: calcGrowth(totalProfit, prevProfit),
-        aov: calcGrowth(aov, prevAOV),
+        gmvInKobo: calcGrowth(totalGmvInKobo, prevGMV),
+        profit: calcGrowth(totalProfitInKobo, prevProfit),
+        aovInKobo: calcGrowth(aovInKobo, prevAOV),
       }
     }
 
@@ -342,25 +344,25 @@ export async function GET(request: Request) {
                 year: "numeric",
               }),
           orders: item.orders,
-          gmv: item.gmv,
-          profit: item.profit,
+          gmvInKobo: item.gmvInKobo,
+          profitInKobo: item.profitInKobo,
         }
       }
     )
 
     const dowMap = new Map<
       number,
-      { day: string; gmv: number; orders: number }
+      { day: string; gmvInKobo: number; orders: number }
     >()
     DOW_LABELS.forEach((label, i) =>
-      dowMap.set(i, { day: label, gmv: 0, orders: 0 })
+      dowMap.set(i, { day: label, gmvInKobo: 0, orders: 0 })
     )
     ;(paidResult.dow || []).forEach((item: AnalyticsDowItem) => {
       // $dayOfWeek is 1-indexed starting Sunday
       const dow = item._id - 1
       if (dow >= 0 && dow <= 6) {
         const entry = dowMap.get(dow)!
-        entry.gmv += item.gmv
+        entry.gmvInKobo += item.gmvInKobo
         entry.orders += item.orders
       }
     })
@@ -369,9 +371,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       kpis: {
         totalOrders,
-        totalGMV,
-        totalProfit,
-        aov,
+        totalGmvInKobo,
+        totalProfitInKobo,
+        aovInKobo,
         completionRate,
         cancellationRate,
         growth,
@@ -392,8 +394,8 @@ export async function GET(request: Request) {
         (v: AnalyticsTopVendorItem) => ({
           id: String(v._id),
           name: v.vendorName,
-          gmv: v.gmv,
-          vendorRevenue: v.vendorRevenue,
+          gmvInKobo: v.gmvInKobo,
+          vendorRevenueInKobo: v.vendorRevenueInKobo,
           ordersCount: v.ordersCount,
         })
       ),

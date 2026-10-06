@@ -30,15 +30,15 @@ export function VendorDeliverySettings() {
     setPrevData(data)
     const initialLm: Record<string, number> = {}
     data.overrides.landmarks.forEach(
-      (o: { landmarkId: string; fee: number }) =>
-        (initialLm[o.landmarkId] = o.fee)
+      (o: { landmarkId: string; feeInKobo: number }) =>
+        (initialLm[o.landmarkId] = o.feeInKobo)
     )
     setLocalLandmarkOverrides(initialLm)
 
     const initialSub: Record<string, number> = {}
     data.overrides.subLandmarks.forEach(
-      (o: { subLandmarkId: string; fee: number }) =>
-        (initialSub[o.subLandmarkId] = o.fee)
+      (o: { subLandmarkId: string; feeInKobo: number }) =>
+        (initialSub[o.subLandmarkId] = o.feeInKobo)
     )
 
     setLocalSubLandmarkOverrides(initialSub)
@@ -48,11 +48,14 @@ export function VendorDeliverySettings() {
     // Clean up empty strings before sending
     const landmarkOverrides = Object.entries(localLandmarkOverrides)
       .filter(([, v]) => v !== "")
-      .map(([landmarkId, fee]) => ({ landmarkId, fee: Number(fee) }))
+      .map(([landmarkId, fee]) => ({ landmarkId, feeInKobo: Number(fee) }))
 
     const subLandmarkOverrides = Object.entries(localSubLandmarkOverrides)
       .filter(([, v]) => v !== "")
-      .map(([subLandmarkId, fee]) => ({ subLandmarkId, fee: Number(fee) }))
+      .map(([subLandmarkId, fee]) => ({
+        subLandmarkId,
+        feeInKobo: Number(fee),
+      }))
 
     saveMutation.mutate(
       { landmarkOverrides, subLandmarkOverrides },
@@ -160,7 +163,7 @@ export function VendorDeliverySettings() {
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         Platform Default:{" "}
                         <span className="font-medium text-foreground">
-                          {formatPrice(lm.defaultDeliveryFee)}
+                          {formatPrice(lm.defaultDeliveryFeeInKobo)}
                         </span>
                       </p>
                     </div>
@@ -174,7 +177,7 @@ export function VendorDeliverySettings() {
                       </span>
                       <Input
                         type="number"
-                        placeholder={`${lm.defaultDeliveryFee}`}
+                        placeholder={`${lm.defaultDeliveryFeeInKobo}`}
                         value={localLandmarkOverrides[lm.id] ?? ""}
                         onChange={(e) =>
                           setLocalLandmarkOverrides({
@@ -221,9 +224,9 @@ export function VendorDeliverySettings() {
                           localSubLandmarkOverrides[sub.id] !== ""
                         const parentEffectiveFee = hasOverride
                           ? localLandmarkOverrides[lm.id]
-                          : lm.defaultDeliveryFee
+                          : lm.defaultDeliveryFeeInKobo
                         const subDefaultFee =
-                          sub.defaultDeliveryFee || parentEffectiveFee
+                          sub.defaultDeliveryFeeInKobo || parentEffectiveFee
 
                         return (
                           <div

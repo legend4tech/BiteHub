@@ -1,8 +1,6 @@
 "use client"
-
 import { useEffect } from "react"
 import Script from "next/script"
-
 interface MonnifyConfig {
   amount: number
   currency: string
@@ -19,13 +17,11 @@ interface MonnifyConfig {
   }>
   metadata?: Record<string, unknown>
 }
-
 interface MonnifyHandlerProps {
   config: MonnifyConfig
   onSuccess: (reference: string) => void
   onClose: () => void
 }
-
 declare global {
   interface Window {
     MonnifySDK?: {
@@ -33,7 +29,6 @@ declare global {
     }
   }
 }
-
 export default function MonnifyHandler({
   config,
   onSuccess,
@@ -57,7 +52,7 @@ export default function MonnifyHandler({
         onComplete: function (response: { paymentReference?: string }) {
           onSuccess(response.paymentReference || config.reference)
         },
-        onClose: function (data: unknown) {
+        onClose: function () {
           onClose()
         },
       })
@@ -66,13 +61,12 @@ export default function MonnifyHandler({
       onClose()
     }
   }
-
   useEffect(() => {
     if (window.MonnifySDK) {
       initMonnify()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config])
-
   return (
     <Script
       src="https://sdk.monnify.com/plugin/monnify.js"

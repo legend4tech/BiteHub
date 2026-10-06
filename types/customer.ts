@@ -10,7 +10,7 @@ export interface CartState {
   vendorId: string | null
   vendorName: string | null
   vendorWhatsappNumber: string | null
-  vendorDeliveryFee: number
+  vendorDeliveryFeeInKobo: number
   vendorPrepTime: string | null
   vendorMonnifySubaccountCode: string | null
 }
@@ -20,7 +20,7 @@ export interface OrderRecord {
   _id?: { toString: () => string }
   orderId: string
   vendorName: string
-  totalAmount: number
+  totalAmountInKobo: number
   status: string
   paymentStatus?: string
   location: string
@@ -28,7 +28,7 @@ export interface OrderRecord {
   items: Array<{
     name: string
     quantity: number
-    price: number
+    priceInKobo: number
     image?: string
   }>
 }
@@ -37,14 +37,14 @@ export interface Transaction {
   id?: string
   _id?: { toString: () => string }
   type: string
-  amount: number
-  balanceAfter?: number
+  amountInKobo: number
+  balanceAfterInKobo?: number
   direction?: "credit" | "debit"
   description?: string
   status?: string
   reference: string
   createdAt: string | Date
-  remainingAmount?: number
+  remainingAmountInKobo?: number
   expiresAt?: string | Date
 }
 
@@ -84,14 +84,14 @@ export interface CustomerReviewOrder {
   items: {
     menuItemId: string
     name: string
-    price: number
+    priceInKobo: number
     quantity: number
     image?: string
   }[]
-  totalAmount: number
+  totalAmountInKobo: number
   createdAt: string
   status: string
-  isRated: boolean
+  isFullyRated: boolean
   isVendorRated: boolean
   ratedItems: string[]
   existingItemReviews?: {
@@ -112,3 +112,22 @@ export interface CustomerReviewRecord {
   updatedAt: string
   orderId: string
 }
+
+/**
+ * Result of processCheckout. Discriminated on `error` so callers can narrow
+ * with `if (result.error)` before reading the success fields.
+ */
+export type CheckoutResult =
+  | {
+      error: string
+      status: number
+      requiresLogin?: boolean
+      requiresSignup?: boolean
+    }
+  | {
+      error?: undefined
+      status: number
+      orderId: string
+      checkoutUrl: string
+      transactionReference: string
+    }

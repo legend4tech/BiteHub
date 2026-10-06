@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useForm, type Resolver } from "react-hook-form"
+import { useForm, useWatch, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useGlobalSettings } from "@/hooks/shared/useGlobalSettings"
 import { Settings, Shield, Search, Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,6 +43,11 @@ export function AdminSettings() {
       newPassword: "",
       confirmPassword: "",
     },
+  })
+
+  const newPasswordValue = useWatch({
+    control: passwordForm.control,
+    name: "newPassword",
   })
 
   const updatePasswordMutation = useAdminUpdatePassword()
@@ -206,9 +211,7 @@ export function AdminSettings() {
                     )}
                   </button>
                 </div>
-                <PasswordStrengthMeter
-                  password={passwordForm.watch("newPassword") || ""}
-                />
+                <PasswordStrengthMeter password={newPasswordValue || ""} />
               </Field>
 
               <Field>

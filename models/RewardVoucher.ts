@@ -15,6 +15,7 @@ export interface IRewardVoucher extends Document {
   usedOrderId?: string // The order where this was applied
 
   expiresAt: Date
+  warningEmailSentAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -41,6 +42,7 @@ const RewardVoucherSchema = new Schema<IRewardVoucher>(
     usedOrderId: { type: String }, // Stores BiteHub's custom orderId string
 
     expiresAt: { type: Date, required: true },
+    warningEmailSentAt: { type: Date },
   },
   {
     timestamps: true,

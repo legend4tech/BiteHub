@@ -30,7 +30,7 @@ export async function GET() {
       {
         $group: {
           _id: null,
-          total: { $sum: "$amount" },
+          total: { $sum: "$amountInKobo" },
         },
       },
     ])
@@ -46,7 +46,7 @@ export async function GET() {
       {
         $group: {
           _id: null,
-          total: { $sum: "$walletPromoAmountUsed" },
+          total: { $sum: "$walletPromoAmountUsedInKobo" },
         },
       },
     ])

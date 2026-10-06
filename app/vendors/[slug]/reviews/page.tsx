@@ -1,14 +1,12 @@
 "use client"
-
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { useVendorReviews } from "@/hooks/vendor/useVendorReviews"
-import { useEffect, useState } from "react"
-import { ArrowLeft, Star, Loader2, UserCircle2, X } from "lucide-react"
+import { useState } from "react"
+import { ArrowLeft, Star, UserCircle2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
 import {
   ReviewCardSkeleton,
   RatingStatisticsSkeleton,
@@ -17,13 +15,10 @@ import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
 import { RatingStatistics } from "@/components/public-vendors/RatingStatistics"
-
 export default function VendorReviewsPage() {
   const router = useRouter()
   const { slug } = useParams<{ slug: string }>()
-
   const [ratingFilter, setRatingFilter] = useState<number | null>(null)
-
   const {
     data,
     fetchNextPage,
@@ -32,13 +27,10 @@ export default function VendorReviewsPage() {
     status,
     refetch,
   } = useVendorReviews(slug, ratingFilter)
-
   const reviews = data?.pages.flatMap((page) => page.reviews) || []
-
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Navbar />
-
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
         <Button
           variant="ghost"
@@ -48,11 +40,9 @@ export default function VendorReviewsPage() {
           <ArrowLeft className="mr-2 size-4" />
           Back to Menu
         </Button>
-
         <h1 className="mb-8 font-heading text-3xl font-bold tracking-tight">
           Customer Reviews
         </h1>
-
         {data?.pages[0]?.statistics && (
           <RatingStatistics
             statistics={data.pages[0].statistics}
@@ -60,7 +50,6 @@ export default function VendorReviewsPage() {
             onFilterChange={setRatingFilter}
           />
         )}
-
         {ratingFilter && (
           <div className="mb-6 flex items-center justify-between rounded-2xl border border-border bg-muted/50 px-4 py-3">
             <div className="flex items-center gap-2">
@@ -81,7 +70,6 @@ export default function VendorReviewsPage() {
             </Button>
           </div>
         )}
-
         {status === "pending" ? (
           <div>
             <RatingStatisticsSkeleton />
@@ -136,7 +124,6 @@ export default function VendorReviewsPage() {
                       </h3>
                     </div>
                   </div>
-
                   <div className="flex w-fit items-center gap-1 rounded-full bg-warning/10 px-3 py-1.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
@@ -152,7 +139,6 @@ export default function VendorReviewsPage() {
                 </div>
               </div>
             ))}
-
             {/* Infinite loading trigger */}
             {(hasNextPage || isFetchingNextPage) && (
               <InfiniteScrollTrigger
@@ -172,7 +158,6 @@ export default function VendorReviewsPage() {
           </div>
         )}
       </div>
-
       <Footer />
     </main>
   )

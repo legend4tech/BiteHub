@@ -20,20 +20,25 @@ export async function PUT(
     const data = await request.json()
     const { id } = await params
 
-    // Handle clearing the defaultDeliveryFee if passed as empty string or null
+    // Handle clearing the defaultDeliveryFeeInKobo if passed as empty string or null
     const updated = await SubLandmark.findByIdAndUpdate(
       id,
-      data.defaultDeliveryFee === null || data.defaultDeliveryFee === ""
+      data.defaultDeliveryFeeInKobo === null ||
+        data.defaultDeliveryFeeInKobo === ""
         ? {
             $set: { name: data.name?.trim(), isActive: data.isActive },
-            $unset: { defaultDeliveryFee: 1 },
+            $unset: { defaultDeliveryFeeInKobo: 1 },
           }
         : {
             $set: {
               name: data.name?.trim(),
               isActive: data.isActive,
-              ...(data.defaultDeliveryFee !== undefined
-                ? { defaultDeliveryFee: Number(data.defaultDeliveryFee) }
+              ...(data.defaultDeliveryFeeInKobo !== undefined
+                ? {
+                    defaultDeliveryFeeInKobo: Number(
+                      data.defaultDeliveryFeeInKobo
+                    ),
+                  }
                 : {}),
             },
           },

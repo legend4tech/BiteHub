@@ -1,5 +1,4 @@
 "use client"
-
 import React, {
   createContext,
   useContext,
@@ -7,7 +6,7 @@ import React, {
   useEffect,
   useRef,
 } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import {
   DEFAULT_SCHOOL_ID,
   DEFAULT_CAMPUS_ID,
@@ -15,20 +14,15 @@ import {
 } from "@/lib/config/campus"
 import { SS_ACCEPTED_CROSS_CAMPUS } from "@/lib/constants"
 import { useCustomerProfile } from "@/hooks/customer/useCustomerProfile"
-
 interface CampusContextType {
   schoolId: string
   campusId: string
   setSchoolAndCampus: (schoolId: string, campusId: string) => void
   isLoaded: boolean
 }
-
 const CampusContext = createContext<CampusContextType | undefined>(undefined)
-
 const LS_KEY = "bitehub_campus_preference"
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function validateCampus(
   schoolId: string,
   campusId: string
@@ -42,7 +36,6 @@ function validateCampus(
     campusId: validCampus ? campusId : school.campuses[0].id,
   }
 }
-
 function loadFromLocalStorage(): { schoolId: string; campusId: string } | null {
   try {
     const stored = localStorage.getItem(LS_KEY)
@@ -54,7 +47,6 @@ function loadFromLocalStorage(): { schoolId: string; campusId: string } | null {
     return null
   }
 }
-
 function saveToLocalStorage(schoolId: string, campusId: string) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({ schoolId, campusId }))
@@ -62,33 +54,23 @@ function saveToLocalStorage(schoolId: string, campusId: string) {
     document.cookie = `bitehub_campus_preference=${JSON.stringify({ schoolId, campusId })}; path=/; max-age=31536000`
   } catch {}
 }
-
 // ─── Provider ─────────────────────────────────────────────────────────────────
-
 export function CampusProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const [schoolId, setSchoolId] = useState<string>(DEFAULT_SCHOOL_ID)
   const [campusId, setCampusId] = useState<string>(DEFAULT_CAMPUS_ID)
   const [isLoaded, setIsLoaded] = useState(false)
-
   // Capture initial values via refs so the effect runs once on mount
   // without eslint-disable, and without re-running on every navigation.
-  const routerRef = useRef(router)
-  const pathnameRef = useRef(pathname)
+
   const searchParamsRef = useRef(searchParams)
-
   const { data: profile, isCustomer } = useCustomerProfile()
-
   useEffect(() => {
     // We want to evaluate the source of truth carefully.
     const sp = searchParamsRef.current
     const urlSchool = sp.get("school")
     const urlCampus = sp.get("campus")
     const stored = loadFromLocalStorage()
-
     // If customer profile is loaded, it is the ultimate baseline.
     if (isCustomer && profile?.school && profile?.campus) {
       // If there is a URL param and it differs from profile, we let it be
@@ -100,7 +82,6 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
       // Since CampusProvider initializes, let's just initialize to URL if present, otherwise Profile, otherwise Local Storage.
       // Wait, if we initialize to URL, they get the modal. That's fine!
       // But let's make sure we don't infinitely re-set it.
-
       // Let's check if the URL params match the stale local storage from when they were a guest.
       const isStaleUrlFromGuest =
         urlSchool &&
@@ -108,7 +89,6 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
         urlSchool === stored.schoolId &&
         urlCampus === stored.campusId &&
         (urlSchool !== profile.school || urlCampus !== profile.campus)
-
       if (
         isStaleUrlFromGuest &&
         !sessionStorage.getItem(SS_ACCEPTED_CROSS_CAMPUS)
@@ -146,17 +126,14 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
         setCampusId(pref.campusId)
       }
     }
-
     setIsLoaded(true)
   }, [profile, isCustomer]) // Re-run if profile loads/changes
-
   const setSchoolAndCampus = (newSchoolId: string, newCampusId: string) => {
     const validated = validateCampus(newSchoolId, newCampusId)
     setSchoolId(validated.schoolId)
     setCampusId(validated.campusId)
     saveToLocalStorage(validated.schoolId, validated.campusId)
   }
-
   return (
     <CampusContext.Provider
       value={{ schoolId, campusId, setSchoolAndCampus, isLoaded }}
@@ -165,7 +142,6 @@ export function CampusProvider({ children }: { children: React.ReactNode }) {
     </CampusContext.Provider>
   )
 }
-
 export function useCampus() {
   const context = useContext(CampusContext)
   if (context === undefined) {

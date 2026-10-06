@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { formatPriceExact } from "@/lib/format"
+import { toMajorUnit } from "@/lib/money"
 import Link from "next/link"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
@@ -46,9 +47,9 @@ export default async function CustomerDashboardPage() {
   // Fetch last 3 orders
   const recentOrders = await getRecentCustomerOrders(session.user.email, 3)
 
-  const walletBalance = wallet ? wallet.balance : 0
-  const promoBalance = wallet ? wallet.promoBalance || 0 : 0
-  const depositBalance = wallet ? wallet.depositBalance || 0 : 0
+  const walletBalance = wallet ? wallet.balanceInKobo : 0
+  const promoBalance = wallet ? wallet.promoBalanceInKobo || 0 : 0
+  const depositBalance = wallet ? wallet.depositBalanceInKobo || 0 : 0
   const orderCount = await getCustomerOrdersCount(session.user.email)
 
   return (
@@ -173,7 +174,7 @@ export default async function CustomerDashboardPage() {
                 BiteHub Coins
               </p>
               <h3 className="text-2xl font-bold">
-                {promoBalance}{" "}
+                {toMajorUnit(promoBalance)}{" "}
                 <span className="text-sm font-normal text-muted-foreground">
                   BHC
                 </span>
@@ -299,7 +300,7 @@ export default async function CustomerDashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-primary">
-                      {formatPriceExact(order.totalAmount)}
+                      {formatPriceExact(order.totalAmountInKobo)}
                     </p>
                     <div className="mt-1 flex justify-end">
                       <StatusBadge

@@ -128,7 +128,7 @@ export async function PATCH(
           processOrderCompleted(
             order.orderId,
             order.customerId.toString(),
-            order.totalAmount
+            order.totalAmountInKobo
           ).catch(async (err: Error) => {
             const { default: GamificationFailureLog } =
               await import("@/models/GamificationFailureLog")
@@ -176,38 +176,88 @@ export async function PATCH(
           const { default: WalletTransaction } =
             await import("@/models/WalletTransaction")
 
-          const promoRefund = order.walletPromoAmountUsed || 0
+          const promoRefund = order.walletPromoAmountUsedInKobo || 0
           const depositRefund =
-            order.walletDepositAmountUsed || order.totalAmount - promoRefund
+            order.walletDepositAmountUsedInKobo ||
+            order.totalAmountInKobo - promoRefund
 
           // Atomic Wallet Refund to prevent race conditions
           const updatedWallet = await Wallet.findOneAndUpdate(
             { customerId: customer._id },
             {
               $inc: {
-                balance: order.totalAmount,
-                promoBalance: promoRefund,
-                depositBalance: depositRefund,
+                balanceInKobo: order.totalAmountInKobo,
+                promoBalanceInKobo: promoRefund,
+                depositBalanceInKobo: depositRefund,
               },
             },
             { new: true }
           )
 
           if (updatedWallet) {
-            await WalletTransaction.create({
-              customerId: customer._id,
-              type: "refund",
-              amount: order.totalAmount,
-              balanceAfter: updatedWallet.balance,
-              direction: "credit",
-              reference: `REF-${order.orderId}`,
-              description: `Refund for cancelled order ${order.orderId}`,
-            })
+            const txs = []
+            if (depositRefund > 0) {
+              txs.push({
+                customerId: customer._id,
+                type: "refund",
+                amountInKobo: depositRefund,
+                balanceAfterInKobo: updatedWallet.balanceInKobo - promoRefund, // Approximate intermediate balance
+                direction: "credit",
+                reference: `REF-DEP-${order.orderId}`,
+                description: `Cash refund for cancelled order ${order.orderId}`,
+              })
+            }
+            if (promoRefund > 0) {
+              const expiresAt = new Date()
+              expiresAt.setDate(expiresAt.getDate() + 30) // Standard 30 days validity for refunded coins
+              txs.push({
+                customerId: customer._id,
+                type: "reward",
+                amountInKobo: promoRefund,
+                remainingAmountInKobo: promoRefund,
+                expiresAt,
+                isExpired: false,
+                balanceAfterInKobo: updatedWallet.balanceInKobo,
+                direction: "credit",
+                reference: `REF-BHC-${order.orderId}`,
+                description: `Coin refund for cancelled order ${order.orderId}`,
+              })
+            }
+
+            if (txs.length > 0) {
+              await WalletTransaction.insertMany(txs)
+            }
 
             const { default: Vendor } = await import("@/models/Vendor")
             await Vendor.findByIdAndUpdate(order.vendorId, {
-              $inc: { pendingWalletBalance: -order.vendorRevenue },
+              $inc: { pendingWalletBalanceInKobo: -order.vendorRevenueInKobo },
             })
+
+            if (order.rewardVoucherId) {
+              const { default: RewardVoucher } =
+                await import("@/models/RewardVoucher")
+              const restoredVoucher = await RewardVoucher.findByIdAndUpdate(
+                order.rewardVoucherId,
+                {
+                  $set: { isUsed: false },
+                  $unset: { usedAt: 1 },
+                },
+                { new: true }
+              )
+
+              if (restoredVoucher && restoredVoucher.campaignId) {
+                const { default: RewardCampaign } =
+                  await import("@/models/RewardCampaign")
+                await RewardCampaign.findByIdAndUpdate(
+                  restoredVoucher.campaignId,
+                  {
+                    $inc: {
+                      budgetSpentInKobo: -order.sponsoredDiscountAmountInKobo,
+                    },
+                  }
+                )
+              }
+            }
           }
         }
       }

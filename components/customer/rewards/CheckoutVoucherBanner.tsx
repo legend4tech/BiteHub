@@ -47,7 +47,12 @@ export function CheckoutVoucherBanner() {
 
             {!isApplied ? (
               <Button
-                onClick={() => applyVoucher(applicableVoucher.code)}
+                onClick={() =>
+                  applyVoucher(
+                    applicableVoucher.code,
+                    applicableVoucher.menuItemId
+                  )
+                }
                 size="sm"
                 className="mt-2 rounded-full font-bold shadow-md transition-transform hover:scale-105 active:scale-95"
               >

@@ -69,7 +69,7 @@ export type OrderFormValues = z.infer<typeof orderFormSchema>
 export const orderItemSchema = z.object({
   menuItemId: z.string().min(1, "Menu item ID is required"),
   name: z.string().min(1, "Name is required"),
-  price: z
+  priceInKobo: z
     .number({ message: "Please enter a valid number" })
     .min(0, "Price must be non-negative"),
   quantity: z
@@ -94,7 +94,7 @@ export const createOrderSchema = z.object({
   exactLocation: z.string().min(1, "Exact location is required"),
   notes: z.string().optional(),
   paymentMethod: z.enum(["monnify", "wallet"]).default("monnify"),
-  total: z.number({ message: "Please enter a valid number" }).optional(), // We accept it but ignore it for calculation
+  totalInKobo: z.number({ message: "Please enter a valid number" }).optional(), // We accept it but ignore it for calculation
   appliedVoucherCode: z.string().optional(),
   useBHC: z.boolean().optional(),
 })

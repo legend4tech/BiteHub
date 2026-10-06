@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
-import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import { serializeOrder, type LeanOrder } from "@/lib/serializers"
 import { ORDER_STATUS } from "@/lib/constants"
-
 export const dynamic = "force-dynamic"
-
 /**
  * GET /api/vendor/monnify/settlements
  * Returns a summary of the vendor's earnings from our order database.
@@ -24,49 +21,46 @@ export async function GET() {
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     await dbConnect()
-
     const { Types } = await import("mongoose")
     const vendorId = new Types.ObjectId(session.user.vendorId)
-
     // Aggregate vendor revenue across all payment states
-    const [summary] = await Order.aggregate([
+    await await Order.aggregate([
       { $match: { vendorId, paymentStatus: "paid" } },
       {
         $group: {
           _id: "$status",
-          totalRevenue: { $sum: "$vendorRevenue" },
+          totalRevenueInKobo: { $sum: "$vendorRevenueInKobo" },
           count: { $sum: 1 },
         },
       },
     ])
-
     // Get recent paid orders for the timeline view
     const recentOrders = await Order.find({ vendorId, paymentStatus: "paid" })
-      .select("orderId status vendorRevenue totalAmount createdAt customerName")
+      .select(
+        "orderId status vendorRevenueInKobo totalAmountInKobo createdAt customerName"
+      )
       .sort({ createdAt: -1 })
       .limit(20)
       .lean()
-
     // Aggregate totals
     const [totals] = await Order.aggregate([
       { $match: { vendorId, paymentStatus: "paid" } },
       {
         $group: {
           _id: null,
-          totalEarned: { $sum: "$vendorRevenue" },
+          totalEarnedInKobo: { $sum: "$vendorRevenueInKobo" },
           totalOrders: { $sum: 1 },
-          completedRevenue: {
+          completedRevenueInKobo: {
             $sum: {
               $cond: [
                 { $eq: ["$status", ORDER_STATUS.COMPLETED] },
-                "$vendorRevenue",
+                "$vendorRevenueInKobo",
                 0,
               ],
             },
           },
-          pendingRevenue: {
+          pendingRevenueInKobo: {
             $sum: {
               $cond: [
                 {
@@ -79,7 +73,7 @@ export async function GET() {
                     ],
                   ],
                 },
-                "$vendorRevenue",
+                "$vendorRevenueInKobo",
                 0,
               ],
             },
@@ -87,12 +81,11 @@ export async function GET() {
         },
       },
     ])
-
     return NextResponse.json({
-      totalEarned: totals?.totalEarned || 0,
+      totalEarnedInKobo: totals?.totalEarnedInKobo || 0,
       totalOrders: totals?.totalOrders || 0,
-      completedRevenue: totals?.completedRevenue || 0,
-      pendingRevenue: totals?.pendingRevenue || 0,
+      completedRevenueInKobo: totals?.completedRevenueInKobo || 0,
+      pendingRevenueInKobo: totals?.pendingRevenueInKobo || 0,
       recentOrders: recentOrders.map((o) =>
         serializeOrder(o as unknown as LeanOrder)
       ),

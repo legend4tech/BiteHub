@@ -1,9 +1,7 @@
 "use client"
-
 import { useState } from "react"
 import { useForm, Controller, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
@@ -16,10 +14,8 @@ import {
 import { signOut } from "next-auth/react"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
 import { Loader2, Eye, EyeOff } from "lucide-react"
-
 import { changePasswordSchema, changeEmailSchema } from "@/lib/schemas"
 import type { ChangePasswordValues, ChangeEmailValues } from "@/lib/schemas"
-
 export function VendorSecurityForms({
   currentEmail,
 }: {
@@ -31,7 +27,6 @@ export function VendorSecurityForms({
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
-
   // --- Password Form ---
   const passwordForm = useForm<ChangePasswordValues>({
     // Zod v4.4.x vs @hookform/resolvers version mismatch — same pattern as VendorPaymentForm.tsx
@@ -45,9 +40,7 @@ export function VendorSecurityForms({
     },
     mode: "onTouched",
   })
-
   const changePasswordMutation = useVendorChangePassword()
-
   const onPasswordSubmit = (values: ChangePasswordValues) => {
     setPasswordLoading(true)
     changePasswordMutation.mutate(values, {
@@ -66,9 +59,7 @@ export function VendorSecurityForms({
       },
     })
   }
-
   const forgotPasswordMutation = useVendorForgotPassword()
-
   const handleForgotPassword = () => {
     setForgotPasswordLoading(true)
     forgotPasswordMutation.mutate(
@@ -89,7 +80,6 @@ export function VendorSecurityForms({
       }
     )
   }
-
   const emailForm = useForm<ChangeEmailValues>({
     // Zod v4.4.x vs @hookform/resolvers version mismatch — same pattern as VendorPaymentForm.tsx
     resolver: zodResolver(
@@ -100,9 +90,7 @@ export function VendorSecurityForms({
     },
     mode: "onTouched",
   })
-
   const changeEmailMutation = useVendorChangeEmail()
-
   const onEmailSubmit = (values: ChangeEmailValues) => {
     setEmailLoading(true)
     changeEmailMutation.mutate(values, {
@@ -123,7 +111,6 @@ export function VendorSecurityForms({
       },
     })
   }
-
   return (
     <div className="space-y-12">
       {/* Change Email Section */}
@@ -137,7 +124,6 @@ export function VendorSecurityForms({
             email remains active until confirmed.
           </p>
         </div>
-
         <form
           onSubmit={emailForm.handleSubmit(onEmailSubmit)}
           className="space-y-5"
@@ -152,7 +138,6 @@ export function VendorSecurityForms({
               className="bg-muted text-muted-foreground"
             />
           </div>
-
           <Controller
             name="newEmail"
             control={emailForm.control}
@@ -172,16 +157,13 @@ export function VendorSecurityForms({
               </Field>
             )}
           />
-
           <Button type="submit" variant="hero" disabled={emailLoading}>
             {emailLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Request Email Change
           </Button>
         </form>
       </section>
-
       <hr className="border-border" />
-
       {/* Change Password Section */}
       <section className="space-y-6">
         <div>
@@ -191,7 +173,6 @@ export function VendorSecurityForms({
             successful change.
           </p>
         </div>
-
         <form
           onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
           className="space-y-5"
@@ -244,7 +225,6 @@ export function VendorSecurityForms({
               </Field>
             )}
           />
-
           <Controller
             name="newPassword"
             control={passwordForm.control}
@@ -280,7 +260,6 @@ export function VendorSecurityForms({
               </Field>
             )}
           />
-
           <Controller
             name="confirmPassword"
             control={passwordForm.control}
@@ -317,7 +296,6 @@ export function VendorSecurityForms({
               </Field>
             )}
           />
-
           <Button type="submit" variant="hero" disabled={passwordLoading}>
             {passwordLoading && (
               <Loader2 className="mr-2 size-4 animate-spin" />

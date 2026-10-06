@@ -1,22 +1,18 @@
 import { auth } from "@/auth"
 import { getVendorMenuItems } from "@/lib/services/menuService"
 import { VendorMenuManagement } from "@/components/vendor-dashboard/VendorMenuManagement"
-import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import type { MenuItem } from "@/types/vendor"
-
+import type {} from "@/types/vendor"
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
-
 export default async function VendorMenuPage({ searchParams }: Props) {
   const session = await auth()
   if (!session || !session.user?.vendorId) {
     return null
   }
-
   const resolvedParams = await searchParams
   const activeCategory =
     typeof resolvedParams.category === "string"
@@ -24,15 +20,12 @@ export default async function VendorMenuPage({ searchParams }: Props) {
       : "all"
   const search =
     typeof resolvedParams.search === "string" ? resolvedParams.search : ""
-
   const vendorId = session.user.vendorId
-
   const { allItems, filteredItems } = await getVendorMenuItems(
     vendorId,
     search,
     activeCategory
   )
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -48,7 +41,6 @@ export default async function VendorMenuPage({ searchParams }: Props) {
           </Link>
         </Button>
       </div>
-
       <VendorMenuManagement
         initialItems={filteredItems}
         allItems={allItems}

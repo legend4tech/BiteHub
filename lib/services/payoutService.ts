@@ -9,6 +9,7 @@ import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import Vendor from "@/models/Vendor"
 import { executeBulkDisbursement } from "@/lib/monnify"
+import { toMajorUnit } from "@/lib/money"
 
 export async function processWalletDisbursements() {
   await dbConnect()
@@ -17,7 +18,7 @@ export async function processWalletDisbursements() {
   // We use an update operation to atomically set isDisbursing to true for eligible vendors
   const lockedVendorsRaw = await Vendor.updateMany(
     {
-      pendingWalletBalance: { $gt: 0 },
+      pendingWalletBalanceInKobo: { $gt: 0 },
       monnifyAccountNumber: { $exists: true, $ne: "" },
       monnifyBankCode: { $exists: true, $ne: "" },
       isDisbursing: { $ne: true }, // Only pick those not already disbursing
@@ -35,7 +36,7 @@ export async function processWalletDisbursements() {
   // Now fetch the vendors we just locked
   const vendorsToPay = await Vendor.find({
     isDisbursing: true,
-    pendingWalletBalance: { $gt: 0 },
+    pendingWalletBalanceInKobo: { $gt: 0 },
   })
 
   if (vendorsToPay.length === 0) {
@@ -44,7 +45,7 @@ export async function processWalletDisbursements() {
 
   const batchReference = `bulk-payout-${Date.now()}`
   const transactions = vendorsToPay.map((vendor) => ({
-    amount: vendor.pendingWalletBalance,
+    amount: toMajorUnit(vendor.pendingWalletBalanceInKobo),
     reference: `payout-${vendor._id}-${Date.now()}`,
     narration: `BiteHub Wallet Payout - ${vendor.name}`,
     bankCode: vendor.monnifyBankCode,
@@ -66,13 +67,13 @@ export async function processWalletDisbursements() {
 
     // If API call didn't throw, we assume success. Update local DB.
     for (const vendor of vendorsToPay) {
-      const amountPaid = vendor.pendingWalletBalance
+      const amountPaidInKobo = vendor.pendingWalletBalanceInKobo
 
       await Vendor.findByIdAndUpdate(vendor._id, {
         $set: { isDisbursing: false },
         $inc: {
-          walletTotalDisbursed: amountPaid,
-          pendingWalletBalance: -amountPaid,
+          walletTotalDisbursedInKobo: amountPaidInKobo,
+          pendingWalletBalanceInKobo: -amountPaidInKobo,
         },
       })
 
@@ -87,7 +88,7 @@ export async function processWalletDisbursements() {
         { $set: { isDisbursed: true } }
       )
 
-      totalDisbursedAmount += amountPaid
+      totalDisbursedAmount += amountPaidInKobo
       processedCount++
     }
 
@@ -95,7 +96,7 @@ export async function processWalletDisbursements() {
       message: "Wallet Disbursement successful",
       batchReference,
       processed: processedCount,
-      totalAmount: totalDisbursedAmount,
+      totalAmountInKobo: totalDisbursedAmount,
       bulkResult,
     }
   } finally {

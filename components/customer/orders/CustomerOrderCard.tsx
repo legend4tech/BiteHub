@@ -52,7 +52,7 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
 
         <div className="mt-4 flex items-center justify-between gap-4 sm:mt-0 sm:flex-col sm:items-end">
           <p className="font-heading text-xl font-bold text-primary">
-            {formatPrice(order.totalAmount)}
+            {formatPrice(order.totalAmountInKobo)}
           </p>
           <StatusBadge
             status={order.status as OrderStatus}
@@ -69,7 +69,7 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
         <div className="space-y-3">
           {order.items.map(
             (
-              item: { name: string; quantity: number; price: number },
+              item: { name: string; quantity: number; priceInKobo: number },
               i: number
             ) => (
               <div
@@ -83,7 +83,7 @@ export function CustomerOrderCard({ order }: CustomerOrderCardProps) {
                   {item.name}
                 </span>
                 <span className="font-semibold text-foreground">
-                  {formatPrice(item.price * item.quantity)}
+                  {formatPrice(item.priceInKobo * item.quantity)}
                 </span>
               </div>
             )

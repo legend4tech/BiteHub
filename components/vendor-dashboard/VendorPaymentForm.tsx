@@ -1,18 +1,10 @@
 "use client"
-
-import { useState, useEffect } from "react"
-import { useForm, Controller, type Resolver } from "react-hook-form"
+import { useState } from "react"
+import { useForm, Controller, useWatch, type Resolver } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
-import {
-  Check,
-  ChevronsUpDown,
-  Loader2,
-  CheckCircle,
-  Lock,
-  CalendarClock,
-} from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, CheckCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vendor } from "@/types/vendor"
@@ -21,7 +13,6 @@ import {
   useVendorRequestMonnifyChange,
   useVendorVerifyMonnifyChange,
 } from "@/hooks/vendor/useVendorMutations"
-import axios from "axios"
 import { useRouter } from "next/navigation"
 import { useBanksQuery } from "@/hooks/shared/useBanksQuery"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -42,43 +33,27 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import {} from "@/components/ui/select"
 import { VendorPaymentModals } from "./VendorPaymentModals"
 import { useMonnifyAccountValidation } from "@/hooks/useMonnifyAccountValidation"
 import { VendorPaymentInfoCard } from "./VendorPaymentInfoCard"
 
-interface Bank {
-  name: string
-  code: string
-}
-
 interface VendorPaymentFormProps {
   initial: Vendor
 }
-
 export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
   const [saving, setSaving] = useState(false)
   const { data: banks = [], isLoading: loadingBanks } = useBanksQuery()
   const [openBankList, setOpenBankList] = useState(false)
   const router = useRouter()
-
   // State for modals
   const [showSetupModal, setShowSetupModal] = useState(false)
   const [setupConfirmText, setSetupConfirmText] = useState("")
-
   const [showOtpRequestModal, setShowOtpRequestModal] = useState(false)
   const [requestingOtp, setRequestingOtp] = useState(false)
-
   const [showVerifyModal, setShowVerifyModal] = useState(false)
   const [otpValue, setOtpValue] = useState("")
   const [changeConfirmText, setChangeConfirmText] = useState("")
-
   // Calculate Lock status
   const lockDays = Number(process.env.NEXT_PUBLIC_BANK_UPDATE_LOCK_DAYS || 14)
   const lastUpdate = initial.lastBankUpdateAt
@@ -93,7 +68,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
         (lockExpiry.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       )
     : 0
-
   const form = useForm<VendorPaymentSettingsValues>({
     resolver: zodResolver(
       vendorPaymentSettingsSchema as never
@@ -104,24 +78,22 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       accountNumber: initial.monnifyAccountNumber ?? "", // Bug fix: previously used initial.accountNumber
     },
   })
-
-  const watchedBankCode = form.watch("bankCode")
-  const watchedAccountNumber = form.watch("accountNumber")
-
+  const watchedBankCode = useWatch({ control: form.control, name: "bankCode" })
+  const watchedAccountNumber = useWatch({
+    control: form.control,
+    name: "accountNumber",
+  })
   const { accountName, isFetchingName, isNameValid, nameError } =
     useMonnifyAccountValidation(watchedAccountNumber, watchedBankCode)
-
   // Start the flow — values are not used here; they're read via form.getValues() in the confirm handlers
-  const onSubmit = async (_values: VendorPaymentSettingsValues) => {
+  const onSubmit = async () => {
     if (initial.monnifyIntegrationStatus === "active") {
       setShowOtpRequestModal(true)
     } else {
       setShowSetupModal(true)
     }
   }
-
   const addMonnifyMutation = useVendorAddMonnify()
-
   // Final Setup Confirm
   const handleSetupConfirm = () => {
     if (
@@ -129,11 +101,9 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       "add account"
     )
       return
-
     setSaving(true)
     const values = form.getValues()
     const bankName = banks.find((b) => b.code === values.bankCode)?.name
-
     addMonnifyMutation.mutate(
       {
         vendorId: initial.id,
@@ -166,9 +136,7 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       }
     )
   }
-
   const requestMonnifyChangeMutation = useVendorRequestMonnifyChange()
-
   // Step 1: Request OTP
   const handleRequestOtp = () => {
     setRequestingOtp(true)
@@ -187,9 +155,7 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       },
     })
   }
-
   const verifyMonnifyChangeMutation = useVendorVerifyMonnifyChange()
-
   // Step 2: Verify OTP
   const handleVerifyConfirm = () => {
     if (
@@ -198,11 +164,9 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       !otpValue
     )
       return
-
     setSaving(true)
     const values = form.getValues()
     const bankName = banks.find((b) => b.code === values.bankCode)?.name
-
     verifyMonnifyChangeMutation.mutate(
       {
         vendorId: initial.id,
@@ -235,7 +199,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
       }
     )
   }
-
   return (
     <div className="space-y-6">
       <VendorPaymentInfoCard
@@ -247,7 +210,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
         configuredAccountNumber={initial.monnifyAccountNumber}
         banks={banks}
       />
-
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -315,7 +277,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                 )}
               />
             </Field>
-
             <Field data-invalid={!!form.formState.errors.accountNumber}>
               <label className="text-sm font-medium" htmlFor="accountNumber">
                 Account Number
@@ -331,7 +292,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
                 aria-invalid={!!form.formState.errors.accountNumber}
               />
             </Field>
-
             <Field className="md:col-span-2" data-invalid={!!nameError}>
               <label className="text-sm font-medium" htmlFor="accountName">
                 Account Name
@@ -364,7 +324,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
             </Field>
           </div>
         </div>
-
         <div className="flex flex-col items-end gap-3 pt-4">
           <Button
             type="submit"
@@ -386,7 +345,6 @@ export function VendorPaymentForm({ initial }: VendorPaymentFormProps) {
           </Button>
         </div>
       </form>
-
       <VendorPaymentModals
         showSetupModal={showSetupModal}
         setShowSetupModal={setShowSetupModal}

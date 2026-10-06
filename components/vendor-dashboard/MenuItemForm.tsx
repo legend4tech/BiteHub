@@ -1,19 +1,9 @@
 "use client"
-
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
+import {} from "@/components/ui/select"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import type { MenuItem, MenuItemPayload } from "@/types/vendor"
@@ -22,26 +12,26 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, Controller } from "react-hook-form"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { formatInputNumber, parseInputNumber } from "@/lib/format"
+import { nairaToKobo, toMajorUnit } from "@/lib/money"
 import { MenuItemChecklists } from "./MenuItemChecklists"
 import { MenuItemBasicFields } from "./MenuItemBasicFields"
 import { MenuItemPreorderFields } from "./MenuItemPreorderFields"
-
 interface MenuItemFormProps {
   initial?: Partial<MenuItem>
   onSave: (data: MenuItemPayload) => void | Promise<void>
   onCancel: () => void
 }
-
 export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
   const [saving, setSaving] = useState(false)
-
   const form = useForm<MenuItemFormValues>({
     // `as never` needed: @hookform/resolvers typed against Zod 4.0.x; project uses 4.4.x
     resolver: zodResolver(menuItemFormSchema as never),
     defaultValues: {
       name: initial?.name ?? "",
       description: initial?.description ?? "",
-      price: initial?.price ? formatInputNumber(initial.price.toString()) : "",
+      priceInKobo: initial?.priceInKobo
+        ? formatInputNumber(toMajorUnit(initial.priceInKobo).toString())
+        : "",
       category:
         (initial?.category as MenuItemFormValues["category"]) ?? "snack",
       isAvailable: initial?.isAvailable ?? true,
@@ -72,12 +62,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
       preorderDeliveryInfo: initial?.preorderDeliveryInfo ?? "",
     },
   })
-
   const onSubmit = async (values: MenuItemFormValues) => {
     setSaving(true)
     try {
       let imageToSave = values.image
-
       if (
         values.image &&
         typeof values.image === "object" &&
@@ -87,12 +75,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
         const formData = new FormData()
         formData.append("file", values.image.file)
         formData.append("type", "menu")
-
         const uploadResponse = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         })
-
         if (!uploadResponse.ok) {
           const errData = await uploadResponse.json()
           throw new Error(
@@ -100,18 +86,16 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
               "Image upload failed. Please check your connection and try again."
           )
         }
-
         const uploadData = await uploadResponse.json()
         imageToSave = {
           url: uploadData.imageUrl,
           publicId: uploadData.publicId,
         }
       }
-
       await onSave({
         name: values.name,
         description: values.description ?? null,
-        price: parseInputNumber(values.price),
+        priceInKobo: nairaToKobo(parseInputNumber(values.priceInKobo)),
         category: values.category,
         isAvailable: values.isAvailable,
         image: imageToSave ?? undefined,
@@ -140,12 +124,10 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
       setSaving(false)
     }
   }
-
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <MenuItemBasicFields control={form.control} />
       <MenuItemChecklists control={form.control} />
-
       <Controller
         name="image"
         control={form.control}
@@ -161,9 +143,7 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
           </Field>
         )}
       />
-
       <MenuItemPreorderFields control={form.control} watch={form.watch} />
-
       <Controller
         name="isAvailable"
         control={form.control}
@@ -182,7 +162,6 @@ export function MenuItemForm({ initial, onSave, onCancel }: MenuItemFormProps) {
           </Field>
         )}
       />
-
       <div className="flex gap-3 pt-2">
         <Button
           type="button"

@@ -116,20 +116,20 @@ export function DashboardVendorsTab({
                   }}
                   formatter={(value: unknown, name: unknown) => [
                     formatPrice(Number(value) || 0),
-                    name === "gmv" ? "GMV" : "Vendor Revenue",
+                    name === "gmvInKobo" ? "GMV" : "Vendor Revenue",
                   ]}
                   cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
                 />
                 <Bar
-                  dataKey="gmv"
-                  name="gmv"
+                  dataKey="gmvInKobo"
+                  name="gmvInKobo"
                   fill="var(--color-primary)"
                   radius={[0, 4, 4, 0]}
                   barSize={12}
                 />
                 <Bar
-                  dataKey="vendorRevenue"
-                  name="vendorRevenue"
+                  dataKey="vendorRevenueInKobo"
+                  name="vendorRevenueInKobo"
                   fill="var(--color-chart-2)"
                   radius={[0, 4, 4, 0]}
                   barSize={12}
@@ -196,10 +196,10 @@ export function DashboardVendorsTab({
                       {vendor.ordersCount}
                     </td>
                     <td className="px-6 py-3.5 text-right font-medium">
-                      {formatPrice(vendor.gmv)}
+                      {formatPrice(vendor.gmvInKobo)}
                     </td>
                     <td className="px-6 py-3.5 text-right font-medium text-status-completed">
-                      {formatPrice(vendor.vendorRevenue)}
+                      {formatPrice(vendor.vendorRevenueInKobo)}
                     </td>
                   </tr>
                 ))}

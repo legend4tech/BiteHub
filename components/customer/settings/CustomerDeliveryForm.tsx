@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { Input } from "@/components/ui/input"
@@ -20,11 +19,9 @@ import {
 import { getSchoolName, getCampusName } from "@/lib/config/campus"
 import { useSystemLandmarks } from "@/hooks/shared/useLandmarks"
 import type { AxiosError } from "axios"
-
 export function CustomerDeliveryForm() {
-  const { data: profile, isLoading, error } = useCustomerProfile()
+  const { data: profile, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
-
   const {
     control,
     handleSubmit,
@@ -40,18 +37,15 @@ export function CustomerDeliveryForm() {
       preferredExactLocation: "",
     },
   })
-
   // Use profile campus/school directly — these are locked and not editable
   const { data: systemLandmarks = [], isLoading: loadingLandmarks } =
     useSystemLandmarks(profile?.school ?? "", profile?.campus ?? "")
-
   useEffect(() => {
     if (error) {
       toast.error("Failed to load profile data")
       console.error(error)
     }
   }, [error])
-
   const onSubmit = async (values: {
     preferredLandmark: string
     preferredExactLocation: string
@@ -75,7 +69,6 @@ export function CustomerDeliveryForm() {
       }
     )
   }
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -120,9 +113,7 @@ export function CustomerDeliveryForm() {
           </div>
         </div>
       </section>
-
       <hr className="border-border" />
-
       {/* Delivery Preferences */}
       <section className="space-y-6">
         <div>
@@ -197,7 +188,6 @@ export function CustomerDeliveryForm() {
               </Field>
             )}
           />
-
           <Controller
             name="preferredExactLocation"
             control={control}
@@ -220,7 +210,6 @@ export function CustomerDeliveryForm() {
           />
         </div>
       </section>
-
       <div className="flex justify-end pt-4">
         <Button
           type="submit"

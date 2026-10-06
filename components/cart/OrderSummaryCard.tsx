@@ -12,12 +12,12 @@ interface OrderSummaryCardProps {
   cart: {
     items: Array<{
       quantity: number
-      menuItem: { id: string; name: string; price: number }
+      menuItem: { id: string; name: string; priceInKobo: number }
     }>
-    vendorDeliveryFee: number
+    defaultDeliveryFeeInKobo: number
   }
   total: number
-  serviceFee: number
+  serviceFeeInKobo: number
   finalTotal: number
   loading: boolean
   isSyncing: boolean
@@ -31,19 +31,21 @@ interface OrderSummaryCardProps {
   serverError?: string | null
   requiresLogin?: boolean
   requiresSignup?: boolean
-  applyVoucher: (code: string) => void
+  applyVoucher: (code: string, menuItemId: string) => void
   removeVoucher: () => void
   appliedVoucherCode: string | null
+  appliedVoucherMenuItemId: string | null
+  itemSubtotal: number
   useBHC: boolean
   setUseBHC: (value: boolean) => void
-  customerWallet: { wallet: { promoBalance: number } } | null
+  customerWallet: { wallet: { promoBalanceInKobo: number } } | null
   isInsufficientFunds?: boolean
 }
 
 export function OrderSummaryCard({
   cart,
   total,
-  serviceFee,
+  serviceFeeInKobo,
   finalTotal,
   loading,
   isSyncing,
@@ -59,6 +61,8 @@ export function OrderSummaryCard({
   applyVoucher,
   removeVoucher,
   appliedVoucherCode,
+  appliedVoucherMenuItemId,
+  itemSubtotal,
   useBHC,
   setUseBHC,
   customerWallet,
@@ -66,39 +70,70 @@ export function OrderSummaryCard({
 }: OrderSummaryCardProps) {
   const router = useRouter()
 
-  const promoBalance = customerWallet?.wallet?.promoBalance ?? 0
-  const discountedTotal =
-    useBHC && promoBalance > 0
-      ? Math.max(0, finalTotal - Math.min(promoBalance, finalTotal))
-      : finalTotal
+  const promoBalance = customerWallet?.wallet?.promoBalanceInKobo ?? 0
+  const bhcDiscount =
+    useBHC && promoBalance > 0 ? Math.min(promoBalance, itemSubtotal) : 0
+  const discountedTotal = finalTotal - bhcDiscount
 
   return (
     <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
       <h2 className="mb-6 font-heading text-xl font-semibold">Order Summary</h2>
 
       <div className="mb-6 space-y-4">
-        {cart.items.map((ci) => (
-          <div
-            key={ci.menuItem.id}
-            className="flex justify-between gap-4 text-sm"
-          >
-            <div className="flex gap-2">
-              <span className="font-medium text-muted-foreground">
-                {ci.quantity}x
-              </span>
-              <span className="font-medium">{ci.menuItem.name}</span>
+        {cart.items.map((ci) => {
+          const isVoucherApplied = appliedVoucherMenuItemId === ci.menuItem.id
+          const itemOriginalPrice = ci.menuItem.priceInKobo * ci.quantity
+          const itemDiscountedPrice = isVoucherApplied
+            ? ci.menuItem.priceInKobo * (ci.quantity - 1)
+            : itemOriginalPrice
+
+          return (
+            <div
+              key={ci.menuItem.id}
+              className="flex justify-between gap-4 text-sm"
+            >
+              <div className="flex gap-2">
+                <span className="font-medium text-muted-foreground">
+                  {ci.quantity}x
+                </span>
+                <span className="font-medium">{ci.menuItem.name}</span>
+              </div>
+              <div className="flex flex-col items-end">
+                {isVoucherApplied ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground line-through">
+                      {formatPrice(itemOriginalPrice)}
+                    </span>
+                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary shadow-sm">
+                      {itemDiscountedPrice === 0
+                        ? "FREE"
+                        : formatPrice(itemDiscountedPrice)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="font-bold">
+                    {formatPrice(itemOriginalPrice)}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="font-bold">
-              {formatPrice(ci.menuItem.price * ci.quantity)}
-            </span>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="mb-6 space-y-3 border-t border-border pt-6 text-sm">
         <div className="flex justify-between text-muted-foreground">
           <span>Items Subtotal</span>
-          <span>{formatPriceExact(total)}</span>
+          <div className="flex items-center gap-2">
+            {appliedVoucherMenuItemId && (
+              <span className="text-xs line-through opacity-70">
+                {formatPriceExact(total)}
+              </span>
+            )}
+            <span className="font-medium text-foreground">
+              {formatPriceExact(itemSubtotal)}
+            </span>
+          </div>
         </div>
         <div className="flex justify-between text-muted-foreground">
           <span>Delivery Fee</span>
@@ -108,10 +143,10 @@ export function OrderSummaryCard({
                 {isCrossCampus ? "Wrong campus" : "Not configured"}
               </span>
             ) : isValidLocation ? (
-              cart.vendorDeliveryFee === 0 ? (
+              (cart.defaultDeliveryFeeInKobo ?? 0) === 0 ? (
                 "Free"
               ) : (
-                formatPriceExact(cart.vendorDeliveryFee)
+                formatPriceExact(cart.defaultDeliveryFeeInKobo ?? 0)
               )
             ) : (
               "Select location"
@@ -120,12 +155,17 @@ export function OrderSummaryCard({
         </div>
         <div className="flex justify-between text-muted-foreground">
           <span>Service Fee</span>
-          <span>{formatPriceExact(serviceFee)}</span>
+          <span>{formatPriceExact(serviceFeeInKobo)}</span>
         </div>
         {useBHC && promoBalance > 0 && (
           <div className="flex justify-between font-medium text-primary">
             <span>BiteHub Coins Applied</span>
-            <span>-{formatPriceExact(Math.min(promoBalance, finalTotal))}</span>
+            <span>-{formatPriceExact(bhcDiscount)}</span>
+          </div>
+        )}
+        {(useBHC || appliedVoucherCode) && (
+          <div className="pt-2 text-[11px] leading-tight font-medium text-muted-foreground/80 italic">
+            * Rewards and Coins apply only to the cost of your items.
           </div>
         )}
       </div>
@@ -138,14 +178,25 @@ export function OrderSummaryCard({
         appliedVoucherCode={appliedVoucherCode}
         useBHC={useBHC}
         setUseBHC={setUseBHC}
-        finalTotalWithoutBHC={finalTotal}
+        finalTotalWithoutBHC={itemSubtotal}
       />
 
       <div className="mb-6 flex justify-between border-t border-border pt-6 font-heading text-xl font-bold">
         <span>Total</span>
-        <span className="text-primary">
-          {formatPriceExact(discountedTotal)}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          {bhcDiscount > 0 ? (
+            <>
+              <span className="text-sm text-muted-foreground line-through opacity-70">
+                {formatPriceExact(finalTotal)}
+              </span>
+              <span className="rounded-lg bg-primary/10 px-3 py-1 text-primary shadow-sm">
+                {formatPriceExact(discountedTotal)}
+              </span>
+            </>
+          ) : (
+            <span className="text-primary">{formatPriceExact(finalTotal)}</span>
+          )}
+        </div>
       </div>
 
       {serverError && (

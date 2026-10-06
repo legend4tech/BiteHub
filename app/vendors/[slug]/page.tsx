@@ -98,7 +98,7 @@ export default async function VendorDetailPage({
       vendorName: vendor.name,
       vendorSlug: vendor.slug,
       vendorWhatsappNumber: vendor.whatsappNumber ?? "",
-      vendorDeliveryFee: vendor.deliveryFee ?? 0,
+      vendorDeliveryFee: vendor.defaultDeliveryFeeInKobo ?? 0,
       vendorPrepTime: vendor.prepTime ?? "",
     })
   ) as unknown as import("@/types/vendor").MenuItem[]

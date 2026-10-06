@@ -259,7 +259,7 @@ export function MenuItemCard({ item, onDifferentVendor }: MenuItemCardProps) {
          */}
         <div className="mt-auto flex items-center justify-between gap-1 border-t border-border/60 pt-2">
           <p className="text-sm leading-none font-bold text-primary tabular-nums">
-            {formatPrice(item.price)}
+            {formatPrice(item.priceInKobo)}
           </p>
 
           {qty > 0 && !isCurrentlyAvailable ? (

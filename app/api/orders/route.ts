@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     const result = await processCheckout(parsedBody.data, session)
 
-    if (result.error) {
+    if (result.error !== undefined) {
       return NextResponse.json(result, { status: result.status })
     }
 

@@ -99,8 +99,8 @@ export function VendorMenu({
       return true
     })
     .sort((a, b) => {
-      if (sortBy === "price_asc") return a.price - b.price
-      if (sortBy === "price_desc") return b.price - a.price
+      if (sortBy === "price_asc") return a.priceInKobo - b.priceInKobo
+      if (sortBy === "price_desc") return b.priceInKobo - a.priceInKobo
       if (sortBy === "name_asc") return a.name.localeCompare(b.name)
       return 0
     })

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import Image from "next/image"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Star, Loader2, Utensils, X } from "lucide-react"
@@ -43,11 +44,10 @@ export function ItemReviewForm({
   const [hoveredRating, setHoveredRating] = useState(0)
   const submitReview = useSubmitReview()
 
-  const { control, handleSubmit, reset, watch, setValue } =
-    useForm<SingleItemReviewValues>({
-      resolver: zodResolver(singleItemReviewSchema),
-      defaultValues: { rating: 0, title: "", comments: "", isAnonymous: false },
-    })
+  const { control, handleSubmit, reset } = useForm<SingleItemReviewValues>({
+    resolver: zodResolver(singleItemReviewSchema),
+    defaultValues: { rating: 0, title: "", comments: "", isAnonymous: false },
+  })
 
   // We watch the rating to optionally conditionally render fields, though now
   // since the user clicked "Review", we can just show everything, or we can keep the UX
@@ -102,10 +102,13 @@ export function ItemReviewForm({
       >
         <div className="flex items-center gap-3">
           {orderItem?.image ? (
-            <img
+            <Image
               src={orderItem.image}
               alt={orderItem.name || "Menu Item"}
+              width={48}
+              height={48}
               className="size-12 shrink-0 rounded-full object-cover shadow-sm"
+              unoptimized
             />
           ) : (
             <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10">

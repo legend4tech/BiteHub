@@ -17,17 +17,23 @@ import {
   PAYMENT_STATUS,
   generateOrderId,
   LOW_STOCK_THRESHOLD,
-  PLATFORM_FLAT_FEE,
+  PLATFORM_FLAT_FEE_IN_KOBO,
+  UNPAID_ORDER_EXPIRY_MINUTES,
 } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
+import {
+  sendCheckoutNotifications,
+  validateCustomerCheckoutStatus,
+} from "@/lib/services/checkoutHelpers"
+import { processWalletPaymentDeduction } from "@/lib/services/checkoutWalletHelpers"
 import { sendVendorLowStockAlertEmail } from "@/lib/vendorAlertMail"
-import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import {
   resolveDeliveryFee,
   validateOrderItemsAndCalculateTotal,
 } from "@/lib/services/orderCheckoutService"
 import { Session } from "next-auth"
+import type { CheckoutResult } from "@/types/customer"
 
 export async function processCheckout(
   parsedData: {
@@ -36,7 +42,7 @@ export async function processCheckout(
       menuItemId: string
       name: string
       quantity: number
-      price: number
+      priceInKobo: number
     }[]
     customerName: string
     customerEmail: string
@@ -49,7 +55,7 @@ export async function processCheckout(
     useBHC?: boolean
   },
   session: Session | null
-) {
+): Promise<CheckoutResult> {
   const {
     vendorId,
     items,
@@ -69,29 +75,12 @@ export async function processCheckout(
     email: customerEmail.toLowerCase(),
   }).lean()
 
-  if (existingCustomer) {
-    const isCustomerRole = session?.user?.role === "customer"
-    const isAuthenticatedCustomer =
-      isCustomerRole &&
-      session.user?.email?.toLowerCase() === customerEmail.toLowerCase()
-
-    const isOwnEmailDifferentRole =
-      session?.user &&
-      session.user.role !== "customer" &&
-      session.user.email?.toLowerCase() === customerEmail.toLowerCase()
-
-    if (!isAuthenticatedCustomer && !isOwnEmailDifferentRole) {
-      const hasPassword = !!existingCustomer.password
-      return {
-        error: hasPassword
-          ? "An account with this email exists. Please log in to continue."
-          : "Please create a free BiteHub account to continue ordering.",
-        requiresLogin: true,
-        requiresSignup: !hasPassword,
-        status: 401,
-      }
-    }
-  }
+  const customerValidation = validateCustomerCheckoutStatus(
+    existingCustomer,
+    customerEmail,
+    session
+  )
+  if (customerValidation) return customerValidation
 
   const vendor = await Vendor.findById(vendorId).lean()
   if (!vendor || !vendor.isActive) {
@@ -116,9 +105,9 @@ export async function processCheckout(
 
   const finalVendorName = vendor.name
 
-  const deliveryFee = await resolveDeliveryFee(vendor, location)
+  const deliveryFeeInKobo = await resolveDeliveryFee(vendor, location)
 
-  let calculatedTotal: number
+  let calculatedTotalInKobo: number
   let maxHours: number
   let maxItemPrepTime: string
   let dbMenuItemsMap: Map<string, Partial<IMenuItem>>
@@ -127,9 +116,9 @@ export async function processCheckout(
     const validationResult = await validateOrderItemsAndCalculateTotal(
       items,
       vendorId,
-      deliveryFee
+      deliveryFeeInKobo
     )
-    calculatedTotal = validationResult.calculatedTotal
+    calculatedTotalInKobo = validationResult.calculatedTotal
     maxHours = validationResult.maxHours
     maxItemPrepTime = validationResult.maxItemPrepTime
     dbMenuItemsMap = validationResult.dbMenuItemsMap as Map<
@@ -146,7 +135,7 @@ export async function processCheckout(
     }
   }
 
-  let sponsoredDiscountAmount = 0
+  let sponsoredDiscountAmountInKobo = 0
   let isRewardSponsored = false
   let rewardVoucherId: mongoose.Types.ObjectId | undefined = undefined
 
@@ -162,7 +151,10 @@ export async function processCheckout(
       return { error: "You must be logged in to use a voucher.", status: 401 }
     }
     const RewardVoucher = (await import("@/models/RewardVoucher")).default
-    const voucher = await RewardVoucher.findOne({ code: appliedVoucherCode })
+    const voucher = await RewardVoucher.findOne({
+      code: appliedVoucherCode,
+      customerId: existingCustomer._id,
+    })
 
     if (!voucher) {
       return { error: "Invalid voucher code.", status: 400 }
@@ -181,30 +173,36 @@ export async function processCheckout(
       }
     }
 
-    sponsoredDiscountAmount = itemInCart.price
+    sponsoredDiscountAmountInKobo = itemInCart.priceInKobo
     isRewardSponsored = true
     rewardVoucherId = voucher._id
   }
 
-  const baseCustomerPayment = calculatedTotal - sponsoredDiscountAmount
-  const targetAmountToReceive = baseCustomerPayment + PLATFORM_FLAT_FEE
-  const monnifyFee =
+  const baseCustomerPaymentInKobo =
+    calculatedTotalInKobo - sponsoredDiscountAmountInKobo
+  const targetAmountToReceiveInKobo =
+    baseCustomerPaymentInKobo + PLATFORM_FLAT_FEE_IN_KOBO
+  const monnifyFeeInKobo =
     paymentMethod === "wallet"
       ? 0
-      : computeMonnifyServiceFee(targetAmountToReceive)
-  const serviceFee = monnifyFee + PLATFORM_FLAT_FEE
-  const finalTotal = baseCustomerPayment + serviceFee
+      : computeMonnifyServiceFee(targetAmountToReceiveInKobo)
+  const serviceFeeInKobo = monnifyFeeInKobo + PLATFORM_FLAT_FEE_IN_KOBO
+  const finalTotalInKobo = baseCustomerPaymentInKobo + serviceFeeInKobo
 
   const settings = await GlobalSettings.findOne()
   const platformFeePercentage = settings
     ? settings.platformFeePercentage
     : Number(process.env.NEXT_PUBLIC_PLATFORM_FEE_PERCENTAGE || 5)
 
-  const foodSubtotal = calculatedTotal - deliveryFee
-  const rawPlatformCommission = foodSubtotal * (platformFeePercentage / 100)
-  const platformCommission = Math.round(rawPlatformCommission * 100) / 100
-  const vendorRevenue =
-    Math.round((calculatedTotal - platformCommission) * 100) / 100
+  const foodSubtotalInKobo = calculatedTotalInKobo - deliveryFeeInKobo
+  const finalFoodSubtotalInKobo =
+    foodSubtotalInKobo - sponsoredDiscountAmountInKobo
+  const rawPlatformCommissionInKobo =
+    foodSubtotalInKobo * (platformFeePercentage / 100)
+  const platformCommissionInKobo = Math.round(rawPlatformCommissionInKobo)
+  const vendorRevenueInKobo = Math.round(
+    calculatedTotalInKobo - platformCommissionInKobo
+  )
 
   const orderId = generateOrderId()
   const paymentReference = `BH-PAY-${orderId}`
@@ -236,7 +234,7 @@ export async function processCheckout(
       customerId: customerForWallet._id,
     })
 
-    if (!walletCheck || walletCheck.balance < finalTotal) {
+    if (!walletCheck || walletCheck.balanceInKobo < finalTotalInKobo) {
       return { error: "Insufficient wallet balance", status: 400 }
     }
   } else {
@@ -248,17 +246,18 @@ export async function processCheckout(
       }
     }
 
-    const vendorSplitAmount = Math.round(vendorRevenue * 100) / 100
+    const vendorSplitAmountInKobo = vendorRevenueInKobo
 
     try {
+      const { toMajorUnit } = await import("@/lib/money")
       const monnifyInit = await initMonnifyTransaction({
-        amount: finalTotal,
+        amount: toMajorUnit(finalTotalInKobo),
         paymentReference,
         customerName,
         customerEmail,
         paymentDescription: `BiteHub Order ${orderId} from ${finalVendorName}`,
         vendorSubAccountCode: vendor.monnifySubAccountCode,
-        vendorSplitAmount,
+        vendorSplitAmount: toMajorUnit(vendorSplitAmountInKobo),
         redirectUrl,
       })
       checkoutUrl = monnifyInit.checkoutUrl
@@ -301,7 +300,7 @@ export async function processCheckout(
         const RewardCampaign = (await import("@/models/RewardCampaign")).default
         await RewardCampaign.findByIdAndUpdate(
           lockedVoucher.campaignId,
-          { $inc: { budgetSpent: sponsoredDiscountAmount } },
+          { $inc: { budgetSpentInKobo: sponsoredDiscountAmountInKobo } },
           { session: mongooseSession }
         )
       }
@@ -312,7 +311,7 @@ export async function processCheckout(
           menuItemId: string
           name: string
           quantity: number
-          price: number
+          priceInKobo: number
         }) => {
           const dbItem = dbMenuItemsMap.get(item.menuItemId)
           const updateDoc: {
@@ -380,19 +379,21 @@ export async function processCheckout(
             customerPhone,
             location: `${exactLocation} (${location})`,
             notes: notes || "",
-            deliveryFee,
-            serviceFee,
-            platformCommission,
-            vendorRevenue,
-            totalAmount: finalTotal,
+            deliveryFeeInKobo,
+            serviceFeeInKobo,
+            platformCommissionInKobo,
+            vendorRevenueInKobo,
+            totalAmountInKobo: finalTotalInKobo,
             status: orderStatus,
             paymentMethod,
             paymentStatus,
             monnifyReference:
               paymentMethod === "monnify" ? paymentReference : undefined,
-            expiresAt: new Date(Date.now() + 30 * 60000), // 30 minutes from now
+            expiresAt: new Date(
+              Date.now() + UNPAID_ORDER_EXPIRY_MINUTES * 60_000
+            ),
             isRewardSponsored,
-            sponsoredDiscountAmount,
+            sponsoredDiscountAmountInKobo,
             rewardVoucherId,
           },
         ],
@@ -400,92 +401,45 @@ export async function processCheckout(
       )
 
       if (paymentMethod === "wallet" && customerForWallet) {
-        const Wallet = (await import("@/models/Wallet")).default
-        const lockedWallet = await Wallet.findOne({
-          customerId: customerForWallet._id,
-          balance: { $gte: finalTotal },
-        }).session(mongooseSession)
-
-        if (!lockedWallet) {
-          transactionError =
-            "Insufficient wallet balance during checkout. Order cancelled."
-          throw new Error("Insufficient balance")
+        try {
+          await processWalletPaymentDeduction(
+            customerForWallet,
+            finalTotalInKobo,
+            useBHC,
+            orderId,
+            vendorId,
+            vendorRevenueInKobo,
+            order,
+            mongooseSession,
+            finalFoodSubtotalInKobo
+          )
+        } catch (err: unknown) {
+          if (err instanceof Error && err.message === "Insufficient balance") {
+            transactionError =
+              "Insufficient wallet balance during checkout. Order cancelled."
+            throw err
+          }
+          throw err
         }
 
-        const promoDeduction = useBHC
-          ? Math.min(lockedWallet.promoBalance || 0, finalTotal)
-          : 0
-        const depositDeduction = finalTotal - promoDeduction
+        if (rewardVoucherId) {
+          const RewardVoucher = (await import("@/models/RewardVoucher")).default
+          const usedVoucher = await RewardVoucher.findByIdAndUpdate(
+            rewardVoucherId,
+            { isUsed: true, usedAt: new Date() },
+            { new: true, session: mongooseSession }
+          )
 
-        if ((lockedWallet.depositBalance || 0) < depositDeduction) {
-          transactionError =
-            "Insufficient deposit balance to cover the total without using BiteHub Coins."
-          throw new Error("Insufficient balance")
-        }
-
-        lockedWallet.promoBalance -= promoDeduction
-        lockedWallet.depositBalance =
-          (lockedWallet.depositBalance || 0) - depositDeduction
-        lockedWallet.balance -= finalTotal
-
-        await lockedWallet.save({ session: mongooseSession })
-        const updatedWallet = lockedWallet
-
-        const WalletTransaction = (await import("@/models/WalletTransaction"))
-          .default
-
-        // FIFO Deduction Logic
-        if (promoDeduction > 0) {
-          const activeRewards = await WalletTransaction.find({
-            customerId: customerForWallet._id,
-            type: "reward",
-            direction: "credit",
-            isExpired: false,
-            remainingAmount: { $gt: 0 },
-          })
-            .sort({ expiresAt: 1 })
-            .session(mongooseSession)
-
-          let leftToDeduct = promoDeduction
-          for (const reward of activeRewards) {
-            if (leftToDeduct <= 0) break
-            const deduct = Math.min(reward.remainingAmount, leftToDeduct)
-            reward.remainingAmount -= deduct
-            if (reward.remainingAmount === 0) {
-              reward.isExpired = true // Fully used up
-            }
-            await reward.save({ session: mongooseSession })
-            leftToDeduct -= deduct
+          if (usedVoucher && usedVoucher.campaignId) {
+            const RewardCampaign = (await import("@/models/RewardCampaign"))
+              .default
+            await RewardCampaign.findByIdAndUpdate(
+              usedVoucher.campaignId,
+              { $inc: { budgetSpentInKobo: sponsoredDiscountAmountInKobo } },
+              { session: mongooseSession }
+            )
           }
         }
-        await WalletTransaction.create(
-          [
-            {
-              customerId: customerForWallet._id,
-              type: "order_payment",
-              amount: finalTotal,
-              balanceAfter: updatedWallet.balance,
-              direction: "debit",
-              reference: `ORD-${orderId}`,
-              description: `Payment for order ${orderId}`,
-            },
-          ],
-          { session: mongooseSession }
-        )
-
-        await Vendor.findByIdAndUpdate(
-          vendor._id,
-          {
-            $inc: { pendingWalletBalance: vendorRevenue },
-          },
-          { session: mongooseSession }
-        )
-
-        order.walletPromoAmountUsed = promoDeduction
-        order.walletDepositAmountUsed = depositDeduction
-        order.status = ORDER_STATUS.CONFIRMED
-        order.paymentStatus = PAYMENT_STATUS.PAID
-        await order.save({ session: mongooseSession })
       }
 
       orderResponse = order
@@ -508,56 +462,28 @@ export async function processCheckout(
 
   const order = orderResponse
 
-  if (paymentMethod === "wallet" && customerForWallet) {
-    const { sendOrderReceiptEmail, sendVendorNewOrderEmail } =
-      await import("@/lib/mail")
-    sendOrderReceiptEmail(
-      customerEmail,
-      customerName,
-      order.orderId,
-      finalVendorName,
-      finalTotal,
-      deliveryFee,
-      serviceFee,
-      items,
-      redirectUrl
-    ).catch(console.error)
-
-    if (finalWhatsapp) {
-      sendVendorOrderNotification(
-        finalWhatsapp,
-        customerName,
-        order.orderId,
-        vendorRevenue
-      ).catch(console.error)
-    }
-
-    sendVendorNewOrderEmail(
-      String(vendorId),
-      finalVendorName,
-      order.orderId,
-      customerName,
-      customerPhone,
-      location,
-      items,
-      deliveryFee,
-      serviceFee,
-      finalTotal,
-      vendorRevenue,
-      platformCommission,
-      notes || undefined
-    ).catch(console.error)
-  } else {
-    const { sendOrderInitiatedEmail } = await import("@/lib/mail")
-    sendOrderInitiatedEmail(
-      customerEmail,
-      customerName,
-      order.orderId,
-      finalVendorName,
-      finalTotal,
-      redirectUrl
-    ).catch(console.error)
-  }
+  await sendCheckoutNotifications({
+    paymentMethod,
+    customerEmail,
+    customerName,
+    customerPhone,
+    orderId: order.orderId,
+    finalVendorName,
+    finalTotalInKobo,
+    deliveryFeeInKobo,
+    serviceFeeInKobo,
+    discountAmountInKobo:
+      sponsoredDiscountAmountInKobo + (order.walletPromoAmountUsedInKobo || 0),
+    vendorRevenueInKobo,
+    platformCommissionInKobo,
+    items,
+    redirectUrl,
+    finalWhatsapp,
+    vendorId,
+    location,
+    notes,
+    customerForWallet,
+  })
 
   return {
     orderId: order.orderId,

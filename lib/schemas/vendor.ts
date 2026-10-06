@@ -11,7 +11,7 @@ export const menuItemFormSchema = z
       .min(1, "Item name is required.")
       .min(2, "Name must be at least 2 characters."),
     description: z.string().trim().optional(),
-    price: z
+    priceInKobo: z
       .string()
       .min(1, "Price is required.")
       .refine((v) => {
@@ -125,7 +125,7 @@ export const vendorDeliverySettingsUpdateSchema = z.object({
     .array(
       z.object({
         landmarkId: z.string().min(1, "Landmark ID is required"),
-        fee: z
+        feeInKobo: z
           .number({ message: "Please enter a valid number" })
           .min(0, "Fee must be a positive number"),
       })
@@ -135,7 +135,7 @@ export const vendorDeliverySettingsUpdateSchema = z.object({
     .array(
       z.object({
         subLandmarkId: z.string().min(1, "Sub-landmark ID is required"),
-        fee: z
+        feeInKobo: z
           .number({ message: "Please enter a valid number" })
           .min(0, "Fee must be a positive number"),
       })

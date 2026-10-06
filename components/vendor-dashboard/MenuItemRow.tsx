@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { Pencil, Trash2, Link as LinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,16 +7,13 @@ import { MENU_CATEGORIES } from "@/lib/constants"
 import Image from "next/image"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { toast } from "sonner"
-
 import { formatPrice, formatTime, isItemAvailableToday } from "@/lib/format"
-
 interface MenuItemRowProps {
   item: MenuItem
   onEdit: (item: MenuItem) => void
   onDelete: (id: string) => void
   onToggleAvailability: (id: string, available: boolean) => void | Promise<void>
 }
-
 export function MenuItemRow({
   item,
   onEdit,
@@ -26,15 +22,12 @@ export function MenuItemRow({
 }: MenuItemRowProps) {
   const [localAvailable, setLocalAvailable] = useState(item.isAvailable)
   const [isToggling, setIsToggling] = useState(false)
-
   const [prevIsAvailable, setPrevIsAvailable] = useState(item.isAvailable)
   if (item.isAvailable !== prevIsAvailable) {
     setPrevIsAvailable(item.isAvailable)
     setLocalAvailable(item.isAvailable)
   }
-
   const cat = MENU_CATEGORIES.find((c) => c.value === item.category)
-
   const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
   const isScheduled = !item.isPreorder && item.availableFrom && item.availableTo
@@ -42,22 +35,18 @@ export function MenuItemRow({
     isScheduled &&
     (currentTime < item.availableFrom! || currentTime > item.availableTo!)
   const imageUrl = typeof item.image === "string" ? item.image : item.image?.url
-
   const isAvailableToday = item.isPreorder
     ? true
     : isItemAvailableToday(item.availableDays)
-
   const isPreorderClosed = Boolean(
     item.isPreorder &&
     item.preorderEndDate &&
     now > new Date(item.preorderEndDate)
   )
-
   const isSoldOut =
     item.quantityAvailable !== null &&
     item.quantityAvailable !== undefined &&
     item.quantityAvailable <= 0
-
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30">
       {/* Menu Item Image */}
@@ -84,14 +73,12 @@ export function MenuItemRow({
           </div>
         )}
       </div>
-
       {/* Info */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{item.name}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {cat?.label ?? item.category}
         </p>
-
         <div className="mt-1 flex flex-wrap gap-1">
           {!localAvailable && (
             <span className="inline-flex items-center rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-destructive uppercase">
@@ -109,7 +96,7 @@ export function MenuItemRow({
             </span>
           )}
           {localAvailable && !isAvailableToday && (
-            <span className="bg-warning/10 text-warning-foreground dark:dark:bg-warning/20 dark:text-warning inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+            <span className="inline-flex items-center rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-warning-foreground uppercase dark:dark:bg-warning/20 dark:text-warning">
               Not active today
             </span>
           )}
@@ -130,7 +117,7 @@ export function MenuItemRow({
             <>
               {isOffSchedule ? (
                 currentTime < item.availableFrom! ? (
-                  <span className="bg-warning/10 text-warning-foreground dark:dark:bg-warning/20 dark:text-warning inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                  <span className="inline-flex items-center rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-warning-foreground uppercase dark:dark:bg-warning/20 dark:text-warning">
                     Opens order at {formatTime(item.availableFrom!)}
                   </span>
                 ) : (
@@ -148,12 +135,10 @@ export function MenuItemRow({
           )}
         </div>
       </div>
-
       {/* Price */}
       <p className="shrink-0 text-sm font-bold text-primary">
-        {formatPrice(item.price)}
+        {formatPrice(item.priceInKobo)}
       </p>
-
       {/* Availability toggle */}
       <button
         onClick={async () => {
@@ -163,7 +148,7 @@ export function MenuItemRow({
           setIsToggling(true)
           try {
             await onToggleAvailability(item.id, newValue)
-          } catch (_error) {
+          } catch {
             setLocalAvailable(!newValue)
           } finally {
             setIsToggling(false)
@@ -181,7 +166,6 @@ export function MenuItemRow({
           />
         </div>
       </button>
-
       {/* Actions */}
       <div className="flex shrink-0 items-center gap-1">
         <Button

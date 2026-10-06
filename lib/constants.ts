@@ -14,7 +14,7 @@ export const SUPPORT_EMAIL = "contact@bitehubapp.com"
 export const CONTACT_EMAIL = "contact@bitehubapp.com"
 export const NO_REPLY_EMAIL = "no-reply@bitehubapp.com"
 export const LOW_STOCK_THRESHOLD = 5
-export const PLATFORM_FLAT_FEE = 150
+export const PLATFORM_FLAT_FEE_IN_KOBO = 15000
 
 // ─── Discovery Score Weights ───────────────────────────────────────────────────
 // Used by menuService.ts to rank items on the /menus page (Recommended sort).
@@ -67,6 +67,9 @@ export const PAYMENT_STATUS = {
 } as const
 export type PaymentStatusType =
   (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS]
+
+/** Minutes an unpaid order is held before it auto-cancels. */
+export const UNPAID_ORDER_EXPIRY_MINUTES = 15
 
 // Maintain backward compatibility with existing type
 export const ORDER_STATUS_STEPS: OrderStatus[] = [
@@ -197,25 +200,33 @@ export function buildWhatsAppLink(phone: string, message: string): string {
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`
 }
 
+/** Human-readable payment method names shown in the UI and WhatsApp messages. */
+export const PAYMENT_METHOD_LABEL = {
+  monnify: "Monnify",
+  wallet: "BiteHub Wallet",
+} as const
+
 export function buildOrderWhatsAppMessage(order: {
   orderId: string
   customerName: string
-  items: { name: string; quantity: number; price: number }[]
+  items: { name: string; quantity: number; priceInKobo: number }[]
   total?: number // legacy support
-  totalAmount?: number // from serializer
+  totalAmountInKobo?: number // from serializer
   notes?: string
-  paymentMethod?: "monnify"
+  paymentMethod?: "monnify" | "wallet"
   paymentStatus?: string
 }): string {
   const itemList = order.items
     .map(
-      (i) => `• ${i.name} ×${i.quantity} — ${formatPrice(i.price * i.quantity)}`
+      (i) =>
+        `• ${i.name} ×${i.quantity} — ${formatPrice(i.priceInKobo * i.quantity)}`
     )
     .join("\n")
 
-  // Monnify is the only payment method — show confirmation when paid
-  const paymentText =
-    order.paymentMethod === "monnify" ? `*Payment:* Paid via Monnify` : null
+  // Show confirmation with the method used (Monnify or BiteHub Wallet)
+  const paymentText = order.paymentMethod
+    ? `*Payment:* Paid via ${PAYMENT_METHOD_LABEL[order.paymentMethod]}`
+    : null
 
   return [
     `Hello! I just placed an order from your menu via *${APP_NAME}* 🍽️`,
@@ -226,7 +237,7 @@ export function buildOrderWhatsAppMessage(order: {
     `*Items:*`,
     itemList,
     ``,
-    `*Total:* ${formatPrice(order.totalAmount ?? order.total ?? 0)}`,
+    `*Total:* ${formatPrice(order.totalAmountInKobo ?? order.total ?? 0)}`,
     paymentText,
     order.notes ? `*Notes:* ${order.notes}` : null,
     ``,

@@ -4,7 +4,7 @@ import dbConnect from "@/lib/db"
 import {
   updateAdminCampaign,
   deactivateAdminCampaign,
-} from "@/lib/services/gamificationService"
+} from "@/lib/services/gamificationQueryService"
 import { rewardCampaignFormSchema } from "@/lib/schemas/admin"
 import { strictRateLimiter } from "@/lib/rate-limit"
 

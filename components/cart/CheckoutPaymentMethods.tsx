@@ -6,8 +6,8 @@ import type { OrderFormInputValues } from "@/lib/schemas"
 
 interface CustomerWalletData {
   wallet?: {
-    balance: number
-    depositBalance: number
+    balanceInKobo: number
+    depositBalanceInKobo: number
   }
 }
 
@@ -17,7 +17,7 @@ interface CheckoutPaymentMethodsProps {
   isWalletLoading: boolean
   customerWallet: CustomerWalletData | null | undefined
   targetAmountToReceive: number
-  serviceFee: number
+  serviceFeeInKobo: number
   router: { push: (url: string) => void }
   isRewardApplied: boolean
 }
@@ -28,7 +28,7 @@ export function CheckoutPaymentMethods({
   isWalletLoading,
   customerWallet,
   targetAmountToReceive,
-  serviceFee,
+  serviceFeeInKobo,
   router,
   isRewardApplied,
 }: CheckoutPaymentMethodsProps) {
@@ -66,7 +66,7 @@ export function CheckoutPaymentMethods({
             ) : (
               <span className="mt-1 text-center text-sm text-muted-foreground">
                 {field.value === "monnify"
-                  ? `(+${formatPriceExact(serviceFee)} fee)`
+                  ? `(+${formatPriceExact(serviceFeeInKobo)} fee)`
                   : "Secure, automated"}
               </span>
             )}
@@ -78,7 +78,8 @@ export function CheckoutPaymentMethods({
                 if (
                   isWalletLoading ||
                   !customerWallet?.wallet ||
-                  customerWallet.wallet.depositBalance < targetAmountToReceive
+                  customerWallet.wallet.depositBalanceInKobo <
+                    targetAmountToReceive
                 )
                   return
                 field.onChange("wallet")
@@ -89,7 +90,7 @@ export function CheckoutPaymentMethods({
                   : isWalletLoading
                     ? "cursor-not-allowed border-border bg-muted/10"
                     : !customerWallet?.wallet ||
-                        customerWallet.wallet.depositBalance <
+                        customerWallet.wallet.depositBalanceInKobo <
                           targetAmountToReceive
                       ? "cursor-not-allowed border-border bg-muted/30 opacity-80"
                       : "border-border hover:border-primary/50 hover:bg-primary/5"
@@ -124,9 +125,11 @@ export function CheckoutPaymentMethods({
                 <div className="mt-1 flex flex-col items-center text-sm text-muted-foreground">
                   <span>
                     Bal:{" "}
-                    {formatPriceExact(customerWallet.wallet.depositBalance)}
+                    {formatPriceExact(
+                      customerWallet.wallet.depositBalanceInKobo ?? 0
+                    )}
                   </span>
-                  {customerWallet.wallet.depositBalance <
+                  {(customerWallet.wallet.depositBalanceInKobo ?? 0) <
                   targetAmountToReceive ? (
                     <div className="mt-1 flex flex-col items-center">
                       <span className="mb-2 text-center text-[10px] leading-tight font-medium text-destructive">

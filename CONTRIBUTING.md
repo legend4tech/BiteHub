@@ -27,6 +27,7 @@
 18. [Environment Variables](#18-environment-variables)
 19. [Git & Commit Rules](#19-git--commit-rules)
 20. [Authentication Architecture](#20-authentication-architecture)
+21. [Financial Math & The InKobo Rule](#21-financial-math--the-inkobo-rule)
 
 ---
 
@@ -911,4 +912,34 @@ if (res.error === "CredentialsSignin" || res.error === "Invalid credentials") {
 
 ---
 
-*Last updated: May 2026 · Maintained by the BiteHub core team.*
+## 21. Financial Math & The "InKobo" Rule
+
+When handling money in this codebase, **never use floating-point numbers or decimals.**
+Always store, calculate, and transmit money in **Kobo** (integer values representing the lowest denomination of Naira).
+
+### The Rule
+- Append `InKobo` to every variable, database field, and API payload related to money (e.g., `priceInKobo`, `walletBalanceInKobo`, `deliveryFeeInKobo`).
+- Only convert back to Naira format at the very last step in the frontend (using `formatPrice` from `lib/format.ts`) strictly for UI display.
+
+### Example
+
+**❌ Bad (Floating Point - DO NOT DO THIS):**
+```typescript
+// Floating point precision error: 10.1 + 20.2 = 30.299999999999997
+const price = 1500.50; 
+const tax = price * 0.05;
+```
+
+**✅ Good (Integer Math):**
+```typescript
+// Exact integer math
+const priceInKobo = 150050; // ₦1,500.50
+const taxInKobo = Math.round(priceInKobo * 0.05); // Output: 7503
+```
+
+### Why?
+JavaScript represents numbers as IEEE 754 double-precision floats. This introduces rounding errors in decimal arithmetic (e.g. `0.1 + 0.2 = 0.30000000000000004`). Over thousands of vendor transactions and wallet top-ups, these fractional errors accumulate and permanently corrupt the financial ledger. By doing all math in integers (Kobo), we mathematically guarantee 100% precision for every transaction.
+
+---
+
+*Last updated: October 2026 · Maintained by the BiteHub core team.*

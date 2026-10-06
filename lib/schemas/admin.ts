@@ -29,7 +29,7 @@ export const adminLandmarkSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   school: z.string().trim().min(1, "School is required"),
   campus: z.string().trim().min(1, "Campus is required"),
-  defaultDeliveryFee: z
+  defaultDeliveryFeeInKobo: z
     .number({ message: "Please enter a valid number" })
     .min(0, "Default delivery fee must be a positive number"),
   isActive: z.boolean().optional().default(true),
@@ -40,7 +40,7 @@ export type AdminLandmarkValues = z.infer<typeof adminLandmarkSchema>
 export const adminSubLandmarkSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   landmarkId: z.string().trim().min(1, "Landmark ID is required"),
-  defaultDeliveryFee: z
+  defaultDeliveryFeeInKobo: z
     .number({ message: "Please enter a valid number" })
     .min(0)
     .optional(),
@@ -79,7 +79,10 @@ export type UpdateAdminProfileValues = z.infer<typeof updateAdminProfileSchema>
 // ─── Platform Withdrawals ──────────────────────────────────────────────────────
 
 export const withdrawalSchema = z.object({
-  amount: z.number({ message: "Please enter a valid number" }).positive(),
+  amountInKobo: z
+    .number({ message: "Please enter a valid number" })
+    .int("Must be an integer (in Kobo)")
+    .positive(),
   reference: z.string().min(1),
   note: z.string().optional(),
 })
@@ -144,12 +147,12 @@ export const rewardCampaignFormSchema = z
     targetCount: z
       .number({ message: "Please enter a valid number" })
       .min(1, "Target count must be at least 1"),
-    minOrderValue: z
+    minOrderValueInKobo: z
       .number({ message: "Please enter a valid number" })
       .optional(),
 
     rewardType: z.enum(["BITEHUB_COINS", "FREE_MEAL"]),
-    rewardValue: z
+    rewardValueInKobo: z
       .number({ message: "Please enter a valid number" })
       .optional(),
     rewardExpiryDays: z
@@ -166,7 +169,7 @@ export const rewardCampaignFormSchema = z
     maxBeneficiaries: z
       .number({ message: "Please enter a valid number" })
       .min(1, "Max beneficiaries must be at least 1"),
-    budgetAllocated: z
+    budgetAllocatedInKobo: z
       .number({ message: "Please enter a valid number" })
       .min(0, "Budget cannot be negative"),
 
@@ -181,11 +184,11 @@ export const rewardCampaignFormSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.rewardType === "BITEHUB_COINS") {
-      if (!data.rewardValue || data.rewardValue <= 0) {
+      if (!data.rewardValueInKobo || data.rewardValueInKobo <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Reward value is required for BiteHub Coins",
-          path: ["rewardValue"],
+          path: ["rewardValueInKobo"],
         })
       }
     } else if (data.rewardType === "FREE_MEAL") {

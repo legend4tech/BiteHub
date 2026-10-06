@@ -18,7 +18,7 @@ export type MenuCategory =
 export interface OrderItem {
   menuItemId: string
   name: string
-  price: number
+  priceInKobo: number
   quantity: number
 }
 
@@ -34,15 +34,15 @@ export interface Order {
   customerPhone: string
   location: string
   notes?: string | null
-  deliveryFee: number
+  deliveryFeeInKobo: number
   status: OrderStatus
-  serviceFee: number
-  platformCommission: number
-  vendorRevenue: number
-  totalAmount: number
+  serviceFeeInKobo: number
+  platformCommissionInKobo: number
+  vendorRevenueInKobo: number
+  totalAmountInKobo: number
   createdAt: string // ISO string
   updatedAt: string // ISO string
-  paymentMethod?: "monnify"
+  paymentMethod?: "monnify" | "wallet"
   paymentStatus?: "pending" | "paid" | "failed"
   monnifyReference?: string
   vendorPaymentDetails?: {
@@ -51,7 +51,7 @@ export interface Order {
     accountName?: string
     acceptsCashOnDelivery?: boolean
   }
-  isRated?: boolean
+  isFullyRated?: boolean
 }
 
 export interface SubmitFeedbackPayload {
@@ -81,12 +81,12 @@ export interface SystemLandmark {
   name: string
   school: string
   campus: string
-  defaultDeliveryFee: number
+  defaultDeliveryFeeInKobo: number
   subLandmarks?: {
     id: string
     landmarkId: string
     name: string
-    defaultDeliveryFee: number | null
+    defaultDeliveryFeeInKobo: number | null
     isActive: boolean
     createdAt: string
     updatedAt: string

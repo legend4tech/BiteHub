@@ -10,44 +10,40 @@ import * as React from "react"
 import { SUPPORT_EMAIL } from "@/lib/constants"
 import { EMAIL_THEME } from "@/lib/email-theme"
 import { EmailLayout } from "./EmailLayout"
-
+import { formatKoboToNaira as formatPrice } from "@/lib/money"
 interface OrderItem {
   name: string
   quantity: number
-  price: number
+  priceInKobo: number
 }
-
 interface OrderReceiptEmailProps {
   customerName: string
   orderId: string
   vendorName: string
-  totalAmount: number
-  deliveryFee?: number
-  serviceFee?: number
+  totalAmountInKobo: number
+  deliveryFeeInKobo?: number
+  serviceFeeInKobo?: number
   items: OrderItem[]
   trackingUrl: string
+  paymentMethod?: string
+  discountAmountInKobo?: number
 }
-
 export const OrderReceiptEmail = ({
   customerName,
   orderId,
   vendorName,
-  totalAmount,
-  deliveryFee = 0,
-  serviceFee = 0,
+
+  deliveryFeeInKobo = 0,
+  serviceFeeInKobo = 0,
   items = [],
   trackingUrl,
+  paymentMethod = "monnify",
+  discountAmountInKobo = 0,
 }: OrderReceiptEmailProps) => {
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const subtotal = totalAmount - deliveryFee - serviceFee
-
+  const rawSubtotal = items.reduce(
+    (acc, item) => acc + item.priceInKobo * item.quantity,
+    0
+  )
   return (
     <EmailLayout
       preview={`Your BiteHub Receipt for Order ${orderId}`}
@@ -58,56 +54,63 @@ export const OrderReceiptEmail = ({
       <Text style={text}>
         Thank you for ordering on BiteHub. Your payment for order{" "}
         <strong>{orderId}</strong> from <strong>{vendorName}</strong> has been
-        confirmed securely via Monnify.
+        confirmed securely via{" "}
+        {paymentMethod === "wallet" ? "your BiteHub Wallet" : "Monnify"}.
       </Text>
-
       <Section style={detailsSection}>
         <Text style={sectionTitle}>Order Summary</Text>
-
         {items.map((item, index) => (
           <div key={index} style={itemRow}>
             <Text style={itemText}>
               <span style={itemQty}>{item.quantity}x</span> {item.name}
             </Text>
             <Text style={itemPrice}>
-              {formatPrice(item.price * item.quantity)}
+              {formatPrice(item.priceInKobo * item.quantity)}
             </Text>
           </div>
         ))}
-
         <Hr style={summaryDivider} />
-
         <div style={summaryRow}>
-          <Text style={summaryLabel}>Subtotal</Text>
-          <Text style={summaryValue}>{formatPrice(subtotal)}</Text>
+          <Text style={summaryLabel}>Items Subtotal</Text>
+          <Text style={summaryValue}>{formatPrice(rawSubtotal)}</Text>
         </div>
-
-        {deliveryFee > 0 && (
+        {discountAmountInKobo > 0 && (
+          <div style={summaryRow}>
+            <Text style={summaryLabel}>Rewards Discount</Text>
+            <Text style={{ ...summaryValue, color: "#10B981" }}>
+              -{formatPrice(discountAmountInKobo)}
+            </Text>
+          </div>
+        )}
+        {deliveryFeeInKobo > 0 && (
           <div style={summaryRow}>
             <Text style={summaryLabel}>Delivery Fee</Text>
-            <Text style={summaryValue}>{formatPrice(deliveryFee)}</Text>
+            <Text style={summaryValue}>{formatPrice(deliveryFeeInKobo)}</Text>
           </div>
         )}
-
-        {serviceFee > 0 && (
+        {serviceFeeInKobo > 0 && (
           <div style={summaryRow}>
             <Text style={summaryLabel}>Service Fee</Text>
-            <Text style={summaryValue}>{formatPrice(serviceFee)}</Text>
+            <Text style={summaryValue}>{formatPrice(serviceFeeInKobo)}</Text>
           </div>
         )}
-
         <div style={totalRow}>
           <Text style={totalLabel}>Total Paid</Text>
-          <Text style={totalValue}>{formatPrice(totalAmount)}</Text>
+          <Text style={totalValue}>
+            {formatPrice(
+              rawSubtotal +
+                deliveryFeeInKobo +
+                serviceFeeInKobo -
+                discountAmountInKobo
+            )}
+          </Text>
         </div>
       </Section>
-
       <Section style={buttonContainer}>
         <Button href={trackingUrl} style={button}>
           Track Your Order
         </Button>
       </Section>
-
       <Text style={text}>
         If you have any issues with your order, please contact the vendor
         directly from your tracking page or reach out to us at{" "}
@@ -119,9 +122,7 @@ export const OrderReceiptEmail = ({
     </EmailLayout>
   )
 }
-
 export default OrderReceiptEmail
-
 const heading = {
   fontSize: "24px",
   fontWeight: "700",

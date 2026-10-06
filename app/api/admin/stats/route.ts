@@ -61,17 +61,17 @@ export async function GET() {
       getMonnifyWalletBalance(),
       MenuItemModel.distinct("vendorId"),
       PlatformWithdrawal.aggregate([
-        { $group: { _id: null, total: { $sum: "$amount" } } },
+        { $group: { _id: null, total: { $sum: "$amountInKobo" } } },
       ]),
       Wallet.aggregate([
-        { $group: { _id: null, total: { $sum: "$balance" } } },
+        { $group: { _id: null, total: { $sum: "$balanceInKobo" } } },
       ]),
       VendorModel.aggregate([
         {
           $group: {
             _id: null,
-            totalPending: { $sum: "$pendingWalletBalance" },
-            totalDisbursed: { $sum: "$walletTotalDisbursed" },
+            totalPending: { $sum: "$pendingWalletBalanceInKobo" },
+            totalDisbursed: { $sum: "$walletTotalDisbursedInKobo" },
           },
         },
       ]),
@@ -88,24 +88,25 @@ export async function GET() {
       byStatus[entry._id] = entry.count
     }
 
-    // Financials: sum totalAmount (GMV) and platformCommission (Profit) for all PAID orders
+    // Financials: sum totalAmountInKobo (GMV) and platformCommissionInKobo (Profit) for all PAID orders
     const revenueAgg = await OrderModel.aggregate([
       { $match: { paymentStatus: "paid" } },
       {
         $group: {
           _id: null,
-          grossVolume: { $sum: "$totalAmount" },
-          platformProfit: { $sum: "$platformCommission" },
+          grossVolumeInKobo: { $sum: "$totalAmountInKobo" },
+          platformProfitInKobo: { $sum: "$platformCommissionInKobo" },
         },
       },
     ])
-    const grossVolume = revenueAgg[0]?.grossVolume ?? 0
-    const platformProfit = revenueAgg[0]?.platformProfit ?? 0
+    const grossVolumeInKobo = revenueAgg[0]?.grossVolumeInKobo ?? 0
+    const platformProfitInKobo = revenueAgg[0]?.platformProfitInKobo ?? 0
 
     // Financial Health
-    const allTimePlatformProfit = platformProfit
-    const totalWithdrawn = withdrawalAgg[0]?.total ?? 0
-    const remainingProfit = allTimePlatformProfit - totalWithdrawn
+    const allTimePlatformProfitInKobo = platformProfitInKobo
+    const totalWithdrawnInKobo = withdrawalAgg[0]?.total ?? 0
+    const remainingProfitInKobo =
+      allTimePlatformProfitInKobo - totalWithdrawnInKobo
     const totalCustomerWalletLiabilities = walletLiabilitiesAgg[0]?.total ?? 0
 
     const totalPendingVendorWallet = vendorWalletAgg[0]?.totalPending ?? 0
@@ -122,12 +123,12 @@ export async function GET() {
       completedOrders: byStatus[ORDER_STATUS.COMPLETED] ?? 0,
       cancelledOrders: byStatus[ORDER_STATUS.CANCELLED] ?? 0,
       vendorsWithoutMenus,
-      grossVolume,
-      platformProfit,
+      grossVolumeInKobo,
+      platformProfitInKobo,
       monnifyBalance,
-      allTimePlatformProfit,
-      totalWithdrawn,
-      remainingProfit,
+      allTimePlatformProfitInKobo,
+      totalWithdrawnInKobo,
+      remainingProfitInKobo,
       totalCustomerWalletLiabilities,
       totalPendingVendorWallet,
       totalVendorWalletDisbursed,

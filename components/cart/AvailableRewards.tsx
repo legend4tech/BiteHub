@@ -7,20 +7,21 @@ import Link from "next/link"
 import { Switch } from "@/components/ui/switch"
 import { formatPrice } from "@/lib/format"
 import { toast } from "sonner"
+import { toMajorUnit } from "@/lib/money"
 
 interface AvailableRewardsProps {
   cart: {
     items: Array<{
-      menuItem: { id: string; name: string; price: number }
+      menuItem: { id: string; name: string; priceInKobo: number }
     }>
     vendorId: string | null
   }
   customerWallet?: {
     wallet: {
-      promoBalance: number
+      promoBalanceInKobo: number
     }
   } | null
-  applyVoucher: (code: string) => void
+  applyVoucher: (code: string, menuItemId: string) => void
   removeVoucher: () => void
   appliedVoucherCode: string | null
   useBHC: boolean
@@ -40,7 +41,7 @@ export function AvailableRewards({
 }: AvailableRewardsProps) {
   const { data: vouchers, isLoading } = useCustomerVouchers()
 
-  const promoBalance = customerWallet?.wallet?.promoBalance || 0
+  const promoBalance = customerWallet?.wallet?.promoBalanceInKobo || 0
   const hasBHC = promoBalance > 0
 
   // Calculate how much they will actually save
@@ -57,7 +58,9 @@ export function AvailableRewards({
     <div className="mb-6 space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
       {/* BiteHub Coins Toggle */}
       {hasBHC && (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3 shadow-sm">
+        <div
+          className={`flex items-center justify-between rounded-lg border border-border bg-card p-3 shadow-sm transition-opacity ${finalTotalWithoutBHC <= 0 ? "opacity-50 grayscale" : ""}`}
+        >
           <div>
             <div className="flex items-center gap-2">
               <Coins className="size-5 text-yellow-500" />
@@ -65,13 +68,16 @@ export function AvailableRewards({
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               You have{" "}
-              <span className="font-bold text-primary">{promoBalance} BHC</span>{" "}
+              <span className="font-bold text-primary">
+                {toMajorUnit(promoBalance)} BHC
+              </span>{" "}
               available.
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
             <Switch
-              checked={useBHC}
+              disabled={finalTotalWithoutBHC <= 0}
+              checked={useBHC && finalTotalWithoutBHC > 0}
               onCheckedChange={(checked) => {
                 setUseBHC(checked)
                 if (checked) {
@@ -100,7 +106,9 @@ export function AvailableRewards({
               id: string
               code: string
               vendorId: string
+              menuItemId: string
               menuItem?: { name: string }
+              expiresAt: string
             }) => {
               const isApplied = appliedVoucherCode === voucher.code
 
@@ -132,6 +140,14 @@ export function AvailableRewards({
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Code: <span className="font-mono">{voucher.code}</span>
+                        {" • "}
+                        Expires:{" "}
+                        <span className="font-medium text-foreground">
+                          {new Date(voucher.expiresAt).toLocaleDateString(
+                            "en-GB",
+                            { day: "numeric", month: "short", year: "numeric" }
+                          )}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -139,6 +155,7 @@ export function AvailableRewards({
                   <div className="shrink-0">
                     {isApplied ? (
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         className="w-full border-destructive text-destructive hover:bg-destructive/10 sm:w-auto"
@@ -151,11 +168,12 @@ export function AvailableRewards({
                       </Button>
                     ) : isApplicable ? (
                       <Button
+                        type="button"
                         variant="default"
                         size="sm"
                         className="w-full sm:w-auto"
                         onClick={() => {
-                          applyVoucher(voucher.code)
+                          applyVoucher(voucher.code, voucher.menuItemId)
                           toast.success("Voucher applied!")
                         }}
                       >
@@ -168,7 +186,7 @@ export function AvailableRewards({
                         size="sm"
                         className="w-full text-xs sm:w-auto"
                       >
-                        <Link href={`/menu/${voucher.vendorId}`}>
+                        <Link href={`/menu/${voucher.menuItemId}`}>
                           Pick Meal &rarr;
                         </Link>
                       </Button>

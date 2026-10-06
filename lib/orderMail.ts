@@ -44,11 +44,13 @@ export async function sendOrderReceiptEmail(
   customerName: string,
   orderId: string,
   vendorName: string,
-  totalAmount: number,
-  deliveryFee: number,
-  serviceFee: number,
-  items: Array<{ name: string; quantity: number; price: number }>,
-  trackingUrl: string
+  totalAmountInKobo: number,
+  deliveryFeeInKobo: number,
+  serviceFeeInKobo: number,
+  items: Array<{ name: string; quantity: number; priceInKobo: number }>,
+  trackingUrl: string,
+  paymentMethod?: string,
+  discountAmountInKobo?: number
 ) {
   if (!process.env.RESEND_API_KEY) {
     console.warn(
@@ -66,11 +68,13 @@ export async function sendOrderReceiptEmail(
         customerName,
         orderId,
         vendorName,
-        totalAmount,
-        deliveryFee,
-        serviceFee,
+        totalAmountInKobo,
+        deliveryFeeInKobo,
+        serviceFeeInKobo,
         items,
         trackingUrl,
+        paymentMethod,
+        discountAmountInKobo,
       }),
     })
     if (error) {
@@ -89,7 +93,7 @@ export async function sendOrderInitiatedEmail(
   customerName: string,
   orderId: string,
   vendorName: string,
-  totalAmount: number,
+  totalAmountInKobo: number,
   trackingUrl: string
 ) {
   if (!process.env.RESEND_API_KEY) {
@@ -108,7 +112,7 @@ export async function sendOrderInitiatedEmail(
         customerName,
         orderId,
         vendorName,
-        totalAmount,
+        totalAmountInKobo,
         trackingUrl,
       }),
     })

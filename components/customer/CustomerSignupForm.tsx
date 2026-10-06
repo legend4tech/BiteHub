@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, User, ShoppingBag, Star, Gift } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller, Resolver } from "react-hook-form"
+import { useForm, Controller, useWatch, Resolver } from "react-hook-form"
 import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { AuthPanel } from "@/components/shared/AuthPanel"
 import { toast } from "sonner"
@@ -61,9 +61,9 @@ export default function CustomerSignupForm() {
     setStep(1)
   }
 
-  const selectedSchool = form.watch("school")
+  const selectedSchool = useWatch({ control: form.control, name: "school" })
 
-  const passwordValue = form.watch("password")
+  const passwordValue = useWatch({ control: form.control, name: "password" })
 
   const onSubmit = async (values: CustomerSignupFormValues) => {
     if (typeof window !== "undefined" && !navigator.onLine) {
@@ -89,7 +89,7 @@ export default function CustomerSignupForm() {
         )
         router.push(`/customer/login?redirect=${encodeURIComponent(redirect)}`)
       } else {
-        window.location.href = redirect
+        window.location.assign(redirect)
       }
     } catch (error: unknown) {
       const err = error as {

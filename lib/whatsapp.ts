@@ -1,4 +1,5 @@
 import axios from "axios"
+import { toMajorUnit } from "@/lib/money"
 import https from "https"
 
 const httpsAgent = new https.Agent({ family: 4 })
@@ -7,7 +8,7 @@ export async function sendVendorOrderNotification(
   vendorPhone: string,
   customerName: string,
   orderId: string,
-  totalAmount: number
+  totalAmountInKobo: number
 ) {
   try {
     const token = process.env.WHATSAPP_ACCESS_TOKEN
@@ -62,7 +63,7 @@ export async function sendVendorOrderNotification(
               {
                 type: "text",
                 parameter_name: "total_amount",
-                text: `NGN ${(totalAmount || 0).toLocaleString()}`,
+                text: `NGN ${toMajorUnit(totalAmountInKobo || 0).toLocaleString()}`,
               },
             ],
           },

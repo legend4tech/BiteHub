@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import type { Transaction } from "@/types/customer"
+import { toMajorUnit } from "@/lib/money"
 
 export function ExpiringRewardsBanner({ rewards }: { rewards: Transaction[] }) {
   const [open, setOpen] = useState(false)
@@ -19,7 +20,9 @@ export function ExpiringRewardsBanner({ rewards }: { rewards: Transaction[] }) {
 
   // The first item is the nearest expiration due to backend sorting
   const nearest = rewards[0]
-  const nearestAmount = nearest.remainingAmount ?? nearest.amount
+  const nearestAmount = toMajorUnit(
+    nearest.remainingAmountInKobo ?? nearest.amountInKobo
+  )
   const nearestDate = nearest.expiresAt
     ? format(new Date(nearest.expiresAt), "MMM do")
     : "Soon"
@@ -61,7 +64,10 @@ export function ExpiringRewardsBanner({ rewards }: { rewards: Transaction[] }) {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-semibold text-foreground">
-                        {reward.remainingAmount ?? reward.amount} BHC
+                        {toMajorUnit(
+                          reward.remainingAmountInKobo ?? reward.amountInKobo
+                        )}{" "}
+                        BHC
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {reward.expiresAt

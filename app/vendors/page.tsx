@@ -2,7 +2,6 @@ import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { VendorCard } from "@/components/public-vendors/VendorCard"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { FadeIn } from "@/components/FadeIn"
 import { SearchInput } from "@/components/shared/SearchInput"
 import {
@@ -18,7 +17,6 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { getVendors } from "@/lib/services/vendorService"
 import { CampusSelector } from "@/components/shared/CampusSelector"
-
 export const metadata: Metadata = {
   title: "All Vendors",
   description:
@@ -45,7 +43,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 }
-
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function VendorListContent({
   q,
@@ -71,7 +68,6 @@ async function VendorListContent({
     topRated,
     limit: 20,
   })
-
   if (vendors.length === 0) {
     return (
       <div className="col-span-full">
@@ -87,14 +83,12 @@ async function VendorListContent({
       </div>
     )
   }
-
   return (
     <>
       <p className="mb-6 text-sm text-muted-foreground">
         {totalVendors} active kitchen{totalVendors !== 1 ? "s" : ""} ready to
         serve you.
       </p>
-
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {vendors.map((vendor, i) => (
           <FadeIn key={vendor!.id} delay={0.05 * Math.min(i, 20)}>
@@ -105,7 +99,6 @@ async function VendorListContent({
           </FadeIn>
         ))}
       </div>
-
       {vendors.length === 20 && (
         <LoadMoreVendors
           initialPage={1}
@@ -122,7 +115,6 @@ async function VendorListContent({
     </>
   )
 }
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default async function VendorsPage({
   searchParams,
@@ -140,37 +132,15 @@ export default async function VendorsPage({
     typeof resolvedSearchParams.campus === "string"
       ? resolvedSearchParams.campus
       : DEFAULT_CAMPUS_ID
-
   const openNow = resolvedSearchParams.openNow === "true"
   const freeDelivery = resolvedSearchParams.freeDelivery === "true"
   const topRated = resolvedSearchParams.topRated === "true"
-
   const campusLabel = `${getSchoolName(school)} — ${getCampusName(school, campus)}`
-
   // Base URL for toggling filters
-  const buildFilterUrl = (key: string, value: boolean) => {
-    const params = new URLSearchParams()
-    if (q) params.set("q", q)
-    if (school !== DEFAULT_SCHOOL_ID) params.set("school", school)
-    if (campus !== DEFAULT_CAMPUS_ID) params.set("campus", campus)
-
-    // Copy existing filters
-    if (openNow && key !== "openNow") params.set("openNow", "true")
-    if (freeDelivery && key !== "freeDelivery")
-      params.set("freeDelivery", "true")
-    if (topRated && key !== "topRated") params.set("topRated", "true")
-
-    // Toggle the targeted filter
-    if (value) params.set(key, "true")
-
-    const str = params.toString()
-    return str ? `?${str}` : "?"
-  }
 
   return (
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <Navbar />
-
       <div className="flex-1 py-16">
         <div className="mx-auto max-w-7xl px-6">
           <FadeIn delay={0.1}>
@@ -192,7 +162,6 @@ export default async function VendorsPage({
               </div>
             </div>
           </FadeIn>
-
           <SectionErrorBoundary
             title="Couldn't load vendors"
             message="We couldn't reach the server. Check your connection and try again."
@@ -217,7 +186,6 @@ export default async function VendorsPage({
           </SectionErrorBoundary>
         </div>
       </div>
-
       <Footer />
     </main>
   )

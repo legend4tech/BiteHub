@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     const {
       name,
       description,
-      price,
+      priceInKobo,
       category,
       image,
       isAvailable,
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       vendorId,
       name: name.trim(),
       description: description?.trim(),
-      price: Number(price),
+      priceInKobo: Number(priceInKobo),
       category: category.trim(),
       image,
       isAvailable: isAvailable ?? true,

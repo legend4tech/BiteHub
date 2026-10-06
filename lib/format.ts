@@ -1,16 +1,19 @@
+import { toMajorUnit } from "@/lib/money"
+
 /**
  * Consistent price formatter to avoid hydration mismatches.
  * Uses a hardcoded locale (en-NG) to ensure the server and client
  * always render the exact same string.
  */
-export function formatPrice(amount: number): string {
+export function formatPrice(amountInKobo: number): string {
+  const amountInNaira = toMajorUnit(amountInKobo)
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })
-    .format(amount)
+    .format(amountInNaira)
     .replace("NGN", "₦")
 }
 
@@ -24,14 +27,15 @@ export function formatPrice(amount: number): string {
  * maximumFractionDigits entirely, stripping all kobo. Instead we format as a plain
  * number (which fully respects fraction digits) and manually prepend ₦.
  */
-export function formatPriceExact(amount: number): string {
+export function formatPriceExact(amountInKobo: number): string {
   // Whole numbers: no decimal places (e.g. ₦2,000)
   // Decimal numbers: always exactly 2 places (e.g. ₦34.50, ₦1,958.55)
-  const hasKobo = !Number.isInteger(amount)
+  const amountInNaira = toMajorUnit(amountInKobo)
+  const hasKobo = !Number.isInteger(amountInNaira)
   const formatted = new Intl.NumberFormat("en-NG", {
     minimumFractionDigits: hasKobo ? 2 : 0,
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(amountInNaira)
   return `\u20a6${formatted}`
 }
 

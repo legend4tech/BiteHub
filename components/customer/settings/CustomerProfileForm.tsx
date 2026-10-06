@@ -1,5 +1,4 @@
 "use client"
-
 import { useForm, Controller } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { formatFromWhatsapp } from "@/lib/schemas"
@@ -13,12 +12,10 @@ import { ImageUpload } from "@/components/shared/ImageUpload"
 import type { AxiosError } from "axios"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-
 export function CustomerProfileForm() {
-  const { data: profile, isLoading, error } = useCustomerProfile()
+  const { data: profile, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
   const { update } = useSession()
-
   const {
     control,
     handleSubmit,
@@ -36,14 +33,12 @@ export function CustomerProfileForm() {
       phone: "",
     },
   })
-
   const [imageUpload, setImageUpload] = useState<{
     url: string
     publicId: string
     file?: File
   } | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-
   useEffect(() => {
     if (profile?.image) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -53,14 +48,12 @@ export function CustomerProfileForm() {
       })
     }
   }, [profile?.image, profile?.imagePublicId])
-
   useEffect(() => {
     if (error) {
       toast.error("Failed to load profile data")
       console.error(error)
     }
   }, [error])
-
   const onSubmit = async (values: {
     name: string
     username: string
@@ -68,22 +61,18 @@ export function CustomerProfileForm() {
   }) => {
     let finalImageUrl = profile?.image || ""
     let finalPublicId = profile?.imagePublicId || ""
-
     if (imageUpload?.file) {
       setIsUploading(true)
       const formData = new FormData()
       formData.append("file", imageUpload.file)
       formData.append("type", "customer")
-
       try {
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         })
         const uploadData = await uploadRes.json()
-
         if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed")
-
         finalImageUrl = uploadData.imageUrl
         finalPublicId = uploadData.publicId
       } catch (error: unknown) {
@@ -97,7 +86,6 @@ export function CustomerProfileForm() {
       finalImageUrl = ""
       finalPublicId = ""
     }
-
     updateProfile.mutate(
       {
         name: values.name,
@@ -119,7 +107,6 @@ export function CustomerProfileForm() {
       }
     )
   }
-
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -135,7 +122,6 @@ export function CustomerProfileForm() {
             Update your basic profile information.
           </p>
         </div>
-
         <div className="max-w-[200px]">
           <ImageUpload
             type="customer"
@@ -143,7 +129,6 @@ export function CustomerProfileForm() {
             onChange={setImageUpload}
           />
         </div>
-
         <div className="space-y-5">
           <Controller
             name="name"
@@ -165,7 +150,6 @@ export function CustomerProfileForm() {
               </Field>
             )}
           />
-
           <Controller
             name="username"
             control={control}
@@ -210,7 +194,6 @@ export function CustomerProfileForm() {
               </Field>
             )}
           />
-
           <Controller
             name="phone"
             control={control}
@@ -236,7 +219,6 @@ export function CustomerProfileForm() {
           />
         </div>
       </section>
-
       <div className="flex justify-end pt-4">
         <Button
           type="submit"

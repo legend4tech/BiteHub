@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import VendorModel from "@/models/Vendor"
-import MenuItemModel from "@/models/MenuItem"
 import VendorUserModel from "@/models/VendorUser"
 import { syncVendorMenuScores } from "@/lib/services/scoreService"
 import mongoose from "mongoose"
 import { auth } from "@/auth"
 import { adminUpdateVendorSchema } from "@/lib/schemas/admin"
-
 // PATCH — toggle vendor isActive or update fields
 export async function PATCH(
   request: Request,
@@ -23,14 +21,11 @@ export async function PATCH(
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     await dbConnect()
     const { id } = await params
-
     if (!mongoose.isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid vendor ID" }, { status: 400 })
     }
-
     const body = await request.json()
     const parsedBody = adminUpdateVendorSchema.safeParse(body)
     if (!parsedBody.success) {
@@ -39,10 +34,8 @@ export async function PATCH(
         { status: 400 }
       )
     }
-
     const { isActive, accountIsActive, isFeatured, isManagedByBiteHub } =
       parsedBody.data
-
     // Toggle vendor storefront
     if (isActive !== undefined) {
       if (isActive) {
@@ -63,7 +56,6 @@ export async function PATCH(
       }
       await VendorModel.findByIdAndUpdate(id, { isActive })
     }
-
     // Toggle vendor login account independently
     if (accountIsActive !== undefined) {
       await VendorUserModel.findOneAndUpdate(
@@ -71,18 +63,15 @@ export async function PATCH(
         { isActive: accountIsActive }
       )
     }
-
     // Toggle featured status
     if (isFeatured !== undefined) {
       await VendorModel.findByIdAndUpdate(id, { isFeatured })
       await syncVendorMenuScores(id)
     }
-
     // Toggle managed status
     if (isManagedByBiteHub !== undefined) {
       await VendorModel.findByIdAndUpdate(id, { isManagedByBiteHub })
     }
-
     return NextResponse.json({ message: "Updated successfully" })
   } catch (error) {
     console.error("[admin/vendors PATCH]", error)

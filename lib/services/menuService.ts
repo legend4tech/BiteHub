@@ -16,8 +16,8 @@ import type { SortOrder } from "mongoose"
 import { escapeRegex } from "@/lib/utils"
 
 // Tag logic — single definition for the entire codebase
-export function getItemTag(price: number): string | null {
-  return price > 1000 ? "🔥 Hot" : null
+export function getItemTag(priceInKobo: number): string | null {
+  return priceInKobo > 100000 ? "🔥 Hot" : null
 }
 
 export interface GetMenusOptions {
@@ -227,8 +227,8 @@ export async function getMenus(options: GetMenusOptions = {}) {
     createdAt: -1,
     _id: -1,
   }
-  if (sortBy === "price_asc") sortQuery = { price: 1, _id: -1 }
-  else if (sortBy === "price_desc") sortQuery = { price: -1, _id: -1 }
+  if (sortBy === "price_asc") sortQuery = { priceInKobo: 1, _id: -1 }
+  else if (sortBy === "price_desc") sortQuery = { priceInKobo: -1, _id: -1 }
   else if (sortBy === "name_asc") sortQuery = { name: 1, _id: -1 }
 
   let items: LeanMenuItem[] = []
@@ -329,7 +329,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
         vendorWhatsappNumber:
           vendorWhatsappMap.get(item.vendorId.toString()) || "",
         vendorPrepTime: vendorData?.prepTime || "",
-        tag: getItemTag(item.price),
+        tag: getItemTag(item.priceInKobo),
         isAvailableNow: base.isAvailableNow,
       }
     })
@@ -401,7 +401,7 @@ export async function getMenuItemById(id: string) {
     vendorIsActive: vendor.isActive,
     vendorWhatsappNumber: vendor.whatsappNumber || "",
     vendorPrepTime: vendor.prepTime || "",
-    tag: getItemTag(itemDoc.price),
+    tag: getItemTag(itemDoc.priceInKobo),
   }
 
   // 4. Fetch related items (same vendor, available, not this item, limit 4)
@@ -424,7 +424,7 @@ export async function getMenuItemById(id: string) {
         vendorSlug: vendor.slug,
         vendorWhatsappNumber: vendor.whatsappNumber || "",
         vendorPrepTime: vendor.prepTime || "",
-        tag: getItemTag(doc.price),
+        tag: getItemTag(doc.priceInKobo),
       }
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)

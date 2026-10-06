@@ -3,10 +3,9 @@ import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
-import { ORDER_STATUS } from "@/lib/constants"
 import { executeBulkDisbursement } from "@/lib/monnify"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
-
+import { toMajorUnit } from "@/lib/money"
 export async function POST(
   request: Request,
   props: { params: Promise<{ id: string }> }
@@ -22,7 +21,6 @@ export async function POST(
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     // Rate-limit by admin user ID — prevents rapid double-payout triggering
     if (isRateLimitingEnabled) {
       const { success } = await strictRateLimiter.limit(
@@ -35,18 +33,14 @@ export async function POST(
         )
       }
     }
-
     await dbConnect()
-
     const vendorId = params.id
-
     // Atomically find and lock the vendor
     const vendor = await Vendor.findOneAndUpdate(
       { _id: vendorId, isDisbursing: { $ne: true } },
       { $set: { isDisbursing: true } },
       { new: true }
     )
-
     if (!vendor) {
       // Vendor either doesn't exist or is currently being disbursed
       const existingVendor = await Vendor.findById(vendorId)
@@ -59,8 +53,10 @@ export async function POST(
         ) // 423 Locked
       }
     }
-
-    if (!vendor.pendingWalletBalance || vendor.pendingWalletBalance <= 0) {
+    if (
+      !vendor.pendingWalletBalanceInKobo ||
+      vendor.pendingWalletBalanceInKobo <= 0
+    ) {
       // Unlock before returning error
       await Vendor.findByIdAndUpdate(vendor._id, {
         $set: { isDisbursing: false },
@@ -70,7 +66,6 @@ export async function POST(
         { status: 400 }
       )
     }
-
     if (!vendor.monnifyAccountNumber || !vendor.monnifyBankCode) {
       // Unlock before returning error
       await Vendor.findByIdAndUpdate(vendor._id, {
@@ -81,10 +76,8 @@ export async function POST(
         { status: 400 }
       )
     }
-
     const batchReference = `retry-payout-${vendor._id}-${Date.now()}`
-    const amountPaid = vendor.pendingWalletBalance
-
+    const amountPaidInKobo = vendor.pendingWalletBalanceInKobo
     // Execute Bulk Disbursement via Monnify
     const bulkResult = await executeBulkDisbursement({
       batchReference,
@@ -92,7 +85,7 @@ export async function POST(
       narration: `Manual wallet payout retry for ${vendor.name}`,
       transactions: [
         {
-          amount: amountPaid,
+          amount: toMajorUnit(amountPaidInKobo),
           reference: `payout-${vendor._id}-${Date.now()}`,
           narration: `BiteHub Wallet Payout - ${vendor.name}`,
           bankCode: vendor.monnifyBankCode,
@@ -100,16 +93,14 @@ export async function POST(
         },
       ],
     })
-
     // If API call didn't throw, we assume success. Update local DB.
     await Vendor.findByIdAndUpdate(vendor._id, {
       $set: { isDisbursing: false },
       $inc: {
-        walletTotalDisbursed: amountPaid,
-        pendingWalletBalance: -amountPaid,
+        walletTotalDisbursedInKobo: amountPaidInKobo,
+        pendingWalletBalanceInKobo: -amountPaidInKobo,
       },
     })
-
     // Mark the corresponding wallet orders as disbursed
     await Order.updateMany(
       {
@@ -120,14 +111,12 @@ export async function POST(
       },
       { $set: { isDisbursed: true } }
     )
-
     return NextResponse.json({
       message: "Payout retry successful",
       bulkResult,
     })
   } catch (error) {
     console.error(`[POST /api/admin/vendors/${params.id}/retry-payout]`, error)
-
     // Attempt to unlock on failure
     try {
       await Vendor.findByIdAndUpdate(params.id, {
@@ -139,7 +128,6 @@ export async function POST(
         e
       )
     }
-
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Internal Server Error",

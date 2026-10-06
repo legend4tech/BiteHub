@@ -1,8 +1,6 @@
 "use client"
-
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,8 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { z } from "zod"
-import { useForm, Controller, useWatch } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { MENU_CATEGORIES, VENDOR_CATEGORIES } from "@/lib/constants"
@@ -28,10 +25,8 @@ import { vendorCreationSchema } from "@/lib/schemas"
 import type { VendorCreationValues } from "@/lib/schemas"
 import { VendorManagerAccountFields } from "./VendorManagerAccountFields"
 import { VendorManagerLocationFields } from "./VendorManagerLocationFields"
-
 export function VendorManagerCreationForm() {
   const [submitting, setSubmitting] = useState(false)
-
   const form = useForm<VendorCreationValues>({
     resolver: zodResolver(vendorCreationSchema as never),
     defaultValues: {
@@ -48,38 +43,31 @@ export function VendorManagerCreationForm() {
     },
     mode: "onChange",
   })
-
   const addVendorMutation = useAdminAddVendor()
-
   const onSubmit = async (values: VendorCreationValues) => {
     setSubmitting(true)
     try {
       let imageToSave = values.image
         ? { url: values.image.url, publicId: values.image.publicId }
         : undefined
-
       if (values.image?.file) {
         const formData = new FormData()
         formData.append("file", values.image.file)
         formData.append("type", "vendor")
-
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         })
-
         if (!uploadRes.ok) {
           const err = await uploadRes.json()
           throw new Error(err.error || "Image upload failed")
         }
-
         const uploadData = await uploadRes.json()
         imageToSave = {
           url: uploadData.imageUrl,
           publicId: uploadData.publicId,
         }
       }
-
       await addVendorMutation.mutateAsync({ ...values, image: imageToSave })
       toast.success(`Vendor "${values.name}" created successfully!`)
       form.reset()
@@ -94,9 +82,7 @@ export function VendorManagerCreationForm() {
       setSubmitting(false)
     }
   }
-
   const categories = MENU_CATEGORIES.filter((c) => c.value !== "all")
-
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -116,7 +102,6 @@ export function VendorManagerCreationForm() {
             </Field>
           )}
         />
-
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Controller
             name="whatsappNumber"
@@ -137,7 +122,6 @@ export function VendorManagerCreationForm() {
               </Field>
             )}
           />
-
           <Controller
             name="category"
             control={form.control}
@@ -171,7 +155,6 @@ export function VendorManagerCreationForm() {
             )}
           />
         </div>
-
         <Controller
           name="description"
           control={form.control}
@@ -188,7 +171,6 @@ export function VendorManagerCreationForm() {
             </Field>
           )}
         />
-
         <div className="grid grid-cols-1 gap-4">
           <Controller
             name="prepTime"
@@ -232,9 +214,7 @@ export function VendorManagerCreationForm() {
             )}
           />
         </div>
-
         <VendorManagerLocationFields control={form.control} />
-
         <Controller
           name="tags"
           control={form.control}
@@ -269,9 +249,7 @@ export function VendorManagerCreationForm() {
             </Field>
           )}
         />
-
         <VendorManagerAccountFields control={form.control} />
-
         {/* Profile image */}
         <div className="border-t border-border pt-6">
           <Controller
@@ -292,7 +270,6 @@ export function VendorManagerCreationForm() {
             )}
           />
         </div>
-
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="outline" className="flex-1" asChild>
             <Link href="/admin">Cancel</Link>

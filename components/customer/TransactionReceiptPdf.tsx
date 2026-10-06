@@ -171,7 +171,7 @@ export const TransactionReceiptPdf = ({ transaction, customerName }: Props) => {
     transaction.type.includes("deposit") || transaction.type === "reward"
 
   // Replace weird Naira symbol with NGN in PDF to avoid font rendering issues
-  const rawPriceStr = formatPriceExact(transaction.amount)
+  const rawPriceStr = formatPriceExact(transaction.amountInKobo)
   const safePriceStr = rawPriceStr.replace("₦", "NGN ")
 
   return (
@@ -190,6 +190,7 @@ export const TransactionReceiptPdf = ({ transaction, customerName }: Props) => {
 
         <View style={styles.header}>
           <View style={styles.brandContainer}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src="/apple-touch-icon.png" style={styles.logoImage} />
             <Text style={styles.logoText}>
               Bite<Text style={styles.logoHighlight}>Hub</Text>

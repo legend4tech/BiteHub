@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic"
  *  - pending: orders currently pending (any date)
  *  - inProgress: confirmed + preparing + ready (any date)
  *  - totalCompleted: all-time completed orders
- *  - totalRevenue: sum of totalAmount for all completed orders
+ *  - totalRevenue: sum of totalAmountInKobo for all completed orders
  */
 export async function GET() {
   try {
@@ -48,7 +48,7 @@ export async function GET() {
     // Check if the vendor has payment details set up
     const vendor = await Vendor.findById(vendorId)
       .select(
-        "paymentDetails slug monnifySubAccountCode monnifyTotalDisbursed monnifyAccountNumber pendingWalletBalance walletTotalDisbursed"
+        "paymentDetails slug monnifySubAccountCode monnifyTotalDisbursedInKobo monnifyAccountNumber pendingWalletBalanceInKobo walletTotalDisbursedInKobo"
       )
       .lean()
     const hasPaymentDetails = !!(
@@ -126,21 +126,21 @@ export async function GET() {
                   $cond: [
                     {
                       $and: [
-                        { $ne: ["$vendorRevenue", null] },
-                        { $gt: ["$vendorRevenue", 0] },
+                        { $ne: ["$vendorRevenueInKobo", null] },
+                        { $gt: ["$vendorRevenueInKobo", 0] },
                       ],
                     },
-                    "$vendorRevenue",
+                    "$vendorRevenueInKobo",
                     {
                       $subtract: [
-                        { $ifNull: ["$totalAmount", 0] },
+                        { $ifNull: ["$totalAmountInKobo", 0] },
                         {
                           $add: [
-                            { $ifNull: ["$serviceFee", 0] },
+                            { $ifNull: ["$serviceFeeInKobo", 0] },
                             {
                               $ceil: {
                                 $multiply: [
-                                  { $ifNull: ["$totalAmount", 0] },
+                                  { $ifNull: ["$totalAmountInKobo", 0] },
                                   0.05,
                                 ],
                               },
@@ -169,21 +169,21 @@ export async function GET() {
                   $cond: [
                     {
                       $and: [
-                        { $ne: ["$vendorRevenue", null] },
-                        { $gt: ["$vendorRevenue", 0] },
+                        { $ne: ["$vendorRevenueInKobo", null] },
+                        { $gt: ["$vendorRevenueInKobo", 0] },
                       ],
                     },
-                    "$vendorRevenue",
+                    "$vendorRevenueInKobo",
                     {
                       $subtract: [
-                        { $ifNull: ["$totalAmount", 0] },
+                        { $ifNull: ["$totalAmountInKobo", 0] },
                         {
                           $add: [
-                            { $ifNull: ["$serviceFee", 0] },
+                            { $ifNull: ["$serviceFeeInKobo", 0] },
                             {
                               $ceil: {
                                 $multiply: [
-                                  { $ifNull: ["$totalAmount", 0] },
+                                  { $ifNull: ["$totalAmountInKobo", 0] },
                                   0.05,
                                 ],
                               },
@@ -212,18 +212,18 @@ export async function GET() {
       monnifyRevenue: 0,
     }
 
-    const monnifyDisbursed = vendor?.monnifyTotalDisbursed || 0
-    const walletTotalDisbursed = vendor?.walletTotalDisbursed || 0
+    const monnifyDisbursed = vendor?.monnifyTotalDisbursedInKobo || 0
+    const walletTotalDisbursedInKobo = vendor?.walletTotalDisbursedInKobo || 0
 
     // Calculate pending amounts using lifetime totals
     const pendingMonnify = Math.max(
       0,
       (finalStats.monnifyRevenue || 0) - monnifyDisbursed
     )
-    const pendingWallet = vendor?.pendingWalletBalance || 0
+    const pendingWallet = vendor?.pendingWalletBalanceInKobo || 0
 
     // Combine them to maintain existing UI seamlessness
-    const totalDisbursed = monnifyDisbursed + walletTotalDisbursed
+    const totalDisbursed = monnifyDisbursed + walletTotalDisbursedInKobo
     const totalPending = pendingMonnify + pendingWallet
 
     // Check if the vendor has Monnify connected

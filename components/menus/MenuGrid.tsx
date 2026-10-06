@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { MenuItemGrid } from "@/components/menus/MenuItemGrid"
 import { CartSummary } from "@/components/cart/CartSummary"
@@ -9,17 +8,14 @@ import { useCart } from "@/hooks/useCart"
 import type { MenuItem } from "@/types/vendor"
 import { FadeIn } from "@/components/FadeIn"
 import Image from "next/image"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTransition } from "react"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { EmptyState } from "@/components/shared/EmptyState"
-
 interface MenuGridProps {
   initialItems: MenuItem[]
   activeCategory: string
 }
-
 export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
   const [orderFormOpen, setOrderFormOpen] = useState(false)
   const [conflictItem, setConflictItem] = useState<MenuItem | null>(null)
@@ -27,18 +23,14 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-
   // initialItems are already filtered by the server based on the category!
   const filtered = initialItems
-
   const handleDifferentVendor = (item: MenuItem) => setConflictItem(item)
-
   const handleClearAndAdd = () => {
     if (!conflictItem) return
     clearAndAdd(conflictItem)
     setConflictItem(null)
   }
-
   return (
     <>
       <FadeIn delay={0.2}>
@@ -51,14 +43,12 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
               params.set("category", cat.value)
             }
             const href = `?${params.toString()}`
-
             const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
               e.preventDefault()
               startTransition(() => {
                 router.push(href)
               })
             }
-
             return (
               <a
                 key={cat.value}
@@ -85,7 +75,6 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
           })}
         </div>
       </FadeIn>
-
       {/* Grid */}
       {isPending ? (
         <div className="py-8">
@@ -103,13 +92,10 @@ export function MenuGrid({ initialItems, activeCategory }: MenuGridProps) {
           onDifferentVendor={handleDifferentVendor}
         />
       )}
-
       {/* Floating cart */}
       <CartSummary onCheckout={() => setOrderFormOpen(true)} />
-
       {/* Cart Sheet */}
       <CartSheet open={orderFormOpen} onClose={() => setOrderFormOpen(false)} />
-
       {/* Cross-vendor conflict dialog */}
       {conflictItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">

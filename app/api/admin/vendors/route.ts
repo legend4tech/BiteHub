@@ -7,9 +7,8 @@ import MenuItemModel from "@/models/MenuItem"
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth"
 import { DEFAULT_SCHOOL_ID, DEFAULT_CAMPUS_ID } from "@/lib/config/campus"
-import { strongPasswordSchema, formatToWhatsapp } from "@/lib/schemas"
+import { formatToWhatsapp } from "@/lib/schemas"
 import { adminCreateVendorApiSchema } from "@/lib/schemas/admin"
-
 // GET — all vendors for admin (no isActive filter)
 export async function GET() {
   try {
@@ -22,19 +21,14 @@ export async function GET() {
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     await dbConnect()
-
     const vendors = await VendorModel.find({}).sort({ createdAt: -1 }).lean()
-
     // Fetch corresponding VendorUser accounts
     const vendorIds = vendors.map((v) => v._id)
     const users = await VendorUserModel.find({ vendorId: { $in: vendorIds } })
       .select("vendorId email isActive lastLoginAt createdAt")
       .lean()
-
     const userMap = new Map(users.map((u) => [u.vendorId.toString(), u]))
-
     // Fetch AdminUsers for onboardedBy tracking
     const adminUserIds = vendors
       .map((v) => v.onboardedBy)
@@ -43,14 +37,12 @@ export async function GET() {
       .select("_id name")
       .lean()
     const adminMap = new Map(adminUsers.map((a) => [a._id.toString(), a.name]))
-
     // Fetch MenuItem counts per vendor
     const menuCounts = await MenuItemModel.aggregate([
       { $match: { vendorId: { $in: vendorIds } } },
       { $group: { _id: "$vendorId", count: { $sum: 1 } } },
     ])
     const menuMap = new Map(menuCounts.map((m) => [m._id.toString(), m.count]))
-
     const result = vendors.map((v) => {
       const id = String(v._id)
       const user = userMap.get(id)
@@ -58,7 +50,6 @@ export async function GET() {
         ? adminMap.get(v.onboardedBy.toString())
         : undefined
       const hasMenu = (menuMap.get(id) || 0) > 0
-
       return {
         id,
         name: v.name,
@@ -74,7 +65,7 @@ export async function GET() {
         hasMenu,
         image: v.image,
         isManagedByBiteHub: v.isManagedByBiteHub || false,
-        pendingWalletBalance: v.pendingWalletBalance || 0,
+        pendingWalletBalanceInKobo: v.pendingWalletBalanceInKobo || 0,
         monnifyBankCode: v.monnifyBankCode,
         monnifyAccountNumber: v.monnifyAccountNumber,
         createdAt: (v as { createdAt: string }).createdAt,
@@ -90,7 +81,6 @@ export async function GET() {
         onboardedByName,
       }
     })
-
     return NextResponse.json(result)
   } catch (error) {
     console.error("[admin/vendors GET]", error)
@@ -100,7 +90,6 @@ export async function GET() {
     )
   }
 }
-
 // POST — create vendor profile + login account atomically
 export async function POST(request: Request) {
   try {
@@ -113,10 +102,8 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     await dbConnect()
     const body = await request.json()
-
     const parsedBody = adminCreateVendorApiSchema.safeParse(body)
     if (!parsedBody.success) {
       return NextResponse.json(
@@ -124,7 +111,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
     const {
       name,
       whatsappNumber,
@@ -139,7 +125,6 @@ export async function POST(request: Request) {
       image,
       isManagedByBiteHub,
     } = parsedBody.data
-
     // Uniqueness checks
     const existingEmail = await VendorUserModel.findOne({
       email: email.toLowerCase().trim(),
@@ -150,7 +135,6 @@ export async function POST(request: Request) {
         { status: 409 }
       )
     }
-
     const slug = name
       .trim()
       .toLowerCase()
@@ -158,7 +142,6 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9-]/g, "")
     const existingSlug = await VendorModel.findOne({ slug })
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug
-
     // Create vendor profile
     const vendor = await VendorModel.create({
       name: name.trim(),
@@ -175,7 +158,6 @@ export async function POST(request: Request) {
       onboardedBy: session.user.id,
       isManagedByBiteHub: isManagedByBiteHub || false,
     })
-
     // Hash password and create login account
     const passwordHash = await bcrypt.hash(password, 12)
     const vendorEmail = email.toLowerCase().trim()
@@ -186,11 +168,9 @@ export async function POST(request: Request) {
       role: "vendor",
       isActive: true,
     })
-
     // Send welcome email in the background
     const { sendVendorWelcomeEmail } = await import("@/lib/mail")
     void sendVendorWelcomeEmail(vendorEmail, vendor.name, password)
-
     return NextResponse.json(
       {
         message: "Vendor created successfully",

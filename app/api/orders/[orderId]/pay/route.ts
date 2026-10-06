@@ -5,6 +5,7 @@ import Vendor from "@/models/Vendor"
 import { initMonnifyTransaction } from "@/lib/monnify"
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { toMajorUnit } from "@/lib/money"
 
 export async function POST(
   request: Request,
@@ -56,7 +57,7 @@ export async function POST(
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"
     const redirectUrl = `${appUrl}/order/${order.orderId}`
-    const vendorSplitAmount = Math.round(order.vendorRevenue * 100) / 100
+    const vendorSplitAmount = toMajorUnit(order.vendorRevenueInKobo)
 
     // Generate a fresh payment reference to avoid "Duplicate payment reference" from Monnify
     const newPaymentReference = `BH-PAY-${order.orderId}-${Date.now()}`
@@ -66,7 +67,7 @@ export async function POST(
 
     try {
       const monnifyInit = await initMonnifyTransaction({
-        amount: order.totalAmount,
+        amount: toMajorUnit(order.totalAmountInKobo),
         paymentReference: newPaymentReference,
         customerName: order.customerName,
         customerEmail: order.customerEmail || "",

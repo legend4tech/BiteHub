@@ -1,10 +1,8 @@
 "use client"
-
 import { useInfiniteQuery } from "@tanstack/react-query"
 import apiClient from "@/lib/axios"
-import type { Vendor } from "@/types/vendor"
+import type {} from "@/types/vendor"
 import type { VendorWithMenu } from "@/types/vendor"
-
 interface UseVendorsOptions {
   q?: string
   school?: string
@@ -13,7 +11,6 @@ interface UseVendorsOptions {
   initialPage?: number
   enabled?: boolean
 }
-
 export function useVendors(options?: UseVendorsOptions) {
   const {
     q = "",
@@ -23,7 +20,6 @@ export function useVendors(options?: UseVendorsOptions) {
     initialPage = 1,
     enabled = true,
   } = options || {}
-
   return useInfiniteQuery({
     queryKey: ["vendors", q, school, campus],
     queryFn: async ({ pageParam = initialPage }) => {

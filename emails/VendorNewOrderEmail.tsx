@@ -6,7 +6,7 @@ import { EmailLayout } from "./EmailLayout"
 interface OrderItem {
   name: string
   quantity: number
-  price: number
+  priceInKobo: number
 }
 
 interface VendorNewOrderEmailProps {
@@ -16,26 +16,16 @@ interface VendorNewOrderEmailProps {
   customerPhone: string
   deliveryLocation: string
   items: OrderItem[]
-  deliveryFee: number
-  serviceFee: number
-  platformCommission: number
-  totalAmount: number
-  vendorRevenue: number
+  deliveryFeeInKobo: number
+  serviceFeeInKobo: number
+  platformCommissionInKobo: number
+  totalAmountInKobo: number
+  vendorRevenueInKobo: number
   notes?: string
   dashboardUrl: string
 }
 
-// Inline exact formatter — no NGN CLDR stripping of kobo
-const fmt = (n: number) => {
-  const hasKobo = !Number.isInteger(n)
-  return (
-    "\u20a6" +
-    new Intl.NumberFormat("en-NG", {
-      minimumFractionDigits: hasKobo ? 2 : 0,
-      maximumFractionDigits: 2,
-    }).format(n)
-  )
-}
+import { formatKoboToNaira } from "@/lib/money"
 
 export const VendorNewOrderEmail = ({
   vendorName,
@@ -44,17 +34,20 @@ export const VendorNewOrderEmail = ({
   customerPhone,
   deliveryLocation,
   items = [],
-  deliveryFee = 0,
-  platformCommission = 0,
-  vendorRevenue,
+  deliveryFeeInKobo = 0,
+  platformCommissionInKobo = 0,
+  vendorRevenueInKobo,
   notes,
   dashboardUrl,
 }: VendorNewOrderEmailProps) => {
-  const itemsSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const itemsSubtotal = items.reduce(
+    (s, i) => s + i.priceInKobo * i.quantity,
+    0
+  )
 
   return (
     <EmailLayout
-      preview={`New order ${orderId} from ${customerName} — ${fmt(vendorRevenue)} earnings`}
+      preview={`New order ${orderId} from ${customerName} — ${formatKoboToNaira(vendorRevenueInKobo)} earnings`}
       subheader="New Order Alert"
     >
       <Heading style={heading}>You have a new order!</Heading>
@@ -94,7 +87,9 @@ export const VendorNewOrderEmail = ({
             <Text style={itemText}>
               <span style={itemQty}>{item.quantity}x</span> {item.name}
             </Text>
-            <Text style={itemPrice}>{fmt(item.price * item.quantity)}</Text>
+            <Text style={itemPrice}>
+              {formatKoboToNaira(item.priceInKobo * item.quantity)}
+            </Text>
           </div>
         ))}
 
@@ -102,25 +97,31 @@ export const VendorNewOrderEmail = ({
 
         <div style={summaryRow}>
           <Text style={summaryLabel}>Items subtotal</Text>
-          <Text style={summaryValue}>{fmt(itemsSubtotal)}</Text>
+          <Text style={summaryValue}>{formatKoboToNaira(itemsSubtotal)}</Text>
         </div>
-        {deliveryFee > 0 && (
+        {deliveryFeeInKobo > 0 && (
           <div style={summaryRow}>
             <Text style={summaryLabel}>Delivery Fee</Text>
-            <Text style={summaryValue}>{fmt(deliveryFee)}</Text>
+            <Text style={summaryValue}>
+              {formatKoboToNaira(deliveryFeeInKobo)}
+            </Text>
           </div>
         )}
-        {platformCommission > 0 && (
+        {platformCommissionInKobo > 0 && (
           <div style={summaryRow}>
             <Text style={summaryLabel}>Platform Commission</Text>
-            <Text style={summaryValue}>{fmt(platformCommission)}</Text>
+            <Text style={summaryValue}>
+              {formatKoboToNaira(platformCommissionInKobo)}
+            </Text>
           </div>
         )}
 
         {/* Earnings highlight */}
         <div style={earningsRow}>
           <Text style={earningsLabel}>Your earnings</Text>
-          <Text style={earningsValue}>{fmt(vendorRevenue)}</Text>
+          <Text style={earningsValue}>
+            {formatKoboToNaira(vendorRevenueInKobo)}
+          </Text>
         </div>
       </Section>
 

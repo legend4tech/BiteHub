@@ -4,7 +4,7 @@ export interface IMenuItem extends Document {
   vendorId: Types.ObjectId
   name: string
   description?: string
-  price: number
+  priceInKobo: number
   category: string
   image?: {
     url: string
@@ -35,7 +35,14 @@ const MenuItemSchema: Schema = new Schema(
     },
     name: { type: String, required: true },
     description: { type: String },
-    price: { type: Number, required: true },
+    priceInKobo: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     category: { type: String, required: true },
     image: {
       url: { type: String },

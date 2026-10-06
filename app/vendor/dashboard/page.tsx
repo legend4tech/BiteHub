@@ -283,8 +283,8 @@ export default function VendorDashboardPage() {
             pending={stats?.pending ?? 0}
             inProgress={stats?.inProgress ?? 0}
             totalCompleted={stats?.totalCompleted ?? 0}
-            monnifyDisbursed={stats?.monnifyDisbursed ?? 0}
-            monnifyPending={stats?.monnifyPending ?? 0}
+            monnifyDisbursed={stats?.monnifyDisbursedInKobo ?? 0}
+            monnifyPending={stats?.monnifyPendingInKobo ?? 0}
           />
         )}
 

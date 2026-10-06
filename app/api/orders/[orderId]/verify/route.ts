@@ -61,7 +61,7 @@ export async function POST(
 
       // ── Overwrite estimates with Monnify's actual ground-truth figures ──────────
       if (typeof monnifyData.fee === "number") {
-        updatedOrder.serviceFee = monnifyData.fee
+        updatedOrder.serviceFeeInKobo = Math.round(monnifyData.fee * 100)
       }
 
       if (
@@ -72,7 +72,9 @@ export async function POST(
         // Usually, splitAmount is present in the config sent.
         const vendorSplit = monnifyData.incomeSplitConfig[0]
         if (typeof vendorSplit.splitAmount === "number") {
-          updatedOrder.vendorRevenue = vendorSplit.splitAmount
+          updatedOrder.vendorRevenueInKobo = Math.round(
+            vendorSplit.splitAmount * 100
+          )
         }
       }
 
@@ -111,14 +113,18 @@ export async function POST(
           updatedOrder.customerName,
           updatedOrder.orderId,
           updatedOrder.vendorName,
-          updatedOrder.totalAmount,
-          updatedOrder.deliveryFee || 0,
-          updatedOrder.serviceFee || 0,
+          updatedOrder.totalAmountInKobo,
+          updatedOrder.deliveryFeeInKobo || 0,
+          updatedOrder.serviceFeeInKobo || 0,
           updatedOrder.items.map(
-            (item: { name: string; quantity: number; price: number }) => ({
+            (item: {
+              name: string
+              quantity: number
+              priceInKobo: number
+            }) => ({
               name: item.name,
               quantity: item.quantity,
-              price: item.price,
+              priceInKobo: item.priceInKobo,
             })
           ),
           trackingUrl
@@ -133,7 +139,7 @@ export async function POST(
           updatedOrder.vendorWhatsappNumber,
           updatedOrder.customerName,
           updatedOrder.orderId,
-          updatedOrder.vendorRevenue
+          updatedOrder.vendorRevenueInKobo
         ).catch((e) =>
           console.error("Failed to send WhatsApp from verify endpoint:", e)
         )
@@ -149,17 +155,21 @@ export async function POST(
           updatedOrder.customerPhone,
           updatedOrder.location,
           updatedOrder.items.map(
-            (item: { name: string; quantity: number; price: number }) => ({
+            (item: {
+              name: string
+              quantity: number
+              priceInKobo: number
+            }) => ({
               name: item.name,
               quantity: item.quantity,
-              price: item.price,
+              priceInKobo: item.priceInKobo,
             })
           ),
-          updatedOrder.deliveryFee || 0,
-          updatedOrder.serviceFee || 0,
-          updatedOrder.totalAmount,
-          updatedOrder.vendorRevenue,
-          updatedOrder.platformCommission || 0,
+          updatedOrder.deliveryFeeInKobo || 0,
+          updatedOrder.serviceFeeInKobo || 0,
+          updatedOrder.totalAmountInKobo,
+          updatedOrder.vendorRevenueInKobo,
+          updatedOrder.platformCommissionInKobo || 0,
           updatedOrder.notes || undefined
         ).catch((e) =>
           console.error("Failed to send vendor order email from verify:", e)

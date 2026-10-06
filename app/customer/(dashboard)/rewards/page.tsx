@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 
 import mongoose from "mongoose"
 import dbConnect from "@/lib/db"
+import { toMajorUnit } from "@/lib/money"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -33,7 +34,7 @@ export default async function CustomerRewardsPage() {
   const { wallet, expiringRewards } = await getCustomerWalletData(
     session.user.id
   )
-  const availableCoins = wallet?.promoBalance || 0
+  const availableCoins = toMajorUnit(wallet?.promoBalanceInKobo || 0)
 
   await dbConnect()
   const WalletTransaction = (await import("@/models/WalletTransaction")).default
@@ -46,10 +47,10 @@ export default async function CustomerRewardsPage() {
         direction: "credit",
       },
     },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
+    { $group: { _id: null, total: { $sum: "$amountInKobo" } } },
   ])
 
-  const lifetimeEarned = earnedAgg[0]?.total || 0
+  const lifetimeEarned = toMajorUnit(earnedAgg[0]?.total || 0)
   const lifetimeSpent = Math.max(0, lifetimeEarned - availableCoins)
 
   const rewardTransactionsRaw = await WalletTransaction.find({
@@ -265,7 +266,7 @@ export default async function CustomerRewardsPage() {
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {tx.amount} BHC
+                      {toMajorUnit(tx.amountInKobo)} BHC
                     </p>
                     <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
                       REWARD

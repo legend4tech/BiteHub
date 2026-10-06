@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import mongoose from "mongoose"
+import { toMajorUnit } from "@/lib/money"
 
 export async function POST(req: Request) {
   try {
@@ -37,8 +38,8 @@ export async function POST(req: Request) {
       isExpired: false,
       expiresAt: { $lt: now },
       $or: [
-        { remainingAmount: { $gt: 0 } },
-        { remainingAmount: { $exists: false } },
+        { remainingAmountInKobo: { $gt: 0 } },
+        { remainingAmountInKobo: { $exists: false } },
       ],
     }).lean()
 
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       const expiredByCustomer: Record<string, number> =
         expiredTransactions.reduce((acc: Record<string, number>, tx) => {
           const id = tx.customerId
-          const amountToExpire = tx.remainingAmount ?? tx.amount
+          const amountToExpire = tx.remainingAmountInKobo ?? tx.amountInKobo
           if (amountToExpire > 0) {
             acc[id] = (acc[id] || 0) + amountToExpire
           }
@@ -73,13 +74,13 @@ export async function POST(req: Request) {
             // Safety check: Never deduct more than the current PROMO balance.
             // We should not touch their depositBalance if promoBalance is out of sync.
             const deductionAmount = Math.min(
-              wallet.promoBalance || 0,
+              wallet.promoBalanceInKobo || 0,
               totalExpiredAmount
             )
 
             if (deductionAmount > 0) {
-              wallet.promoBalance -= deductionAmount
-              wallet.balance -= deductionAmount
+              wallet.promoBalanceInKobo -= deductionAmount
+              wallet.balanceInKobo -= deductionAmount
               await wallet.save({ session })
 
               // Create a debit transaction to explain the deduction
@@ -89,8 +90,8 @@ export async function POST(req: Request) {
                     customerId,
                     type: "reward",
                     direction: "debit",
-                    amount: deductionAmount,
-                    balanceAfter: wallet.balance,
+                    amountInKobo: deductionAmount,
+                    balanceAfterInKobo: wallet.balanceInKobo,
                     reference: `EXP-${new mongoose.Types.ObjectId().toString().substring(0, 8).toUpperCase()}`,
                     description: "BiteHub Coins Expired",
                   },
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
                 isExpired: false,
                 expiresAt: { $lt: now },
               },
-              { $set: { isExpired: true, remainingAmount: 0 } },
+              { $set: { isExpired: true, remainingAmountInKobo: 0 } },
               { session }
             )
 
@@ -129,8 +130,10 @@ export async function POST(req: Request) {
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // TASK B: Send 7-Day Warnings
+    // TASK B: Send 7-Day Warnings (BHC & Vouchers)
     // ─────────────────────────────────────────────────────────────────────────────
+    const RewardVoucher = (await import("@/models/RewardVoucher")).default
+
     const rawWarningTransactions = await WalletTransaction.find({
       type: "reward",
       direction: "credit",
@@ -138,9 +141,15 @@ export async function POST(req: Request) {
       warningEmailSentAt: { $exists: false },
       expiresAt: { $gt: now, $lt: sevenDaysFromNow },
       $or: [
-        { remainingAmount: { $gt: 0 } },
-        { remainingAmount: { $exists: false } },
+        { remainingAmountInKobo: { $gt: 0 } },
+        { remainingAmountInKobo: { $exists: false } },
       ],
+    }).lean()
+
+    const rawWarningVouchers = await RewardVoucher.find({
+      isUsed: false,
+      warningEmailSentAt: { $exists: false },
+      expiresAt: { $gt: now, $lt: sevenDaysFromNow },
     }).lean()
 
     const warningTransactions = rawWarningTransactions
@@ -149,19 +158,29 @@ export async function POST(req: Request) {
 
     let warningsSent = 0
 
-    if (warningTransactions.length > 0) {
+    if (warningTransactions.length > 0 || rawWarningVouchers.length > 0) {
       // Group by customerId so we send 1 email per user
-      const warningByCustomer = warningTransactions.reduce(
-        (acc: Record<string, number>, tx) => {
-          const id = tx.customerId
-          const warningAmt = tx.remainingAmount ?? tx.amount
-          if (warningAmt > 0) {
-            acc[id] = (acc[id] || 0) + warningAmt
-          }
-          return acc
-        },
-        {}
-      )
+      type WarningData = { bhcAmount: number; voucherCount: number }
+      const warningByCustomer: Record<string, WarningData> = {}
+
+      // Add BHC warnings
+      warningTransactions.forEach((tx) => {
+        const id = tx.customerId
+        const warningAmt = tx.remainingAmountInKobo ?? tx.amountInKobo
+        if (warningAmt > 0) {
+          if (!warningByCustomer[id])
+            warningByCustomer[id] = { bhcAmount: 0, voucherCount: 0 }
+          warningByCustomer[id].bhcAmount += warningAmt
+        }
+      })
+
+      // Add Voucher warnings
+      rawWarningVouchers.forEach((v) => {
+        const id = v.customerId.toString()
+        if (!warningByCustomer[id])
+          warningByCustomer[id] = { bhcAmount: 0, voucherCount: 0 }
+        warningByCustomer[id].voucherCount += 1
+      })
 
       // We need customer details for the emails
       const customerIds = Object.keys(warningByCustomer)
@@ -180,30 +199,53 @@ export async function POST(req: Request) {
         {} as Record<string, (typeof customers)[number]>
       )
 
-      for (const [customerId, expiringAmount] of Object.entries(
-        warningByCustomer
-      )) {
+      for (const [customerId, data] of Object.entries(warningByCustomer)) {
         const customer = customerMap[customerId]
         if (customer && customer.email) {
           try {
+            const warningText = []
+            if (data.bhcAmount > 0)
+              warningText.push(`${toMajorUnit(data.bhcAmount)} BHC`)
+            if (data.voucherCount > 0)
+              warningText.push(
+                `${data.voucherCount} Free Meal Voucher${data.voucherCount > 1 ? "s" : ""}`
+              )
+
+            const expiringItemsText = warningText.join(" and ")
+
             await sendRewardWarningEmail(
               customer.email,
               customer.name,
-              `${expiringAmount} BHC`
+              expiringItemsText
             )
 
-            // Mark as warned
-            await WalletTransaction.updateMany(
-              {
-                customerId,
-                type: "reward",
-                direction: "credit",
-                isExpired: false,
-                warningEmailSentAt: { $exists: false },
-                expiresAt: { $gt: now, $lt: sevenDaysFromNow },
-              },
-              { $set: { warningEmailSentAt: new Date() } }
-            )
+            // Mark BHC as warned
+            if (data.bhcAmount > 0) {
+              await WalletTransaction.updateMany(
+                {
+                  customerId,
+                  type: "reward",
+                  direction: "credit",
+                  isExpired: false,
+                  warningEmailSentAt: { $exists: false },
+                  expiresAt: { $gt: now, $lt: sevenDaysFromNow },
+                },
+                { $set: { warningEmailSentAt: new Date() } }
+              )
+            }
+
+            // Mark Vouchers as warned
+            if (data.voucherCount > 0) {
+              await RewardVoucher.updateMany(
+                {
+                  customerId,
+                  isUsed: false,
+                  warningEmailSentAt: { $exists: false },
+                  expiresAt: { $gt: now, $lt: sevenDaysFromNow },
+                },
+                { $set: { warningEmailSentAt: new Date() } }
+              )
+            }
 
             warningsSent++
           } catch (error) {

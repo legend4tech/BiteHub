@@ -1,5 +1,4 @@
 import type { NextAuthConfig } from "next-auth"
-
 export const authConfig: NextAuthConfig = {
   session: {
     strategy: "jwt",
@@ -10,7 +9,7 @@ export const authConfig: NextAuthConfig = {
     error: "/auth-error",
   },
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
+    authorized() {
       // Defer all routing logic to proxy.ts as per the contributor guide
       return true
     },

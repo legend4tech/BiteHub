@@ -1,14 +1,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
 import axios from "axios"
-import type { OrderRecord } from "@/types/customer"
+import type {} from "@/types/customer"
 import type { CustomerOrdersPageData } from "@/types/customer"
-
 interface UseCustomerOrdersParams {
   limit?: number
   initialPage?: number
   enabled?: boolean
 }
-
 export function useCustomerOrders({
   limit = 20,
   initialPage = 1,

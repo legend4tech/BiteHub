@@ -1,18 +1,15 @@
 "use client"
-
 import { useState, useOptimistic, useTransition } from "react"
 import { Switch } from "@/components/ui/switch"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useVendorUpdateSettings } from "@/hooks/vendor/useVendorMutations"
-
 interface StoreStatusToggleProps {
   isOpen: boolean
   onToggle: (isOpen: boolean) => void
   disabled?: boolean
 }
-
 export function StoreStatusToggle({
   isOpen,
   onToggle,
@@ -22,15 +19,12 @@ export function StoreStatusToggle({
   const [pendingStatus, setPendingStatus] = useState<boolean | null>(null)
   const [isToggling, setIsToggling] = useState(false)
   const [isPending, startTransition] = useTransition()
-
   const [optimisticIsOpen, addOptimisticIsOpen] = useOptimistic<
     boolean,
     boolean
   >(isOpen, (state, newIsOpen) => newIsOpen)
-
   const updateSettingsMutation = useVendorUpdateSettings()
   const router = useRouter()
-
   const confirmStatusChange = () => {
     if (pendingStatus === null) return
     setIsToggling(true)
@@ -46,14 +40,13 @@ export function StoreStatusToggle({
             : "Store is now temporarily closed"
         )
         router.refresh()
-      } catch (e) {
+      } catch {
         toast.error("Failed to update store status")
       } finally {
         setIsToggling(false)
       }
     })
   }
-
   return (
     <>
       <div className="flex flex-row items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-sm">

@@ -1,27 +1,27 @@
 export interface AnalyticsData {
   kpis: {
     totalOrders: number
-    totalGMV: number
-    totalProfit: number
-    aov: number
+    totalGmvInKobo: number
+    totalProfitInKobo: number
+    aovInKobo: number
     completionRate: number
     cancellationRate: number
     growth: {
       orders: number
-      gmv: number
-      profit: number
-      aov: number
+      gmvInKobo: number
+      profitInKobo: number
+      aovInKobo: number
     }
   }
   chartData: Array<{
     date: string
     orders: number
-    gmv: number
-    profit: number
+    gmvInKobo: number
+    profitInKobo: number
   }>
   revenueByDow: Array<{
     day: string
-    gmv: number
+    gmvInKobo: number
     orders: number
   }>
   paymentSplit: {
@@ -40,8 +40,8 @@ export interface AnalyticsData {
   topVendors: Array<{
     id: string
     name: string
-    gmv: number
-    vendorRevenue: number
+    gmvInKobo: number
+    vendorRevenueInKobo: number
     ordersCount: number
   }>
   topZones: Array<{
@@ -53,7 +53,7 @@ export interface AnalyticsData {
 export interface SubLandmark {
   id: string
   name: string
-  defaultDeliveryFee?: number
+  defaultDeliveryFeeInKobo?: number
   isActive: boolean
 }
 
@@ -62,7 +62,7 @@ export interface Landmark {
   school: string
   campus: string
   name: string
-  defaultDeliveryFee: number
+  defaultDeliveryFeeInKobo: number
   isActive: boolean
   subLandmarks: SubLandmark[]
 }
@@ -86,7 +86,7 @@ export interface AdminOrder {
   items: Array<{
     menuItemId: string
     name: string
-    price: number
+    priceInKobo: number
     quantity: number
   }>
   customerName: string
@@ -94,7 +94,7 @@ export interface AdminOrder {
   customerPhone: string
   location: string
   notes?: string
-  totalAmount: number
+  totalAmountInKobo: number
   status: string
   paymentMethod: string
   paymentStatus: string
@@ -123,15 +123,15 @@ export interface AdminStats {
   preparingOrders: number
   completedOrders: number
   cancelledOrders: number
-  grossVolume: number
-  platformProfit: number
-  monnifyBalance: number | null
-  allTimePlatformProfit: number
-  totalWithdrawn: number
-  remainingProfit: number
-  totalCustomerWalletLiabilities: number
-  totalPendingVendorWallet: number
-  totalVendorWalletDisbursed: number
+  grossVolumeInKobo: number
+  platformProfitInKobo: number
+  monnifyBalanceInKobo: number | null
+  allTimePlatformProfitInKobo: number
+  totalWithdrawnInKobo: number
+  remainingProfitInKobo: number
+  totalCustomerWalletLiabilitiesInKobo: number
+  totalPendingVendorWalletInKobo: number
+  totalVendorWalletDisbursedInKobo: number
 }
 
 export interface VendorAccount {
@@ -159,15 +159,15 @@ export interface AdminVendor {
   monnifyIntegrationStatus?: "pending" | "active" | "failed" | string
   onboardedByName?: string
   isManagedByBiteHub?: boolean
-  pendingWalletBalance?: number
+  pendingWalletBalanceInKobo?: number
   monnifyBankCode?: string
   monnifyAccountNumber?: string
 }
 
 export interface AnalyticsKPIs {
   totalOrders: number
-  totalGMV: number
-  totalProfit: number
+  totalGmvInKobo: number
+  totalProfitInKobo: number
 }
 
 export interface AnalyticsPrevAgg {
@@ -177,22 +177,22 @@ export interface AnalyticsPrevAgg {
 export interface AnalyticsTimeSeriesItem {
   _id: string
   orders: number
-  gmv: number
-  profit: number
+  gmvInKobo: number
+  profitInKobo: number
   firstDate: string | Date
 }
 
 export interface AnalyticsDowItem {
   _id: number
   orders: number
-  gmv: number
+  gmvInKobo: number
 }
 
 export interface AnalyticsTopVendorItem {
   _id: string
   vendorName: string
-  gmv: number
-  vendorRevenue: number
+  gmvInKobo: number
+  vendorRevenueInKobo: number
   ordersCount: number
 }
 

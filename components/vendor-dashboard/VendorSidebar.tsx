@@ -1,5 +1,4 @@
 "use client"
-
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -35,7 +34,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
-
 const navItems = [
   { href: "/vendor/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vendor/menu", label: "Menu", icon: UtensilsCrossed },
@@ -44,7 +42,6 @@ const navItems = [
   { href: "/vendor/delivery-settings", label: "Delivery Fees", icon: MapPin },
   { href: "/vendor/settings", label: "Settings", icon: Settings },
 ]
-
 function NavLinks({
   pathname,
   collapsed = false,
@@ -99,7 +96,6 @@ function NavLinks({
     </TooltipProvider>
   )
 }
-
 function SidebarContent({
   collapsed,
   setCollapsed,
@@ -111,7 +107,6 @@ function SidebarContent({
 }) {
   const pathname = usePathname()
   const { data: session } = useSession()
-
   return (
     <div className="flex h-full flex-col">
       {/* Logo + collapse toggle */}
@@ -168,7 +163,6 @@ function SidebarContent({
           </button>
         )}
       </div>
-
       {/* User badge */}
       {!collapsed && session?.user && (
         <div className="mx-3 mt-4 flex items-center gap-2.5 rounded-xl border border-border/30 bg-accent/40 px-3 py-2.5">
@@ -196,7 +190,6 @@ function SidebarContent({
           </div>
         </div>
       )}
-
       {/* Nav — flex-1 here ensures bottom bar is always pinned to the bottom */}
       <div className="min-h-0 flex-1 overflow-y-auto" data-lenis-prevent>
         <NavLinks
@@ -205,7 +198,6 @@ function SidebarContent({
           onNavigate={onNavigate}
         />
       </div>
-
       {/* Bottom */}
       <div
         className={cn(
@@ -227,7 +219,6 @@ function SidebarContent({
             )}
             <ThemeToggle />
           </div>
-
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
@@ -252,7 +243,7 @@ function SidebarContent({
                       await signOut({ redirect: false })
                       toast.success("Successfully logged out")
                       window.location.href = "/vendor/login"
-                    } catch (error) {
+                    } catch {
                       toast.error("Network error. Could not log out.")
                     }
                   }}
@@ -270,11 +261,9 @@ function SidebarContent({
     </div>
   )
 }
-
 // ── Desktop Sidebar ──────────────────────────────────────────────────────────
 export function VendorSidebar() {
   const [collapsed, setCollapsed] = useState(false)
-
   return (
     <aside
       className={cn(
@@ -286,11 +275,9 @@ export function VendorSidebar() {
     </aside>
   )
 }
-
 // ── Mobile Trigger (hamburger) ────────────────────────────────────────────────
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false)
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>

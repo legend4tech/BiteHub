@@ -1,14 +1,12 @@
 "use client"
-
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { useMenuItemReviews } from "@/hooks/customer/useMenuItemReviews"
-import { useEffect, useState } from "react"
-import { ArrowLeft, Star, Loader2, UserCircle2, X } from "lucide-react"
+import { useState } from "react"
+import { ArrowLeft, Star, UserCircle2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
 import { InfiniteScrollTrigger } from "@/components/shared/InfiniteScrollTrigger"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FetchError } from "@/components/shared/FetchError"
@@ -17,13 +15,10 @@ import {
   MenuItemReviewSkeleton,
   RatingStatisticsSkeleton,
 } from "@/components/shared/skeletons/PublicSkeletons"
-
 export default function MenuItemReviewsPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
-
   const [ratingFilter, setRatingFilter] = useState<number | null>(null)
-
   const {
     data,
     fetchNextPage,
@@ -32,9 +27,7 @@ export default function MenuItemReviewsPage() {
     status,
     refetch,
   } = useMenuItemReviews(id, ratingFilter)
-
   const reviews = data?.pages.flatMap((page) => page.reviews) || []
-
   const formatDate = (dateString: string) => {
     const d = new Date(dateString)
     return d.toLocaleDateString("en-US", {
@@ -43,11 +36,9 @@ export default function MenuItemReviewsPage() {
       year: "numeric",
     })
   }
-
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Navbar />
-
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
         <Button
           variant="ghost"
@@ -57,11 +48,9 @@ export default function MenuItemReviewsPage() {
           <ArrowLeft className="mr-2 size-4" />
           Back to Menu Item
         </Button>
-
         <h1 className="mb-8 font-heading text-3xl font-bold tracking-tight">
           Item Reviews
         </h1>
-
         {data?.pages[0]?.statistics && (
           <RatingStatistics
             statistics={data.pages[0].statistics}
@@ -69,7 +58,6 @@ export default function MenuItemReviewsPage() {
             onFilterChange={setRatingFilter}
           />
         )}
-
         {ratingFilter && (
           <div className="mb-6 flex items-center justify-between rounded-2xl border border-border bg-muted/50 px-4 py-3">
             <div className="flex items-center gap-2">
@@ -90,7 +78,6 @@ export default function MenuItemReviewsPage() {
             </Button>
           </div>
         )}
-
         {status === "pending" ? (
           <div>
             <RatingStatisticsSkeleton />
@@ -165,7 +152,6 @@ export default function MenuItemReviewsPage() {
                     <Star className="size-3.5 fill-warning" />
                   </div>
                 </div>
-
                 {(review.title || review.comments) && (
                   <div className="mt-4">
                     {review.title && (
@@ -182,7 +168,6 @@ export default function MenuItemReviewsPage() {
                 )}
               </div>
             ))}
-
             {/* Infinite loading trigger */}
             {(hasNextPage || isFetchingNextPage) && (
               <InfiniteScrollTrigger
@@ -202,7 +187,6 @@ export default function MenuItemReviewsPage() {
           </div>
         )}
       </div>
-
       <Footer />
     </main>
   )

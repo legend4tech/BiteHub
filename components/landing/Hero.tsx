@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -8,10 +7,8 @@ import Link from "next/link"
 import { APP_NAME, APP_LOGO_URL } from "@/lib/constants"
 import { CampusSelector } from "@/components/shared/CampusSelector"
 import { useCampus } from "@/components/providers/CampusProvider"
-import { useSearchParams } from "next/navigation"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
-
 const slides = [
   {
     src: "/soup.jpg",
@@ -38,16 +35,13 @@ const slides = [
     alt: "Tropical smoothie",
   },
 ]
-
 export function Hero() {
   const [index, setIndex] = useState(0)
   const [mounted, setMounted] = useState(false)
   const { schoolId, campusId } = useCampus()
   const containerRef = useRef<HTMLElement>(null)
-
   // Build campus query string so CTA links carry the active filter
   const campusQuery = `school=${schoolId}&campus=${campusId}`
-
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 0)
     const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 3500)
@@ -56,7 +50,6 @@ export function Hero() {
       clearInterval(id)
     }
   }, [])
-
   useGSAP(
     () => {
       // We use a high-end power3 easing for a premium, snappy yet fluid feel.
@@ -65,7 +58,6 @@ export function Hero() {
         delay: 0.2,
         defaults: { ease: "power3.out", duration: 1.2 },
       })
-
       // Reveal sequence
       tl.fromTo(".gsap-hero-badge", { opacity: 0, y: 20 }, { opacity: 1, y: 0 })
         .fromTo(
@@ -123,7 +115,6 @@ export function Hero() {
           },
           "<0.1"
         )
-
       // Continuous floating animations for chips
       gsap.to(".gsap-chip-1", {
         y: -15,
@@ -146,15 +137,12 @@ export function Hero() {
     },
     { scope: containerRef }
   )
-
   const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
-
     const distanceX = e.clientX - centerX
     const distanceY = e.clientY - centerY
-
     // Move the button slightly towards the cursor (e.g. 25% of the distance)
     gsap.to(e.currentTarget, {
       x: distanceX * 0.25,
@@ -163,7 +151,6 @@ export function Hero() {
       ease: "power3.out",
     })
   }
-
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
     gsap.to(e.currentTarget, {
       scale: 1.05,
@@ -171,7 +158,6 @@ export function Hero() {
       ease: "power2.out",
     })
   }
-
   const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
     gsap.to(e.currentTarget, {
       x: 0,
@@ -181,7 +167,6 @@ export function Hero() {
       ease: "elastic.out(1.2, 0.4)",
     })
   }
-
   return (
     <section
       ref={containerRef}
@@ -201,7 +186,6 @@ export function Hero() {
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             Your campus. Your vendors. Your meal.
           </div>
-
           <h1 className="font-heading text-5xl leading-[1.05] font-bold tracking-tight md:text-6xl lg:text-7xl">
             <div className="overflow-hidden pb-1">
               <div className="gsap-hero-title invisible">Get your favorite</div>
@@ -222,12 +206,10 @@ export function Hero() {
               </div>
             </div>
           </h1>
-
           <p className="gsap-hero-item max-w-xl text-lg leading-relaxed text-muted-foreground opacity-0">
             Discover the best vendors around school, browse menus and place an
             order in seconds — all in one place.
           </p>
-
           <div className="gsap-hero-item flex flex-wrap gap-3 opacity-0">
             <Button asChild variant="hero" size="xl">
               <Link
@@ -256,7 +238,6 @@ export function Hero() {
               </Link>
             </Button>
           </div>
-
           {/* Social Proof Avatar Group */}
           <div className="gsap-hero-item mt-6 flex items-center gap-4 opacity-0">
             <div className="flex -space-x-3">
@@ -270,7 +251,7 @@ export function Hero() {
               ))}
             </div>
             <div className="flex flex-col">
-              <div className="text-warning flex items-center gap-1">
+              <div className="flex items-center gap-1 text-warning">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
@@ -292,12 +273,10 @@ export function Hero() {
               </p>
             </div>
           </div>
-
           <div className="gsap-hero-item relative z-10 mt-8 flex items-center gap-2 opacity-0">
             <span className="text-xs text-muted-foreground">Browsing for:</span>
             <CampusSelector />
           </div>
-
           {/* Stats — honest pre-launch values */}
           <div className="gsap-hero-item flex flex-wrap items-center gap-6 border-t border-border/60 pt-6 opacity-0">
             <Stat
@@ -317,7 +296,6 @@ export function Hero() {
             />
           </div>
         </div>
-
         {/* Right — image carousel */}
         <div className="gsap-hero-right relative opacity-0 lg:col-span-6">
           <div
@@ -343,7 +321,6 @@ export function Hero() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               ))}
-
             {/* Dot indicators */}
             <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
               {slides.map((_, i) => (
@@ -358,7 +335,6 @@ export function Hero() {
               ))}
             </div>
           </div>
-
           {/* Feature chip — replaces fake order number */}
           <div className="gsap-chip-1 absolute -bottom-6 -left-6 hidden w-56 rounded-2xl border border-white/20 bg-card/70 p-4 opacity-0 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl md:block dark:border-white/10 dark:bg-black/50">
             <div className="flex items-center gap-3">
@@ -382,7 +358,6 @@ export function Hero() {
               <span className="font-medium">Cooking now · 8 min left</span>
             </div>
           </div>
-
           {/* Value prop chip — replaces fake "ordered today" count */}
           <div className="gsap-chip-2 absolute -top-4 -right-4 hidden items-center gap-2 rounded-2xl border border-white/20 bg-card/70 px-4 py-3 opacity-0 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl md:flex dark:border-white/10 dark:bg-black/50">
             <Zap className="size-4 fill-primary text-primary" />
@@ -395,7 +370,6 @@ export function Hero() {
     </section>
   )
 }
-
 function Stat({
   icon,
   value,
