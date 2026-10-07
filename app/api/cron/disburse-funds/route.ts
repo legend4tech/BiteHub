@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {
-    // Secure the cron endpoint. Vercel automatically sends this header.
+    // Secure the cron endpoint.
     // Make sure you have CRON_SECRET configured in your Vercel Environment Variables.
     const authHeader = request.headers.get("authorization")
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

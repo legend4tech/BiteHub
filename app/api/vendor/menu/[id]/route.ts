@@ -7,6 +7,7 @@ import { serializeMenuItem } from "@/lib/serializers"
 import { deleteFromCloudinary } from "@/lib/cloudinary"
 import { isItemAvailableNow } from "@/lib/timeUtils"
 import { LOW_STOCK_THRESHOLD } from "@/lib/constants"
+import type { SanitizedMenuItemUpdate } from "@/lib/schemas"
 
 export async function GET(
   request: Request,
@@ -64,6 +65,37 @@ export async function PATCH(
     const vendorId = new Types.ObjectId(session.user.vendorId)
     const body = await request.json()
 
+    const { menuItemFormSchema } = await import("@/lib/schemas")
+    const parsedBody = menuItemFormSchema.partial().safeParse(body)
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsedBody.error.format() },
+        { status: 400 }
+      )
+    }
+
+    const safeData = parsedBody.data
+    const sanitizedBody = { ...safeData } as unknown as SanitizedMenuItemUpdate
+
+    // Cast and sanitize fields according to the schema
+    if (safeData.priceInKobo !== undefined) {
+      sanitizedBody.priceInKobo = Number(safeData.priceInKobo)
+    }
+    if (safeData.quantityAvailable !== undefined) {
+      sanitizedBody.quantityAvailable =
+        safeData.quantityAvailable !== null && safeData.quantityAvailable !== ""
+          ? Number(safeData.quantityAvailable)
+          : null
+    }
+    if (safeData.prepTimeValue !== undefined) {
+      sanitizedBody.prepTimeValue = safeData.prepTimeValue
+        ? Number(safeData.prepTimeValue)
+        : null
+    }
+
+    // Explicitly restrict updates to validated fields only to prevent ownership/id injection
+    delete sanitizedBody.vendorId // Hard guard
+
     // Fetch existing menu item to check for image changes
     const existingItem = await MenuItem.findOne({ _id: id, vendorId })
     if (!existingItem) {
@@ -74,34 +106,37 @@ export async function PATCH(
     }
 
     // Clean up old Cloudinary image if it was replaced or removed
-    if (body.image !== undefined) {
+    if (sanitizedBody.image !== undefined) {
       const oldPublicId = existingItem.image?.publicId
-      const newPublicId = body.image?.publicId
+      const newPublicId = sanitizedBody.image?.publicId
       if (oldPublicId && oldPublicId !== newPublicId) {
         await deleteFromCloudinary(oldPublicId)
       }
     }
 
     // Prepare updated fields for availability calculation
-    const updatedIsAvailable = body.isAvailable ?? existingItem.isAvailable
+    const updatedIsAvailable =
+      sanitizedBody.isAvailable ?? existingItem.isAvailable
     const updatedAvailableFrom =
-      body.availableFrom ?? existingItem.availableFrom
-    const updatedAvailableTo = body.availableTo ?? existingItem.availableTo
+      sanitizedBody.availableFrom ?? existingItem.availableFrom
+    const updatedAvailableTo =
+      sanitizedBody.availableTo ?? existingItem.availableTo
     const updatedAvailableDays =
-      body.availableDays ?? existingItem.availableDays
+      sanitizedBody.availableDays ?? existingItem.availableDays
 
     const updatedQuantityAvailable =
-      body.quantityAvailable !== undefined
-        ? body.quantityAvailable
+      sanitizedBody.quantityAvailable !== undefined
+        ? sanitizedBody.quantityAvailable
         : existingItem.quantityAvailable
 
-    const updatedIsPreorder = body.isPreorder ?? existingItem.isPreorder
+    const updatedIsPreorder =
+      sanitizedBody.isPreorder ?? existingItem.isPreorder
     const updatedPreorderEndDate =
-      body.preorderEndDate !== undefined
-        ? body.preorderEndDate
+      sanitizedBody.preorderEndDate !== undefined
+        ? sanitizedBody.preorderEndDate
         : existingItem.preorderEndDate
 
-    body.computedIsAvailableNow = isItemAvailableNow(
+    sanitizedBody.computedIsAvailableNow = isItemAvailableNow(
       updatedIsAvailable,
       updatedAvailableFrom,
       updatedAvailableTo,
@@ -113,16 +148,16 @@ export async function PATCH(
 
     // Reset low stock alert if the vendor restocks the item above the threshold or sets it to infinite
     if (
-      body.quantityAvailable === null ||
-      (body.quantityAvailable !== undefined &&
-        body.quantityAvailable > LOW_STOCK_THRESHOLD)
+      sanitizedBody.quantityAvailable === null ||
+      (sanitizedBody.quantityAvailable !== undefined &&
+        sanitizedBody.quantityAvailable > LOW_STOCK_THRESHOLD)
     ) {
-      body.lowStockAlertSent = false
+      sanitizedBody.lowStockAlertSent = false
     }
 
     const item = await MenuItem.findOneAndUpdate(
       { _id: id, vendorId },
-      { $set: body },
+      { $set: sanitizedBody },
       { returnDocument: "after" }
     ).lean()
 

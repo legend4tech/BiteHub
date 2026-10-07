@@ -2,19 +2,41 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import dbConnect from "@/lib/db"
 import Vendor from "@/models/Vendor"
-async function processSettlement(amount: number, accountNumber: string) {
+async function processSettlement(
+  amount: number,
+  accountNumber: string,
+  reference: string
+) {
   await dbConnect()
-  const vendor = await Vendor.findOne({ monnifyAccountNumber: accountNumber })
+
+  const vendor = await Vendor.findOneAndUpdate(
+    {
+      monnifyAccountNumber: accountNumber,
+      processedSettlementRefs: { $ne: reference },
+    },
+    {
+      $inc: { monnifyTotalDisbursedInKobo: amount },
+      $addToSet: { processedSettlementRefs: reference },
+    },
+    { new: true }
+  )
+
   if (!vendor) {
-    console.warn(
-      `[Settlement Webhook] No vendor found for account: ${accountNumber}. This may be the platform's main settlement account.`
-    )
+    // Check if the vendor exists but already processed this reference
+    const existing = await Vendor.findOne({
+      monnifyAccountNumber: accountNumber,
+    })
+    if (!existing) {
+      console.warn(
+        `[Settlement Webhook] No vendor found for account: ${accountNumber}. This may be the platform's main settlement account.`
+      )
+    } else {
+      console.log(
+        `[Settlement Webhook] Settlement ${reference} already processed for vendor ${existing.id}`
+      )
+    }
     return
   }
-  const currentDisbursed = vendor.monnifyTotalDisbursedInKobo || 0
-  vendor.monnifyTotalDisbursedInKobo = currentDisbursed + amount
-  await vendor.save()
-  // Log removed for production
 }
 export async function POST(request: Request) {
   try {
@@ -54,6 +76,21 @@ export async function POST(request: Request) {
         eventData?.destinationAccountDetails?.accountNumber ||
         eventData?.accountNumber
 
+      const reference =
+        eventData?.reference ||
+        eventData?.transactionReference ||
+        eventData?.settlementReference ||
+        "unknown"
+
+      if (reference === "unknown") {
+        console.error(
+          "[Settlement Webhook] Could not extract reference for idempotency",
+          { eventData }
+        )
+        // Return 200 so Monnify doesn't keep retrying for a data issue
+        return NextResponse.json({ status: "ignored" })
+      }
+
       if (!accountNumber || !amount) {
         console.error(
           "[Settlement Webhook] Could not extract accountNumber or amount",
@@ -62,8 +99,12 @@ export async function POST(request: Request) {
         // Return 200 so Monnify doesn't keep retrying for a data issue
         return NextResponse.json({ status: "ignored" })
       }
+
+      const { nairaToKobo } = await import("@/lib/money")
+      const amountInKobo = nairaToKobo(amount)
+
       // ✅ Awaited — ensures DB update completes before Vercel terminates
-      await processSettlement(amount, accountNumber)
+      await processSettlement(amountInKobo, accountNumber, reference)
     } else {
       console.warn(
         `[Settlement Webhook] Unexpected eventType: ${eventType} — ignoring`

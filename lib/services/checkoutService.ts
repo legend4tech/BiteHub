@@ -374,6 +374,7 @@ export async function processCheckout(
             vendorPrepTime:
               maxHours !== -1 ? maxItemPrepTime : vendor.prepTime || "",
             items,
+            customerId: existingCustomer?._id,
             customerName,
             customerEmail,
             customerPhone,
@@ -422,24 +423,7 @@ export async function processCheckout(
           throw err
         }
 
-        if (rewardVoucherId) {
-          const RewardVoucher = (await import("@/models/RewardVoucher")).default
-          const usedVoucher = await RewardVoucher.findByIdAndUpdate(
-            rewardVoucherId,
-            { isUsed: true, usedAt: new Date() },
-            { new: true, session: mongooseSession }
-          )
-
-          if (usedVoucher && usedVoucher.campaignId) {
-            const RewardCampaign = (await import("@/models/RewardCampaign"))
-              .default
-            await RewardCampaign.findByIdAndUpdate(
-              usedVoucher.campaignId,
-              { $inc: { budgetSpentInKobo: sponsoredDiscountAmountInKobo } },
-              { session: mongooseSession }
-            )
-          }
-        }
+        // The voucher has already been marked used and the budget decremented earlier in this transaction.
       }
 
       orderResponse = order

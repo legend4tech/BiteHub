@@ -104,8 +104,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: "ignored" })
       }
 
+      const { nairaToKobo } = await import("@/lib/money")
+      const amountInKobo = nairaToKobo(amount)
+
       // ✅ Awaited — ensures DB update completes before Vercel terminates
-      await processDisbursement(amount, accountNumber, reference, status)
+      await processDisbursement(amountInKobo, accountNumber, reference, status)
     } else {
       console.warn(
         `[Disbursement Webhook] Unexpected eventType: ${eventType} — ignoring`

@@ -77,16 +77,37 @@ export async function processWalletDisbursements() {
         },
       })
 
-      // Mark the corresponding wallet orders as disbursed
-      await Order.updateMany(
-        {
-          vendorId: vendor._id,
-          paymentMethod: "wallet",
-          paymentStatus: "paid",
-          isDisbursed: { $ne: true },
-        },
-        { $set: { isDisbursed: true } }
-      )
+      // Mark the exact wallet orders that contributed to this specific payout amount
+      // This prevents race conditions where a new order is paid during the API call
+      const pendingOrders = await Order.find({
+        vendorId: vendor._id,
+        paymentMethod: "wallet",
+        paymentStatus: "paid",
+        isDisbursed: { $ne: true },
+      })
+        .sort({ createdAt: 1 })
+        .select("_id vendorRevenueInKobo")
+        .lean()
+
+      let runningTotal = 0
+      const orderIdsToMark = []
+
+      for (const po of pendingOrders) {
+        // If adding this order exceeds the amount we actually paid out, stop.
+        // It belongs to the next payout batch.
+        if (runningTotal + po.vendorRevenueInKobo > amountPaidInKobo) {
+          break
+        }
+        runningTotal += po.vendorRevenueInKobo
+        orderIdsToMark.push(po._id)
+      }
+
+      if (orderIdsToMark.length > 0) {
+        await Order.updateMany(
+          { _id: { $in: orderIdsToMark } },
+          { $set: { isDisbursed: true } }
+        )
+      }
 
       totalDisbursedAmount += amountPaidInKobo
       processedCount++

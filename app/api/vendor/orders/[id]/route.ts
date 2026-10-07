@@ -111,14 +111,13 @@ export async function PATCH(
     order.status = status // Update local object for the rest of the flow
     const wasCancelled = oldStatus === ORDER_STATUS.CANCELLED
 
-    // Send customer email if email exists and status changed
-    if (order.customerEmail && status !== oldStatus) {
+    if (status !== oldStatus) {
       if (status === ORDER_STATUS.COMPLETED) {
-        const { sendOrderCompletedEmail } = await import("@/lib/mail")
         // Gamification trigger
-        const { processOrderCompleted } =
-          await import("@/lib/services/gamificationService")
         if (order.customerId) {
+          const { processOrderCompleted } =
+            await import("@/lib/services/gamificationService")
+
           // Update lastOrderAt for dormant customer re-engagement
           const { default: Customer } = await import("@/models/Customer")
           await Customer.findByIdAndUpdate(order.customerId, {
@@ -142,14 +141,17 @@ export async function PATCH(
           })
         }
 
-        // Fire and forget
-        void sendOrderCompletedEmail(
-          order.customerEmail,
-          order.customerName,
-          order.orderId,
-          order.vendorName
-        )
-      } else {
+        if (order.customerEmail) {
+          const { sendOrderCompletedEmail } = await import("@/lib/mail")
+          // Fire and forget
+          void sendOrderCompletedEmail(
+            order.customerEmail,
+            order.customerName,
+            order.orderId,
+            order.vendorName
+          )
+        }
+      } else if (order.customerEmail) {
         const { sendCustomerOrderStatusEmail } = await import("@/lib/mail")
         const statusConfig = ORDER_STATUS_CONFIG[status as OrderStatusType]
         if (statusConfig) {
@@ -167,9 +169,35 @@ export async function PATCH(
     }
 
     if (status === ORDER_STATUS.CANCELLED && !wasCancelled) {
-      if (order.paymentMethod === "wallet" && !order.isDisbursed) {
+      // Restore MenuItem inventory for all cancelled orders
+      const { default: MenuItem } = await import("@/models/MenuItem")
+      const bulkOps = order.items.map(
+        (item: { menuItemId: string; quantity: number }) => ({
+          updateOne: {
+            filter: {
+              _id: item.menuItemId,
+              quantityAvailable: { $ne: null },
+            },
+            update: { $inc: { quantityAvailable: item.quantity } },
+          },
+        })
+      )
+      if (bulkOps.length > 0) {
+        await MenuItem.bulkWrite(bulkOps).catch((err) => {
+          console.error(
+            "[vendor/orders PATCH] Failed to restore inventory:",
+            err
+          )
+        })
+      }
+
+      if (
+        order.paymentMethod === "wallet" &&
+        !order.isDisbursed &&
+        order.customerId
+      ) {
         const { default: Customer } = await import("@/models/Customer")
-        const customer = await Customer.findOne({ email: order.customerEmail })
+        const customer = await Customer.findById(order.customerId)
 
         if (customer) {
           const { default: Wallet } = await import("@/models/Wallet")

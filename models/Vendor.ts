@@ -25,6 +25,7 @@ export interface IVendor extends Document {
   pendingWalletBalanceInKobo?: number
   walletTotalDisbursedInKobo?: number
   processedDisbursementRefs?: string[]
+  processedSettlementRefs?: string[]
   isDisbursing?: boolean
   lastBankUpdateAt?: Date
   bankUpdateOtp?: string
@@ -116,6 +117,10 @@ const VendorSchema: Schema = new Schema(
     },
     isManagedByBiteHub: { type: Boolean, default: false },
     processedDisbursementRefs: {
+      type: [String],
+      default: [],
+    },
+    processedSettlementRefs: {
       type: [String],
       default: [],
     },

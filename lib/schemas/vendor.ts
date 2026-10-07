@@ -70,6 +70,18 @@ export const menuItemFormSchema = z
 
 export type MenuItemFormValues = z.infer<typeof menuItemFormSchema>
 
+export type SanitizedMenuItemUpdate = Omit<
+  Partial<MenuItemFormValues>,
+  "priceInKobo" | "quantityAvailable" | "prepTimeValue"
+> & {
+  priceInKobo?: number
+  quantityAvailable?: number | null
+  prepTimeValue?: number | null
+  vendorId?: string
+  computedIsAvailableNow?: boolean
+  lowStockAlertSent?: boolean
+}
+
 export const vendorSettingsSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().trim().min(1, "Description is required"),
