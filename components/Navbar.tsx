@@ -54,10 +54,17 @@ export function Navbar() {
     },
     { name: "Track Order", href: "/order", base: "/order", icon: Search },
     {
+      name: "Customer Login",
+      href: `/customer/login?redirect=/menus?${cq}`,
+      base: "/customer/login",
+      icon: LogIn,
+      mobileOnly: true,
+    },
+    {
       name: "Vendor Login",
       href: "/vendor/login",
       base: "/vendor/login",
-      icon: LogIn,
+      icon: Store,
     },
     { name: "About Us", href: "/about", base: "/about", icon: Info },
     { name: "Contact Us", href: "/contact", base: "/contact", icon: PhoneCall },
@@ -87,38 +94,44 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 xl:flex">
-          {navLinks.map((link) => {
-            const isActive =
-              pathname === link.base || pathname.startsWith(link.base + "/")
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-bold transition-all duration-300 ${
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <div className="relative z-10 flex items-center gap-2">
-                  <link.icon
-                    className={`size-4 ${isActive ? "text-primary" : "text-muted-foreground transition-colors group-hover:text-primary"}`}
-                  />
-                  {link.name}
-                </div>
-                {!isActive && (
-                  <div className="absolute inset-0 translate-y-full bg-primary/5 transition-transform duration-300 group-hover:translate-y-0" />
-                )}
-                {isActive && (
-                  <motion.div
-                    layoutId="navbar-active"
-                    className="absolute inset-0 -z-0 rounded-xl bg-primary/10"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-              </Link>
-            )
-          })}
+          {navLinks
+            .filter((link) => !("mobileOnly" in link ? link.mobileOnly : false))
+            .map((link) => {
+              const isActive =
+                pathname === link.base || pathname.startsWith(link.base + "/")
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`group relative overflow-hidden rounded-xl px-4 py-2 text-sm font-bold transition-all duration-300 ${
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <div className="relative z-10 flex items-center gap-2">
+                    <link.icon
+                      className={`size-4 ${isActive ? "text-primary" : "text-muted-foreground transition-colors group-hover:text-primary"}`}
+                    />
+                    {link.name}
+                  </div>
+                  {!isActive && (
+                    <div className="absolute inset-0 translate-y-full bg-primary/5 transition-transform duration-300 group-hover:translate-y-0" />
+                  )}
+                  {isActive && (
+                    <motion.div
+                      layoutId="navbar-active"
+                      className="absolute inset-0 -z-0 rounded-xl bg-primary/10"
+                      transition={{
+                        type: "spring",
+                        bounce: 0.2,
+                        duration: 0.6,
+                      }}
+                    />
+                  )}
+                </Link>
+              )
+            })}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -198,8 +211,10 @@ export function Navbar() {
                 href={`/customer/login?redirect=/menus?${cq}`}
                 className="flex items-center gap-2"
               >
-                <ShoppingBag className="size-4 transition-transform group-hover:rotate-12" />
+                <ShoppingBag className="hidden size-4 transition-transform group-hover:rotate-12 sm:block" />
+                <LogIn className="size-4 transition-transform group-hover:rotate-12 sm:hidden" />
                 <span className="hidden sm:inline">Login to order</span>
+                <span className="sm:hidden">Login</span>
               </Link>
             </Button>
           )}

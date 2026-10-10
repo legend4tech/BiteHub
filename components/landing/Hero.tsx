@@ -184,7 +184,7 @@ export function Hero() {
         <div className="space-y-8 lg:col-span-6">
           <div className="gsap-hero-badge inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground opacity-0">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            Your campus. Your vendors. Your meal.
+            Food right when you need it
           </div>
           <h1 className="font-heading text-5xl leading-[1.05] font-bold tracking-tight md:text-6xl lg:text-7xl">
             <div className="overflow-hidden pb-1">

@@ -5,6 +5,7 @@ import { AllProducts } from "@/components/landing/AllProducts"
 import { FeaturedVendors } from "@/components/landing/FeaturedVendors"
 import { HowItWorks } from "@/components/landing/HowItWorks"
 import { VendorCTA } from "@/components/landing/VendorCTA"
+import { CustomerRewardsCTA } from "@/components/landing/CustomerRewardsCTA"
 import { Footer } from "@/components/Footer"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -126,6 +127,7 @@ export default async function Page({
         </SectionErrorBoundary>
         {/* Always render — no data dependency */}
         <HowItWorks />
+        <CustomerRewardsCTA />
         <VendorCTA />
         <Footer />
       </main>
