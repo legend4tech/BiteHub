@@ -5,12 +5,11 @@ import VendorUserModel from "@/models/VendorUser"
 import VendorModel from "@/models/Vendor"
 import bcrypt from "bcryptjs"
 import { changePasswordSchema } from "@/lib/schemas"
-import { Resend } from "resend"
+import { render } from "@react-email/render"
+import { mailer } from "@/lib/ses"
 import React from "react"
 import PasswordChangeNotification from "@/emails/PasswordChangeNotification"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
     await user.save()
 
     // Send security notification email
-    if (process.env.RESEND_API_KEY) {
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
       try {
         const vendorId = session.user?.vendorId || user.vendorId
         const vendor = vendorId
@@ -73,13 +72,16 @@ export async function POST(req: NextRequest) {
         const fromEmail =
           process.env.EMAIL_FROM || "BiteHub <no-reply@mail.bitehubapp.com>"
 
-        await resend.emails.send({
+        const html = await render(
+          React.createElement(PasswordChangeNotification, {
+            vendorName,
+          })
+        )
+        await mailer.sendMail({
           from: fromEmail,
           to: user.email,
           subject: "Security Alert: Your password has been changed",
-          react: React.createElement(PasswordChangeNotification, {
-            vendorName,
-          }),
+          html: html,
         })
       } catch (emailError) {
         console.error(

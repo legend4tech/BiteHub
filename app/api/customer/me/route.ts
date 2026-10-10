@@ -27,6 +27,7 @@ export async function GET() {
       preferredExactLocation: customer.preferredExactLocation,
       image: customer.image,
       imagePublicId: customer.imagePublicId,
+      receivesMarketing: customer.receivesMarketing ?? true,
     })
   } catch (error) {
     console.error("[CUSTOMER_ME_GET]", error)
@@ -61,6 +62,7 @@ export async function PATCH(req: NextRequest) {
       preferredExactLocation,
       image,
       imagePublicId,
+      receivesMarketing,
     } = parsedBody.data
     await dbConnect()
     if (username) {
@@ -111,6 +113,7 @@ export async function PATCH(req: NextRequest) {
           }),
           ...(image !== undefined && { image }),
           ...(imagePublicId !== undefined && { imagePublicId }),
+          ...(receivesMarketing !== undefined && { receivesMarketing }),
         },
       },
       { new: true }
@@ -132,6 +135,7 @@ export async function PATCH(req: NextRequest) {
         preferredExactLocation: updatedCustomer.preferredExactLocation,
         image: updatedCustomer.image,
         imagePublicId: updatedCustomer.imagePublicId,
+        receivesMarketing: updatedCustomer.receivesMarketing ?? true,
       },
     })
   } catch (error) {

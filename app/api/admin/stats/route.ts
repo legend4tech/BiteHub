@@ -8,6 +8,7 @@ import Wallet from "@/models/Wallet"
 import { auth } from "@/auth"
 import { ORDER_STATUS } from "@/lib/constants"
 import { getMonnifyWalletBalance } from "@/lib/monnify"
+import { nairaToKobo } from "@/lib/money"
 
 export async function GET() {
   try {
@@ -125,13 +126,14 @@ export async function GET() {
       vendorsWithoutMenus,
       grossVolumeInKobo,
       platformProfitInKobo,
-      monnifyBalance,
+      monnifyBalanceInKobo:
+        monnifyBalance !== null ? nairaToKobo(monnifyBalance) : null,
       allTimePlatformProfitInKobo,
       totalWithdrawnInKobo,
       remainingProfitInKobo,
-      totalCustomerWalletLiabilities,
-      totalPendingVendorWallet,
-      totalVendorWalletDisbursed,
+      totalCustomerWalletLiabilitiesInKobo: totalCustomerWalletLiabilities,
+      totalPendingVendorWalletInKobo: totalPendingVendorWallet,
+      totalVendorWalletDisbursedInKobo: totalVendorWalletDisbursed,
     })
   } catch (error) {
     console.error("[admin/stats]", error)

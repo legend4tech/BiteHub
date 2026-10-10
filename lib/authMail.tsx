@@ -10,8 +10,8 @@
  *  - app/api/admin/vendors/* (vendor welcome on creation)
  */
 
-import { Resend } from "resend"
-import React from "react"
+import { render } from "@react-email/render"
+import { mailer } from "./ses"
 import ResetPasswordEmail from "@/emails/ResetPasswordEmail"
 import BankSetupConfirmationEmail from "@/emails/BankSetupConfirmationEmail"
 import BankChangeOtpEmail from "@/emails/BankChangeOtpEmail"
@@ -21,8 +21,6 @@ import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
 import CustomerWelcomeEmail from "@/emails/CustomerWelcomeEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // ─── Shared helper ────────────────────────────────────────────────────────────
 
 /** Resolves the correct "from" address for dev vs production. */
@@ -30,11 +28,13 @@ function resolveFrom() {
   const configured = process.env.EMAIL_FROM || `BiteHub <${NO_REPLY_EMAIL}>`
   return process.env.NODE_ENV === "production"
     ? configured
-    : process.env.EMAIL_FROM || "onboarding@resend.dev"
+    : process.env.EMAIL_FROM || "no-reply@bitehubapp.com"
 }
 
 function missingKey() {
-  console.warn("⚠️ RESEND_API_KEY is not defined in env.")
+  console.warn(
+    "⚠️ AWS SES setup is missing (AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY)."
+  )
   return { success: false, error: "Email provider key missing" }
 }
 
@@ -46,29 +46,25 @@ export async function sendPasswordResetEmail(
   resetLink: string,
   expiryMinutes: number = 15
 ) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn(
-      "⚠️ RESEND_API_KEY is not defined in env. Logged reset link:",
-      resetLink
-    )
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.warn("⚠️ AWS credentials missing. Logged reset link:", resetLink)
     return { success: false, error: "Email provider key missing" }
   }
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <ResetPasswordEmail
+        vendorName={vendorName}
+        resetLink={resetLink}
+        expiryMinutes={expiryMinutes}
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: "Reset your BiteHub vendor password",
-      react: React.createElement(ResetPasswordEmail, {
-        vendorName,
-        resetLink,
-        expiryMinutes,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Password Reset):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send password reset email:", error)
     return { success: false, error }
@@ -81,30 +77,29 @@ export async function sendCustomerPasswordResetEmail(
   resetLink: string,
   expiryMinutes: number = 15
 ) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     console.warn(
-      "⚠️ RESEND_API_KEY is not defined in env. Logged customer reset link:",
+      "⚠️ AWS credentials missing. Logged customer reset link:",
       resetLink
     )
     return { success: false, error: "Email provider key missing" }
   }
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <ResetPasswordEmail
+        vendorName={customerName}
+        resetLink={resetLink}
+        expiryMinutes={expiryMinutes}
+        userType="customer"
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: "Reset your BiteHub password",
-      react: React.createElement(ResetPasswordEmail, {
-        vendorName: customerName,
-        resetLink,
-        expiryMinutes,
-        userType: "customer",
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Customer Password Reset):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send customer password reset email:", error)
     return { success: false, error }
@@ -118,24 +113,24 @@ export async function sendBankSetupConfirmationEmail(
   accountNumber: string,
   lockDays: number
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <BankSetupConfirmationEmail
+        vendorName={vendorName}
+        bankName={bankName}
+        accountNumber={accountNumber}
+        lockDays={lockDays}
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: "Your BiteHub Payout Bank Details Are Set Up",
-      react: React.createElement(BankSetupConfirmationEmail, {
-        vendorName,
-        bankName,
-        accountNumber,
-        lockDays,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Bank Setup):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send bank setup confirmation email:", error)
     return { success: false, error }
@@ -148,23 +143,23 @@ export async function sendBankChangeOtpEmail(
   otp: string,
   expiryMinutes: number = 15
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <BankChangeOtpEmail
+        vendorName={vendorName}
+        otp={otp}
+        expiryMinutes={expiryMinutes}
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: `BiteHub Bank Update Verification Code: ${otp}`,
-      react: React.createElement(BankChangeOtpEmail, {
-        vendorName,
-        otp,
-        expiryMinutes,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Bank Change OTP):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send bank change OTP email:", error)
     return { success: false, error }
@@ -178,24 +173,24 @@ export async function sendBankChangeConfirmationEmail(
   accountNumber: string,
   lockDays: number
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <BankChangeConfirmationEmail
+        vendorName={vendorName}
+        bankName={bankName}
+        accountNumber={accountNumber}
+        lockDays={lockDays}
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: "BiteHub Payout Bank Details Updated",
-      react: React.createElement(BankChangeConfirmationEmail, {
-        vendorName,
-        bankName,
-        accountNumber,
-        lockDays,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Bank Change Confirmation):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send bank change confirmation email:", error)
     return { success: false, error }
@@ -206,22 +201,19 @@ export async function sendAdminPasswordChangedEmail(
   email: string,
   adminName: string
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <AdminPasswordChangedEmail adminName={adminName} email={email} />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: "Security Alert: Admin Password Changed",
-      react: React.createElement(AdminPasswordChangedEmail, {
-        adminName,
-        email,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Admin Password Change):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send admin password change notification:", error)
     return { success: false, error }
@@ -232,23 +224,24 @@ export async function sendCustomerWelcomeEmail(
   email: string,
   customerName: string
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <CustomerWelcomeEmail
+        customerName={customerName}
+        dashboardUrl={
+          process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"
+        }
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: `Welcome to BiteHub, ${customerName}! 🍕`,
-      react: React.createElement(CustomerWelcomeEmail, {
-        customerName,
-        dashboardUrl:
-          process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com",
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Customer Welcome):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send customer welcome email:", error)
     return { success: false, error }
@@ -260,25 +253,25 @@ export async function sendVendorWelcomeEmail(
   vendorName: string,
   passwordPlain: string
 ) {
-  if (!process.env.RESEND_API_KEY) return missingKey()
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/vendor/dashboard`
   try {
-    const { data, error } = await resend.emails.send({
+    const html = await render(
+      <VendorWelcomeEmail
+        vendorName={vendorName}
+        email={email}
+        passwordPlain={passwordPlain}
+        dashboardUrl={dashboardUrl}
+      />
+    )
+    const info = await mailer.sendMail({
       from: resolveFrom(),
       to: email,
       subject: `Welcome to BiteHub, ${vendorName}! 🚀`,
-      react: React.createElement(VendorWelcomeEmail, {
-        vendorName,
-        email,
-        passwordPlain,
-        dashboardUrl,
-      }),
+      html,
     })
-    if (error) {
-      console.error("Resend API Error (Vendor Welcome Email):", error)
-      return { success: false, error }
-    }
-    return { success: true, data }
+    return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send vendor welcome email:", error)
     return { success: false, error }

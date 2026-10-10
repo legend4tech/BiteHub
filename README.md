@@ -29,7 +29,7 @@ BiteHub is a campus food ordering platform designed to connect students with loc
 - **State Management:** [React Query](https://tanstack.com/query/latest) (server state) + React Context (local state)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
 - **Validation:** [Zod](https://zod.dev/)
-- **Email:** [Resend](https://resend.com/) + React Email
+- **Email:** AWS SES + Nodemailer + React Email
 - **File Uploads:** [Cloudinary](https://cloudinary.com/)
 - **Notifications:** WhatsApp Business API (Meta)
 - **Rate Limiting:** [Upstash Redis](https://upstash.com/)
@@ -91,9 +91,11 @@ MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net
 MONGODB_DB=bitehub_dev
 ```
 
-### Email (Resend)
+### Email (AWS SES)
 ```env
-RESEND_API_KEY=your_resend_api_key
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
 EMAIL_FROM=BiteHub <no-reply@bitehubapp.com>
 EMAIL_TOKEN_EXPIRY_MINUTES=60
 PASSWORD_RESET_EXPIRY_MINUTES=15

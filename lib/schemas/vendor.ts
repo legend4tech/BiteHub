@@ -92,6 +92,7 @@ export const vendorSettingsSchema = z.object({
   school: z.string().optional(),
   campus: z.string().optional(),
   isOpen: z.boolean().optional(),
+  receivesMarketing: z.boolean().optional().default(true),
   image: z.any().nullable().optional(),
 })
 

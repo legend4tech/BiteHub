@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { render } from "@react-email/render"
+import { mailer } from "@/lib/ses"
 import React from "react"
 import ContactAutoReply from "@/emails/ContactAutoReply"
 import { CONTACT_EMAIL } from "@/lib/constants"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 import { contactSchema } from "@/lib/schemas"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
@@ -31,8 +30,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("⚠️ RESEND_API_KEY not set. Contact email not sent.")
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      console.warn("⚠️ AWS_ACCESS_KEY_ID not set. Contact email not sent.")
       return NextResponse.json(
         { message: "Email service not configured." },
         { status: 503 }
@@ -45,7 +44,7 @@ export async function POST(req: NextRequest) {
     // Send both emails — use allSettled so one failure doesn't kill the other
     const [notifyResult, autoReplyResult] = await Promise.allSettled([
       // 1. Notify BiteHub inbox with full message details (critical — must arrive)
-      resend.emails.send({
+      mailer.sendMail({
         from: fromEmail,
         to: CONTACT_EMAIL,
         replyTo: email,
@@ -54,16 +53,20 @@ export async function POST(req: NextRequest) {
       }),
 
       // 2. Auto-acknowledge the sender (non-critical — best effort)
-      resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: `We received your message — BiteHub Support`,
-        react: React.createElement(ContactAutoReply, {
+      render(
+        React.createElement(ContactAutoReply, {
           senderName: name,
           subject,
           message,
-        }),
-      }),
+        })
+      ).then((html) =>
+        mailer.sendMail({
+          from: fromEmail,
+          to: email,
+          subject: `We received your message — BiteHub Support`,
+          html,
+        })
+      ),
     ])
 
     // If the main notification failed, that's a real error

@@ -67,6 +67,7 @@ export interface CustomerProfile {
   preferredExactLocation?: string
   image?: string
   imagePublicId?: string
+  receivesMarketing?: boolean
   acceptedTermsVersion?: string
 }
 

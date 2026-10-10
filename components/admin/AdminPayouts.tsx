@@ -4,6 +4,7 @@ import { RefreshCcw, Activity, AlertTriangle, Banknote } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { formatPriceExact } from "@/lib/format"
 import type { AdminVendor, AdminStats } from "@/types/admin"
 interface AdminPayoutsProps {
   vendors: AdminVendor[]
@@ -27,13 +28,6 @@ export function AdminPayouts({
       v.pendingWalletBalanceInKobo !== undefined &&
       v.pendingWalletBalanceInKobo > 0
   )
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -57,7 +51,7 @@ export function AdminPayouts({
               Global Pending Payouts
             </div>
             <p className="font-heading text-3xl font-extrabold tracking-tight text-destructive">
-              {formatPrice(stats.totalPendingVendorWalletInKobo)}
+              {formatPriceExact(stats.totalPendingVendorWalletInKobo)}
             </p>
             <p className="mt-2 text-xs text-destructive/70">
               Total funds pending disbursement to vendors
@@ -71,7 +65,7 @@ export function AdminPayouts({
               Lifetime Wallet Disbursements
             </div>
             <p className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
-              {formatPrice(stats.totalVendorWalletDisbursedInKobo)}
+              {formatPriceExact(stats.totalVendorWalletDisbursedInKobo)}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
               Total funds successfully disbursed via Wallet
@@ -153,7 +147,7 @@ export function AdminPayouts({
                   {/* Actions & Balance */}
                   <div className="flex shrink-0 flex-col items-end gap-3 pt-2 pl-[56px] md:pt-0 md:pl-0">
                     <p className="font-heading text-xl font-bold text-destructive">
-                      {formatPrice(vendor.pendingWalletBalanceInKobo || 0)}
+                      {formatPriceExact(vendor.pendingWalletBalanceInKobo || 0)}
                     </p>
                     <Button
                       variant="outline"

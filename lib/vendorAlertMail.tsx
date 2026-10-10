@@ -9,13 +9,12 @@
  *    LOW_STOCK_THRESHOLD so they can restock before selling out entirely.
  */
 
-import { Resend } from "resend"
+import { render } from "@react-email/render"
+import { mailer } from "./ses"
 import React from "react"
 import VendorLowStockAlertEmail from "@/emails/VendorLowStockAlertEmail"
 import VendorNewReviewEmail from "@/emails/VendorNewReviewEmail"
 import { NO_REPLY_EMAIL } from "./constants"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 /**
  * Sends a one-time low stock alert to the vendor when a menu item's remaining
@@ -35,9 +34,9 @@ export async function sendVendorLowStockAlertEmail(
   itemName: string,
   remainingQuantity: number
 ) {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     console.warn(
-      "⚠️ RESEND_API_KEY not set. Skipping vendor low stock alert email."
+      "⚠️ AWS_ACCESS_KEY_ID not set. Skipping vendor low stock alert email."
     )
     return { success: false, error: "Email provider key missing" }
   }
@@ -61,29 +60,27 @@ export async function sendVendorLowStockAlertEmail(
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
-      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+      : process.env.EMAIL_FROM || "no-reply@bitehubapp.com"
 
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/vendor/dashboard/menu`
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: resolvedFrom,
-      to: vendorUser.email,
-      subject: `Low Stock Alert: ${itemName} is running out!`,
-      react: React.createElement(VendorLowStockAlertEmail, {
+    const html = await render(
+      React.createElement(VendorLowStockAlertEmail, {
         vendorName,
         itemName,
         remainingQuantity,
         dashboardUrl,
-      }),
+      })
+    )
+    await mailer.sendMail({
+      from: resolvedFrom,
+      to: vendorUser.email,
+      subject: `Low Stock Alert: ${itemName} is running out!`,
+      html: html,
     })
 
-    if (error) {
-      console.error("Resend API Error (Vendor Low Stock Alert):", error)
-      return { success: false, error }
-    }
-
-    return { success: true, data }
+    return { success: true }
   } catch (error) {
     console.error("Failed to send vendor low stock alert email:", error)
     return { success: false, error }
@@ -101,8 +98,10 @@ export async function sendVendorNewReviewEmail(
     comments?: string
   }[]
 ) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("⚠️ RESEND_API_KEY not set. Skipping vendor new review email.")
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.warn(
+      "⚠️ AWS_ACCESS_KEY_ID not set. Skipping vendor new review email."
+    )
     return { success: false, error: "Email provider key missing" }
   }
 
@@ -125,28 +124,26 @@ export async function sendVendorNewReviewEmail(
   const resolvedFrom =
     process.env.NODE_ENV === "production"
       ? fromEmail
-      : process.env.EMAIL_FROM || "onboarding@resend.dev"
+      : process.env.EMAIL_FROM || "no-reply@bitehubapp.com"
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/vendor/feedback`
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: resolvedFrom,
-      to: vendorUser.email,
-      subject: `You received a new ${vendorRating}-star review!`,
-      react: React.createElement(VendorNewReviewEmail, {
+    const html = await render(
+      React.createElement(VendorNewReviewEmail, {
         vendorName,
         vendorRating,
         itemReviews,
         dashboardUrl,
-      }),
+      })
+    )
+    await mailer.sendMail({
+      from: resolvedFrom,
+      to: vendorUser.email,
+      subject: `You received a new ${vendorRating}-star review!`,
+      html: html,
     })
 
-    if (error) {
-      console.error("Resend API Error (Vendor New Review Alert):", error)
-      return { success: false, error }
-    }
-
-    return { success: true, data }
+    return { success: true }
   } catch (error) {
     console.error("Failed to send vendor new review alert email:", error)
     return { success: false, error }

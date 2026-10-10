@@ -10,6 +10,7 @@ export interface IVendor extends Document {
   school: string
   campus: string
   isActive: boolean
+  receivesMarketing: boolean
   isOpen: boolean
   defaultDeliveryFeeInKobo: number
   prepTime: string
@@ -64,6 +65,7 @@ const VendorSchema: Schema = new Schema(
     school: { type: String, required: true },
     campus: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    receivesMarketing: { type: Boolean, default: true },
     isOpen: { type: Boolean, default: true },
     defaultDeliveryFeeInKobo: { type: Number, default: 0 },
     prepTime: { type: String, default: "" },

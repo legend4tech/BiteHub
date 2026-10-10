@@ -257,7 +257,7 @@ export function AdminOverview({
                   const gap = Math.abs(
                     (stats.monnifyBalanceInKobo ?? 0) - expected
                   )
-                  const isHealthy = gap < 500 // within ₦500 tolerance
+                  const isHealthy = gap < 50000 // within ₦500 tolerance (50000 kobo)
                   return (
                     <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
                       <div className="flex-1">

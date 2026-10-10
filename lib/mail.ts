@@ -34,3 +34,5 @@ export {
 export { sendVendorNewOrderEmail } from "./vendorOrderMail"
 
 export { sendVendorLowStockAlertEmail } from "./vendorAlertMail"
+
+export { sendSubscriberWelcomeEmail } from "./subscriberMail"

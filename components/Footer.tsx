@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { useState } from "react"
+import { toast } from "sonner"
 import { Mail, MapPin, Heart } from "lucide-react"
 import { APP_NAME, APP_LOGO_URL, CONTACT_EMAIL } from "@/lib/constants"
 import { useCampus } from "@/components/providers/CampusProvider"
@@ -11,6 +13,43 @@ const VENDOR_FORM_URL = "https://forms.gle/KEwY8nthHHfjLL1n6"
 export function Footer() {
   const { schoolId, campusId } = useCampus()
   const cq = `school=${schoolId}&campus=${campusId}`
+  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email) return
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || "Failed to subscribe")
+
+      if (data.alreadySubscribed) {
+        toast.info("You are already subscribed to our updates.", {
+          action: {
+            label: "Unsubscribe",
+            onClick: () => window.location.assign(data.unsubscribeUrl),
+          },
+          duration: 5000,
+        })
+      } else {
+        toast.success("Subscribed successfully!")
+      }
+
+      setEmail("")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <footer className="relative overflow-hidden border-t border-border bg-card/40">
@@ -115,19 +154,30 @@ export function Footer() {
             </div>
 
             <div className="pt-2">
-              <p className="mb-2 text-xs font-bold text-foreground">
+              <p className="mb-3 font-heading text-sm font-bold tracking-tight text-foreground">
                 Subscribe to our updates
               </p>
-              <div className="flex gap-2">
+              <form
+                onSubmit={handleSubscribe}
+                className="flex w-full max-w-sm gap-2"
+              >
                 <input
                   type="email"
-                  placeholder="Your email"
-                  className="flex-1 rounded-xl border border-border bg-accent/50 px-4 py-2 text-xs transition-colors focus:border-primary focus:outline-none"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
+                  required
+                  placeholder="Enter your email"
+                  className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm text-foreground shadow-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:opacity-50"
                 />
-                <button className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90">
-                  Join
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Subscribing..." : "Subscribe"}
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>

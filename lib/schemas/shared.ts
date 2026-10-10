@@ -145,3 +145,8 @@ export const feedbackSchema = z
   })
 
 export type FeedbackValues = z.infer<typeof feedbackSchema>
+
+export const subscribeSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase().trim(),
+})
+export type SubscribeValues = z.infer<typeof subscribeSchema>

@@ -9,6 +9,7 @@ export interface ICustomer extends Document {
   referralCode: string
   referredBy?: string
   isActive: boolean
+  receivesMarketing: boolean
   school?: string // Made optional for backward compatibility with older users
   campus?: string
   preferredLandmark?: string
@@ -55,6 +56,7 @@ const CustomerSchema = new Schema<ICustomer>(
     referralCode: { type: String, required: true, unique: true },
     referredBy: { type: String }, // The referralCode of the user who referred them
     isActive: { type: Boolean, default: true },
+    receivesMarketing: { type: Boolean, default: true },
     school: { type: String },
     campus: { type: String },
     preferredLandmark: { type: String },

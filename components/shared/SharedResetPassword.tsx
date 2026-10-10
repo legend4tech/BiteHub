@@ -268,19 +268,19 @@ export function SharedResetPassword({
               </Button>
             </form>
           )}
+          {/* Back Link */}
+          {!isAuth && (
+            <div className="mt-6 text-center">
+              <Link
+                href={loginHref}
+                className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+                Back to sign in
+              </Link>
+            </div>
+          )}
         </div>
-        {/* Back Link */}
-        {!isAuth && (
-          <div className="mt-6 text-center">
-            <Link
-              href={loginHref}
-              className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
-              Back to sign in
-            </Link>
-          </div>
-        )}
       </div>
     </main>
   )

@@ -33,8 +33,9 @@ export function FundWalletFlow({
   const [amountStr, setAmountStr] = useState("1000")
 
   const desiredAmount = Number(amountStr) || 0
-  const calculatedFee = computeMonnifyServiceFee(desiredAmount)
-  const totalToTransfer = desiredAmount + calculatedFee
+  const desiredAmountInKobo = nairaToKobo(desiredAmount)
+  const calculatedFeeInKobo = computeMonnifyServiceFee(desiredAmountInKobo)
+  const totalToTransferInKobo = desiredAmountInKobo + calculatedFeeInKobo
 
   const handleCopy = (text: string | null, label: string) => {
     if (!text) return
@@ -95,7 +96,7 @@ export function FundWalletFlow({
                     Amount to credit
                   </span>
                   <span className="font-semibold">
-                    {formatPriceExact(nairaToKobo(desiredAmount))}
+                    {formatPriceExact(desiredAmountInKobo)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -103,7 +104,7 @@ export function FundWalletFlow({
                     Processing Fee (Monnify)
                   </span>
                   <span className="font-semibold text-destructive">
-                    {formatPriceExact(nairaToKobo(calculatedFee))}
+                    {formatPriceExact(calculatedFeeInKobo)}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-border pt-3">
@@ -111,7 +112,7 @@ export function FundWalletFlow({
                     Total to Transfer
                   </span>
                   <span className="text-lg font-bold text-primary">
-                    {formatPriceExact(nairaToKobo(totalToTransfer))}
+                    {formatPriceExact(totalToTransferInKobo)}
                   </span>
                 </div>
               </div>
@@ -135,7 +136,7 @@ export function FundWalletFlow({
                     toast.error("Minimum funding amount is ₦100")
                     return
                   }
-                  if (totalToTransfer > 100000) {
+                  if (totalToTransferInKobo > 100000 * 100) {
                     toast.error("Maximum single transfer limit is ₦100,000")
                     return
                   }
@@ -165,7 +166,7 @@ export function FundWalletFlow({
                 <h2 className="text-2xl font-bold text-foreground">
                   Transfer exactly{" "}
                   <span className="text-primary">
-                    {formatPriceExact(nairaToKobo(totalToTransfer))}
+                    {formatPriceExact(totalToTransferInKobo)}
                   </span>
                 </h2>
               </div>
@@ -210,9 +211,8 @@ export function FundWalletFlow({
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Transfers reflect almost instantly. To cover Monnify&apos;s
                   processing charges, we auto-deduct the{" "}
-                  {formatPriceExact(nairaToKobo(calculatedFee))} fee and credit
-                  your wallet with exactly{" "}
-                  {formatPriceExact(nairaToKobo(desiredAmount))}.
+                  {formatPriceExact(calculatedFeeInKobo)} fee and credit your
+                  wallet with exactly {formatPriceExact(desiredAmountInKobo)}.
                 </p>
               </div>
             </div>

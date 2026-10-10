@@ -10,6 +10,7 @@ export interface Vendor {
   campus: string
   isActive: boolean
   isOpen: boolean
+  receivesMarketing?: boolean
   defaultDeliveryFeeInKobo: number
   prepTime?: string
   image?: string | { url: string; publicId: string }

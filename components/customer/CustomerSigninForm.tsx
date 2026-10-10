@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -127,6 +128,12 @@ export function CustomerSigninForm() {
           <Field data-invalid={fieldState.invalid}>
             <div className="flex items-center justify-between">
               <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+              <Link
+                href={`/customer/forgot-password?email=${encodeURIComponent(form.getValues("email") || "")}`}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
             </div>
             <div className="relative">
               <Input

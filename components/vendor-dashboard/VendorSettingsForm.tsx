@@ -67,6 +67,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
       school: initial.school ?? "",
       campus: initial.campus ?? "",
       isOpen: initial.isOpen ?? true,
+      receivesMarketing: initial.receivesMarketing ?? true,
     },
   })
 
@@ -119,6 +120,7 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
         school: values.school,
         campus: values.campus,
         isOpen: values.isOpen,
+        receivesMarketing: values.receivesMarketing,
       })
 
       const initialImageUrl =
@@ -406,6 +408,31 @@ export function VendorSettingsForm({ initial }: VendorSettingsFormProps) {
           )}
         />
       </Field>
+
+      <Controller
+        name="receivesMarketing"
+        control={form.control}
+        render={({ field }) => (
+          <div className="flex flex-row items-start space-y-0 space-x-3 rounded-xl border border-border p-4">
+            <Checkbox
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              id="vendorReceivesMarketing"
+            />
+            <div className="space-y-1 leading-none">
+              <label
+                htmlFor="vendorReceivesMarketing"
+                className="text-sm font-medium"
+              >
+                Marketing Communications
+              </label>
+              <p className="text-sm text-muted-foreground">
+                Receive emails about new features, updates, and milestones.
+              </p>
+            </div>
+          </div>
+        )}
+      />
 
       <div className="flex justify-end">
         <Button

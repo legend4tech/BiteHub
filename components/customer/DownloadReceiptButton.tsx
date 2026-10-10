@@ -1,7 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { PDFDownloadLink } from "@react-pdf/renderer"
+import React, { useState } from "react"
 import { Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Transaction } from "@/types/customer"
@@ -13,48 +12,50 @@ interface Props {
 }
 
 export function DownloadReceiptButton({ transaction, customerName }: Props) {
-  // We need to delay rendering the PDFDownloadLink until the client has mounted
-  // because @react-pdf/renderer uses browser APIs that cause hydration mismatch.
-  const [isClient, setIsClient] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsClient(true)
-  }, [])
+  const handleDownload = async () => {
+    try {
+      setIsGenerating(true)
+      // Dynamically import the pdf builder to avoid blocking the main thread
+      const { pdf } = await import("@react-pdf/renderer")
 
-  if (!isClient) {
-    return (
-      <Button variant="ghost" size="icon" disabled title="Download Receipt">
-        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-      </Button>
-    )
-  }
-
-  return (
-    <PDFDownloadLink
-      document={
+      const blob = await pdf(
         <TransactionReceiptPdf
           transaction={transaction}
           customerName={customerName}
         />
-      }
-      fileName={`receipt-${transaction.reference}.pdf`}
+      ).toBlob()
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `receipt-${transaction.reference}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Failed to generate PDF", error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      title="Download Receipt"
+      onClick={handleDownload}
+      disabled={isGenerating}
+      className="hover:bg-primary/10 hover:text-primary"
     >
-      {({ loading }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          title="Download Receipt"
-          disabled={loading}
-          className="hover:bg-primary/10 hover:text-primary"
-        >
-          {loading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Download className="size-4" />
-          )}
-        </Button>
+      {isGenerating ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Download className="size-4" />
       )}
-    </PDFDownloadLink>
+    </Button>
   )
 }

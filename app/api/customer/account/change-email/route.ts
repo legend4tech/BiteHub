@@ -3,14 +3,13 @@ import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
 import crypto from "crypto"
-import { Resend } from "resend"
+import { render } from "@react-email/render"
+import { mailer } from "@/lib/ses"
 import React from "react"
 import EmailChangeNotification from "@/emails/EmailChangeNotification"
 import EmailChangeConfirmation from "@/emails/EmailChangeConfirmation"
 import { changeEmailSchema } from "@/lib/schemas"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -92,8 +91,8 @@ export async function POST(req: NextRequest) {
     user.emailChangeExpires = new Date(Date.now() + expiryMinutes * 60 * 1000)
     await user.save()
 
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("⚠️ RESEND_API_KEY not set. Email change link not sent.")
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      console.warn("⚠️ AWS_ACCESS_KEY_ID not set. Email change link not sent.")
       return NextResponse.json(
         { message: "Email service not configured." },
         { status: 503 }
@@ -108,38 +107,41 @@ export async function POST(req: NextRequest) {
     // Send both emails
     const [notifyResult, confirmResult] = await Promise.allSettled([
       // 1. Notify OLD email
-      resend.emails.send({
-        from: fromEmail,
-        to: currentEmail,
-        subject: "Security Alert: Email change requested",
-        react: React.createElement(EmailChangeNotification, {
+      render(
+        React.createElement(EmailChangeNotification, {
           vendorName: customerName,
           oldEmail: currentEmail,
           newEmail,
-        }),
-      }),
+        })
+      ).then((html) =>
+        mailer.sendMail({
+          from: fromEmail,
+          to: currentEmail,
+          subject: "Security Alert: Email change requested",
+          html,
+        })
+      ),
       // 2. Send confirmation to NEW email
-      resend.emails.send({
-        from: fromEmail,
-        to: newEmail,
-        subject: "Confirm your new BiteHub email address",
-        react: React.createElement(EmailChangeConfirmation, {
+      render(
+        React.createElement(EmailChangeConfirmation, {
           vendorName: customerName,
           confirmLink,
           expiryMinutes,
-        }),
-      }),
+        })
+      ).then((html) =>
+        mailer.sendMail({
+          from: fromEmail,
+          to: newEmail,
+          subject: "Confirm your new BiteHub email address",
+          html,
+        })
+      ),
     ])
 
-    if (
-      confirmResult.status === "rejected" ||
-      (confirmResult.status === "fulfilled" && confirmResult.value?.error)
-    ) {
+    if (confirmResult.status === "rejected") {
       console.error(
         "[change-email] Failed to send confirmation email:",
-        confirmResult.status === "rejected"
-          ? confirmResult.reason
-          : confirmResult.value.error
+        confirmResult.reason
       )
       return NextResponse.json(
         { message: "Failed to send confirmation email. Please try again." },
@@ -147,15 +149,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (
-      notifyResult.status === "rejected" ||
-      (notifyResult.status === "fulfilled" && notifyResult.value?.error)
-    ) {
+    if (notifyResult.status === "rejected") {
       console.warn(
         "[change-email] Failed to send notification to old email:",
-        notifyResult.status === "rejected"
-          ? notifyResult.reason
-          : notifyResult.value.error
+        notifyResult.reason
       )
     }
 

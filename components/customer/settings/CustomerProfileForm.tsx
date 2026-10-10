@@ -12,6 +12,7 @@ import { ImageUpload } from "@/components/shared/ImageUpload"
 import type { AxiosError } from "axios"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { Checkbox } from "@/components/ui/checkbox"
 export function CustomerProfileForm() {
   const { data: profile, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
@@ -26,11 +27,13 @@ export function CustomerProfileForm() {
       name: profile?.name || "",
       username: profile?.username || "",
       phone: profile?.phone ? formatFromWhatsapp(profile.phone) : "",
+      receivesMarketing: profile?.receivesMarketing ?? true,
     },
     defaultValues: {
       name: "",
       username: "",
       phone: "",
+      receivesMarketing: true,
     },
   })
   const [imageUpload, setImageUpload] = useState<{
@@ -58,6 +61,7 @@ export function CustomerProfileForm() {
     name: string
     username: string
     phone: string
+    receivesMarketing: boolean
   }) => {
     let finalImageUrl = profile?.image || ""
     let finalPublicId = profile?.imagePublicId || ""
@@ -93,6 +97,7 @@ export function CustomerProfileForm() {
         phone: values.phone,
         image: finalImageUrl,
         imagePublicId: finalPublicId,
+        receivesMarketing: values.receivesMarketing,
       },
       {
         onSuccess: async () => {
@@ -215,6 +220,30 @@ export function CustomerProfileForm() {
                   <FieldError errors={[fieldState.error]} />
                 )}
               </Field>
+            )}
+          />
+          <Controller
+            name="receivesMarketing"
+            control={control}
+            render={({ field }) => (
+              <div className="flex flex-row items-start space-y-0 space-x-3 rounded-xl border border-border p-4">
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  id="receivesMarketing"
+                />
+                <div className="space-y-1 leading-none">
+                  <label
+                    htmlFor="receivesMarketing"
+                    className="text-sm font-medium"
+                  >
+                    Marketing Communications
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive emails about new features, updates, and rewards.
+                  </p>
+                </div>
+              </div>
             )}
           />
         </div>

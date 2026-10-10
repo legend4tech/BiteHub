@@ -180,6 +180,7 @@ export const customerProfileUpdateSchema = z.object({
   preferredExactLocation: z.string().trim().optional(),
   image: z.string().url("Invalid image URL").optional().or(z.literal("")),
   imagePublicId: z.string().optional().or(z.literal("")),
+  receivesMarketing: z.boolean().optional().default(true),
 })
 export type CustomerProfileUpdateValues = z.infer<
   typeof customerProfileUpdateSchema

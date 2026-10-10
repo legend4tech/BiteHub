@@ -40,6 +40,7 @@ export async function PATCH(request: Request) {
       whatsappNumber,
       prepTime,
       isOpen,
+      receivesMarketing,
       image,
     } = parsedBody.data
 
@@ -91,6 +92,8 @@ export async function PATCH(request: Request) {
       updateData.whatsappNumber = formatToWhatsapp(whatsappNumber?.trim() || "")
     if (prepTime !== undefined) updateData.prepTime = prepTime
     if (isOpen !== undefined) updateData.isOpen = isOpen
+    if (receivesMarketing !== undefined)
+      updateData.receivesMarketing = receivesMarketing
     if (image !== undefined) updateData.image = image
 
     const updatedVendor = await Vendor.findByIdAndUpdate(
