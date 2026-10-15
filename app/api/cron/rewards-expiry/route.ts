@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import mongoose from "mongoose"
+import crypto from "crypto"
 import { toMajorUnit } from "@/lib/money"
 
 export async function POST(req: Request) {
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
                     direction: "debit",
                     amountInKobo: deductionAmount,
                     balanceAfterInKobo: wallet.balanceInKobo,
-                    reference: `EXP-${new mongoose.Types.ObjectId().toString().substring(0, 8).toUpperCase()}`,
+                    reference: `EXP-${customerId.toString().slice(-6)}-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
                     description: "BiteHub Coins Expired",
                   },
                 ],

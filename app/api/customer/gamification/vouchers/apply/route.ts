@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db"
 import RewardVoucher from "@/models/RewardVoucher"
 import { applyVoucherSchema } from "@/lib/schemas/customer"
 import { strictRateLimiter } from "@/lib/rate-limit"
+import { serializeRewardVoucher } from "@/lib/serializers"
 
 export async function POST(req: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
       customerId: session.user.id,
       isUsed: false,
       expiresAt: { $gt: new Date() },
-    })
+    }).lean()
 
     if (!voucher) {
       return NextResponse.json(
@@ -48,8 +49,11 @@ export async function POST(req: Request) {
     }
 
     // We don't mark it as used here. It gets marked as used when the order is completed.
-    // We just return it so the checkout UI can apply the discount.
-    return NextResponse.json({ success: true, voucher })
+    // We return clean serialized voucher so the checkout UI can apply the discount.
+    return NextResponse.json({
+      success: true,
+      voucher: serializeRewardVoucher(voucher),
+    })
   } catch (error) {
     console.error("[POST /api/customer/gamification/vouchers/apply]", error)
     return NextResponse.json(

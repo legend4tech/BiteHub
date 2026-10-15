@@ -45,9 +45,9 @@ async function processSuccessfulTransaction(paymentReference: string) {
       })
       if (!existingTx) {
         const rawAmount = Number(
-          monnifyData.settlementAmount ||
-            monnifyData.amountPaid ||
-            monnifyData.amount
+          monnifyData.amountPaid ||
+            monnifyData.amount ||
+            monnifyData.settlementAmount
         )
         const amountInKobo = nairaToKobo(rawAmount)
 
@@ -98,11 +98,9 @@ async function processSuccessfulTransaction(paymentReference: string) {
           session.endSession()
         }
 
-        if (updatedWalletBalance === null)
-          return NextResponse.json(
-            { error: "Wallet update failed" },
-            { status: 500 }
-          )
+        if (updatedWalletBalance === null) {
+          throw new Error("Wallet update failed")
+        }
 
         revalidatePath("/customer/wallet")
 
@@ -279,25 +277,6 @@ export async function POST(request: Request) {
 
     const event = JSON.parse(rawBody)
     const { eventType, eventData } = event
-
-    // Webhook Timestamp / Age Validation (Replay Protection)
-    const eventTimestampStr = eventData?.createdOn || eventData?.transactionDate
-    if (eventTimestampStr) {
-      // Use the Nigerian timezone offset or parse directly depending on the format.
-      // Assuming Monnify sends ISO strings or parseable date strings.
-      const eventTimestamp = new Date(eventTimestampStr).getTime()
-      if (!isNaN(eventTimestamp)) {
-        const ageMs = Date.now() - eventTimestamp
-        // Reject events older than 10 minutes
-        if (ageMs > 10 * 60 * 1000) {
-          console.warn(
-            "[Collection Webhook] Stale event rejected:",
-            eventData?.paymentReference
-          )
-          return NextResponse.json({ status: "stale_event_ignored" })
-        }
-      }
-    }
 
     // Log removed for production
 

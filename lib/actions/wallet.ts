@@ -42,6 +42,12 @@ export async function activateWallet(
     redirect("/customer/login")
   }
 
+  const existingWallet = await Wallet.findOne({ customerId: customer._id })
+  if (existingWallet?.accountNumber) {
+    revalidatePath("/customer/dashboard/wallet")
+    return { success: true }
+  }
+
   try {
     const accountReference = `WALLET-${customer._id.toString()}-${Date.now()}`
     const accountName = `BiteHub Wallet - ${customer.name}`
@@ -72,12 +78,12 @@ export async function activateWallet(
     const trueAccountName =
       validatedAccount.accountName || accountDetails.accountName
 
-    const existingWallet = await Wallet.findOne({ customerId: customer._id })
-
     if (!existingWallet) {
       await Wallet.create({
         customerId: customer._id,
-        balance: 0,
+        balanceInKobo: 0,
+        depositBalanceInKobo: 0,
+        promoBalanceInKobo: 0,
         monnifyReservedAccountRef: accountReference,
         accountName: trueAccountName,
         accountNumber: accountDetails.accountNumber,
@@ -96,12 +102,19 @@ export async function activateWallet(
         }
       )
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    if ((err as { code?: number }).code === 11000) {
+      // Wallet was created concurrently by a parallel request
+      const createdWallet = await Wallet.findOne({ customerId: customer._id })
+      if (createdWallet?.accountNumber) {
+        revalidatePath("/customer/dashboard/wallet")
+        return { success: true }
+      }
+    }
     console.error(
       "[activateWallet] Monnify reserved account creation failed:",
       err
     )
-    // Re-throw so the UI can catch it (using useFormState or try/catch on the client)
     return { error: "Failed to activate wallet. Please try again." }
   }
 

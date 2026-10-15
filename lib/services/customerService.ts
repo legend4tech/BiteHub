@@ -207,11 +207,13 @@ export async function getCustomerWalletData(
       .map(serializeWalletTransaction)
       .filter(Boolean) as import("@/types/customer").Transaction[]
 
+    const now = new Date()
     const rawExpiringRewards = await WalletTransaction.find({
       customerId,
       type: "reward",
       direction: "credit",
       isExpired: false,
+      expiresAt: { $gt: now },
       $or: [
         { remainingAmountInKobo: { $gt: 0 } },
         { remainingAmountInKobo: { $exists: false } },

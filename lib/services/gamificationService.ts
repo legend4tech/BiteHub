@@ -14,10 +14,10 @@ import RewardVoucher from "@/models/RewardVoucher"
 import Wallet from "@/models/Wallet"
 import WalletTransaction from "@/models/WalletTransaction"
 import crypto from "crypto"
-// Helper to generate secure voucher codes
+// Helper to generate secure voucher codes with high entropy
 function generateVoucherCode(): string {
-  // E.g., BITE-A8F9K2
-  return `BITE-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
+  // E.g., BITE-A8F9K2B3C4
+  return `BITE-${crypto.randomBytes(5).toString("hex").toUpperCase()}`
 }
 import {} from "@/lib/serializers"
 /**
@@ -153,7 +153,11 @@ export async function processOrderCompleted(
             orderTotalInKobo < campaign.minOrderValueInKobo
           )
             continue
-          await processCampaignProgress(referrer._id, campaign, orderId)
+          await processCampaignProgress(
+            referrer._id,
+            campaign,
+            customer._id.toString()
+          )
         }
       }
     }
@@ -274,7 +278,21 @@ async function processCampaignProgress(
     await session.commitTransaction()
   } catch (error) {
     await session.abortTransaction()
-    console.error("Gamification Error:", error)
+    console.error("Gamification Error in processCampaignProgress:", error)
+    try {
+      const err = error as Error
+      const { default: GamificationFailureLog } =
+        await import("@/models/GamificationFailureLog")
+      await GamificationFailureLog.create({
+        customerId,
+        campaignId: campaign._id,
+        errorMessage: err.message || "Unknown error",
+        errorStack: err.stack,
+        context: `processCampaignProgress (campaign: ${campaign.title}, entity: ${entityId})`,
+      })
+    } catch (logErr) {
+      console.error("Failed to write to GamificationFailureLog:", logErr)
+    }
   } finally {
     session.endSession()
   }
@@ -317,7 +335,7 @@ async function issueCoins(
         expiresAt,
         isExpired: false,
         remainingAmountInKobo: amountInKobo,
-        reference: `REWARD-${crypto.randomBytes(4).toString("hex").toUpperCase()}`,
+        reference: `REWARD-${crypto.randomBytes(8).toString("hex").toUpperCase()}`,
         description: `Reward for completing: ${campaignTitle}`,
       },
     ],
@@ -338,7 +356,7 @@ async function issueCoins(
   }
 }
 /**
- * Issues a cryptographically secure voucher for a free meal.
+ * Issues a cryptographically secure voucher for a free meal with collision retry.
  */
 async function issueVoucher(
   customerId: mongoose.Types.ObjectId,
@@ -351,19 +369,34 @@ async function issueVoucher(
 ) {
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + expiryDays)
-  await RewardVoucher.create(
-    [
-      {
-        code: generateVoucherCode(),
-        customerId,
-        campaignId,
-        vendorId,
-        menuItemId,
-        expiresAt,
-      },
-    ],
-    { session }
-  )
+  let voucherCreated = false
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await RewardVoucher.create(
+        [
+          {
+            code: generateVoucherCode(),
+            customerId,
+            campaignId,
+            vendorId,
+            menuItemId,
+            expiresAt,
+          },
+        ],
+        { session }
+      )
+      voucherCreated = true
+      break
+    } catch (err: unknown) {
+      if ((err as { code?: number }).code === 11000 && attempt < 2) {
+        continue
+      }
+      throw err
+    }
+  }
+  if (!voucherCreated) {
+    throw new Error("Failed to generate a unique voucher code")
+  }
   const customer = await Customer.findById(customerId)
     .select("email name")
     .lean()

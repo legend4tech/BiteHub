@@ -11,12 +11,28 @@ async function processDisbursement(
 ) {
   await dbConnect()
 
-  // Monnify sends destinationAccountNumber = the vendor's bank account they registered
-  const vendor = await Vendor.findOne({ monnifyAccountNumber: accountNumber })
+  // 1. Prioritize vendor lookup by ID encoded in the reference: payout-${vendorId}-${timestamp}
+  let vendor = null
+  if (reference?.startsWith("payout-")) {
+    const parts = reference.split("-")
+    if (parts.length >= 2 && parts[1]) {
+      const vendorId = parts[1]
+      try {
+        vendor = await Vendor.findById(vendorId)
+      } catch {
+        // Fallback to accountNumber if invalid ObjectId
+      }
+    }
+  }
+
+  // 2. Fallback to destination account number if reference lookup did not match
+  if (!vendor) {
+    vendor = await Vendor.findOne({ monnifyAccountNumber: accountNumber })
+  }
 
   if (!vendor) {
     console.warn(
-      `[Disbursement Webhook] No vendor found for account: ${accountNumber}`
+      `[Disbursement Webhook] No vendor found for ref "${reference}" or account: ${accountNumber}`
     )
     return
   }
@@ -45,14 +61,64 @@ async function processDisbursement(
     }
   }
 
-  // Atomically update ONLY IF the reference is not already in the array (Concurrency safety)
-  await Vendor.findOneAndUpdate(
-    {
-      _id: vendor._id,
-      processedDisbursementRefs: { $ne: reference },
-    },
-    updateDoc
-  )
+  const mongoose = (await import("mongoose")).default
+  const session = await mongoose.startSession()
+
+  try {
+    await session.withTransaction(async () => {
+      // Atomically update ONLY IF the reference is not already in the array (Concurrency safety)
+      const updatedVendor = await Vendor.findOneAndUpdate(
+        {
+          _id: vendor._id,
+          processedDisbursementRefs: { $ne: reference },
+        },
+        updateDoc,
+        { new: true, session }
+      )
+
+      if (!updatedVendor) {
+        console.warn(
+          `[Disbursement Webhook] Duplicate reference ${reference} ignored (Concurrency catch).`
+        )
+        return
+      }
+
+      if (status !== "SUCCESS") {
+        // Reset isDisbursed on the vendor's orders that were marked for this payout amount
+        const { default: Order } = await import("@/models/Order")
+        const disbursedOrders = await Order.find({
+          vendorId: vendor._id,
+          paymentMethod: "wallet",
+          paymentStatus: "paid",
+          isDisbursed: true,
+        })
+          .sort({ updatedAt: -1 })
+          .select("_id vendorRevenueInKobo")
+          .session(session)
+          .lean()
+
+        let runningTotal = 0
+        const orderIdsToReset = []
+        for (const doOrder of disbursedOrders) {
+          if (runningTotal + doOrder.vendorRevenueInKobo > amount) {
+            break
+          }
+          runningTotal += doOrder.vendorRevenueInKobo
+          orderIdsToReset.push(doOrder._id)
+        }
+
+        if (orderIdsToReset.length > 0) {
+          await Order.updateMany(
+            { _id: { $in: orderIdsToReset } },
+            { $set: { isDisbursed: false } },
+            { session }
+          )
+        }
+      }
+    })
+  } finally {
+    session.endSession()
+  }
 }
 
 export async function POST(request: Request) {

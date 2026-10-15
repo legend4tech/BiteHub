@@ -10,6 +10,7 @@ import type { Types } from "mongoose"
 import type { IVendor } from "@/models/Vendor"
 import type { IMenuItem } from "@/models/MenuItem"
 import type { IOrder } from "@/models/Order"
+import type { GamificationFailureItem } from "@/types/admin"
 import { isItemAvailableNow } from "@/lib/timeUtils"
 
 /**
@@ -492,19 +493,67 @@ export function serializeRewardVoucher(doc: LeanRewardVoucher | null) {
 }
 
 export function serializeGamificationFailureLog(
-  doc: LeanGamificationFailureLog | null
-) {
+  doc:
+    | (LeanGamificationFailureLog & {
+        customerId?: unknown
+        campaignId?: unknown
+      })
+    | null
+): GamificationFailureItem | null {
   if (!doc) return null
+
+  const cust =
+    doc.customerId &&
+    typeof doc.customerId === "object" &&
+    "_id" in doc.customerId
+      ? (doc.customerId as {
+          _id: Types.ObjectId | string
+          name?: string
+          email?: string
+          phone?: string
+        })
+      : null
+
+  const camp =
+    doc.campaignId &&
+    typeof doc.campaignId === "object" &&
+    "_id" in doc.campaignId
+      ? (doc.campaignId as {
+          _id: Types.ObjectId | string
+          title?: string
+          rewardType?: string
+          rewardValueInKobo?: number | null
+          vendorId?: Types.ObjectId | string | null
+          menuItemId?: string | null
+        })
+      : null
+
   return {
     id: doc._id.toString(),
     orderId: doc.orderId ?? null,
-    customerId: doc.customerId?.toString() ?? null,
-    campaignId: doc.campaignId?.toString() ?? null,
     errorMessage: doc.errorMessage,
     errorStack: doc.errorStack ?? null,
     context: doc.context,
-    resolved: doc.resolved,
+    resolved: Boolean(doc.resolved),
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
+    customer: cust
+      ? {
+          id: cust._id.toString(),
+          name: cust.name || "Unknown",
+          email: cust.email || "",
+          phone: cust.phone || "",
+        }
+      : null,
+    campaign: camp
+      ? {
+          id: camp._id.toString(),
+          title: camp.title || "Unknown Campaign",
+          rewardType: camp.rewardType || "UNKNOWN",
+          rewardValueInKobo: camp.rewardValueInKobo ?? null,
+          vendorId: camp.vendorId ? camp.vendorId.toString() : null,
+          menuItemId: camp.menuItemId ?? null,
+        }
+      : null,
   }
 }

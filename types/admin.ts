@@ -200,3 +200,28 @@ export interface AnalyticsTopZoneItem {
   _id: string
   orders: number
 }
+
+export interface GamificationFailureItem {
+  id: string
+  orderId: string | null
+  errorMessage: string
+  errorStack: string | null
+  context: string
+  resolved: boolean
+  createdAt: string
+  updatedAt: string
+  customer: {
+    id: string
+    name: string
+    email: string
+    phone: string
+  } | null
+  campaign: {
+    id: string
+    title: string
+    rewardType: string
+    rewardValueInKobo: number | null
+    vendorId: string | null
+    menuItemId: string | null
+  } | null
+}

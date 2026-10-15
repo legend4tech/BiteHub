@@ -5,8 +5,10 @@ import {
   useCampaigns,
   useToggleCampaignStatus,
   useGamificationAnalytics,
+  useGamificationFailures,
 } from "@/hooks/admin/useCampaigns"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -24,16 +26,23 @@ import {
   TrendingUp,
   Ticket,
   Clock,
+  AlertCircle,
 } from "lucide-react"
+import { RewardFailureLogsTable } from "@/components/admin/campaigns/RewardFailureLogsTable"
 import { formatPrice } from "@/lib/format"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function AdminCampaignsPage() {
+  const [activeTab, setActiveTab] = useState<"campaigns" | "issues">(
+    "campaigns"
+  )
   const { data: campaigns, isLoading, isError, refetch } = useCampaigns()
   const { data: analytics, isLoading: analyticsLoading } =
     useGamificationAnalytics()
+  const { data: unresolvedFailures } = useGamificationFailures(false)
+  const unresolvedCount = unresolvedFailures?.length || 0
   const { mutateAsync: toggleCampaign } = useToggleCampaignStatus()
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
@@ -199,7 +208,46 @@ export default function AdminCampaignsPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("campaigns")}
+          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
+            activeTab === "campaigns"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Target className="size-4" />
+          <span>Active Campaigns</span>
+          <Badge variant="secondary" className="ml-1 text-xs">
+            {campaigns?.length || 0}
+          </Badge>
+        </button>
+        <button
+          onClick={() => setActiveTab("issues")}
+          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
+            activeTab === "issues"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <AlertCircle className="size-4" />
+          <span>Reward Issues</span>
+          {unresolvedCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="ml-1 h-5 rounded-full px-1.5 text-[10px]"
+            >
+              {unresolvedCount}
+            </Badge>
+          )}
+        </button>
+      </div>
+
+      {activeTab === "issues" ? (
+        <RewardFailureLogsTable />
+      ) : isLoading ? (
         <PageSkeleton variant="admin-list" />
       ) : isError ? (
         <FetchError

@@ -62,6 +62,27 @@ export async function PATCH(
       )
     }
 
+    if (order.status === ORDER_STATUS.CANCELLED) {
+      return NextResponse.json(
+        {
+          error: "You cannot update the status of a cancelled order.",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (
+      order.status === ORDER_STATUS.COMPLETED &&
+      status !== ORDER_STATUS.COMPLETED
+    ) {
+      return NextResponse.json(
+        {
+          error: "You cannot change the status of an already completed order.",
+        },
+        { status: 400 }
+      )
+    }
+
     if (
       status === ORDER_STATUS.CANCELLED &&
       order.status === ORDER_STATUS.COMPLETED
@@ -92,8 +113,196 @@ export async function PATCH(
       }
     }
 
-    // Atomic update to prevent Double Refund / Race Conditions
     const oldStatus = order.status
+
+    if (status === ORDER_STATUS.CANCELLED) {
+      if (oldStatus === ORDER_STATUS.CANCELLED) {
+        return NextResponse.json(
+          { message: "Order is already cancelled" },
+          { status: 200 }
+        )
+      }
+
+      const mongoose = (await import("mongoose")).default
+      const cancelSession = await mongoose.startSession()
+
+      try {
+        await cancelSession.withTransaction(async () => {
+          // 1. Atomically set status to CANCELLED within the transaction
+          const updatedOrder = await Order.findOneAndUpdate(
+            {
+              orderId: params.id,
+              vendorId,
+              status: { $ne: ORDER_STATUS.CANCELLED },
+            },
+            { $set: { status: ORDER_STATUS.CANCELLED } },
+            { new: true, runValidators: true, session: cancelSession }
+          )
+
+          if (!updatedOrder) {
+            throw new Error(
+              "Order was already cancelled by a concurrent request"
+            )
+          }
+
+          // 2. Restore MenuItem inventory for all cancelled orders
+          const { default: MenuItem } = await import("@/models/MenuItem")
+          const bulkOps = order.items.map(
+            (item: { menuItemId: string; quantity: number }) => ({
+              updateOne: {
+                filter: {
+                  _id: item.menuItemId,
+                  quantityAvailable: { $ne: null },
+                },
+                update: { $inc: { quantityAvailable: item.quantity } },
+              },
+            })
+          )
+          if (bulkOps.length > 0) {
+            await MenuItem.bulkWrite(bulkOps, { session: cancelSession })
+          }
+
+          if (
+            order.paymentMethod === "wallet" &&
+            order.paymentStatus === PAYMENT_STATUS.PAID &&
+            !order.isDisbursed &&
+            order.customerId
+          ) {
+            const { default: Customer } = await import("@/models/Customer")
+            const customer = await Customer.findById(order.customerId).session(
+              cancelSession
+            )
+
+            if (customer) {
+              const { default: Wallet } = await import("@/models/Wallet")
+              const { default: WalletTransaction } =
+                await import("@/models/WalletTransaction")
+
+              const promoRefund = order.walletPromoAmountUsedInKobo || 0
+              const depositRefund =
+                order.walletDepositAmountUsedInKobo ||
+                order.totalAmountInKobo - promoRefund
+
+              // Atomic Wallet Refund within session
+              const updatedWallet = await Wallet.findOneAndUpdate(
+                { customerId: customer._id },
+                {
+                  $inc: {
+                    balanceInKobo: order.totalAmountInKobo,
+                    promoBalanceInKobo: promoRefund,
+                    depositBalanceInKobo: depositRefund,
+                  },
+                },
+                { new: true, session: cancelSession }
+              )
+
+              if (updatedWallet) {
+                const txs = []
+                if (depositRefund > 0) {
+                  txs.push({
+                    customerId: customer._id,
+                    type: "refund",
+                    amountInKobo: depositRefund,
+                    balanceAfterInKobo:
+                      updatedWallet.balanceInKobo - promoRefund,
+                    direction: "credit",
+                    reference: `REF-DEP-${order.orderId}`,
+                    description: `Cash refund for cancelled order ${order.orderId}`,
+                  })
+                }
+                if (promoRefund > 0) {
+                  const expiresAt = new Date()
+                  expiresAt.setDate(expiresAt.getDate() + 30) // Standard 30 days validity for refunded coins
+                  txs.push({
+                    customerId: customer._id,
+                    type: "reward",
+                    amountInKobo: promoRefund,
+                    remainingAmountInKobo: promoRefund,
+                    expiresAt,
+                    isExpired: false,
+                    balanceAfterInKobo: updatedWallet.balanceInKobo,
+                    direction: "credit",
+                    reference: `REF-BHC-${order.orderId}`,
+                    description: `Coin refund for cancelled order ${order.orderId}`,
+                  })
+                }
+
+                if (txs.length > 0) {
+                  await WalletTransaction.insertMany(txs, {
+                    session: cancelSession,
+                  })
+                }
+
+                const { default: Vendor } = await import("@/models/Vendor")
+                await Vendor.findByIdAndUpdate(
+                  order.vendorId,
+                  {
+                    $inc: {
+                      pendingWalletBalanceInKobo: -order.vendorRevenueInKobo,
+                    },
+                  },
+                  { session: cancelSession }
+                )
+
+                if (order.rewardVoucherId) {
+                  const { default: RewardVoucher } =
+                    await import("@/models/RewardVoucher")
+                  const restoredVoucher = await RewardVoucher.findByIdAndUpdate(
+                    order.rewardVoucherId,
+                    {
+                      $set: { isUsed: false },
+                      $unset: { usedAt: 1 },
+                    },
+                    { new: true, session: cancelSession }
+                  )
+
+                  if (restoredVoucher && restoredVoucher.campaignId) {
+                    const { default: RewardCampaign } =
+                      await import("@/models/RewardCampaign")
+                    await RewardCampaign.findByIdAndUpdate(
+                      restoredVoucher.campaignId,
+                      {
+                        $inc: {
+                          budgetSpentInKobo:
+                            -order.sponsoredDiscountAmountInKobo,
+                        },
+                      },
+                      { session: cancelSession }
+                    )
+                  }
+                }
+              }
+            }
+          }
+        })
+      } finally {
+        cancelSession.endSession()
+      }
+
+      order.status = ORDER_STATUS.CANCELLED
+
+      const { default: AdminUser } = await import("@/models/AdminUser")
+      const { sendAdminOrderCancelledEmail } = await import("@/lib/mail")
+
+      const admins = await AdminUser.find({ isActive: true })
+        .select("email")
+        .lean()
+      const adminEmails = admins.map((a: { email: string }) => a.email)
+
+      if (adminEmails.length > 0) {
+        // Fire and forget
+        void sendAdminOrderCancelledEmail(
+          adminEmails,
+          order.orderId,
+          order.vendorName,
+          order.monnifyReference || ""
+        )
+      }
+
+      return NextResponse.json({ success: true, status: order.status })
+    }
+
+    // Atomic update to prevent Race Conditions for non-cancellation transitions
     const updatedOrder = await Order.findOneAndUpdate(
       { orderId: params.id, vendorId, status: { $ne: status } },
       { $set: { status } },
@@ -101,7 +310,6 @@ export async function PATCH(
     )
 
     if (!updatedOrder) {
-      // Order status was already updated by a concurrent request
       return NextResponse.json(
         { message: "Order status already updated" },
         { status: 200 }
@@ -109,7 +317,6 @@ export async function PATCH(
     }
 
     order.status = status // Update local object for the rest of the flow
-    const wasCancelled = oldStatus === ORDER_STATUS.CANCELLED
 
     if (status !== oldStatus) {
       if (status === ORDER_STATUS.COMPLETED) {
@@ -165,147 +372,6 @@ export async function PATCH(
             statusConfig.description
           )
         }
-      }
-    }
-
-    if (status === ORDER_STATUS.CANCELLED && !wasCancelled) {
-      // Restore MenuItem inventory for all cancelled orders
-      const { default: MenuItem } = await import("@/models/MenuItem")
-      const bulkOps = order.items.map(
-        (item: { menuItemId: string; quantity: number }) => ({
-          updateOne: {
-            filter: {
-              _id: item.menuItemId,
-              quantityAvailable: { $ne: null },
-            },
-            update: { $inc: { quantityAvailable: item.quantity } },
-          },
-        })
-      )
-      if (bulkOps.length > 0) {
-        await MenuItem.bulkWrite(bulkOps).catch((err) => {
-          console.error(
-            "[vendor/orders PATCH] Failed to restore inventory:",
-            err
-          )
-        })
-      }
-
-      if (
-        order.paymentMethod === "wallet" &&
-        !order.isDisbursed &&
-        order.customerId
-      ) {
-        const { default: Customer } = await import("@/models/Customer")
-        const customer = await Customer.findById(order.customerId)
-
-        if (customer) {
-          const { default: Wallet } = await import("@/models/Wallet")
-          const { default: WalletTransaction } =
-            await import("@/models/WalletTransaction")
-
-          const promoRefund = order.walletPromoAmountUsedInKobo || 0
-          const depositRefund =
-            order.walletDepositAmountUsedInKobo ||
-            order.totalAmountInKobo - promoRefund
-
-          // Atomic Wallet Refund to prevent race conditions
-          const updatedWallet = await Wallet.findOneAndUpdate(
-            { customerId: customer._id },
-            {
-              $inc: {
-                balanceInKobo: order.totalAmountInKobo,
-                promoBalanceInKobo: promoRefund,
-                depositBalanceInKobo: depositRefund,
-              },
-            },
-            { new: true }
-          )
-
-          if (updatedWallet) {
-            const txs = []
-            if (depositRefund > 0) {
-              txs.push({
-                customerId: customer._id,
-                type: "refund",
-                amountInKobo: depositRefund,
-                balanceAfterInKobo: updatedWallet.balanceInKobo - promoRefund, // Approximate intermediate balance
-                direction: "credit",
-                reference: `REF-DEP-${order.orderId}`,
-                description: `Cash refund for cancelled order ${order.orderId}`,
-              })
-            }
-            if (promoRefund > 0) {
-              const expiresAt = new Date()
-              expiresAt.setDate(expiresAt.getDate() + 30) // Standard 30 days validity for refunded coins
-              txs.push({
-                customerId: customer._id,
-                type: "reward",
-                amountInKobo: promoRefund,
-                remainingAmountInKobo: promoRefund,
-                expiresAt,
-                isExpired: false,
-                balanceAfterInKobo: updatedWallet.balanceInKobo,
-                direction: "credit",
-                reference: `REF-BHC-${order.orderId}`,
-                description: `Coin refund for cancelled order ${order.orderId}`,
-              })
-            }
-
-            if (txs.length > 0) {
-              await WalletTransaction.insertMany(txs)
-            }
-
-            const { default: Vendor } = await import("@/models/Vendor")
-            await Vendor.findByIdAndUpdate(order.vendorId, {
-              $inc: { pendingWalletBalanceInKobo: -order.vendorRevenueInKobo },
-            })
-
-            if (order.rewardVoucherId) {
-              const { default: RewardVoucher } =
-                await import("@/models/RewardVoucher")
-              const restoredVoucher = await RewardVoucher.findByIdAndUpdate(
-                order.rewardVoucherId,
-                {
-                  $set: { isUsed: false },
-                  $unset: { usedAt: 1 },
-                },
-                { new: true }
-              )
-
-              if (restoredVoucher && restoredVoucher.campaignId) {
-                const { default: RewardCampaign } =
-                  await import("@/models/RewardCampaign")
-                await RewardCampaign.findByIdAndUpdate(
-                  restoredVoucher.campaignId,
-                  {
-                    $inc: {
-                      budgetSpentInKobo: -order.sponsoredDiscountAmountInKobo,
-                    },
-                  }
-                )
-              }
-            }
-          }
-        }
-      }
-
-      const { default: AdminUser } = await import("@/models/AdminUser")
-      const { sendAdminOrderCancelledEmail } = await import("@/lib/mail")
-
-      const admins = await AdminUser.find({ isActive: true })
-        .select("email")
-        .lean()
-      const adminEmails = admins.map((a: { email: string }) => a.email)
-
-      if (adminEmails.length > 0) {
-        // Fire and forget
-        void sendAdminOrderCancelledEmail(
-          adminEmails,
-          order.orderId,
-          order.vendorName,
-          order.monnifyReference || ""
-        )
       }
     }
 

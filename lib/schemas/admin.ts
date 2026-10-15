@@ -210,3 +210,17 @@ export const rewardCampaignFormSchema = z
   })
 
 export type RewardCampaignFormValues = z.infer<typeof rewardCampaignFormSchema>
+
+// ─── Gamification Failure Logs ────────────────────────────────────────────────
+
+export const gamificationFailuresQuerySchema = z.object({
+  resolved: z.enum(["true", "false"]).optional(),
+})
+export type GamificationFailuresQueryValues = z.infer<
+  typeof gamificationFailuresQuerySchema
+>
+
+export const failureLogIdParamSchema = z.object({
+  id: z.string().trim().min(1, "Failure log ID is required"),
+})
+export type FailureLogIdParamValues = z.infer<typeof failureLogIdParamSchema>
