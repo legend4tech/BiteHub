@@ -28,6 +28,7 @@
 19. [Git & Commit Rules](#19-git--commit-rules)
 20. [Authentication Architecture](#20-authentication-architecture)
 21. [Financial Math & The InKobo Rule](#21-financial-math--the-inkobo-rule)
+22. [Automated Testing & Invariants](#22-automated-testing--invariants)
 
 ---
 
@@ -91,7 +92,12 @@ bitehub/
 ├── models/                 # Mongoose models (one file per model)
 ├── emails/                 # React Email templates
 ├── types/                  # Global TypeScript declaration files
-└── scripts/                # One-off scripts (seeding, migrations)
+├── scripts/                # One-off scripts (seeding, migrations)
+├── tests/                  # Automated test suites (Vitest)
+│   ├── setup.ts            # Global test environment configuration
+│   ├── unit/               # Financial ledger, FIFO deduction, gamification tests
+│   └── concurrency/        # Race-condition simulations & high-scale stress tests
+└── vitest.config.ts        # Vitest test runner configuration
 ```
 
 ### Rules
@@ -755,6 +761,8 @@ docs: document webhook subscription fields
 > **NEVER use `--no-verify` to bypass git hooks.** If a hook is failing (like ESLint or TypeScript), you must fix the underlying issue. Bypassing hooks introduces broken code into the repository.
 
 - [ ] `pnpm run build` passes with **zero** TypeScript errors
+- [ ] `pnpm test` passes with **zero** test failures
+- [ ] Any modifications to wallet, checkout, or rewards include corresponding unit/concurrency invariant tests
 - [ ] No `console.log` left in production paths (use `console.error` for genuine errors only)
 - [ ] All new pages have **loading**, **error**, and **empty** fallbacks
 - [ ] No file exceeds **450 lines**
@@ -942,4 +950,48 @@ JavaScript represents numbers as IEEE 754 double-precision floats. This introduc
 
 ---
 
+## 22. Automated Testing & Invariants
+
+BiteHub uses [Vitest](https://vitest.dev/) for high-speed, type-safe automated testing with native ESM support.
+
+### Running Tests
+
+```bash
+# Run the entire test suite
+pnpm test
+
+# Run tests in interactive watch mode during development
+pnpm test:watch
+
+# Run a specific test suite
+pnpm test tests/unit/wallet-helpers.test.ts
+pnpm test tests/concurrency/high-scale-stress.test.ts
+```
+
+### Folder Organization
+
+```
+tests/
+├── setup.ts                      # Environment variables & global test configurations
+├── unit/
+│   ├── wallet-helpers.test.ts    # FIFO deduction, promo subtotal clamping, integer math
+│   └── gamification-rules.test.ts # Voucher entropy, referral milestone idempotency, budget guards
+└── concurrency/
+    ├── wallet-deduction-race.test.ts # Multi-promise checkout races, overdraft prevention
+    └── high-scale-stress.test.ts     # 100k voucher collisions, 5k concurrent checkouts, 1M tx drift
+```
+
+### Mandatory Invariant Testing Rules
+
+Any contributor modifying financial, checkout, or gamification logic (`lib/services/checkoutWalletHelpers.ts`, `lib/services/gamificationService.ts`, `lib/actions/wallet.ts`, etc.) **must** adhere to these testing rules:
+
+1. **The Zero-Overdraft Invariant:** Tests must assert that wallet balances never drop below ₦0 (`balanceInKobo >= 0`), even under simultaneous checkout requests.
+2. **The Exact Integer Math Invariant:** Financial operations must remain strict integers without floating-point remainders (`Number.isInteger(balanceInKobo) === true` and `balanceInKobo % 1 === 0`).
+3. **The FIFO Expiration Invariant:** Promotional coins must be deducted in chronological order of `expiresAt`. Expired rewards (`expiresAt < now`) must be lazily cleaned up and excluded from available balances.
+4. **The Idempotency Key Invariant:** Milestone progress (such as `REFERRAL_FIRST_ORDER`) must track the milestone entity (`customerId`), not transient identifiers (`orderId`), preventing duplicate bonus credits.
+5. **The File Size Limit (§3):** Test files are subject to the same **< 450 lines per file** hard limit as the rest of the codebase. Split complex test suites across dedicated files in `tests/unit/` or `tests/concurrency/`.
+
+---
+
 *Last updated: October 2026 · Maintained by the BiteHub core team.*
+

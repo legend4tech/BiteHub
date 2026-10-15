@@ -8,6 +8,7 @@ BiteHub is a campus food ordering platform designed to connect students with loc
 - **Campus-specific Filtering:** Browse vendors and menus specific to your campus or university.
 - **Real-time Order Tracking:** Get updates on your order status.
 - **Seamless Ordering:** Easy-to-use cart and checkout flow.
+- **Digital Meal Wallet & Rewards:** Dedicated student wallet with integer Kobo precision, promotional coins with FIFO expiry, and referral bonuses.
 - **WhatsApp Notifications:** Receive order updates directly via WhatsApp.
 
 ### For Vendors
@@ -29,6 +30,7 @@ BiteHub is a campus food ordering platform designed to connect students with loc
 - **State Management:** [React Query](https://tanstack.com/query/latest) (server state) + React Context (local state)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
 - **Validation:** [Zod](https://zod.dev/)
+- **Testing:** [Vitest](https://vitest.dev/) (Unit, financial invariants, and high-concurrency stress testing)
 - **Email:** AWS SES + Nodemailer + React Email
 - **File Uploads:** [Cloudinary](https://cloudinary.com/)
 - **Notifications:** WhatsApp Business API (Meta)
@@ -66,6 +68,12 @@ Before you begin, ensure you have the following installed:
    pnpm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+
+5. **Run automated test suites:**
+   ```bash
+   pnpm test          # Run all unit, financial invariant, and concurrency suites
+   pnpm test:watch    # Run tests in interactive watch mode
+   ```
 
 ## 🔐 Environment Variables
 
@@ -134,6 +142,7 @@ We welcome contributions from the community! Please read our [Contribution Guide
 - Follow the strict **separation of concerns** (Pages, Components, Hooks, Services, Models).
 - Ensure **all colors** use design tokens from `app/globals.css`. No hardcoded hex values or generic Tailwind colors.
 - Run `pnpm run build` locally to ensure there are **zero TypeScript errors** before opening a PR.
+- Run `pnpm test` locally to ensure all **19 financial ledger and concurrency tests pass** before opening a PR.
 
 ## 📄 License
 
