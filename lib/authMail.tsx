@@ -19,6 +19,7 @@ import BankChangeConfirmationEmail from "@/emails/BankChangeConfirmationEmail"
 import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
 import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
 import CustomerWelcomeEmail from "@/emails/CustomerWelcomeEmail"
+import CustomerVerificationOtpEmail from "@/emails/CustomerVerificationOtpEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 
 // ─── Shared helper ────────────────────────────────────────────────────────────
@@ -274,6 +275,39 @@ export async function sendVendorWelcomeEmail(
     return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send vendor welcome email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendCustomerVerificationOtpEmail(
+  email: string,
+  customerName: string,
+  otp: string,
+  expiryMinutes: number = 15
+) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.warn(
+      `⚠️ AWS credentials missing. Logged verification OTP for ${email}: ${otp}`
+    )
+    return { success: false, error: "Email provider key missing" }
+  }
+  try {
+    const html = await render(
+      <CustomerVerificationOtpEmail
+        customerName={customerName}
+        otp={otp}
+        expiryMinutes={expiryMinutes}
+      />
+    )
+    const info = await mailer.sendMail({
+      from: resolveFrom(),
+      to: email,
+      subject: `Your BiteHub Verification Code: ${otp}`,
+      html,
+    })
+    return { success: true, data: info }
+  } catch (error) {
+    console.error("Failed to send customer verification OTP email:", error)
     return { success: false, error }
   }
 }

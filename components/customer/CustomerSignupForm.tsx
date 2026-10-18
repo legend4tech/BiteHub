@@ -21,14 +21,16 @@ import {
 } from "@/lib/schemas"
 import { useCustomerSignup } from "@/hooks/shared/usePublicMutations"
 import { Step1Fields, Step2Fields } from "./CustomerSignupFields"
+import { CustomerOtpStep } from "./CustomerOtpStep"
 
 export default function CustomerSignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/"
 
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [direction, setDirection] = useState(1)
+  const [lastSubmittedEmail, setLastSubmittedEmail] = useState<string>("")
   const signupMutation = useCustomerSignup()
 
   const form = useForm<CustomerSignupFormValues>({
@@ -45,6 +47,7 @@ export default function CustomerSignupForm() {
       school: "",
       campus: "",
       referredBy: searchParams.get("ref") || "",
+      previousEmail: "",
     },
   })
 
@@ -72,25 +75,19 @@ export default function CustomerSignupForm() {
     }
 
     try {
-      const data = await signupMutation.mutateAsync(values)
-
-      toast.success(data.message || "Account created! Signing you in...")
-
-      // Auto sign-in after successful signup
-      const signInRes = await signIn("customer-login", {
-        redirect: false,
-        email: values.email.trim(),
-        password: values.password,
-      })
-
-      if (signInRes?.error) {
-        toast.error(
-          "Account created, but auto-login failed. Please log in manually."
-        )
-        router.push(`/customer/login?redirect=${encodeURIComponent(redirect)}`)
-      } else {
-        window.location.assign(redirect)
+      const payload = {
+        ...values,
+        previousEmail:
+          lastSubmittedEmail &&
+          lastSubmittedEmail.toLowerCase() !== values.email.toLowerCase()
+            ? lastSubmittedEmail
+            : undefined,
       }
+      const data = await signupMutation.mutateAsync(payload)
+      setLastSubmittedEmail(values.email)
+      toast.success(data.message || "Verification code sent to your email!")
+      setDirection(1)
+      setStep(3)
     } catch (error: unknown) {
       const err = error as {
         response?: { status?: number; data?: { error?: string } }
@@ -107,6 +104,47 @@ export default function CustomerSignupForm() {
             "An unexpected error occurred. Please try again."
         )
       }
+    }
+  }
+
+  const handleChangeEmail = async (newEmail: string) => {
+    const currentValues = form.getValues()
+    const payload = {
+      ...currentValues,
+      email: newEmail,
+      previousEmail: lastSubmittedEmail || currentValues.email,
+    }
+
+    try {
+      const data = await signupMutation.mutateAsync(payload)
+      form.setValue("email", newEmail)
+      setLastSubmittedEmail(newEmail)
+      toast.success(data.message || "Verification code sent to your new email!")
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { status?: number; data?: { error?: string } }
+      }
+      const msg =
+        err?.response?.data?.error ||
+        "Failed to update email. Please try again."
+      toast.error(msg)
+      throw error
+    }
+  }
+
+  const handleOtpVerified = async () => {
+    const values = form.getValues()
+    const signInRes = await signIn("customer-login", {
+      redirect: false,
+      email: values.email.trim(),
+      password: values.password,
+    })
+
+    if (signInRes?.error) {
+      toast.success("Account verified! Please log in to continue.")
+      router.push(`/customer/login?redirect=${encodeURIComponent(redirect)}`)
+    } else {
+      window.location.assign(redirect)
     }
   }
 
@@ -176,21 +214,38 @@ export default function CustomerSignupForm() {
                   <span
                     className={
                       step === 1
-                        ? "text-foreground"
+                        ? "font-semibold text-foreground"
                         : "cursor-pointer transition-colors hover:text-foreground"
                     }
-                    onClick={handlePrevStep}
+                    onClick={() => step !== 3 && handlePrevStep()}
                   >
-                    Step 1: Contact
+                    1. Contact
                   </span>
-                  <span className={step === 2 ? "text-foreground" : ""}>
-                    Step 2: Account Setup
+                  <span
+                    className={
+                      step === 2
+                        ? "font-semibold text-foreground"
+                        : "transition-colors"
+                    }
+                  >
+                    2. Security
+                  </span>
+                  <span
+                    className={
+                      step === 3
+                        ? "font-semibold text-foreground"
+                        : "transition-colors"
+                    }
+                  >
+                    3. Verify
                   </span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/20">
                   <div
                     className="h-full bg-primary transition-all duration-500 ease-in-out"
-                    style={{ width: step === 1 ? "50%" : "100%" }}
+                    style={{
+                      width: step === 1 ? "33%" : step === 2 ? "66%" : "100%",
+                    }}
                   />
                 </div>
               </div>
@@ -285,9 +340,38 @@ export default function CustomerSignupForm() {
                         {isPending && (
                           <Loader2 className="size-4 animate-spin" />
                         )}
-                        {isPending ? "Creating account…" : "Create account"}
+                        {isPending
+                          ? lastSubmittedEmail
+                            ? "Updating & sending code…"
+                            : "Creating account…"
+                          : lastSubmittedEmail
+                            ? "Continue to verification"
+                            : "Create account"}
                       </Button>
                     </div>
+                  </motion.div>
+                )}
+
+                {/* --- STEP 3: OTP Verification --- */}
+                {step === 3 && (
+                  <motion.div
+                    key="step3"
+                    custom={direction}
+                    initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="block"
+                  >
+                    <CustomerOtpStep
+                      email={form.getValues("email")}
+                      onVerified={handleOtpVerified}
+                      onBack={() => {
+                        setDirection(-1)
+                        setStep(1)
+                      }}
+                      onChangeEmail={handleChangeEmail}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

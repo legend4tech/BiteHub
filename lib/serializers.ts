@@ -239,6 +239,8 @@ export function serializeCustomer(doc: LeanCustomer | null) {
     referralCode: doc.referralCode,
     referredBy: doc.referredBy ?? null,
     isActive: doc.isActive,
+    isEmailVerified: Boolean(doc.isEmailVerified),
+    emailVerifiedAt: doc.emailVerifiedAt ? safeDate(doc.emailVerifiedAt) : null,
     receivesMarketing: doc.receivesMarketing ?? true,
     school: doc.school ?? null,
     campus: doc.campus ?? null,

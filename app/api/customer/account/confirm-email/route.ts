@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import dbConnect from "@/lib/db"
 import CustomerModel from "@/models/Customer"
+import { getCanonicalEmail } from "@/lib/emailNormalization"
 
 export async function GET(req: NextRequest) {
   try {
@@ -36,6 +37,8 @@ export async function GET(req: NextRequest) {
 
     // Update email and clear pending fields
     user.email = user.pendingEmail
+    user.canonicalEmail = getCanonicalEmail(user.pendingEmail)
+    user.isEmailVerified = true
     user.pendingEmail = undefined
     user.emailChangeToken = undefined
     user.emailChangeExpires = undefined

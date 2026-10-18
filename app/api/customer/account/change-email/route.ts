@@ -10,6 +10,7 @@ import EmailChangeNotification from "@/emails/EmailChangeNotification"
 import EmailChangeConfirmation from "@/emails/EmailChangeConfirmation"
 import { changeEmailSchema } from "@/lib/schemas"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { getCanonicalEmail, isDisposableEmail } from "@/lib/emailNormalization"
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,10 +50,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (isDisposableEmail(newEmail)) {
+      return NextResponse.json(
+        {
+          message:
+            "Temporary or disposable email addresses are not permitted. Please use your personal or university email.",
+        },
+        { status: 400 }
+      )
+    }
+
     await dbConnect()
 
-    // Check if new email is already in use by any customer
-    const existingUser = await CustomerModel.findOne({ email: newEmail })
+    const canonicalNewEmail = getCanonicalEmail(newEmail)
+
+    // Check if new email (or its canonical form) is already in use by any customer
+    const existingUser = await CustomerModel.findOne({
+      $or: [
+        { email: newEmail },
+        { canonicalEmail: canonicalNewEmail },
+        { email: canonicalNewEmail },
+      ],
+    })
     if (existingUser) {
       return NextResponse.json(
         { message: "This email address is already in use by another account" },

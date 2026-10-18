@@ -9,6 +9,7 @@ import VendorModel from "@/models/Vendor"
 import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
 import { strictRateLimiter, isRateLimitingEnabled } from "@/lib/rate-limit"
+import { getCanonicalEmail } from "@/lib/emailNormalization"
 import type { JWT } from "next-auth/jwt"
 
 class AccountSuspendedError extends CredentialsSignin {
@@ -21,6 +22,10 @@ class RateLimitExceededError extends CredentialsSignin {
 
 class InvalidCredentialsError extends CredentialsSignin {
   code = "InvalidCredentials"
+}
+
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "EmailNotVerified"
 }
 
 import { adminLoginSchema as credentialsSchema } from "@/lib/schemas"
@@ -48,9 +53,17 @@ async function validateSession(token: JWT): Promise<JWT | null> {
 
     if (token.role === "vendor") {
       const dbUser = await VendorUserModel.findById(token.id)
-        .select("lastPasswordChangeAt isActive name image")
+        .select("lastPasswordChangeAt isActive email name image")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
+      // Invalidate session if email was changed on another device
+      if (
+        token.email &&
+        dbUser.email &&
+        token.email.toLowerCase() !== dbUser.email.toLowerCase()
+      ) {
+        return null
+      }
       if (dbUser.lastPasswordChangeAt && token.iat) {
         const changedAtSeconds = Math.floor(
           dbUser.lastPasswordChangeAt.getTime() / 1000
@@ -68,9 +81,26 @@ async function validateSession(token: JWT): Promise<JWT | null> {
       if (dbUser.name) token.name = dbUser.name
     } else if (token.role === "customer") {
       const dbUser = await CustomerModel.findById(token.id)
-        .select("isActive name image")
+        .select(
+          "isActive isEmailVerified lastPasswordChangeAt email name image"
+        )
         .lean()
-      if (!dbUser || !dbUser.isActive) return null
+      if (!dbUser || !dbUser.isActive || dbUser.isEmailVerified === false)
+        return null
+      // Invalidate session if email was changed on another device
+      if (
+        token.email &&
+        dbUser.email &&
+        token.email.toLowerCase() !== dbUser.email.toLowerCase()
+      ) {
+        return null
+      }
+      if (dbUser.lastPasswordChangeAt && token.iat) {
+        const changedAtSeconds = Math.floor(
+          dbUser.lastPasswordChangeAt.getTime() / 1000
+        )
+        if (changedAtSeconds > token.iat) return null
+      }
       // Sync display fields — use !== undefined so clearing the image also propagates
       if (dbUser.name) token.name = dbUser.name
       if (dbUser.image !== undefined) token.image = dbUser.image
@@ -205,8 +235,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           await checkRateLimit(email)
           await dbConnect()
 
+          const canonicalEmail = getCanonicalEmail(email)
           const user = await CustomerModel.findOne({
-            email: email.toLowerCase(),
+            $or: [
+              { email: email.toLowerCase() },
+              { canonicalEmail },
+              { email: canonicalEmail },
+            ],
           })
           if (!user || !user.password) {
             throw new InvalidCredentialsError()
@@ -217,6 +252,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (!user.isActive) {
             throw new AccountSuspendedError()
+          }
+
+          if (!user.isEmailVerified) {
+            throw new EmailNotVerifiedError()
           }
 
           // Update last login (fire and forget — non-blocking)

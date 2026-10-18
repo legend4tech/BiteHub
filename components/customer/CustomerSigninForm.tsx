@@ -13,6 +13,7 @@ import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { toast } from "sonner"
 import { customerLoginSchema, type CustomerLoginValues } from "@/lib/schemas"
 import { SuspendedAlert } from "@/components/shared/SuspendedAlert"
+import { CustomerOtpStep } from "./CustomerOtpStep"
 
 export function CustomerSigninForm() {
   const searchParams = useSearchParams()
@@ -21,6 +22,7 @@ export function CustomerSigninForm() {
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isSuspended, setIsSuspended] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   const form = useForm<CustomerLoginValues>({
     resolver: zodResolver(
@@ -46,6 +48,19 @@ export function CustomerSigninForm() {
 
       if (res?.error) {
         const resCode = (res as { code?: string }).code
+
+        if (resCode === "EmailNotVerified") {
+          const email = values.email.trim()
+          setUnverifiedEmail(email)
+          // Trigger OTP resend so they have a fresh code ready
+          import("axios").then(({ default: axios }) => {
+            axios
+              .post("/api/auth/customer/resend-otp", { email })
+              .catch(() => {})
+          })
+          toast.info("Please enter the verification code sent to your email.")
+          return
+        }
 
         if (resCode === "AccountSuspended") {
           setIsSuspended(true)
@@ -81,8 +96,6 @@ export function CustomerSigninForm() {
       if (!navigator.onLine || err?.message?.toLowerCase().includes("fetch")) {
         toast.error("Network error. Please check your internet connection.")
       } else if (
-        // signIn() throws this specific "Invalid URL" error when the proxy middleware
-        // intercepts the request and returns a 429 JSON response that lacks NextAuth's internal fields.
         err?.message?.includes("429") ||
         err?.message?.toLowerCase().includes("too many") ||
         err?.message?.includes("Invalid URL")
@@ -96,6 +109,31 @@ export function CustomerSigninForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (unverifiedEmail) {
+    return (
+      <CustomerOtpStep
+        email={unverifiedEmail}
+        onVerified={async () => {
+          const res = await signIn("customer-login", {
+            redirect: false,
+            email: unverifiedEmail,
+            password: form.getValues("password"),
+          })
+          if (!res?.error) {
+            toast.success("Email verified! Welcome back.")
+            window.location.assign(redirect)
+          } else {
+            setUnverifiedEmail(null)
+            toast.success(
+              "Email verified! Please enter your password to log in."
+            )
+          }
+        }}
+        onBack={() => setUnverifiedEmail(null)}
+      />
+    )
   }
 
   return (

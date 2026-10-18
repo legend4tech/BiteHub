@@ -117,6 +117,13 @@ export const customerSignupFormSchema = z
     school: z.string().trim().min(1, "Please select your school."),
     campus: z.string().trim().min(1, "Please select your campus."),
     referredBy: z.string().trim().optional(),
+    previousEmail: z
+      .string()
+      .trim()
+      .email("Please enter a valid email address.")
+      .toLowerCase()
+      .optional()
+      .or(z.literal("")),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -137,6 +144,12 @@ export const customerSignupSchema = z.object({
   school: z.string().trim().min(1, "Please select your school."),
   campus: z.string().trim().min(1, "Please select your campus."),
   referredBy: z.string().trim().optional(),
+  previousEmail: z
+    .string()
+    .trim()
+    .email("Please enter a valid email address.")
+    .toLowerCase()
+    .optional(),
 })
 export type CustomerSignupValues = z.infer<typeof customerSignupSchema>
 
@@ -145,6 +158,29 @@ export const customerLoginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 })
 export type CustomerLoginValues = z.infer<typeof customerLoginSchema>
+
+export const verifyOtpSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Please enter a valid email address.")
+    .toLowerCase(),
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Verification code must be 6 digits.")
+    .regex(/^\d{6}$/, "Code must contain only digits."),
+})
+export type VerifyOtpValues = z.infer<typeof verifyOtpSchema>
+
+export const resendOtpSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Please enter a valid email address.")
+    .toLowerCase(),
+})
+export type ResendOtpValues = z.infer<typeof resendOtpSchema>
 
 export const customerProfileUpdateSchema = z.object({
   name: z

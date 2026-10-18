@@ -23,6 +23,14 @@ export interface ICustomer extends Document {
   createdAt: Date
   updatedAt: Date
 
+  // Email Verification & Anti-Abuse
+  isEmailVerified: boolean
+  emailVerifiedAt?: Date
+  canonicalEmail?: string
+  emailVerificationOtpHash?: string
+  emailVerificationOtpExpires?: Date
+  emailVerificationAttempts?: number
+
   // Security / Account Recovery
   pendingEmail?: string
   emailChangeToken?: string
@@ -51,6 +59,19 @@ const CustomerSchema = new Schema<ICustomer>(
       lowercase: true,
       trim: true,
     },
+    canonicalEmail: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    isEmailVerified: { type: Boolean, default: false, index: true },
+    emailVerifiedAt: { type: Date },
+    emailVerificationOtpHash: { type: String },
+    emailVerificationOtpExpires: { type: Date },
+    emailVerificationAttempts: { type: Number, default: 0 },
     phone: { type: String, required: true },
     password: { type: String }, // Hashed password
     referralCode: { type: String, required: true, unique: true },
@@ -89,6 +110,7 @@ const CustomerSchema = new Schema<ICustomer>(
         delete ret.password // Ensure password is never exposed in JSON output
         delete ret.emailChangeToken
         delete ret.resetPasswordToken
+        delete ret.emailVerificationOtpHash
       },
     },
   }

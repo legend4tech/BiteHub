@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import dbConnect from "@/lib/db"
 import { customerSignupSchema } from "@/lib/schemas"
-import { registerOrClaimCustomer } from "@/lib/services/customerService"
+import { initiateCustomerSignup } from "@/lib/services/customerService"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
@@ -29,24 +29,34 @@ export async function POST(request: Request) {
 
     await dbConnect()
 
-    const result = await registerOrClaimCustomer(parsedBody.data)
-
-    if (result.claimed) {
-      return NextResponse.json(
-        { message: "Account successfully claimed and created." },
-        { status: 200 }
-      )
-    }
+    const result = await initiateCustomerSignup(parsedBody.data)
 
     return NextResponse.json(
-      { message: "Account successfully created." },
-      { status: 201 }
+      {
+        message: "Verification code sent to your email.",
+        email: result.email,
+        status: result.status,
+      },
+      { status: 200 }
     )
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "ACCOUNT_EXISTS") {
       return NextResponse.json(
         { error: "An account with this email already exists. Please log in." },
         { status: 409 }
+      )
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "DISPOSABLE_EMAIL_NOT_ALLOWED"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Temporary or disposable email addresses are not permitted. Please use your personal or university email.",
+        },
+        { status: 400 }
       )
     }
 

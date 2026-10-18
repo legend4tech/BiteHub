@@ -8,7 +8,11 @@ import Customer from "@/models/Customer"
 import type { CustomerSignupValues } from "@/lib/schemas"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-import { sendCustomerWelcomeEmail } from "@/lib/authMail"
+import {
+  sendCustomerWelcomeEmail,
+  sendCustomerVerificationOtpEmail,
+} from "@/lib/authMail"
+import { getCanonicalEmail, isDisposableEmail } from "@/lib/emailNormalization"
 import { processReferralSignup } from "@/lib/services/gamificationService"
 
 import dbConnect from "@/lib/db"
@@ -51,139 +55,274 @@ export async function generateUniqueUsername(name: string): Promise<string> {
   return username
 }
 
-export async function registerOrClaimCustomer(data: CustomerSignupValues) {
+/**
+ * Initiates customer signup by validating input, checking canonical email deduplication,
+ * generating a secure 6-digit OTP, saving the unverified record, and dispatching verification email.
+ */
+export async function initiateCustomerSignup(data: CustomerSignupValues) {
   await dbConnect()
   const { name, email, phone, password, school, campus, referredBy } = data
 
-  const hashedPassword = await bcrypt.hash(password, 12)
+  if (isDisposableEmail(email)) {
+    throw new Error("DISPOSABLE_EMAIL_NOT_ALLOWED")
+  }
 
-  const existingCustomer = await Customer.findOne({ email }).lean()
+  const canonicalEmail = getCanonicalEmail(email)
+  const hashedPassword = await bcrypt.hash(password, 12)
 
   if (referredBy) {
     const referrer = await Customer.findOne({ referralCode: referredBy }).lean()
     if (!referrer) {
       throw new Error("INVALID_REFERRAL_CODE")
     }
-
-    // Prevent self-referral if they are claiming their own guest account
-    if (existingCustomer && referrer.email === existingCustomer.email) {
+    if (
+      referrer.email === email.toLowerCase() ||
+      referrer.canonicalEmail === canonicalEmail
+    ) {
       throw new Error("CANNOT_REFER_SELF")
     }
   }
 
-  if (existingCustomer) {
-    if (existingCustomer.password) {
-      throw new Error("ACCOUNT_EXISTS")
-    } else {
-      // CLAIM ACCOUNT LOGIC: user previously checked out as a guest
-      const updateData: Record<string, unknown> = {
-        name,
-        phone,
-        password: hashedPassword,
-        isActive: true,
-        school,
-        campus,
-      }
-      if (!existingCustomer.username) {
-        updateData.username = await generateUniqueUsername(name)
-      }
-      if (referredBy && !existingCustomer.referredBy) {
-        updateData.referredBy = referredBy
-      }
+  const otp = crypto.randomInt(100000, 999999).toString()
+  const otpHash = crypto.createHash("sha256").update(otp).digest("hex")
+  const otpExpires = new Date(Date.now() + 15 * 60 * 1000) // 15 mins
 
-      await Customer.updateOne(
-        { email },
-        {
-          $set: updateData,
-        }
-      )
-
-      if (updateData.referredBy) {
-        try {
-          await processReferralSignup(
-            existingCustomer._id.toString(),
-            updateData.referredBy as string
-          )
-        } catch (error: unknown) {
-          console.error("Error processing referral for claimed account:", error)
-          const err = error as Error
-          const { default: GamificationFailureLog } =
-            await import("@/models/GamificationFailureLog")
-          await GamificationFailureLog.create({
-            customerId: existingCustomer._id,
-            errorMessage: err.message,
-            errorStack: err.stack,
-            context: "processReferralSignup (claimed account)",
-          }).catch(console.error)
-        }
-      }
-
-      // Dispatch welcome email asynchronously
-      sendCustomerWelcomeEmail(email, name).catch(console.error)
-
-      // Smart Retroactive Linking: Link any past guest orders matching exactly this email
-      const Order = (await import("@/models/Order")).default
-      await Order.updateMany(
-        { customerEmail: email, customerId: { $exists: false } },
-        { $set: { customerId: existingCustomer._id } }
-      )
-
-      return { claimed: true }
-    }
+  const emailLower = email.toLowerCase()
+  let prevCustomer = null
+  if (data.previousEmail && data.previousEmail.toLowerCase() !== emailLower) {
+    const prevCanonical = getCanonicalEmail(data.previousEmail)
+    prevCustomer = await Customer.findOne({
+      $or: [
+        { email: data.previousEmail.toLowerCase() },
+        { canonicalEmail: prevCanonical },
+        { email: prevCanonical },
+      ],
+      isEmailVerified: false,
+    })
   }
 
-  // New Customer creation
+  const existingCustomer = await Customer.findOne({
+    $or: [{ email: emailLower }, { canonicalEmail }, { email: canonicalEmail }],
+  })
+
+  // Target existing unverified account or migrate unverified previous email account
+  const targetDoc = existingCustomer || prevCustomer
+  if (targetDoc) {
+    // Security Guard: Verified accounts must NEVER be overwritten via signup
+    if (existingCustomer?.isEmailVerified) {
+      throw new Error("ACCOUNT_EXISTS")
+    }
+
+    if (
+      prevCustomer &&
+      existingCustomer &&
+      prevCustomer._id.toString() !== existingCustomer._id.toString()
+    ) {
+      await Customer.deleteOne({ _id: prevCustomer._id })
+    }
+
+    Object.assign(targetDoc, {
+      email: emailLower,
+      canonicalEmail,
+      name,
+      phone,
+      password: hashedPassword,
+      school,
+      campus,
+      isEmailVerified: false,
+      emailVerificationOtpHash: otpHash,
+      emailVerificationOtpExpires: otpExpires,
+      emailVerificationAttempts: 0,
+    })
+    if (referredBy && !targetDoc.referredBy) targetDoc.referredBy = referredBy
+    if (!targetDoc.username)
+      targetDoc.username = await generateUniqueUsername(name)
+
+    await targetDoc.save()
+    sendCustomerVerificationOtpEmail(email, name, otp).catch(console.error)
+    return { status: "OTP_SENT", email }
+  }
+
+  // Brand-new customer
   const randomReferral = crypto.randomBytes(4).toString("hex")
   const referralCode = `REF-${randomReferral.toUpperCase()}`
   const username = await generateUniqueUsername(name)
 
-  const customer = await Customer.create({
+  await Customer.create({
     name,
     username,
-    email,
+    email: email.toLowerCase(),
+    canonicalEmail,
     phone,
     password: hashedPassword,
     referralCode,
     referredBy,
     isActive: true,
+    isEmailVerified: false,
+    emailVerificationOtpHash: otpHash,
+    emailVerificationOtpExpires: otpExpires,
+    emailVerificationAttempts: 0,
     school,
     campus,
   })
 
-  if (referredBy) {
-    try {
-      await processReferralSignup(customer._id.toString(), referredBy)
-    } catch (error: unknown) {
-      console.error("Error processing referral for new account:", error)
-      const err = error as Error
-      const { default: GamificationFailureLog } =
-        await import("@/models/GamificationFailureLog")
-      await GamificationFailureLog.create({
-        customerId: customer._id,
-        errorMessage: err.message,
-        errorStack: err.stack,
-        context: "processReferralSignup (new account)",
-      }).catch(console.error)
+  sendCustomerVerificationOtpEmail(email, name, otp).catch(console.error)
+  return { status: "OTP_SENT", email }
+}
+
+/**
+ * Verifies a customer's 6-digit registration OTP, activates the account, and triggers welcome workflows.
+ */
+export async function verifyCustomerSignupOtp({
+  email,
+  otp,
+}: {
+  email: string
+  otp: string
+}) {
+  await dbConnect()
+  const canonicalEmail = getCanonicalEmail(email)
+  const customer = await Customer.findOne({
+    $or: [
+      { email: email.toLowerCase() },
+      { canonicalEmail },
+      { email: canonicalEmail },
+    ],
+  })
+
+  if (!customer) {
+    throw new Error("USER_NOT_FOUND")
+  }
+
+  if (customer.isEmailVerified) {
+    return { verified: true, alreadyVerified: true }
+  }
+
+  if (
+    !customer.emailVerificationOtpExpires ||
+    customer.emailVerificationOtpExpires < new Date()
+  ) {
+    throw new Error("OTP_EXPIRED")
+  }
+
+  if ((customer.emailVerificationAttempts || 0) >= 5) {
+    throw new Error("OTP_MAX_ATTEMPTS")
+  }
+
+  // Constant-time cryptographic comparison to prevent timing attacks
+  const incomingHash = crypto.createHash("sha256").update(otp.trim()).digest()
+
+  let isMatch = false
+  if (customer.emailVerificationOtpHash) {
+    const storedHash = Buffer.from(customer.emailVerificationOtpHash, "hex")
+    if (incomingHash.length === storedHash.length) {
+      isMatch = crypto.timingSafeEqual(incomingHash, storedHash)
     }
   }
 
-  // Dispatch welcome email asynchronously
-  sendCustomerWelcomeEmail(email, name).catch(console.error)
+  if (!isMatch) {
+    customer.emailVerificationAttempts =
+      (customer.emailVerificationAttempts || 0) + 1
+    await customer.save()
+    throw new Error("INVALID_OTP")
+  }
 
-  // Smart Retroactive Linking: Link any past guest orders matching exactly this email
-  const Order = (await import("@/models/Order")).default
-  await Order.updateMany(
-    { customerEmail: email, customerId: { $exists: false } },
-    { $set: { customerId: customer._id } }
-  )
+  // Mark customer verified
+  customer.isEmailVerified = true
+  customer.emailVerifiedAt = new Date()
+  customer.emailVerificationOtpHash = undefined
+  customer.emailVerificationOtpExpires = undefined
+  customer.emailVerificationAttempts = 0
+  await customer.save()
 
-  return { claimed: false }
+  // Process referral signup bonus if applicable
+  if (customer.referredBy) {
+    try {
+      await processReferralSignup(customer._id.toString(), customer.referredBy)
+    } catch (error: unknown) {
+      console.error(
+        "Error processing referral for newly verified customer:",
+        error
+      )
+    }
+  }
+
+  // Welcome email
+  sendCustomerWelcomeEmail(customer.email, customer.name).catch(console.error)
+
+  // Smart Retroactive Linking: Link past guest orders matching email or canonical email
+  try {
+    const Order = (await import("@/models/Order")).default
+    await Order.updateMany(
+      {
+        $or: [
+          { customerEmail: customer.email },
+          { customerEmail: canonicalEmail },
+        ],
+        customerId: { $exists: false },
+      },
+      { $set: { customerId: customer._id } }
+    )
+  } catch (error) {
+    console.error("Error retroactively linking guest orders:", error)
+  }
+
+  return { verified: true }
 }
+
+/**
+ * Resends a fresh 6-digit OTP to an unverified customer with rate-limit cooldown.
+ */
+export async function resendCustomerVerificationOtp(email: string) {
+  await dbConnect()
+  const canonicalEmail = getCanonicalEmail(email)
+  const customer = await Customer.findOne({
+    $or: [
+      { email: email.toLowerCase() },
+      { canonicalEmail },
+      { email: canonicalEmail },
+    ],
+  })
+
+  // Silent success for non-existent accounts to eliminate account enumeration attacks
+  if (!customer) {
+    return { success: true }
+  }
+
+  if (customer.isEmailVerified) {
+    throw new Error("ALREADY_VERIFIED")
+  }
+
+  // Enforce 60s cooldown: initial expiry is +15m (900s). If > 14m (840s) left, < 60s passed
+  if (customer.emailVerificationOtpExpires) {
+    const msRemaining =
+      customer.emailVerificationOtpExpires.getTime() - Date.now()
+    if (msRemaining > 14 * 60 * 1000) {
+      throw new Error("RESEND_COOLDOWN")
+    }
+  }
+
+  const otp = crypto.randomInt(100000, 999999).toString()
+  customer.emailVerificationOtpHash = crypto
+    .createHash("sha256")
+    .update(otp)
+    .digest("hex")
+  customer.emailVerificationOtpExpires = new Date(Date.now() + 15 * 60 * 1000)
+  customer.emailVerificationAttempts = 0
+  await customer.save()
+
+  sendCustomerVerificationOtpEmail(customer.email, customer.name, otp).catch(
+    console.error
+  )
+  return { success: true }
+}
+
+/** Legacy alias for backward compatibility */
+export const registerOrClaimCustomer = initiateCustomerSignup
 
 export async function getCustomerByEmail(email: string) {
   await dbConnect()
-  const customer = await Customer.findOne({ email }).lean()
-  return customer
+  return await Customer.findOne({ email }).lean()
 }
 
 export async function getCustomerWalletData(
