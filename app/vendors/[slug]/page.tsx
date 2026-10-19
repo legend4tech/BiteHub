@@ -1,13 +1,6 @@
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
-import {
-  Circle,
-  Phone,
-  Calendar,
-  GraduationCap,
-  Tag,
-  Clock,
-} from "lucide-react"
+import { Circle, GraduationCap, Tag, Clock } from "lucide-react"
 import Link from "next/link"
 import { RatingBadge } from "@/components/shared/RatingBadge"
 import { VendorMenu } from "@/components/public-vendors/VendorMenu"
@@ -102,14 +95,6 @@ export default async function VendorDetailPage({
       vendorPrepTime: vendor.prepTime ?? "",
     })
   ) as unknown as import("@/types/vendor").MenuItem[]
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A"
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -212,15 +197,6 @@ export default async function VendorDetailPage({
                       {vendor.school} • {vendor.campus}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                    <Calendar className="size-4 text-primary" />
-                    <span>
-                      <strong className="font-medium text-foreground">
-                        Joined:
-                      </strong>{" "}
-                      {formatDate(vendor.createdAt)}
-                    </span>
-                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -232,17 +208,6 @@ export default async function VendorDetailPage({
                           Prep Time:
                         </strong>{" "}
                         {vendor.prepTime}
-                      </span>
-                    </div>
-                  )}
-                  {vendor.whatsappNumber && (
-                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                      <Phone className="size-4 text-primary" />
-                      <span>
-                        <strong className="font-medium text-foreground">
-                          Phone:
-                        </strong>{" "}
-                        {vendor.whatsappNumber}
                       </span>
                     </div>
                   )}

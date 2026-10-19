@@ -113,35 +113,39 @@ export function CustomerRewardsCTA() {
   )
 
   return (
-    <section ref={sectionRef} id="customer-rewards-cta" className="py-24">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="customer-cta-container relative overflow-hidden rounded-[3rem] border border-orange-100 bg-orange-50 p-10 shadow-[0_20px_60px_-15px_rgba(234,88,12,0.1)] md:p-16 dark:border-orange-900/50 dark:bg-orange-950/30">
+    <section
+      ref={sectionRef}
+      id="customer-rewards-cta"
+      className="py-16 md:py-24"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="customer-cta-container relative overflow-hidden rounded-3xl border border-orange-100 bg-orange-50 p-6 shadow-[0_20px_60px_-15px_rgba(234,88,12,0.1)] sm:rounded-[3rem] sm:p-10 md:p-16 dark:border-orange-900/50 dark:bg-orange-950/30">
           {/* Decorative elements */}
           <div className="absolute -top-32 -right-32 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[80px]" />
           <div className="absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px]" />
 
-          <div className="relative grid items-center gap-12 lg:grid-cols-2">
-            <div className="customer-cta-text z-10">
+          <div className="relative grid min-w-0 items-center gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="customer-cta-text z-10 min-w-0">
               <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold tracking-wider text-primary uppercase">
                 BiteHub Rewards
               </p>
-              <h2 className="mt-6 font-heading text-4xl leading-[1.1] font-extrabold tracking-tight text-foreground md:text-5xl">
+              <h2 className="mt-4 font-heading text-3xl leading-[1.15] font-extrabold tracking-tight text-foreground sm:mt-6 sm:text-4xl lg:text-5xl">
                 Level up your cravings. <br />
                 <span className="text-primary">
                   Earn real rewards just for eating.
                 </span>
               </h2>
-              <p className="mt-6 max-w-lg text-lg font-medium text-muted-foreground">
+              <p className="mt-4 max-w-lg text-base font-medium text-muted-foreground sm:mt-6 sm:text-lg">
                 Why just order food when you can unlock achievements? {APP_NAME}{" "}
                 turns your daily meals into cash vouchers and exclusive perks.
                 Eat. Earn. Repeat.
               </p>
 
-              <div className="mt-8 space-y-4">
+              <div className="mt-6 space-y-3 sm:mt-8 sm:space-y-4">
                 {perks.map((perk, i) => (
                   <div
                     key={i}
-                    className="customer-cta-perk flex items-center gap-4 rounded-2xl border border-border/50 bg-background/60 p-4 shadow-sm backdrop-blur-sm"
+                    className="customer-cta-perk flex items-center gap-3.5 rounded-2xl border border-border/50 bg-background/60 p-3.5 shadow-sm backdrop-blur-sm sm:gap-4 sm:p-4"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
                       {perk.icon}
@@ -153,10 +157,10 @@ export function CustomerRewardsCTA() {
                 ))}
               </div>
 
-              <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3.5 sm:mt-10 sm:flex-row sm:gap-4">
                 <Button
                   size="lg"
-                  className="h-12 rounded-full px-8 text-base font-bold shadow-xl transition-transform hover:scale-105"
+                  className="h-12 w-full rounded-full px-8 text-base font-bold shadow-xl transition-transform hover:scale-105 sm:w-auto"
                   asChild
                 >
                   <Link href="/customer/signup">
@@ -166,7 +170,7 @@ export function CustomerRewardsCTA() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-12 rounded-full border-border bg-white px-8 text-base font-bold shadow-sm transition-colors hover:bg-orange-50 dark:bg-background dark:hover:bg-orange-950/50"
+                  className="h-12 w-full rounded-full border-border bg-white px-8 text-base font-bold shadow-sm transition-colors hover:bg-orange-50 sm:w-auto dark:bg-background dark:hover:bg-orange-950/50"
                   asChild
                 >
                   <Link href="/menus">Browse Menus</Link>
@@ -175,7 +179,7 @@ export function CustomerRewardsCTA() {
             </div>
 
             <div className="customer-cta-mascot relative z-10 flex items-center justify-center lg:justify-end">
-              <div className="relative h-[350px] w-[350px] md:h-[450px] md:w-[450px]">
+              <div className="relative aspect-square w-full max-w-[260px] sm:max-w-[340px] md:max-w-[420px] lg:max-w-[450px]">
                 {/* Glow behind mascot */}
                 <div className="absolute inset-0 rounded-full bg-primary/20 blur-[60px]" />
                 <Image

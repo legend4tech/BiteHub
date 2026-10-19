@@ -6,6 +6,7 @@ import { FeaturedVendors } from "@/components/landing/FeaturedVendors"
 import { HowItWorks } from "@/components/landing/HowItWorks"
 import { VendorCTA } from "@/components/landing/VendorCTA"
 import { CustomerRewardsCTA } from "@/components/landing/CustomerRewardsCTA"
+import { SubscribeModal } from "@/components/landing/SubscribeModal"
 import { Footer } from "@/components/Footer"
 import { SectionErrorBoundary } from "@/components/shared/SectionErrorBoundary"
 import { PageSkeleton } from "@/components/shared/PageSkeleton"
@@ -129,6 +130,7 @@ export default async function Page({
         <HowItWorks />
         <CustomerRewardsCTA />
         <VendorCTA />
+        <SubscribeModal />
         <Footer />
       </main>
     </>
