@@ -12,6 +12,7 @@ import {
 } from "@/lib/monnify"
 
 import { walletActivationSchema } from "@/lib/schemas/customer"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export type ActionState = { error?: string; success?: boolean } | undefined
 
@@ -37,9 +38,23 @@ export async function activateWallet(
 
   await dbConnect()
 
-  const customer = await Customer.findOne({ email: session.user.email })
+  const customer = session.user.id
+    ? await Customer.findById(session.user.id)
+    : await Customer.findOne({ email: session.user.email })
   if (!customer) {
     redirect("/customer/login")
+  }
+
+  if (isRateLimitingEnabled) {
+    const { success } = await strictRateLimiter.limit(
+      `wallet_activate_${customer._id.toString()}`
+    )
+    if (!success) {
+      return {
+        error:
+          "Too many wallet activation requests. Please wait a few minutes and try again.",
+      }
+    }
   }
 
   const existingWallet = await Wallet.findOne({ customerId: customer._id })

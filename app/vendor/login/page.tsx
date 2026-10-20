@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { GoogleButton } from "@/components/shared/GoogleButton"
 import {
   Loader2,
   Eye,
@@ -28,9 +30,14 @@ import Image from "next/image"
 import { vendorLoginSchema, type VendorLoginValues } from "@/lib/schemas"
 
 export default function VendorLoginPage() {
+  const searchParams = useSearchParams()
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [isSuspended, setIsSuspended] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [isSuspendedManual, setIsSuspendedManual] = useState(false)
+  const isSuspended =
+    searchParams.get("error") === "AccountSuspended" || isSuspendedManual
+  const isNoAccount = searchParams.get("error") === "NoVendorAccount"
 
   const form = useForm<VendorLoginValues>({
     resolver: zodResolver(
@@ -46,7 +53,7 @@ export default function VendorLoginPage() {
     }
 
     setLoading(true)
-    setIsSuspended(false)
+    setIsSuspendedManual(false)
     try {
       const res = await signIn("vendor-login", {
         redirect: false,
@@ -58,7 +65,7 @@ export default function VendorLoginPage() {
         const resCode = (res as { code?: string }).code
 
         if (resCode === "AccountSuspended") {
-          setIsSuspended(true)
+          setIsSuspendedManual(true)
           return
         }
         if (resCode === "RateLimitExceeded") {
@@ -171,6 +178,42 @@ export default function VendorLoginPage() {
             {/* Form */}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {isSuspended && <SuspendedAlert type="vendor" />}
+              {isNoAccount && (
+                <div className="rounded-md bg-destructive/15 p-4 text-sm font-medium text-destructive">
+                  No vendor account found matching this Google email. Please
+                  sign in with your registered vendor credentials or contact
+                  support.
+                </div>
+              )}
+
+              <GoogleButton
+                onClick={async () => {
+                  if (typeof window !== "undefined" && !navigator.onLine) {
+                    toast.error(
+                      "You are offline. Please check your internet connection."
+                    )
+                    return
+                  }
+                  setGoogleLoading(true)
+                  document.cookie =
+                    "bitehub_oauth_intent=vendor; path=/; max-age=300; SameSite=Lax"
+                  await signIn("google", {
+                    redirectTo: "/vendor/dashboard",
+                  })
+                }}
+                loading={googleLoading}
+                disabled={loading}
+                text="Sign in with Google"
+              />
+
+              <div className="relative my-4 flex items-center justify-center">
+                <div className="flex-1 border-t border-border" />
+                <span className="shrink-0 bg-background px-3 text-xs whitespace-nowrap text-muted-foreground uppercase">
+                  Or continue with email
+                </span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+
               <Controller
                 name="email"
                 control={form.control}
@@ -240,7 +283,7 @@ export default function VendorLoginPage() {
                 type="submit"
                 variant="hero"
                 className="mt-2 h-11 w-full text-base"
-                disabled={loading}
+                disabled={loading || googleLoading}
               >
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 {loading ? "Signing in…" : "Sign in"}

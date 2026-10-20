@@ -29,6 +29,7 @@ function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
   const isAuthPage =
     pathname === "/customer/login" ||
     pathname === "/customer/signup" ||
+    pathname.startsWith("/customer/complete-signup") ||
     pathname === "/customer/forgot-password" ||
     (status !== "authenticated" && pathname === "/customer/reset-password")
 

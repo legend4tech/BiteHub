@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { customerLoginSchema, type CustomerLoginValues } from "@/lib/schemas"
 import { SuspendedAlert } from "@/components/shared/SuspendedAlert"
 import { CustomerOtpStep } from "./CustomerOtpStep"
+import { GoogleButton } from "@/components/shared/GoogleButton"
 
 export function CustomerSigninForm() {
   const searchParams = useSearchParams()
@@ -21,7 +22,11 @@ export function CustomerSigninForm() {
 
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [isSuspended, setIsSuspended] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [isSuspendedManual, setIsSuspendedManual] = useState(false)
+  const isSuspended =
+    searchParams.get("error") === "AccountSuspended" || isSuspendedManual
+  const isVendorAccount = searchParams.get("error") === "VendorAccountFound"
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   const form = useForm<CustomerLoginValues>({
@@ -38,7 +43,7 @@ export function CustomerSigninForm() {
     }
 
     setLoading(true)
-    setIsSuspended(false)
+    setIsSuspendedManual(false)
     try {
       const res = await signIn("customer-login", {
         redirect: false,
@@ -63,7 +68,7 @@ export function CustomerSigninForm() {
         }
 
         if (resCode === "AccountSuspended") {
-          setIsSuspended(true)
+          setIsSuspendedManual(true)
           return
         }
         if (resCode === "RateLimitExceeded") {
@@ -139,6 +144,50 @@ export function CustomerSigninForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       {isSuspended && <SuspendedAlert type="customer" />}
+
+      {isVendorAccount && (
+        <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 text-sm text-foreground">
+          <p className="font-semibold text-primary">Vendor Account Detected</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This email is registered to a BiteHub food vendor account. Please
+            sign in via the{" "}
+            <Link
+              href="/vendor/login"
+              className="font-bold text-primary underline"
+            >
+              Vendor Portal
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
+      <GoogleButton
+        onClick={async () => {
+          if (typeof window !== "undefined" && !navigator.onLine) {
+            toast.error(
+              "You are offline. Please check your internet connection."
+            )
+            return
+          }
+          setGoogleLoading(true)
+          document.cookie =
+            "bitehub_oauth_intent=customer; path=/; max-age=300; SameSite=Lax"
+          await signIn("google", { redirectTo: redirect })
+        }}
+        loading={googleLoading}
+        disabled={loading}
+        text="Continue with Google"
+      />
+
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="flex-1 border-t border-border" />
+        <span className="shrink-0 bg-background px-3 text-xs whitespace-nowrap text-muted-foreground uppercase">
+          Or continue with email
+        </span>
+        <div className="flex-1 border-t border-border" />
+      </div>
+
       <Controller
         name="email"
         control={form.control}
@@ -204,7 +253,7 @@ export function CustomerSigninForm() {
         type="submit"
         variant="hero"
         className="mt-2 h-11 w-full text-base"
-        disabled={loading}
+        disabled={loading || googleLoading}
       >
         {loading && <Loader2 className="size-4 animate-spin" />}
         {loading ? "Signing in…" : "Sign in"}

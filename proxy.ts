@@ -138,6 +138,7 @@ export default auth(async (req) => {
     pathname.startsWith("/customer/") &&
     pathname !== "/customer/login" &&
     pathname !== "/customer/signup" &&
+    pathname !== "/customer/complete-signup" &&
     pathname !== "/customer/forgot-password" &&
     pathname !== "/customer/reset-password"
 
@@ -211,7 +212,8 @@ export default auth(async (req) => {
       isVendorManagerLoginRoute ||
       pathname === "/vendor/login" ||
       pathname === "/customer/login" ||
-      pathname === "/customer/signup")
+      pathname === "/customer/signup" ||
+      pathname === "/customer/complete-signup")
   ) {
     if (role === "admin" || role === "superadmin") {
       res = NextResponse.redirect(new URL("/admin", req.nextUrl))

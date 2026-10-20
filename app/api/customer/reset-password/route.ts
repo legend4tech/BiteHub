@@ -5,6 +5,7 @@ import CustomerModel from "@/models/Customer"
 import bcrypt from "bcryptjs"
 import { resetPasswordSchema } from "@/lib/schemas"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { getCanonicalEmail } from "@/lib/emailNormalization"
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, token, password } = parsed.data
+    const canonicalEmail = getCanonicalEmail(email)
 
     if (isRateLimitingEnabled) {
       const { success } = await strictRateLimiter.limit(
@@ -38,7 +40,11 @@ export async function POST(req: NextRequest) {
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
 
     const user = await CustomerModel.findOne({
-      email: email.toLowerCase(),
+      $or: [
+        { email: email.toLowerCase() },
+        { canonicalEmail },
+        { email: canonicalEmail },
+      ],
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: new Date() },
     })

@@ -28,6 +28,21 @@ class EmailNotVerifiedError extends CredentialsSignin {
   code = "EmailNotVerified"
 }
 
+class CustomAuthError extends CredentialsSignin {
+  code = "CustomAuthError"
+  constructor(message: string) {
+    super(message)
+    this.code = message
+  }
+}
+
+import Google from "next-auth/providers/google"
+import {
+  completeGoogleCustomerSignup,
+  handleGoogleSignIn,
+} from "@/lib/services/googleAuthService"
+import { verifyGoogleSignupToken } from "@/lib/tokens"
+import { googleCustomerCompleteSchema } from "@/lib/schemas/customer"
 import { adminLoginSchema as credentialsSchema } from "@/lib/schemas"
 
 // ─── Rate limit helper ────────────────────────────────────────────────────────
@@ -278,9 +293,100 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
+
+    // ── Google OAuth Provider ────────────────────────────────────────────────
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
+      clientSecret:
+        process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+    }),
+
+    // ── Google Customer Complete Registration ────────────────────────────────
+    CredentialsProvider({
+      id: "customer-google-complete",
+      name: "Google Customer Complete",
+      credentials: {
+        token: { label: "Token", type: "text" },
+        phone: { label: "Phone", type: "text" },
+        school: { label: "School", type: "text" },
+        campus: { label: "Campus", type: "text" },
+        referredBy: { label: "Referred By", type: "text" },
+        name: { label: "Name", type: "text" },
+      },
+      async authorize(credentials) {
+        try {
+          const parsed = googleCustomerCompleteSchema.safeParse(credentials)
+          if (!parsed.success) {
+            throw new InvalidCredentialsError()
+          }
+
+          const tokenPayload = verifyGoogleSignupToken(parsed.data.token)
+          if (!tokenPayload) {
+            throw new CustomAuthError(
+              "Signup session expired. Please sign in with Google again."
+            )
+          }
+
+          await checkRateLimit(tokenPayload.email)
+
+          const customer = await completeGoogleCustomerSignup(parsed.data)
+          return {
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            role: "customer",
+            vendorId: undefined,
+            image: customer.image,
+          }
+        } catch (error) {
+          if (error instanceof CredentialsSignin) throw error
+          if (error instanceof Error && error.message === "ACCOUNT_SUSPENDED") {
+            throw new AccountSuspendedError()
+          }
+          if (
+            error instanceof Error &&
+            error.message === "INVALID_REFERRAL_CODE"
+          ) {
+            throw new CustomAuthError("The referral code provided is invalid.")
+          }
+          if (error instanceof Error && error.message === "CANNOT_REFER_SELF") {
+            throw new CustomAuthError("You cannot refer yourself.")
+          }
+          if (
+            error instanceof Error &&
+            error.message === "DISPOSABLE_EMAIL_NOT_ALLOWED"
+          ) {
+            throw new CustomAuthError(
+              "Disposable or temporary email addresses are not permitted."
+            )
+          }
+          if (
+            error instanceof Error &&
+            error.message === "INVALID_OR_EXPIRED_TOKEN"
+          ) {
+            throw new CustomAuthError(
+              "Signup session expired. Please sign in with Google again."
+            )
+          }
+          if (
+            error instanceof Error &&
+            error.message === "TOKEN_ALREADY_USED"
+          ) {
+            throw new CustomAuthError(
+              "This signup link has already been used. Please log in."
+            )
+          }
+          console.error("[customer-google-complete authorize]", error)
+          throw new Error("Database error during registration.")
+        }
+      },
+    }),
   ],
   callbacks: {
     ...authConfig.callbacks,
+    async signIn({ user, account, profile }) {
+      return await handleGoogleSignIn({ user, account, profile })
+    },
     async jwt({ token, user, trigger, session }) {
       // Execute base logic from authConfig (sets id, role, vendorId, image on initial sign in)
       let newToken = token

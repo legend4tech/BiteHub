@@ -22,6 +22,7 @@ import {
 import { useCustomerSignup } from "@/hooks/shared/usePublicMutations"
 import { Step1Fields, Step2Fields } from "./CustomerSignupFields"
 import { CustomerOtpStep } from "./CustomerOtpStep"
+import { GoogleButton } from "@/components/shared/GoogleButton"
 
 export default function CustomerSignupForm() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function CustomerSignupForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [direction, setDirection] = useState(1)
   const [lastSubmittedEmail, setLastSubmittedEmail] = useState<string>("")
+  const [googleLoading, setGoogleLoading] = useState(false)
   const signupMutation = useCustomerSignup()
 
   const form = useForm<CustomerSignupFormValues>({
@@ -268,6 +270,43 @@ export default function CustomerSignupForm() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="block space-y-4"
                   >
+                    <GoogleButton
+                      onClick={async () => {
+                        if (
+                          typeof window !== "undefined" &&
+                          !navigator.onLine
+                        ) {
+                          toast.error(
+                            "You are offline. Please check your internet connection."
+                          )
+                          return
+                        }
+                        setGoogleLoading(true)
+                        const ref =
+                          form.getValues("referredBy") ||
+                          searchParams.get("ref") ||
+                          ""
+                        document.cookie =
+                          "bitehub_oauth_intent=customer; path=/; max-age=300; SameSite=Lax"
+                        if (ref) {
+                          document.cookie = `bitehub_oauth_ref=${encodeURIComponent(
+                            ref
+                          )}; path=/; max-age=300; SameSite=Lax`
+                        }
+                        await signIn("google", { redirectTo: redirect })
+                      }}
+                      loading={googleLoading}
+                      text="Sign up with Google"
+                    />
+
+                    <div className="relative my-4 flex items-center justify-center">
+                      <div className="flex-1 border-t border-border" />
+                      <span className="shrink-0 bg-background px-3 text-xs whitespace-nowrap text-muted-foreground uppercase">
+                        Or register with email
+                      </span>
+                      <div className="flex-1 border-t border-border" />
+                    </div>
+
                     <Step1Fields control={form.control} />
 
                     <Button

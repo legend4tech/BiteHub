@@ -5,6 +5,7 @@ import crypto from "crypto"
 import { sendCustomerPasswordResetEmail } from "@/lib/mail"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 import { forgotPasswordSchema } from "@/lib/schemas"
+import { getCanonicalEmail } from "@/lib/emailNormalization"
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
 
     const { email } = parsed.data
     const normalizedEmail = email.toLowerCase().trim()
+    const canonicalEmail = getCanonicalEmail(normalizedEmail)
 
     if (isRateLimitingEnabled) {
       const { success } = await strictRateLimiter.limit(
@@ -35,7 +37,13 @@ export async function POST(req: NextRequest) {
 
     await dbConnect()
 
-    const user = await CustomerModel.findOne({ email: normalizedEmail })
+    const user = await CustomerModel.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { canonicalEmail },
+        { email: canonicalEmail },
+      ],
+    })
 
     // Always return success even if user not found to prevent email enumeration
     if (!user) {

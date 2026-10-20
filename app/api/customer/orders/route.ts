@@ -19,13 +19,18 @@ export async function GET(request: Request) {
 
     await dbConnect()
 
+    const filter = session.user.id
+      ? {
+          $or: [
+            { customerId: session.user.id },
+            { customerEmail: session.user.email },
+          ],
+        }
+      : { customerEmail: session.user.email }
+
     const [orders, totalOrders] = await Promise.all([
-      Order.find({ customerEmail: session.user.email })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Order.countDocuments({ customerEmail: session.user.email }),
+      Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Order.countDocuments(filter),
     ])
 
     const serializedOrders = orders.map((order) =>

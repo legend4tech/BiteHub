@@ -297,3 +297,38 @@ export const applyVoucherSchema = z.object({
   orderId: z.string().optional(),
 })
 export type ApplyVoucherValues = z.infer<typeof applyVoucherSchema>
+
+// ─── Google Auth Completion ───────────────────────────────────────────────────
+
+/** Form schema — no transforms, safe for react-hook-form */
+export const googleCustomerCompleteFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters.")
+    .optional(),
+  phone: phoneInputSchema,
+  school: z.string().trim().min(1, "Please select your school."),
+  campus: z.string().trim().min(1, "Please select your campus."),
+  referredBy: z.string().trim().optional().or(z.literal("")),
+})
+export type GoogleCustomerCompleteFormValues = z.infer<
+  typeof googleCustomerCompleteFormSchema
+>
+
+/** API schema — with phone normalization and required token */
+export const googleCustomerCompleteSchema = z.object({
+  token: z.string().min(1, "Signup token is required."),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters.")
+    .optional(),
+  phone: phoneInputSchema.transform(normaliseNigerianPhone),
+  school: z.string().trim().min(1, "Please select your school."),
+  campus: z.string().trim().min(1, "Please select your campus."),
+  referredBy: z.string().trim().optional(),
+})
+export type GoogleCustomerCompleteValues = z.infer<
+  typeof googleCustomerCompleteSchema
+>

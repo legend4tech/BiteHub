@@ -8,14 +8,14 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  if (!session?.user?.email) {
+  if (!session?.user?.email || session.user.role !== "customer") {
     return new Response("Unauthorized", { status: 401 })
   }
 
   await dbConnect()
-  const customer = await Customer.findOne({ email: session.user.email })
-    .select("_id")
-    .lean()
+  const customer = session.user.id
+    ? await Customer.findById(session.user.id).select("_id").lean()
+    : await Customer.findOne({ email: session.user.email }).select("_id").lean()
 
   if (!customer) {
     return new Response("Customer not found", { status: 404 })

@@ -11,7 +11,9 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     await dbConnect()
-    const customer = await Customer.findOne({ email: session.user.email })
+    const customer = session.user.id
+      ? await Customer.findById(session.user.id)
+      : await Customer.findOne({ email: session.user.email })
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
@@ -65,10 +67,13 @@ export async function PATCH(req: NextRequest) {
       receivesMarketing,
     } = parsedBody.data
     await dbConnect()
+    const customerId = session.user.id
     if (username) {
       const usernameExists = await Customer.findOne({
         username,
-        email: { $ne: session.user.email },
+        ...(customerId
+          ? { _id: { $ne: customerId } }
+          : { email: { $ne: session.user.email } }),
       }).lean()
       if (usernameExists) {
         return NextResponse.json(
@@ -77,9 +82,9 @@ export async function PATCH(req: NextRequest) {
         )
       }
     }
-    const existingCustomer = await Customer.findOne({
-      email: session.user.email,
-    })
+    const existingCustomer = customerId
+      ? await Customer.findById(customerId)
+      : await Customer.findOne({ email: session.user.email })
     if (!existingCustomer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
@@ -97,8 +102,11 @@ export async function PATCH(req: NextRequest) {
         )
       }
     }
+    const queryFilter = customerId
+      ? { _id: customerId }
+      : { email: session.user.email }
     const updatedCustomer = await Customer.findOneAndUpdate(
-      { email: session.user.email },
+      queryFilter,
       {
         $set: {
           ...(name && { name }),
