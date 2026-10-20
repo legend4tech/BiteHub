@@ -774,10 +774,6 @@ docs: document webhook subscription fields
 
 ---
 
-*Last updated: May 2026 · Maintained by the BiteHub core team.*
-
----
-
 ## 20. Authentication Architecture
 
 BiteHub uses **NextAuth v5** with a JWT session strategy. The auth system is split across three files with a strict separation of concerns:
