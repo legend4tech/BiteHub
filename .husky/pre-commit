@@ -11,5 +11,7 @@ if [ -n "$STAGED_FILES" ]; then
     fi
   done
 fi
-
 pnpm exec lint-staged
+
+echo "🧪 Running test suites..."
+pnpm test
