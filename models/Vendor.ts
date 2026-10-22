@@ -28,6 +28,7 @@ export interface IVendor extends Document {
   processedDisbursementRefs?: string[]
   processedSettlementRefs?: string[]
   isDisbursing?: boolean
+  disbursementBatchId?: string
   lastBankUpdateAt?: Date
   bankUpdateOtp?: string
   bankUpdateOtpExpiry?: Date
@@ -81,9 +82,33 @@ const VendorSchema: Schema = new Schema(
       enum: ["pending", "active"],
       default: "pending",
     },
-    monnifyTotalDisbursedInKobo: { type: Number, default: 0 },
-    pendingWalletBalanceInKobo: { type: Number, default: 0 },
-    walletTotalDisbursedInKobo: { type: Number, default: 0 },
+    monnifyTotalDisbursedInKobo: {
+      type: Number,
+      default: 0,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    pendingWalletBalanceInKobo: {
+      type: Number,
+      default: 0,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+    walletTotalDisbursedInKobo: {
+      type: Number,
+      default: 0,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
     lastBankUpdateAt: { type: Date },
     bankUpdateOtp: { type: String },
     bankUpdateOtpExpiry: { type: Date },
@@ -127,6 +152,7 @@ const VendorSchema: Schema = new Schema(
       default: [],
     },
     isDisbursing: { type: Boolean, default: false },
+    disbursementBatchId: { type: String, default: null },
   },
   {
     timestamps: true,

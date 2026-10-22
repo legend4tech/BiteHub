@@ -8,6 +8,7 @@ import { sendBankChangeConfirmationEmail } from "@/lib/mail"
 import { updateMonnifySubaccount, getSubaccounts } from "@/lib/monnify"
 import GlobalSettings from "@/models/GlobalSettings"
 import { monnifyBankVerifySchema } from "@/lib/schemas"
+import crypto from "crypto"
 
 export async function POST(
   request: Request,
@@ -84,7 +85,8 @@ export async function POST(
     }
 
     // Verify OTP
-    if (!vendor.bankUpdateOtp || vendor.bankUpdateOtp !== otp) {
+    const hashedInputOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    if (!vendor.bankUpdateOtp || vendor.bankUpdateOtp !== hashedInputOtp) {
       vendor.bankUpdateOtpAttempts = (vendor.bankUpdateOtpAttempts || 0) + 1
       await vendor.save()
       const remainingAttempts = 5 - vendor.bankUpdateOtpAttempts
@@ -141,6 +143,7 @@ export async function POST(
     // Update vendor model
     vendor.monnifySubAccountCode = subaccountCode
     vendor.monnifyBankCode = bankCode
+    vendor.monnifyAccountNumber = accountNumber
     vendor.lastBankUpdateAt = new Date()
     // Clear OTP fields
     vendor.bankUpdateOtp = undefined

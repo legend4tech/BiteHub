@@ -46,12 +46,29 @@ export async function POST(request: Request) {
       console.error("[Settlement Webhook] Missing monnify-signature header")
       return NextResponse.json({ error: "Missing signature" }, { status: 400 })
     }
-    const secretKey = process.env.MONNIFY_SECRET_KEY || ""
+    const secretKey = process.env.MONNIFY_SECRET_KEY
+    if (!secretKey) {
+      console.error(
+        "[Settlement Webhook] Missing MONNIFY_SECRET_KEY environment variable"
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      )
+    }
+
     const computedHash = crypto
       .createHmac("sha512", secretKey)
       .update(rawBody)
       .digest("hex")
-    if (computedHash !== signature) {
+
+    const sigBuf = Buffer.from(signature, "hex")
+    const compBuf = Buffer.from(computedHash, "hex")
+
+    if (
+      sigBuf.length !== compBuf.length ||
+      !crypto.timingSafeEqual(sigBuf, compBuf)
+    ) {
       console.error("[Settlement Webhook] Invalid signature — rejected")
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
     }

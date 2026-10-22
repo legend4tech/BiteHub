@@ -40,6 +40,10 @@ export function CheckoutForm() {
     removeVoucher,
     appliedVoucherCode,
     appliedVoucherMenuItemId,
+    applyPromo,
+    removePromo,
+    appliedPromoCode,
+    promoDiscountInKobo,
     useBHC,
     setUseBHC,
   } = useCart()
@@ -182,7 +186,7 @@ export function CheckoutForm() {
     control: form.control,
     name: "paymentMethod",
   })
-  const isRewardApplied = !!appliedVoucherCode || useBHC
+  const isRewardApplied = !!appliedVoucherCode || useBHC || !!appliedPromoCode
 
   useEffect(() => {
     if (isRewardApplied && paymentMethod !== "wallet") {
@@ -215,7 +219,10 @@ export function CheckoutForm() {
         ?.menuItem.priceInKobo || 0
     : 0
 
-  const itemSubtotal = total - voucherDiscountInKobo
+  const itemSubtotal = Math.max(
+    0,
+    total - voucherDiscountInKobo - (promoDiscountInKobo || 0)
+  )
   const calculatedTotal = itemSubtotal + (cart.defaultDeliveryFeeInKobo ?? 0)
   const targetAmountToReceive = calculatedTotal + PLATFORM_FLAT_FEE_IN_KOBO
   const monnifyFee =
@@ -283,6 +290,7 @@ export function CheckoutForm() {
         paymentMethod: values.paymentMethod,
         total: finalTotal,
         appliedVoucherCode: appliedVoucherCode || undefined,
+        appliedPromoCode: appliedPromoCode || undefined,
         useBHC: useBHC,
       },
       {
@@ -466,6 +474,10 @@ export function CheckoutForm() {
             removeVoucher={removeVoucher}
             appliedVoucherCode={appliedVoucherCode}
             appliedVoucherMenuItemId={appliedVoucherMenuItemId}
+            appliedPromoCode={appliedPromoCode}
+            promoDiscountInKobo={promoDiscountInKobo}
+            applyPromo={applyPromo}
+            removePromo={removePromo}
             itemSubtotal={itemSubtotal}
             useBHC={useBHC}
             setUseBHC={setUseBHC}

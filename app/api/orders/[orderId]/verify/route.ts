@@ -9,6 +9,7 @@ import { sendOrderReceiptEmail } from "@/lib/mail"
 import { sendVendorNewOrderEmail } from "@/lib/mail"
 import { sendVendorOrderNotification } from "@/lib/whatsapp"
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
+import { nairaToKobo } from "@/lib/money"
 
 export async function POST(
   request: Request,
@@ -38,15 +39,22 @@ export async function POST(
     const monnifyData = await verifyMonnifyTransaction(order.monnifyReference)
 
     if (monnifyData.paymentStatus === "PAID") {
+      const isCancelled = order.status === ORDER_STATUS.CANCELLED
+      const updateFields: Record<string, unknown> = {
+        paymentStatus: PAYMENT_STATUS.PAID,
+      }
+      if (!isCancelled) {
+        updateFields.status = ORDER_STATUS.CONFIRMED
+      } else {
+        updateFields.notes =
+          (order.notes ? order.notes + " | " : "") +
+          "[Audit] Payment verified after order was already cancelled. Manual resolution/refund required."
+      }
+
       // Atomically acquire lock and update state
       const updatedOrder = await Order.findOneAndUpdate(
         { orderId, paymentStatus: { $ne: PAYMENT_STATUS.PAID } },
-        {
-          $set: {
-            paymentStatus: PAYMENT_STATUS.PAID,
-            status: ORDER_STATUS.CONFIRMED,
-          },
-        },
+        { $set: updateFields },
         { new: true }
       )
 
@@ -61,19 +69,19 @@ export async function POST(
 
       // ── Overwrite estimates with Monnify's actual ground-truth figures ──────────
       if (typeof monnifyData.fee === "number") {
-        updatedOrder.serviceFeeInKobo = Math.round(monnifyData.fee * 100)
+        updatedOrder.serviceFeeInKobo = nairaToKobo(monnifyData.fee)
       }
 
       if (
+        !updatedOrder.vendorRevenueInKobo &&
         monnifyData.incomeSplitConfig &&
         monnifyData.incomeSplitConfig.length > 0
       ) {
-        // If there's a split setup, find the vendor's subaccount amount (if possible) or just use the first split.
-        // Usually, splitAmount is present in the config sent.
+        // If there's a split setup and vendorRevenueInKobo wasn't set, use vendor split amount.
         const vendorSplit = monnifyData.incomeSplitConfig[0]
         if (typeof vendorSplit.splitAmount === "number") {
-          updatedOrder.vendorRevenueInKobo = Math.round(
-            vendorSplit.splitAmount * 100
+          updatedOrder.vendorRevenueInKobo = nairaToKobo(
+            vendorSplit.splitAmount
           )
         }
       }
@@ -133,8 +141,8 @@ export async function POST(
         )
       }
 
-      // Send WhatsApp notification if it wasn't previously paid
-      if (wasPending && updatedOrder.vendorWhatsappNumber) {
+      // Send WhatsApp notification if it was confirmed (not cancelled)
+      if (wasPending && !isCancelled && updatedOrder.vendorWhatsappNumber) {
         sendVendorOrderNotification(
           updatedOrder.vendorWhatsappNumber,
           updatedOrder.customerName,
@@ -146,7 +154,7 @@ export async function POST(
       }
 
       // Send vendor email notification
-      if (wasPending) {
+      if (wasPending && !isCancelled) {
         sendVendorNewOrderEmail(
           String(updatedOrder.vendorId),
           updatedOrder.vendorName,

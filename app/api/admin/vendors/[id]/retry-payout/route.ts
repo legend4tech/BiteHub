@@ -35,10 +35,11 @@ export async function POST(
     }
     await dbConnect()
     const vendorId = params.id
-    // Atomically find and lock the vendor
+    const batchReference = `retry-payout-${vendorId}-${Date.now()}`
+    // Atomically find and lock the vendor with disbursementBatchId
     const vendor = await Vendor.findOneAndUpdate(
       { _id: vendorId, isDisbursing: { $ne: true } },
-      { $set: { isDisbursing: true } },
+      { $set: { isDisbursing: true, disbursementBatchId: batchReference } },
       { new: true }
     )
     if (!vendor) {
@@ -59,7 +60,7 @@ export async function POST(
     ) {
       // Unlock before returning error
       await Vendor.findByIdAndUpdate(vendor._id, {
-        $set: { isDisbursing: false },
+        $set: { isDisbursing: false, disbursementBatchId: null },
       })
       return NextResponse.json(
         { error: "No pending wallet balance to disburse" },
@@ -69,15 +70,16 @@ export async function POST(
     if (!vendor.monnifyAccountNumber || !vendor.monnifyBankCode) {
       // Unlock before returning error
       await Vendor.findByIdAndUpdate(vendor._id, {
-        $set: { isDisbursing: false },
+        $set: { isDisbursing: false, disbursementBatchId: null },
       })
       return NextResponse.json(
         { error: "Vendor has not set up their Monnify bank details" },
         { status: 400 }
       )
     }
-    const batchReference = `retry-payout-${vendor._id}-${Date.now()}`
     const amountPaidInKobo = vendor.pendingWalletBalanceInKobo
+    const transactionRef = `payout-${vendor._id}-${Date.now()}`
+
     // Execute Bulk Disbursement via Monnify
     const bulkResult = await executeBulkDisbursement({
       batchReference,
@@ -86,31 +88,53 @@ export async function POST(
       transactions: [
         {
           amount: toMajorUnit(amountPaidInKobo),
-          reference: `payout-${vendor._id}-${Date.now()}`,
+          reference: transactionRef,
           narration: `BiteHub Wallet Payout - ${vendor.name}`,
-          bankCode: vendor.monnifyBankCode,
-          accountNumber: vendor.monnifyAccountNumber,
+          destinationBankCode: vendor.monnifyBankCode,
+          destinationAccountNumber: vendor.monnifyAccountNumber,
+          destinationAccountName: vendor.name,
+          currency: "NGN",
         },
       ],
     })
     // If API call didn't throw, we assume success. Update local DB.
     await Vendor.findByIdAndUpdate(vendor._id, {
-      $set: { isDisbursing: false },
+      $set: { isDisbursing: false, disbursementBatchId: null },
       $inc: {
         walletTotalDisbursedInKobo: amountPaidInKobo,
         pendingWalletBalanceInKobo: -amountPaidInKobo,
       },
     })
-    // Mark the corresponding wallet orders as disbursed
-    await Order.updateMany(
-      {
-        vendorId: vendor._id,
-        paymentMethod: "wallet",
-        paymentStatus: "paid",
-        isDisbursed: { $ne: true },
-      },
-      { $set: { isDisbursed: true } }
-    )
+    // Mark the exact wallet orders that contributed to this specific payout amount
+    const { ORDER_STATUS } = await import("@/lib/constants")
+    const pendingOrders = await Order.find({
+      vendorId: vendor._id,
+      paymentMethod: "wallet",
+      paymentStatus: "paid",
+      status: { $ne: ORDER_STATUS.CANCELLED },
+      isDisbursed: { $ne: true },
+    })
+      .sort({ createdAt: 1 })
+      .select("_id vendorRevenueInKobo")
+      .lean()
+
+    let runningTotal = 0
+    const orderIdsToMark = []
+
+    for (const po of pendingOrders) {
+      if (runningTotal + po.vendorRevenueInKobo > amountPaidInKobo) {
+        break
+      }
+      runningTotal += po.vendorRevenueInKobo
+      orderIdsToMark.push(po._id)
+    }
+
+    if (orderIdsToMark.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: orderIdsToMark } },
+        { $set: { isDisbursed: true, payoutReference: transactionRef } }
+      )
+    }
     return NextResponse.json({
       message: "Payout retry successful",
       bulkResult,
@@ -120,7 +144,7 @@ export async function POST(
     // Attempt to unlock on failure
     try {
       await Vendor.findByIdAndUpdate(params.id, {
-        $set: { isDisbursing: false },
+        $set: { isDisbursing: false, disbursementBatchId: null },
       })
     } catch (e) {
       console.error(

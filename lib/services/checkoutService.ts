@@ -52,6 +52,7 @@ export async function processCheckout(
     notes?: string
     paymentMethod: string
     appliedVoucherCode?: string
+    appliedPromoCode?: string
     useBHC?: boolean
   },
   session: Session | null
@@ -67,6 +68,7 @@ export async function processCheckout(
     notes,
     paymentMethod,
     appliedVoucherCode,
+    appliedPromoCode,
     useBHC,
   } = parsedData
 
@@ -139,6 +141,14 @@ export async function processCheckout(
   let isRewardSponsored = false
   let rewardVoucherId: mongoose.Types.ObjectId | undefined = undefined
 
+  if (appliedPromoCode && appliedVoucherCode) {
+    return {
+      error:
+        "You cannot use both a voucher and a promo code on the same order.",
+      status: 400,
+    }
+  }
+
   if (appliedVoucherCode) {
     if (paymentMethod !== "wallet") {
       return {
@@ -178,8 +188,58 @@ export async function processCheckout(
     rewardVoucherId = voucher._id
   }
 
-  const baseCustomerPaymentInKobo =
-    calculatedTotalInKobo - sponsoredDiscountAmountInKobo
+  let promoDiscountInKobo = 0
+  let promoCodeData: { promoCodeId: string; code: string } | null = null
+
+  if (appliedPromoCode) {
+    if (paymentMethod !== "wallet") {
+      return {
+        error:
+          "You must use your BiteHub Wallet to pay when using a promo code. Please select Wallet as your payment method.",
+        status: 400,
+      }
+    }
+    if (!session?.user?.email || !existingCustomer) {
+      return {
+        error:
+          "You must be logged in to your BiteHub account to use a promo code.",
+        status: 401,
+      }
+    }
+
+    // Map items to ground-truth prices from database to prevent client price tampering
+    const sanitizedItemsForPromo = items.map((item) => {
+      const dbItem = dbMenuItemsMap.get(item.menuItemId)
+      return {
+        menuItemId: item.menuItemId,
+        priceInKobo: dbItem?.priceInKobo ?? item.priceInKobo,
+        quantity: item.quantity,
+      }
+    })
+
+    const { validatePromoCode } =
+      await import("@/lib/services/promoCodeService")
+    const promoRes = await validatePromoCode({
+      code: appliedPromoCode,
+      customerId: existingCustomer._id.toString(),
+      vendorId,
+      campus: vendor.campus,
+      school: vendor.school,
+      items: sanitizedItemsForPromo,
+    })
+    if (!promoRes.valid) {
+      return { error: promoRes.error, status: 400 }
+    }
+    promoDiscountInKobo = promoRes.discountAmountInKobo
+    promoCodeData = { promoCodeId: promoRes.promoCodeId, code: promoRes.code }
+  }
+
+  const totalDiscountInKobo =
+    sponsoredDiscountAmountInKobo + promoDiscountInKobo
+  const baseCustomerPaymentInKobo = Math.max(
+    0,
+    calculatedTotalInKobo - totalDiscountInKobo
+  )
   const targetAmountToReceiveInKobo =
     baseCustomerPaymentInKobo + PLATFORM_FLAT_FEE_IN_KOBO
   const monnifyFeeInKobo =
@@ -195,8 +255,10 @@ export async function processCheckout(
     : Number(process.env.NEXT_PUBLIC_PLATFORM_FEE_PERCENTAGE || 5)
 
   const foodSubtotalInKobo = calculatedTotalInKobo - deliveryFeeInKobo
-  const finalFoodSubtotalInKobo =
-    foodSubtotalInKobo - sponsoredDiscountAmountInKobo
+  const finalFoodSubtotalInKobo = Math.max(
+    0,
+    foodSubtotalInKobo - totalDiscountInKobo
+  )
   const rawPlatformCommissionInKobo =
     foodSubtotalInKobo * (platformFeePercentage / 100)
   const platformCommissionInKobo = Math.round(rawPlatformCommissionInKobo)
@@ -305,63 +367,74 @@ export async function processCheckout(
         )
       }
 
-      // Reserve quantity by decrementing immediately
-      const bulkOps = items.map(
-        (item: {
-          menuItemId: string
-          name: string
-          quantity: number
-          priceInKobo: number
-        }) => {
-          const dbItem = dbMenuItemsMap.get(item.menuItemId)
+      // 1b. Burn promo code redemption (if applied)
+      if (promoCodeData && (existingCustomer?._id || customerForWallet?._id)) {
+        const { redeemPromoCode } =
+          await import("@/lib/services/promoCodeService")
+        const redeemedCustomerId =
+          existingCustomer?._id || customerForWallet?._id
+        await redeemPromoCode({
+          promoCodeId: promoCodeData.promoCodeId,
+          code: promoCodeData.code,
+          customerId: redeemedCustomerId!,
+          orderId,
+          discountAmountInKobo: promoDiscountInKobo,
+          session: mongooseSession,
+        })
+      }
+
+      // Reserve quantity by decrementing immediately with strict atomic stock check
+      const trackedItems = items.filter((item) => {
+        const dbItem = dbMenuItemsMap.get(item.menuItemId)
+        return (
+          dbItem &&
+          dbItem.quantityAvailable !== null &&
+          dbItem.quantityAvailable !== undefined
+        )
+      })
+
+      if (trackedItems.length > 0) {
+        const bulkOps = trackedItems.map((item) => {
+          const dbItem = dbMenuItemsMap.get(item.menuItemId)!
           const updateDoc: {
             $inc: { quantityAvailable: number }
             $set?: { lowStockAlertSent: boolean }
           } = { $inc: { quantityAvailable: -item.quantity } }
 
-          if (
-            dbItem &&
-            dbItem.quantityAvailable !== null &&
-            dbItem.quantityAvailable !== undefined
-          ) {
-            const newQuantity = dbItem.quantityAvailable - item.quantity
-            if (
-              newQuantity <= LOW_STOCK_THRESHOLD &&
-              !dbItem.lowStockAlertSent
-            ) {
-              updateDoc.$set = { lowStockAlertSent: true }
-              // Fire-and-forget
-              sendVendorLowStockAlertEmail(
-                vendorId,
-                finalVendorName,
-                dbItem.name || "Unknown Item",
-                newQuantity
-              ).catch((err) =>
-                console.error("[POST /api/orders] Low stock alert failed:", err)
-              )
-            }
+          const newQuantity = (dbItem.quantityAvailable || 0) - item.quantity
+          if (newQuantity <= LOW_STOCK_THRESHOLD && !dbItem.lowStockAlertSent) {
+            updateDoc.$set = { lowStockAlertSent: true }
+            // Fire-and-forget
+            sendVendorLowStockAlertEmail(
+              vendorId,
+              finalVendorName,
+              dbItem.name || "Unknown Item",
+              newQuantity
+            ).catch((err) =>
+              console.error("[POST /api/orders] Low stock alert failed:", err)
+            )
           }
 
           return {
             updateOne: {
               filter: {
                 _id: item.menuItemId,
-                quantityAvailable: { $ne: null },
+                quantityAvailable: { $gte: item.quantity },
               },
               update: updateDoc,
             },
           }
+        })
+
+        const bulkRes = await MenuItem.bulkWrite(bulkOps, {
+          session: mongooseSession,
+        })
+
+        if (bulkRes.modifiedCount < trackedItems.length) {
+          transactionError =
+            "One or more items in your cart just went out of stock. Please adjust your quantity."
+          throw new Error(transactionError)
         }
-      )
-      if (bulkOps.length > 0) {
-        await MenuItem.bulkWrite(bulkOps, { session: mongooseSession }).catch(
-          (err) => {
-            console.error(
-              "[POST /api/orders] Failed to decrement quantity:",
-              err
-            )
-          }
-        )
       }
 
       const [order] = await Order.create(
@@ -396,6 +469,8 @@ export async function processCheckout(
             isRewardSponsored,
             sponsoredDiscountAmountInKobo,
             rewardVoucherId,
+            promoCode: promoCodeData?.code,
+            promoDiscountInKobo,
           },
         ],
         { session: mongooseSession }

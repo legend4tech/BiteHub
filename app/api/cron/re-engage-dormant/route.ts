@@ -1,10 +1,31 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import dbConnect from "@/lib/db"
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get("Authorization")
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      console.error(
+        "[POST /api/cron/re-engage-dormant] Missing CRON_SECRET env variable"
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      )
+    }
+
+    const authHeader =
+      req.headers.get("Authorization") || req.headers.get("authorization")
+    const expectedHeader = `Bearer ${cronSecret}`
+    if (
+      !authHeader ||
+      authHeader.length !== expectedHeader.length ||
+      !crypto.timingSafeEqual(
+        Buffer.from(authHeader),
+        Buffer.from(expectedHeader)
+      )
+    ) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
 

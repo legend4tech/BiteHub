@@ -47,6 +47,13 @@ export async function POST(
       )
     }
 
+    if (order.expiresAt && new Date() > new Date(order.expiresAt)) {
+      return NextResponse.json(
+        { error: "This order has expired. Please place a new order." },
+        { status: 400 }
+      )
+    }
+
     const vendor = await Vendor.findById(order.vendorId).lean()
     if (!vendor || !vendor.monnifySubAccountCode) {
       return NextResponse.json(

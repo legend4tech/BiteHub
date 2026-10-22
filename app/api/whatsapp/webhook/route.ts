@@ -1,28 +1,68 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import { sendWhatsappText } from "@/lib/whatsapp"
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  // Parse params from the webhook verification request
   const mode = searchParams.get("hub.mode")
   const token = searchParams.get("hub.verify_token")
   const challenge = searchParams.get("hub.challenge")
-  // Check if a token and mode were sent
+
   const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN
+  if (!verifyToken) {
+    console.error("[WhatsApp Webhook] Missing WHATSAPP_WEBHOOK_VERIFY_TOKEN")
+    return new NextResponse("Forbidden", { status: 403 })
+  }
+
   if (mode && token) {
-    // Check the mode and token sent are correct
-    if (mode === "subscribe" && token === verifyToken) {
-      // Respond with 200 OK and challenge token from the request
-      return new NextResponse(challenge, { status: 200 })
+    const tokenBuf = Buffer.from(token)
+    const verifyBuf = Buffer.from(verifyToken)
+    if (
+      mode === "subscribe" &&
+      tokenBuf.length === verifyBuf.length &&
+      crypto.timingSafeEqual(tokenBuf, verifyBuf)
+    ) {
+      return new NextResponse(challenge || "", { status: 200 })
     } else {
-      // Responds with '403 Forbidden' if verify tokens do not match
       return new NextResponse("Forbidden", { status: 403 })
     }
   }
   return new NextResponse("Bad Request", { status: 400 })
 }
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
+    const rawBody = await req.text()
+
+    const appSecret = process.env.WHATSAPP_APP_SECRET
+    if (appSecret) {
+      const signatureHeader = req.headers.get("x-hub-signature-256")
+      if (!signatureHeader) {
+        console.error("[WhatsApp Webhook] Missing x-hub-signature-256 header")
+        return new NextResponse("Forbidden", { status: 403 })
+      }
+      const signature = signatureHeader.startsWith("sha256=")
+        ? signatureHeader.slice(7)
+        : signatureHeader
+
+      const computedHash = crypto
+        .createHmac("sha256", appSecret)
+        .update(rawBody)
+        .digest("hex")
+
+      const sigBuf = Buffer.from(signature, "hex")
+      const compBuf = Buffer.from(computedHash, "hex")
+
+      if (
+        sigBuf.length !== compBuf.length ||
+        !crypto.timingSafeEqual(sigBuf, compBuf)
+      ) {
+        console.error("[WhatsApp Webhook] Invalid signature rejected")
+        return new NextResponse("Forbidden", { status: 403 })
+      }
+    }
+
+    const body = JSON.parse(rawBody)
     // Check if this is an event from a WhatsApp API
     if (body.object === "whatsapp_business_account") {
       // Loop through all entries

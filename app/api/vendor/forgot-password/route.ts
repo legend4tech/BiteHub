@@ -5,6 +5,7 @@ import VendorUserModel from "@/models/VendorUser"
 import VendorModel from "@/models/Vendor"
 import { sendPasswordResetEmail } from "@/lib/mail"
 import { forgotPasswordSchema } from "@/lib/schemas"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,19 @@ export async function POST(req: NextRequest) {
     }
 
     const { email } = parsed.data
+    const normalizedEmail = email.toLowerCase().trim()
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `vendor_forgot_password_${normalizedEmail}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { message: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
 
     await dbConnect()
 

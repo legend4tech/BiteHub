@@ -7,7 +7,7 @@ async function processDisbursement(
   amount: number,
   accountNumber: string,
   reference: string,
-  status: string
+  isSuccess: boolean
 ) {
   await dbConnect()
 
@@ -49,9 +49,7 @@ async function processDisbursement(
     $addToSet: { processedDisbursementRefs: reference },
   }
 
-  if (status === "SUCCESS") {
-    updateDoc.$inc = { monnifyTotalDisbursedInKobo: amount }
-  } else {
+  if (!isSuccess) {
     console.warn(
       `[Disbursement Webhook] ❌ Disbursement FAILED for vendor "${vendor.slug}". Ref: ${reference}. Rolling back optimistic deduction.`
     )
@@ -60,6 +58,9 @@ async function processDisbursement(
       pendingWalletBalanceInKobo: amount,
     }
   }
+  // Note: On isSuccess === true, walletTotalDisbursedInKobo was already optimistically
+  // incremented by payoutService/retry-payout. We do NOT increment monnifyTotalDisbursedInKobo,
+  // which is strictly for Monnify sub-account settlements, avoiding double-counting in vendor stats.
 
   const mongoose = (await import("mongoose")).default
   const session = await mongoose.startSession()
@@ -83,36 +84,48 @@ async function processDisbursement(
         return
       }
 
-      if (status !== "SUCCESS") {
+      if (!isSuccess) {
         // Reset isDisbursed on the vendor's orders that were marked for this payout amount
         const { default: Order } = await import("@/models/Order")
-        const disbursedOrders = await Order.find({
-          vendorId: vendor._id,
-          paymentMethod: "wallet",
-          paymentStatus: "paid",
-          isDisbursed: true,
-        })
-          .sort({ updatedAt: -1 })
-          .select("_id vendorRevenueInKobo")
-          .session(session)
-          .lean()
 
-        let runningTotal = 0
-        const orderIdsToReset = []
-        for (const doOrder of disbursedOrders) {
-          if (runningTotal + doOrder.vendorRevenueInKobo > amount) {
-            break
+        // First attempt deterministic rollback via stamped payoutReference
+        const exactMatchRes = await Order.updateMany(
+          { payoutReference: reference },
+          { $set: { isDisbursed: false, payoutReference: null } },
+          { session }
+        )
+
+        // Fallback: If no orders had payoutReference stamped (e.g. legacy batches),
+        // fallback to amount-capped running total
+        if (exactMatchRes.matchedCount === 0) {
+          const disbursedOrders = await Order.find({
+            vendorId: vendor._id,
+            paymentMethod: "wallet",
+            paymentStatus: "paid",
+            isDisbursed: true,
+          })
+            .sort({ createdAt: -1 })
+            .select("_id vendorRevenueInKobo")
+            .session(session)
+            .lean()
+
+          let runningTotal = 0
+          const orderIdsToReset = []
+          for (const doOrder of disbursedOrders) {
+            if (runningTotal + doOrder.vendorRevenueInKobo > amount) {
+              break
+            }
+            runningTotal += doOrder.vendorRevenueInKobo
+            orderIdsToReset.push(doOrder._id)
           }
-          runningTotal += doOrder.vendorRevenueInKobo
-          orderIdsToReset.push(doOrder._id)
-        }
 
-        if (orderIdsToReset.length > 0) {
-          await Order.updateMany(
-            { _id: { $in: orderIdsToReset } },
-            { $set: { isDisbursed: false } },
-            { session }
-          )
+          if (orderIdsToReset.length > 0) {
+            await Order.updateMany(
+              { _id: { $in: orderIdsToReset } },
+              { $set: { isDisbursed: false } },
+              { session }
+            )
+          }
         }
       }
     })
@@ -131,13 +144,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 })
     }
 
-    const secretKey = process.env.MONNIFY_SECRET_KEY || ""
+    const secretKey = process.env.MONNIFY_SECRET_KEY
+    if (!secretKey) {
+      console.error(
+        "[Disbursement Webhook] Missing MONNIFY_SECRET_KEY environment variable"
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      )
+    }
+
     const computedHash = crypto
       .createHmac("sha512", secretKey)
       .update(rawBody)
       .digest("hex")
 
-    if (computedHash !== signature) {
+    const sigBuf = Buffer.from(signature, "hex")
+    const compBuf = Buffer.from(computedHash, "hex")
+
+    if (
+      sigBuf.length !== compBuf.length ||
+      !crypto.timingSafeEqual(sigBuf, compBuf)
+    ) {
       console.error("[Disbursement Webhook] Invalid signature — rejected")
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 })
     }
@@ -159,12 +188,16 @@ export async function POST(request: Request) {
         eventData?.destinationAccountDetails?.accountNumber
 
       const reference = eventData?.reference || eventData?.transactionReference
-      const status = eventData?.status ?? "FAILED"
+      const isSuccess =
+        eventType === "SUCCESSFUL_DISBURSEMENT" ||
+        ["SUCCESS", "SUCCESSFUL", "PAID"].includes(
+          String(eventData?.status || "").toUpperCase()
+        )
 
-      if (!accountNumber || !amount) {
+      if (!accountNumber || !amount || !reference) {
         console.error(
-          "[Disbursement Webhook] Could not extract accountNumber or amount",
-          { accountNumber, amount, eventData }
+          "[Disbursement Webhook] Could not extract accountNumber, amount, or reference",
+          { accountNumber, amount, reference, eventData }
         )
         // Return 200 so Monnify doesn't keep retrying for a data issue
         return NextResponse.json({ status: "ignored" })
@@ -174,7 +207,12 @@ export async function POST(request: Request) {
       const amountInKobo = nairaToKobo(amount)
 
       // ✅ Awaited — ensures DB update completes before Vercel terminates
-      await processDisbursement(amountInKobo, accountNumber, reference, status)
+      await processDisbursement(
+        amountInKobo,
+        accountNumber,
+        reference,
+        isSuccess
+      )
     } else {
       console.warn(
         `[Disbursement Webhook] Unexpected eventType: ${eventType} — ignoring`

@@ -7,6 +7,8 @@ import { Loader2 } from "lucide-react"
 import { getSchoolName, getCampusName } from "@/lib/config/campus"
 import { useRouter } from "next/navigation"
 import { AvailableRewards } from "./AvailableRewards"
+import { PromoCodeInput } from "./PromoCodeInput"
+import type { CartState } from "@/hooks/useCart"
 
 interface OrderSummaryCardProps {
   cart: {
@@ -35,6 +37,10 @@ interface OrderSummaryCardProps {
   removeVoucher: () => void
   appliedVoucherCode: string | null
   appliedVoucherMenuItemId: string | null
+  appliedPromoCode?: string | null
+  promoDiscountInKobo?: number
+  applyPromo?: (code: string, discountInKobo: number) => void
+  removePromo?: () => void
   itemSubtotal: number
   useBHC: boolean
   setUseBHC: (value: boolean) => void
@@ -62,6 +68,10 @@ export function OrderSummaryCard({
   removeVoucher,
   appliedVoucherCode,
   appliedVoucherMenuItemId,
+  appliedPromoCode,
+  promoDiscountInKobo = 0,
+  applyPromo,
+  removePromo,
   itemSubtotal,
   useBHC,
   setUseBHC,
@@ -74,6 +84,12 @@ export function OrderSummaryCard({
   const bhcDiscount =
     useBHC && promoBalance > 0 ? Math.min(promoBalance, itemSubtotal) : 0
   const discountedTotal = finalTotal - bhcDiscount
+
+  const voucherDiscountInKobo = appliedVoucherMenuItemId
+    ? cart.items.find((ci) => ci.menuItem.id === appliedVoucherMenuItemId)
+        ?.menuItem.priceInKobo || 0
+    : 0
+  const foodSubtotal = Math.max(0, total - voucherDiscountInKobo)
 
   return (
     <div className="sticky top-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -131,7 +147,7 @@ export function OrderSummaryCard({
               </span>
             )}
             <span className="font-medium text-foreground">
-              {formatPriceExact(itemSubtotal)}
+              {formatPriceExact(foodSubtotal)}
             </span>
           </div>
         </div>
@@ -163,12 +179,34 @@ export function OrderSummaryCard({
             <span>-{formatPriceExact(bhcDiscount)}</span>
           </div>
         )}
-        {(useBHC || appliedVoucherCode) && (
+        {promoDiscountInKobo > 0 && appliedPromoCode && (
+          <div className="flex justify-between font-medium text-primary">
+            <span>Promo Code ({appliedPromoCode})</span>
+            <span>-{formatPriceExact(promoDiscountInKobo)}</span>
+          </div>
+        )}
+        {(useBHC || appliedVoucherCode || appliedPromoCode) && (
           <div className="pt-2 text-[11px] leading-tight font-medium text-muted-foreground/80 italic">
-            * Rewards and Coins apply only to the cost of your items.
+            * Rewards and Promo discounts apply to the cost of your items and
+            require Wallet payment.
           </div>
         )}
       </div>
+
+      {applyPromo && removePromo && (
+        <div className="mb-4">
+          <PromoCodeInput
+            cart={cart as unknown as CartState}
+            appliedPromoCode={appliedPromoCode ?? null}
+            promoDiscountInKobo={promoDiscountInKobo}
+            onApplyPromo={applyPromo}
+            onRemovePromo={removePromo}
+            appliedVoucherCode={appliedVoucherCode}
+            vendorCampus={vendorCampus}
+            vendorSchool={vendorSchool}
+          />
+        </div>
+      )}
 
       <AvailableRewards
         cart={cart as never}
@@ -176,6 +214,7 @@ export function OrderSummaryCard({
         applyVoucher={applyVoucher}
         removeVoucher={removeVoucher}
         appliedVoucherCode={appliedVoucherCode}
+        appliedPromoCode={appliedPromoCode}
         useBHC={useBHC}
         setUseBHC={setUseBHC}
         finalTotalWithoutBHC={itemSubtotal}

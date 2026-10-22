@@ -156,14 +156,21 @@ async function processSuccessfulTransaction(paymentReference: string) {
     return
   }
 
+  const isCancelled = order.status === ORDER_STATUS.CANCELLED
+  const updateFields: Record<string, unknown> = {
+    paymentStatus: PAYMENT_STATUS.PAID,
+  }
+  if (!isCancelled) {
+    updateFields.status = ORDER_STATUS.CONFIRMED
+  } else {
+    updateFields.notes =
+      (order.notes ? order.notes + " | " : "") +
+      "[Audit] Payment received after order was already cancelled. Manual resolution/refund required."
+  }
+
   const updatedOrder = await Order.findOneAndUpdate(
     { orderId: order.orderId, paymentStatus: { $ne: PAYMENT_STATUS.PAID } },
-    {
-      $set: {
-        paymentStatus: PAYMENT_STATUS.PAID,
-        status: ORDER_STATUS.CONFIRMED,
-      },
-    },
+    { $set: updateFields },
     { new: true }
   )
 
@@ -174,6 +181,7 @@ async function processSuccessfulTransaction(paymentReference: string) {
   }
 
   if (
+    !updatedOrder.vendorRevenueInKobo &&
     monnifyData.incomeSplitConfig &&
     monnifyData.incomeSplitConfig.length > 0
   ) {
@@ -228,30 +236,33 @@ async function processSuccessfulTransaction(paymentReference: string) {
     ).catch(console.error)
   }
 
-  if (updatedOrder.vendorWhatsappNumber) {
-    sendVendorOrderNotification(
-      updatedOrder.vendorWhatsappNumber,
-      updatedOrder.customerName,
+  // Only dispatch kitchen/prep notifications if the order is confirmed (not cancelled)
+  if (updatedOrder.status === ORDER_STATUS.CONFIRMED) {
+    if (updatedOrder.vendorWhatsappNumber) {
+      sendVendorOrderNotification(
+        updatedOrder.vendorWhatsappNumber,
+        updatedOrder.customerName,
+        updatedOrder.orderId,
+        updatedOrder.vendorRevenueInKobo
+      ).catch(console.error)
+    }
+
+    sendVendorNewOrderEmail(
+      String(updatedOrder.vendorId),
+      updatedOrder.vendorName,
       updatedOrder.orderId,
-      updatedOrder.vendorRevenueInKobo
+      updatedOrder.customerName,
+      updatedOrder.customerPhone,
+      updatedOrder.location,
+      updatedOrder.items,
+      updatedOrder.deliveryFeeInKobo || 0,
+      updatedOrder.serviceFeeInKobo || 0,
+      updatedOrder.totalAmountInKobo,
+      updatedOrder.vendorRevenueInKobo,
+      updatedOrder.platformCommissionInKobo || 0,
+      updatedOrder.notes || undefined
     ).catch(console.error)
   }
-
-  sendVendorNewOrderEmail(
-    String(updatedOrder.vendorId),
-    updatedOrder.vendorName,
-    updatedOrder.orderId,
-    updatedOrder.customerName,
-    updatedOrder.customerPhone,
-    updatedOrder.location,
-    updatedOrder.items,
-    updatedOrder.deliveryFeeInKobo || 0,
-    updatedOrder.serviceFeeInKobo || 0,
-    updatedOrder.totalAmountInKobo,
-    updatedOrder.vendorRevenueInKobo,
-    updatedOrder.platformCommissionInKobo || 0,
-    updatedOrder.notes || undefined
-  ).catch(console.error)
 }
 
 export async function POST(request: Request) {

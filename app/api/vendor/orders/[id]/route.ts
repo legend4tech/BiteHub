@@ -95,6 +95,16 @@ export async function PATCH(
       )
     }
 
+    if (status === ORDER_STATUS.CANCELLED && order.isDisbursed) {
+      return NextResponse.json(
+        {
+          error:
+            "This order has already been disbursed to your bank account and cannot be cancelled directly. Please contact BiteHub Support.",
+        },
+        { status: 400 }
+      )
+    }
+
     // We must block cancellations during the brief window when a payout is actively communicating with Monnify.
     // If a cancellation slips through here, it would deduct from the vendor's pending balance while the cash is already in transit, resulting in a negative ledger balance.
     if (status === ORDER_STATUS.CANCELLED && order.paymentMethod === "wallet") {
@@ -266,6 +276,34 @@ export async function PATCH(
                           budgetSpentInKobo:
                             -order.sponsoredDiscountAmountInKobo,
                         },
+                      },
+                      { session: cancelSession }
+                    )
+                  }
+                }
+
+                if (order.promoCode && (order.promoDiscountInKobo || 0) > 0) {
+                  const { default: PromoCode } =
+                    await import("@/models/PromoCode")
+                  const { default: PromoCodeRedemption } =
+                    await import("@/models/PromoCodeRedemption")
+
+                  const promo = await PromoCode.findOneAndUpdate(
+                    { code: order.promoCode.trim().toUpperCase() },
+                    {
+                      $inc: {
+                        budgetSpentInKobo: -order.promoDiscountInKobo,
+                        currentRedemptions: -1,
+                      },
+                    },
+                    { session: cancelSession }
+                  )
+
+                  if (promo) {
+                    await PromoCodeRedemption.deleteOne(
+                      {
+                        promoCodeId: promo._id,
+                        orderId: order.orderId,
                       },
                       { session: cancelSession }
                     )

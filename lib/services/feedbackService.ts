@@ -31,14 +31,21 @@ export async function submitCustomerFeedback(
   if (order.customerId?.toString() !== customerId) {
     return { error: "Unauthorized", status: 403 }
   }
+  if (order.vendorId?.toString() !== customerReview.vendorId.toString()) {
+    return { error: "Invalid vendor for this order.", status: 400 }
+  }
   if (order.status !== ORDER_STATUS.COMPLETED) {
     return { error: "Order must be completed before reviewing.", status: 400 }
   }
   if (order.isFullyRated) {
     return { error: "This order has already been fully reviewed.", status: 409 }
   }
+  const allowedItemIds = new Set(
+    order.items.map((i: { menuItemId: unknown }) => String(i.menuItemId))
+  )
   const validItemReviews = (customerReview.itemReviews || []).filter(
-    (ir) => ir.rating && ir.rating > 0
+    (ir) =>
+      ir.rating && ir.rating > 0 && allowedItemIds.has(String(ir.menuItemId))
   )
   const validVendorRating =
     customerReview.vendorRating && customerReview.vendorRating > 0

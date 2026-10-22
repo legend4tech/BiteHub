@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import { isValidElement, cloneElement } from "react"
+import { toMajorUnit } from "@/lib/money"
 
 export function exportToCSV(
   chartData: Array<{
@@ -15,8 +16,8 @@ export function exportToCSV(
   const rows = chartData.map((row) => [
     row.date,
     row.orders,
-    (row.gmvInKobo / 100).toFixed(2),
-    (row.profitInKobo / 100).toFixed(2),
+    toMajorUnit(row.gmvInKobo).toFixed(2),
+    toMajorUnit(row.profitInKobo).toFixed(2),
   ])
   const csvContent = [headers, ...rows].map((r) => r.join(",")).join("\n")
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })

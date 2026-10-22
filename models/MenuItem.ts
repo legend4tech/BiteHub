@@ -53,9 +53,12 @@ const MenuItemSchema: Schema = new Schema(
     availableTo: { type: String },
     prepTimeValue: { type: Number },
     prepTimeUnit: { type: String, enum: ["minutes", "hours", "days"] },
-    quantityAvailable: { type: Number, default: null },
+    quantityAvailable: {
+      type: Number,
+      default: null,
+      min: [0, "Quantity available cannot be negative"],
+    },
     availableDays: {
-      type: [String],
       default: [
         "Sunday",
         "Monday",

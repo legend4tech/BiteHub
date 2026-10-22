@@ -10,7 +10,7 @@ import { getPrepTimeInHours } from "@/lib/format"
 // without needing to look up the vendor separately.
 // Previously OrderForm called getVendorById() from static mock data —
 // that broke for real DB vendors since they aren't in the local data file.
-interface CartState {
+export interface CartState {
   items: CartItem[]
   vendorId: string | null
   vendorName: string | null
@@ -20,6 +20,8 @@ interface CartState {
   vendorMonnifySubaccountCode: string | null
   appliedVoucherCode: string | null
   appliedVoucherMenuItemId: string | null
+  appliedPromoCode?: string | null
+  promoDiscountInKobo?: number
   useBHC: boolean
 }
 
@@ -33,6 +35,8 @@ const EMPTY_CART: CartState = {
   vendorMonnifySubaccountCode: null,
   appliedVoucherCode: null,
   appliedVoucherMenuItemId: null,
+  appliedPromoCode: null,
+  promoDiscountInKobo: 0,
   useBHC: false,
 }
 
@@ -155,6 +159,8 @@ export function useCart() {
         vendorMonnifySubaccountCode: current.vendorMonnifySubaccountCode,
         appliedVoucherCode: current.appliedVoucherCode,
         appliedVoucherMenuItemId: current.appliedVoucherMenuItemId,
+        appliedPromoCode: current.appliedPromoCode ?? null,
+        promoDiscountInKobo: current.promoDiscountInKobo ?? 0,
         useBHC: current.useBHC,
       })
 
@@ -175,6 +181,8 @@ export function useCart() {
         vendorMonnifySubaccountCode: null, // Will be synced by checkout effect
         appliedVoucherCode: null,
         appliedVoucherMenuItemId: null,
+        appliedPromoCode: null,
+        promoDiscountInKobo: 0,
         useBHC: false,
       })
     },
@@ -254,6 +262,9 @@ export function useCart() {
         ...current,
         appliedVoucherCode: code,
         appliedVoucherMenuItemId: menuItemId,
+        // Clear promo code to prevent stacking
+        appliedPromoCode: null,
+        promoDiscountInKobo: 0,
       })
     },
     [persist]
@@ -265,6 +276,30 @@ export function useCart() {
       ...current,
       appliedVoucherCode: null,
       appliedVoucherMenuItemId: null,
+    })
+  }, [persist])
+
+  const applyPromo = useCallback(
+    (code: string, discountInKobo: number) => {
+      const current = readCart()
+      persist({
+        ...current,
+        appliedPromoCode: code,
+        promoDiscountInKobo: discountInKobo,
+        // Clear voucher to prevent stacking
+        appliedVoucherCode: null,
+        appliedVoucherMenuItemId: null,
+      })
+    },
+    [persist]
+  )
+
+  const removePromo = useCallback(() => {
+    const current = readCart()
+    persist({
+      ...current,
+      appliedPromoCode: null,
+      promoDiscountInKobo: 0,
     })
   }, [persist])
 
@@ -355,6 +390,10 @@ export function useCart() {
     removeVoucher,
     appliedVoucherCode: cart.appliedVoucherCode,
     appliedVoucherMenuItemId: cart.appliedVoucherMenuItemId,
+    applyPromo,
+    removePromo,
+    appliedPromoCode: cart.appliedPromoCode,
+    promoDiscountInKobo: cart.promoDiscountInKobo,
     useBHC: cart.useBHC,
     setUseBHC,
   }

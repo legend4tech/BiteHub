@@ -14,11 +14,16 @@ const PlatformWithdrawalSchema = new Schema<IPlatformWithdrawal>(
     amountInKobo: {
       type: Number,
       required: true,
-      min: 0,
+      min: [0, "Amount cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
     },
     reference: {
       type: String,
       required: true,
+      unique: true,
       trim: true,
     },
     note: {

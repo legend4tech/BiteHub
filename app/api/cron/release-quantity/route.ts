@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import dbConnect from "@/lib/db"
 import mongoose from "mongoose"
 import Order from "@/models/Order"
@@ -7,13 +8,30 @@ import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export async function GET(request: Request) {
   try {
-    // Only allow cron job to run this if in production (Vercel cron)
-    const authHeader = request.headers.get("authorization")
-    if (
-      process.env.NODE_ENV === "production" &&
-      authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (process.env.NODE_ENV === "production") {
+      const cronSecret = process.env.CRON_SECRET
+      if (!cronSecret) {
+        console.error(
+          "[CRON release-quantity] Missing CRON_SECRET env variable"
+        )
+        return NextResponse.json(
+          { error: "Server misconfiguration" },
+          { status: 500 }
+        )
+      }
+
+      const authHeader = request.headers.get("authorization")
+      const expectedHeader = `Bearer ${cronSecret}`
+      if (
+        !authHeader ||
+        authHeader.length !== expectedHeader.length ||
+        !crypto.timingSafeEqual(
+          Buffer.from(authHeader),
+          Buffer.from(expectedHeader)
+        )
+      ) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
     }
 
     await dbConnect()
@@ -52,6 +70,51 @@ export async function GET(request: Request) {
           if (bulkOps.length > 0) {
             await MenuItem.bulkWrite(bulkOps, { session })
             releasedItemCount += bulkOps.length
+          }
+
+          // Restore voucher if applied on this expired order
+          if (order.rewardVoucherId) {
+            const { default: RewardVoucher } =
+              await import("@/models/RewardVoucher")
+            const restoredVoucher = await RewardVoucher.findByIdAndUpdate(
+              order.rewardVoucherId,
+              {
+                $set: { isUsed: false },
+                $unset: { usedAt: 1 },
+              },
+              { new: true, session }
+            )
+
+            if (restoredVoucher && restoredVoucher.campaignId) {
+              const { default: RewardCampaign } =
+                await import("@/models/RewardCampaign")
+              await RewardCampaign.findByIdAndUpdate(
+                restoredVoucher.campaignId,
+                {
+                  $inc: {
+                    budgetSpentInKobo: -(
+                      order.sponsoredDiscountAmountInKobo || 0
+                    ),
+                  },
+                },
+                { session }
+              )
+            }
+          }
+
+          // Restore promo code if applied on this expired order
+          if (order.promoCode && (order.promoDiscountInKobo || 0) > 0) {
+            const { default: PromoCode } = await import("@/models/PromoCode")
+            await PromoCode.findOneAndUpdate(
+              { code: order.promoCode.trim().toUpperCase() },
+              {
+                $inc: {
+                  budgetSpentInKobo: -order.promoDiscountInKobo,
+                  currentRedemptions: -1,
+                },
+              },
+              { session }
+            )
           }
 
           // Mark order as cancelled/expired so we don't process it again

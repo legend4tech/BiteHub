@@ -6,6 +6,7 @@ import VendorUser from "@/models/VendorUser"
 import { auth } from "@/auth"
 import { sendBankChangeOtpEmail } from "@/lib/mail"
 import crypto from "crypto"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 
 const BANK_UPDATE_LOCK_DAYS = Number(process.env.BANK_UPDATE_LOCK_DAYS || 14)
 
@@ -22,6 +23,16 @@ export async function POST(
       (session.user as { vendorId?: string })?.vendorId !== slug
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(`bank_otp_${slug}`)
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
     }
 
     await dbConnect()
@@ -62,7 +73,8 @@ export async function POST(
     // Set expiry to 15 minutes from now
     const expiry = new Date(Date.now() + 15 * 60 * 1000)
 
-    vendor.bankUpdateOtp = otp
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex")
+    vendor.bankUpdateOtp = hashedOtp
     vendor.bankUpdateOtpExpiry = expiry
     vendor.bankUpdateOtpAttempts = 0
     await vendor.save()

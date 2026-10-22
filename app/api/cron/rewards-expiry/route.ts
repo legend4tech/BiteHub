@@ -7,10 +7,28 @@ import { toMajorUnit } from "@/lib/money"
 export async function POST(req: Request) {
   try {
     // 1. Authorization Check (QStash Bearer token)
-    const authHeader = req.headers.get("authorization")
-    const expectedToken = `Bearer ${process.env.CRON_SECRET}`
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      console.error(
+        "[POST /api/cron/rewards-expiry] Missing CRON_SECRET env variable"
+      )
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      )
+    }
 
-    if (!process.env.CRON_SECRET || authHeader !== expectedToken) {
+    const authHeader = req.headers.get("authorization")
+    const expectedHeader = `Bearer ${cronSecret}`
+
+    if (
+      !authHeader ||
+      authHeader.length !== expectedHeader.length ||
+      !crypto.timingSafeEqual(
+        Buffer.from(authHeader),
+        Buffer.from(expectedHeader)
+      )
+    ) {
       console.warn("[POST /api/cron/rewards-expiry] Unauthorized attempt")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

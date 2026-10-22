@@ -24,6 +24,7 @@ interface AvailableRewardsProps {
   applyVoucher: (code: string, menuItemId: string) => void
   removeVoucher: () => void
   appliedVoucherCode: string | null
+  appliedPromoCode?: string | null
   useBHC: boolean
   setUseBHC: (value: boolean) => void
   finalTotalWithoutBHC: number
@@ -35,6 +36,7 @@ export function AvailableRewards({
   applyVoucher,
   removeVoucher,
   appliedVoucherCode,
+  appliedPromoCode,
   useBHC,
   setUseBHC,
   finalTotalWithoutBHC,
@@ -165,6 +167,17 @@ export function AvailableRewards({
                         }}
                       >
                         Remove
+                      </Button>
+                    ) : appliedPromoCode ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="w-full text-xs opacity-60 sm:w-auto"
+                        title="Remove promo code to use voucher"
+                      >
+                        Promo Applied
                       </Button>
                     ) : isApplicable ? (
                       <Button

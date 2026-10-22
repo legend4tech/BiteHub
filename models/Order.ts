@@ -37,6 +37,7 @@ export interface IOrder extends Document {
   paymentStatus: "pending" | "paid" | "failed"
   monnifyReference?: string
   isDisbursed?: boolean
+  payoutReference?: string
   expiresAt?: Date
   isFullyRated?: boolean
   isVendorRated?: boolean
@@ -48,6 +49,10 @@ export interface IOrder extends Document {
   sponsoredDiscountAmountInKobo?: number
   walletPromoAmountUsedInKobo?: number
   walletDepositAmountUsedInKobo?: number
+
+  // Promo Code Fields
+  promoCode?: string
+  promoDiscountInKobo?: number
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -157,6 +162,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     monnifyReference: { type: String },
     isDisbursed: { type: Boolean, default: false },
+    payoutReference: { type: String, index: true },
     expiresAt: { type: Date },
     isFullyRated: { type: Boolean, default: false },
     isVendorRated: { type: Boolean, default: false },
@@ -182,6 +188,17 @@ const OrderSchema = new Schema<IOrder>(
       },
     },
     walletDepositAmountUsedInKobo: {
+      type: Number,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
+    },
+
+    // Promo Code Fields
+    promoCode: { type: String, uppercase: true, trim: true },
+    promoDiscountInKobo: {
       type: Number,
       default: 0,
       validate: {

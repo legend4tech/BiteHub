@@ -88,8 +88,28 @@ export async function DELETE(request: Request) {
     }
 
     const { publicId } = await request.json()
-    if (!publicId) {
+    if (!publicId || typeof publicId !== "string") {
       return NextResponse.json({ error: "Missing publicId" }, { status: 400 })
+    }
+
+    // Role-based namespace check to prevent cross-account asset deletion
+    const role = session.user.role
+    const isAdmin = role === "admin" || role === "superadmin"
+    const isVendor = role === "vendor"
+    const isCustomer = role === "customer"
+
+    const isAllowed =
+      isAdmin ||
+      (isVendor &&
+        (publicId.startsWith("bitehub/vendorsimg/") ||
+          publicId.startsWith("bitehub/menuimg/"))) ||
+      (isCustomer && publicId.startsWith("bitehub/customerimg/"))
+
+    if (!isAllowed || !publicId.startsWith("bitehub/")) {
+      return NextResponse.json(
+        { error: "Forbidden: You are not authorized to delete this asset" },
+        { status: 403 }
+      )
     }
 
     await deleteFromCloudinary(publicId)

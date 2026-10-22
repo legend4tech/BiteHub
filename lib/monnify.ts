@@ -383,22 +383,31 @@ export async function executeBulkDisbursement({
     amount: number
     reference: string
     narration: string
-    bankCode: string
-    accountNumber: string
+    destinationBankCode: string
+    destinationAccountNumber: string
+    destinationAccountName: string
+    currency: string
   }[]
 }) {
   const token = await getMonnifyToken()
   try {
+    const payload: Record<string, unknown> = {
+      batchReference,
+      title,
+      narration,
+      onValidationFailure: "CONTINUE",
+      notificationInterval: 100,
+      transactionList: transactions,
+      transactions,
+    }
+    const sourceAccountNumber = process.env.MONNIFY_WALLET_ACCOUNT_NUMBER
+    if (sourceAccountNumber) {
+      payload.sourceAccountNumber = sourceAccountNumber
+    }
+
     const response = await axiosInstance.post(
       `${MONNIFY_API_URL}/api/v2/disbursements/batch`,
-      {
-        batchReference,
-        title,
-        narration,
-        onValidationFailure: "CONTINUE",
-        notificationInterval: 100,
-        transactions,
-      },
+      payload,
       {
         headers: { Authorization: `Bearer ${token}` },
       }

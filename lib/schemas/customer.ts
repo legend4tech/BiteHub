@@ -96,6 +96,7 @@ export const createOrderSchema = z.object({
   paymentMethod: z.enum(["monnify", "wallet"]).default("monnify"),
   totalInKobo: z.number({ message: "Please enter a valid number" }).optional(), // We accept it but ignore it for calculation
   appliedVoucherCode: z.string().optional(),
+  appliedPromoCode: z.string().optional(),
   useBHC: z.boolean().optional(),
 })
 export type CreateOrderValues = z.infer<typeof createOrderSchema>
