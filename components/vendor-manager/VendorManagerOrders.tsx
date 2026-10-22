@@ -2,8 +2,8 @@
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useAdminOrders } from "@/hooks/admin/useAdminOrders"
-import { Copy, PhoneCall, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Copy, PhoneCall } from "lucide-react"
+import { DataPagination } from "@/components/shared/DataPagination"
 import { toast } from "sonner"
 import { PAYMENT_METHOD_LABEL } from "@/lib/constants"
 import Link from "next/link"
@@ -170,32 +170,13 @@ export function VendorManagerOrders() {
             </div>
             {/* Pagination Controls */}
             {data && data.pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-border px-6 py-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {data.pagination.page} of {data.pagination.totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={data.pagination.page === 1 || isLoading}
-                  >
-                    <ChevronLeft className="mr-1 size-4" /> Prev
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setPage((p) =>
-                        Math.min(data.pagination.totalPages, p + 1)
-                      )
-                    }
-                    disabled={!data.pagination.hasMore || isLoading}
-                  >
-                    Next <ChevronRight className="ml-1 size-4" />
-                  </Button>
-                </div>
+              <div className="border-t border-border px-6 py-4">
+                <DataPagination
+                  currentPage={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  totalItems={data.pagination.total}
+                  onPageChange={setPage}
+                />
               </div>
             )}
           </>

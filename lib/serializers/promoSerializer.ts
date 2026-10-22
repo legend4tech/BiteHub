@@ -1,7 +1,18 @@
+/**
+ * promoSerializer.ts
+ *
+ * Serializers for Mongoose PromoCode and PromoCodeRedemption .lean() documents.
+ * Ensures consistent _id -> id mapping, ISO string dates, and strict type adherence.
+ */
+
 import type { Types } from "mongoose"
 import type { IPromoCode } from "@/models/PromoCode"
 import type { IPromoCodeRedemption } from "@/models/PromoCodeRedemption"
-import type { PromoCode, PromoCodeRedemption } from "@/types/promo"
+import type {
+  PromoCode,
+  PromoCodeRedemption,
+  PromoRedemptionDetail,
+} from "@/types/promo"
 
 type LeanDoc<T> = Omit<T, keyof import("mongoose").Document> & {
   _id: Types.ObjectId
@@ -64,6 +75,47 @@ export function serializePromoCodeRedemption(
     code: doc.code,
     customerId: doc.customerId ? doc.customerId.toString() : "",
     orderId: doc.orderId,
+    discountAmountInKobo: doc.discountAmountInKobo,
+    redeemedAt: safeDate(doc.redeemedAt),
+  }
+}
+
+export interface RawPromoRedemptionDetail {
+  _id: unknown
+  code: string
+  promoCodeId: unknown
+  customerId: { name?: string; email?: string; phone?: string } | null
+  orderId: string
+  discountAmountInKobo: number
+  redeemedAt: Date | string
+  order?: {
+    vendorName?: string
+    items?: Array<{
+      menuItemId?: string
+      name: string
+      quantity: number
+      priceInKobo: number
+    }>
+    totalAmountInKobo?: number
+    status?: string
+  } | null
+}
+
+export function serializePromoRedemptionDetail(
+  doc: RawPromoRedemptionDetail
+): PromoRedemptionDetail {
+  return {
+    id: String(doc._id),
+    code: doc.code,
+    promoCodeId: String(doc.promoCodeId),
+    customerName: doc.customerId?.name || "Guest Customer",
+    customerEmail: doc.customerId?.email || "N/A",
+    customerPhone: doc.customerId?.phone || "N/A",
+    orderId: doc.orderId,
+    vendorName: doc.order?.vendorName || "Unknown Vendor",
+    items: doc.order?.items || [],
+    totalAmountInKobo: doc.order?.totalAmountInKobo || 0,
+    orderStatus: doc.order?.status || "confirmed",
     discountAmountInKobo: doc.discountAmountInKobo,
     redeemedAt: safeDate(doc.redeemedAt),
   }

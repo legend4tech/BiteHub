@@ -75,14 +75,16 @@ bitehub/
 │   └── providers/          # React context providers
 │
 ├── hooks/
-│   ├── queries/            # React Query data-fetching hooks
-│   └── (root)              # Non-async UI hooks (useCart, useDebounce…)
+│   ├── vendor/             # Vendor domain hooks (queries & mutations colocated)
+│   ├── admin/              # Admin domain hooks
+│   ├── customer/           # Customer domain hooks
+│   └── (root)              # Cross-domain UI hooks (useCart, useDebounce…)
 │
 ├── lib/
 │   ├── services/           # Server-only DB query functions
 │   ├── schemas.ts          # All Zod validation schemas + inferred types
 │   ├── types.ts            # All shared TypeScript interfaces
-│   ├── serializers.ts      # Mongoose .lean() → plain JSON mappers
+│   ├── serializers/        # Domain serializers (vendor, order, promo...) + index.ts
 │   ├── constants.ts        # App-wide constants (ORDER_STATUS, categories…)
 │   ├── db.ts               # MongoDB connection singleton
 │   ├── axios.ts            # Configured axios client
@@ -143,7 +145,7 @@ Each layer has **one job**. Do not mix them.
 | **Service** | Complex DB queries shared between routes and pages | `lib/services/` |
 | **API Route** | HTTP layer: validate input → call service → return response | `app/api/**/route.ts` |
 | **Model** | Define DB schema and indexes | `models/` |
-| **Serializer** | Convert Mongoose docs to clean frontend JSON | `lib/serializers.ts` |
+| **Serializer** | Convert Mongoose docs to clean frontend JSON | `lib/serializers/` |
 | **Schema** | Validate and infer types from user input | `lib/schemas.ts` |
 
 ### Violations to avoid
@@ -393,7 +395,7 @@ const [items, total] = await Promise.all([
 
 ## 10. Serializers
 
-All Mongoose `.lean()` documents must pass through a serializer in `lib/serializers.ts` before being sent to the client.
+All Mongoose `.lean()` documents must pass through a serializer before being sent to the client. Serializers are organized by domain under `lib/serializers/` (e.g. `vendorSerializer.ts`, `orderSerializer.ts`, `promoSerializer.ts`) and are exported via the `lib/serializers/index.ts` barrel. All callers import directly from `@/lib/serializers`. This domain-driven modular structure ensures serializer files never violate the §3 file size limit (< 450 lines).
 
 ```ts
 // ❌ BAD — raw Mongoose doc, leaks _id, __v, sensitive fields
@@ -705,10 +707,11 @@ export function normaliseNigerianPhone(raw: string): string { ... }
 
 - **Never trust client-sent prices or totals.** Always recalculate server-side from DB records.
 - **Never expose vendor WhatsApp numbers** from client state to an API body — source from DB server-side.
-- **Rate-limit sensitive endpoints** (auth, OTP, contact, user actions) using `lib/rate-limit.ts`. 
+- **Rate-limit sensitive endpoints** (auth, OTP, contact, checkout, user actions) using `lib/rate-limit.ts`. 
   - For **authenticated routes**, always rate limit by **User ID** (`session.user.id`) to prevent cross-user limiting on shared campus IPs.
   - For **unauthenticated routes**, rate limit by **IP address**.
   - Rate limiting must execute **BEFORE** `await dbConnect()` to protect the database from connection exhaustion during an attack.
+  - **Upstash Quota Preservation:** Never rate-limit internal authenticated admin dashboard endpoints (`/api/admin/*`) or read (`GET`) queries with Redis. Rate limiting is strictly reserved for public abuse vectors (brute-force OTP, spamming signups, wallet overdraft races). Avoid double-billing requests that are already rate-limited at the Edge by `proxy.ts`.
 - **Protect vendor/admin routes** — verify the session and ownership before any mutation.
 - **Never log sensitive data** — no passwords, tokens, or full phone numbers in `console.log`.
 - **Always validate server-side** via Zod even when client-side validation exists.
@@ -766,7 +769,7 @@ docs: document webhook subscription fields
 - [ ] No `console.log` left in production paths (use `console.error` for genuine errors only)
 - [ ] All new pages have **loading**, **error**, and **empty** fallbacks
 - [ ] No file exceeds **450 lines**
-- [ ] New Mongoose models have a serializer in `lib/serializers.ts`
+- [ ] New Mongoose models have a serializer in `lib/serializers/`
 - [ ] New API routes follow the standard structure (§7)
 - [ ] New environment variables are documented in `.env.example`
 - [ ] New shared types are added to `lib/types.ts`, not defined locally

@@ -9,7 +9,10 @@
 import dbConnect from "@/lib/db"
 import PromoCode, { IPromoCode } from "@/models/PromoCode"
 import PromoCodeRedemption from "@/models/PromoCodeRedemption"
+import Order from "@/models/Order"
 import { toMajorUnit } from "@/lib/money"
+import { serializePromoRedemptionDetail } from "@/lib/serializers"
+import type { PromoRedemptionDetail } from "@/types/promo"
 import type { ClientSession, Types } from "mongoose"
 
 export interface CartItemInput {
@@ -93,34 +96,68 @@ export async function validatePromoCode(
   if (remainingBudgetInKobo <= 0) {
     return {
       valid: false,
-      error: "The budget for this promo has been fully redeemed.",
+      error:
+        "All slots for this promo code have been fully redeemed. Subscribe to our newsletter so you don't miss future promos!",
     }
   }
 
   // 3. Hierarchical Scope Matching
-  // A. School scoping
-  if (promo.targetSchool && params.school) {
-    if (
-      promo.targetSchool.trim().toLowerCase() !==
-      params.school.trim().toLowerCase()
-    ) {
-      return {
-        valid: false,
-        error: `This promo code is only valid at ${promo.targetSchool}.`,
+  // Cross-check student profile if customer is logged in
+  if (params.customerId && (promo.targetSchool || promo.targetCampus)) {
+    const Customer = (await import("@/models/Customer")).default
+    const customer = await Customer.findById(params.customerId)
+      .select("school campus")
+      .lean()
+
+    if (customer) {
+      if (
+        promo.targetSchool &&
+        customer.school &&
+        promo.targetSchool.trim().toLowerCase() !==
+          customer.school.trim().toLowerCase()
+      ) {
+        return {
+          valid: false,
+          error: `This promo code is only available to students of ${promo.targetSchool}.`,
+        }
+      }
+      if (
+        promo.targetCampus &&
+        customer.campus &&
+        promo.targetCampus.trim().toLowerCase() !==
+          customer.campus.trim().toLowerCase()
+      ) {
+        return {
+          valid: false,
+          error: `This promo code is only available to students on ${promo.targetCampus} campus.`,
+        }
       }
     }
   }
 
-  // B. Campus scoping
-  if (promo.targetCampus && params.campus) {
-    if (
+  // A. School scoping (order & guest selection)
+  if (
+    promo.targetSchool &&
+    (!params.school ||
+      promo.targetSchool.trim().toLowerCase() !==
+        params.school.trim().toLowerCase())
+  ) {
+    return {
+      valid: false,
+      error: `This promo code is only valid for orders at ${promo.targetSchool}.`,
+    }
+  }
+
+  // B. Campus scoping (order & guest selection)
+  if (
+    promo.targetCampus &&
+    (!params.campus ||
       promo.targetCampus.trim().toLowerCase() !==
-      params.campus.trim().toLowerCase()
-    ) {
-      return {
-        valid: false,
-        error: `This promo code is only valid for ${promo.targetCampus} campus.`,
-      }
+        params.campus.trim().toLowerCase())
+  ) {
+    return {
+      valid: false,
+      error: `This promo code is only valid for orders on ${promo.targetCampus} campus.`,
     }
   }
 
@@ -179,7 +216,11 @@ export async function validatePromoCode(
       customerId: params.customerId,
     })
 
-    if (customerRedemptionCount >= promo.maxRedemptionsPerCustomer) {
+    if (
+      promo.maxRedemptionsPerCustomer &&
+      promo.maxRedemptionsPerCustomer > 0 &&
+      customerRedemptionCount >= promo.maxRedemptionsPerCustomer
+    ) {
       return {
         valid: false,
         error: "You have already used this promo code.",
@@ -205,17 +246,27 @@ export async function validatePromoCode(
     calculatedDiscountInKobo = promo.discountValueInKobo
   }
 
-  // Discount cannot exceed the applicable subtotal or the remaining promo budget
+  // Strict full-discount check: if remaining budget cannot cover the full calculated discount,
+  // reject cleanly rather than issuing an unexpected partial discount.
+  if (calculatedDiscountInKobo > remainingBudgetInKobo) {
+    return {
+      valid: false,
+      error:
+        "All slots for this promo code have been fully redeemed. Subscribe to our newsletter so you don't miss future promos!",
+    }
+  }
+
+  // Discount cannot exceed the applicable subtotal
   calculatedDiscountInKobo = Math.min(
     calculatedDiscountInKobo,
-    applicableSubtotalInKobo,
-    remainingBudgetInKobo
+    applicableSubtotalInKobo
   )
 
   if (calculatedDiscountInKobo <= 0) {
     return {
       valid: false,
-      error: "The budget for this promo has been fully redeemed.",
+      error:
+        "All slots for this promo code have been fully redeemed. Subscribe to our newsletter so you don't miss future promos!",
     }
   }
 
@@ -288,6 +339,18 @@ export async function redeemPromoCode(params: {
     )
   }
 
+  if (updatedPromo.maxRedemptionsPerCustomer) {
+    const priorRedemptions = await (session
+      ? PromoCodeRedemption.countDocuments(
+          { promoCodeId, customerId },
+          { session }
+        )
+      : PromoCodeRedemption.countDocuments({ promoCodeId, customerId }))
+    if (priorRedemptions >= updatedPromo.maxRedemptionsPerCustomer) {
+      throw new Error("Usage limit reached for this promo code.")
+    }
+  }
+
   const redemptionDoc = {
     promoCodeId,
     code: code.trim().toUpperCase(),
@@ -301,5 +364,94 @@ export async function redeemPromoCode(params: {
     await PromoCodeRedemption.create([redemptionDoc], { session })
   } else {
     await PromoCodeRedemption.create(redemptionDoc)
+  }
+}
+
+export interface GetPromoRedemptionsParams {
+  promoCodeId?: string | null
+  page?: number
+  limit?: number
+}
+
+export interface PromoRedemptionsListResult {
+  redemptions: PromoRedemptionDetail[]
+  total: number
+  page: number
+  totalPages: number
+}
+
+/**
+ * Retrieves a paginated list of promo code redemptions with populated customer
+ * and order details for the admin marketing dashboard.
+ */
+export async function getPromoRedemptions(
+  params: GetPromoRedemptionsParams = {}
+): Promise<PromoRedemptionsListResult> {
+  await dbConnect()
+
+  const page = Math.max(params.page || 1, 1)
+  const limit = Math.min(Math.max(params.limit || 50, 1), 100)
+  const skip = (page - 1) * limit
+
+  const filter: Record<string, unknown> = {}
+  if (params.promoCodeId) {
+    filter.promoCodeId = params.promoCodeId
+  }
+
+  const [redemptions, total] = await Promise.all([
+    PromoCodeRedemption.find(filter)
+      .sort({ redeemedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("customerId", "name email phone")
+      .lean(),
+    PromoCodeRedemption.countDocuments(filter),
+  ])
+
+  interface LeanOrderSummary {
+    orderId: string
+    vendorName?: string
+    items?: Array<{
+      menuItemId?: string
+      name: string
+      quantity: number
+      priceInKobo: number
+    }>
+    totalAmountInKobo?: number
+    status?: string
+  }
+
+  const orderIds = redemptions.map((r: { orderId: string }) => r.orderId)
+  const orders = (await Order.find({ orderId: { $in: orderIds } })
+    .select("orderId vendorName items totalAmountInKobo status createdAt")
+    .lean()) as unknown as LeanOrderSummary[]
+
+  const orderMap = new Map<string, LeanOrderSummary>(
+    orders.map((o) => [o.orderId, o])
+  )
+
+  const detailedRedemptions = redemptions.map((r) => {
+    const order = orderMap.get(r.orderId)
+    return serializePromoRedemptionDetail({
+      _id: r._id,
+      code: r.code,
+      promoCodeId: r.promoCodeId,
+      customerId: r.customerId as {
+        name?: string
+        email?: string
+        phone?: string
+      } | null,
+      orderId: r.orderId,
+      discountAmountInKobo: r.discountAmountInKobo,
+      redeemedAt: r.redeemedAt,
+      order: order || null,
+    })
+  })
+
+  return {
+    redemptions: detailedRedemptions,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
   }
 }

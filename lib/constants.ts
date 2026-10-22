@@ -246,3 +246,13 @@ export function buildOrderWhatsAppMessage(order: {
     .filter((l) => l !== null)
     .join("\n")
 }
+
+// ─── Promo Code Constants ─────────────────────────────────────────────────────
+
+export const PROMO_DISCOUNT_TYPE = {
+  FIXED_AMOUNT: "FIXED_AMOUNT",
+  PERCENTAGE: "PERCENTAGE",
+} as const
+
+export type PromoDiscountType =
+  (typeof PROMO_DISCOUNT_TYPE)[keyof typeof PROMO_DISCOUNT_TYPE]

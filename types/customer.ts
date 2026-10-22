@@ -132,3 +132,23 @@ export type CheckoutResult =
       checkoutUrl: string
       transactionReference: string
     }
+
+export interface ProcessCheckoutData {
+  vendorId: string
+  items: {
+    menuItemId: string
+    name: string
+    quantity: number
+    priceInKobo: number
+  }[]
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  location: string
+  exactLocation: string
+  notes?: string
+  paymentMethod: string
+  appliedVoucherCode?: string
+  appliedPromoCode?: string
+  useBHC?: boolean
+}

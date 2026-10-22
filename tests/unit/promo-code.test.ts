@@ -102,7 +102,7 @@ describe("Promo Code Engine Invariant Tests", () => {
     expect(result.valid).toBe(false)
     if (!result.valid) {
       expect(result.error).toContain(
-        "budget for this promo has been fully redeemed"
+        "All slots for this promo code have been fully redeemed"
       )
     }
   })
@@ -220,7 +220,6 @@ describe("Promo Code Engine Invariant Tests", () => {
     mockPromoCode.findOne.mockReturnValue({
       lean: vi.fn().mockResolvedValue(mockPromoDoc),
     })
-    // Simulate customer already having 1 redemption
     mockPromoCodeRedemption.countDocuments.mockResolvedValue(1)
 
     const result = await validatePromoCode({
@@ -231,9 +230,25 @@ describe("Promo Code Engine Invariant Tests", () => {
     })
 
     expect(result.valid).toBe(false)
-    if (!result.valid) {
+    if (!result.valid)
       expect(result.error).toContain("already used this promo code")
-    }
+
+    // Unlimited customer redemptions (null cap)
+    mockPromoCode.findOne.mockReturnValue({
+      lean: vi
+        .fn()
+        .mockResolvedValue({
+          ...mockPromoDoc,
+          maxRedemptionsPerCustomer: null,
+        }),
+    })
+    const unlimitedRes = await validatePromoCode({
+      code: "ONCEONLY",
+      customerId: sampleCustomerId,
+      vendorId: sampleVendorId,
+      items: [{ menuItemId: "item-1", priceInKobo: 150000, quantity: 1 }],
+    })
+    expect(unlimitedRes.valid).toBe(true)
   })
 
   it("should atomically record a promo code redemption and increment budget spent via findOneAndUpdate", async () => {
@@ -242,7 +257,7 @@ describe("Promo Code Engine Invariant Tests", () => {
 
     await redeemPromoCode({
       promoCodeId: samplePromoId,
-      code: "PASTOR50",
+      code: "CAMPUS50",
       customerId: sampleCustomerId,
       orderId: "BH-ORDER-999",
       discountAmountInKobo: 30000,
@@ -264,7 +279,7 @@ describe("Promo Code Engine Invariant Tests", () => {
 
     expect(mockPromoCodeRedemption.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        code: "PASTOR50",
+        code: "CAMPUS50",
         customerId: sampleCustomerId,
         orderId: "BH-ORDER-999",
         discountAmountInKobo: 30000,
@@ -278,7 +293,7 @@ describe("Promo Code Engine Invariant Tests", () => {
     await expect(
       redeemPromoCode({
         promoCodeId: samplePromoId,
-        code: "PASTOR50",
+        code: "CAMPUS50",
         customerId: sampleCustomerId,
         orderId: "BH-ORDER-999",
         discountAmountInKobo: 30000,
@@ -289,8 +304,8 @@ describe("Promo Code Engine Invariant Tests", () => {
   describe("createPromoCodeSchema Naira-to-Kobo conversions", () => {
     it("should transform human Naira inputs to integer Kobo using nairaToKobo", () => {
       const parsed = createPromoCodeSchema.parse({
-        code: "PASTORGIFT",
-        title: "Pastor Youth Event",
+        code: "CAMPUSGIFT",
+        title: "Campus Welcome Event",
         discountType: "FIXED_AMOUNT",
         discountInNaira: 500, // ₦500
         budgetInNaira: 25000, // ₦25,000
@@ -298,7 +313,7 @@ describe("Promo Code Engine Invariant Tests", () => {
         maxRedemptionsPerCustomer: 1,
       })
 
-      expect(parsed.code).toBe("PASTORGIFT")
+      expect(parsed.code).toBe("CAMPUSGIFT")
       expect(parsed.discountValueInKobo).toBe(50000)
       expect(parsed.budgetAllocatedInKobo).toBe(2500000)
       expect(parsed.minOrderValueInKobo).toBe(100000)
@@ -310,14 +325,136 @@ describe("Promo Code Engine Invariant Tests", () => {
         title: "Too Low Budget",
         discountType: "FIXED_AMOUNT",
         discountInNaira: 5,
-        budgetInNaira: 5, // Less than ₦10
+        budgetInNaira: 5,
+        maxRedemptionsPerCustomer: 1,
       })
-
       expect(result.success).toBe(false)
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
           "Budget must be at least ₦10"
         )
+      }
+    })
+
+    it("should reject flat discount when 0 or empty", () => {
+      const result = promoCodeFormInputSchema.safeParse({
+        code: "NOFLAT",
+        title: "No Flat Amount",
+        discountType: "FIXED_AMOUNT",
+        discountInNaira: 0,
+        budgetInNaira: 1000,
+        maxRedemptionsPerCustomer: 1,
+      })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(
+          result.error.issues.some((i) => i.path.includes("discountInNaira"))
+        ).toBe(true)
+      }
+    })
+  })
+
+  describe("Strict slot budget exhaustion and custom caps", () => {
+    it("should reject order when remaining budget is less than calculated flat discount", async () => {
+      const mockPromoDoc = {
+        _id: samplePromoId,
+        code: "TAIL500",
+        title: "Tail Budget Promo",
+        discountType: "FIXED_AMOUNT",
+        discountValueInKobo: 50000, // ₦500 discount
+        budgetAllocatedInKobo: 5000000, // ₦50,000 budget
+        budgetSpentInKobo: 4980000, // ₦49,800 spent -> only ₦200 remaining!
+        currentRedemptions: 49,
+        maxRedemptionsPerCustomer: 1,
+        isActive: true,
+      }
+
+      mockPromoCode.findOne.mockReturnValue({
+        lean: vi.fn().mockResolvedValue(mockPromoDoc),
+      })
+      mockPromoCodeRedemption.countDocuments.mockResolvedValue(0)
+
+      const result = await validatePromoCode({
+        code: "TAIL500",
+        customerId: sampleCustomerId,
+        vendorId: sampleVendorId,
+        items: [{ menuItemId: "item-1", priceInKobo: 250000, quantity: 1 }],
+      })
+
+      expect(result.valid).toBe(false)
+      if (!result.valid) {
+        expect(result.error).toContain(
+          "All slots for this promo code have been fully redeemed"
+        )
+        expect(result.error).toContain("Subscribe to our newsletter")
+      }
+    })
+
+    it("should reject order when remaining budget is less than calculated percentage discount", async () => {
+      const mockPromoDoc = {
+        _id: samplePromoId,
+        code: "PERCENT20",
+        title: "20% Promo",
+        discountType: "PERCENTAGE",
+        discountPercentage: 20,
+        budgetAllocatedInKobo: 5000000, // ₦50,000 budget
+        budgetSpentInKobo: 4980000, // ₦49,800 spent -> only ₦200 remaining!
+        currentRedemptions: 49,
+        maxRedemptionsPerCustomer: 1,
+        isActive: true,
+      }
+
+      mockPromoCode.findOne.mockReturnValue({
+        lean: vi.fn().mockResolvedValue(mockPromoDoc),
+      })
+      mockPromoCodeRedemption.countDocuments.mockResolvedValue(0)
+
+      // 20% of ₦4,000 is ₦800, which exceeds remaining ₦200 budget!
+      const result = await validatePromoCode({
+        code: "PERCENT20",
+        customerId: sampleCustomerId,
+        vendorId: sampleVendorId,
+        items: [{ menuItemId: "item-1", priceInKobo: 400000, quantity: 1 }],
+      })
+
+      expect(result.valid).toBe(false)
+      if (!result.valid) {
+        expect(result.error).toContain(
+          "All slots for this promo code have been fully redeemed"
+        )
+      }
+    })
+
+    it("should accurately respect user-defined custom maxDiscountInKobo", async () => {
+      const mockPromoDoc = {
+        _id: samplePromoId,
+        code: "CUSTOMCAP",
+        title: "20% with ₦2,500 Cap",
+        discountType: "PERCENTAGE",
+        discountPercentage: 20,
+        maxDiscountInKobo: 250000, // ₦2,500 custom cap
+        budgetAllocatedInKobo: 10000000,
+        budgetSpentInKobo: 0,
+        maxRedemptionsPerCustomer: 1,
+        isActive: true,
+      }
+
+      mockPromoCode.findOne.mockReturnValue({
+        lean: vi.fn().mockResolvedValue(mockPromoDoc),
+      })
+      mockPromoCodeRedemption.countDocuments.mockResolvedValue(0)
+
+      // Order of ₦25,000: 20% would be ₦5,000, but capped at ₦2,500 (250000 kobo)
+      const result = await validatePromoCode({
+        code: "CUSTOMCAP",
+        customerId: sampleCustomerId,
+        vendorId: sampleVendorId,
+        items: [{ menuItemId: "item-1", priceInKobo: 2500000, quantity: 1 }],
+      })
+
+      expect(result.valid).toBe(true)
+      if (result.valid) {
+        expect(result.discountAmountInKobo).toBe(250000)
       }
     })
   })

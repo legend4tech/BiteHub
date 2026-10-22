@@ -21,50 +21,82 @@ export const validatePromoCodeInputSchema = z.object({
     .min(1, "Cart must have at least one item"),
 })
 
-export type ValidatePromoCodeInput = z.infer<
+export type ValidatePromoCodeInputValues = z.infer<
   typeof validatePromoCodeInputSchema
 >
+export type ValidatePromoCodeInput = ValidatePromoCodeInputValues
 
 /**
  * Form schema for admin UI input (pure Naira, no .transform for zodResolver)
  */
-export const promoCodeFormInputSchema = z.object({
-  code: z
-    .string()
-    .min(2, "Code must be at least 2 characters")
-    .max(20, "Code cannot exceed 20 characters")
-    .regex(
-      /^[A-Za-z0-9_-]+$/,
-      "Code can only contain letters, numbers, hyphens, and underscores"
-    ),
-  title: z.string().min(2, "Title is required").max(100),
-  description: z.string().max(255).optional().nullable(),
+export const promoCodeFormInputSchema = z
+  .object({
+    code: z
+      .string()
+      .min(2, "Code must be at least 2 characters")
+      .max(20, "Code cannot exceed 20 characters")
+      .regex(
+        /^[A-Za-z0-9_-]+$/,
+        "Code can only contain letters, numbers, hyphens, and underscores"
+      ),
+    title: z.string().min(2, "Title is required").max(100),
+    description: z.string().max(255).optional().nullable(),
 
-  targetSchool: z.string().optional().nullable(),
-  targetCampus: z.string().optional().nullable(),
-  targetVendorId: z.string().optional().nullable(),
-  targetMenuItemId: z.string().optional().nullable(),
+    targetSchool: z.string().optional().nullable(),
+    targetCampus: z.string().optional().nullable(),
+    targetVendorId: z.string().optional().nullable(),
+    targetMenuItemId: z.string().optional().nullable(),
 
-  discountType: z.enum(["FIXED_AMOUNT", "PERCENTAGE"]),
-  discountInNaira: z
-    .number({ message: "Discount in Naira must be a number" })
-    .min(0, "Discount cannot be negative"),
-  discountPercentage: z.number().int().min(1).max(100).optional().nullable(),
-  maxDiscountInNaira: z.number().min(0).optional().nullable().nullable(),
-  minOrderValueInNaira: z.number().min(0).optional().nullable().nullable(),
+    discountType: z.enum(["FIXED_AMOUNT", "PERCENTAGE"]),
+    discountInNaira: z
+      .number({ message: "Discount in Naira must be a number" })
+      .min(0, "Discount cannot be negative"),
+    discountPercentage: z.number().int().min(1).max(100).optional().nullable(),
+    maxDiscountInNaira: z.number().min(0).optional().nullable().nullable(),
+    minOrderValueInNaira: z.number().min(0).optional().nullable().nullable(),
 
-  budgetInNaira: z
-    .number({ message: "Budget in Naira must be a number" })
-    .min(10, "Budget must be at least ₦10"),
-  maxRedemptions: z.number().int().min(1).optional().nullable(),
-  maxRedemptionsPerCustomer: z.number().int().min(1).default(1),
+    budgetInNaira: z
+      .number({ message: "Budget in Naira must be a number" })
+      .min(10, "Budget must be at least ₦10"),
+    maxRedemptions: z.number().int().min(1).optional().nullable(),
+    maxRedemptionsPerCustomer: z
+      .number({ message: "Uses per customer must be a number" })
+      .int("Uses per customer must be a whole number")
+      .min(1, "Uses per customer must be at least 1")
+      .optional()
+      .nullable(),
 
-  startDate: z.coerce.date().default(() => new Date()),
-  endDate: z.coerce.date().optional().nullable(),
-  isActive: z.boolean().default(true),
-})
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional().nullable(),
+    isActive: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.discountType === "FIXED_AMOUNT") {
+      if (!data.discountInNaira || data.discountInNaira < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Flat discount amount must be at least ₦1",
+          path: ["discountInNaira"],
+        })
+      }
+    } else if (data.discountType === "PERCENTAGE") {
+      if (
+        data.discountPercentage === undefined ||
+        data.discountPercentage === null ||
+        data.discountPercentage < 1 ||
+        data.discountPercentage > 100
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Discount percentage is required (1% - 100%)",
+          path: ["discountPercentage"],
+        })
+      }
+    }
+  })
 
 export type PromoCodeFormInputValues = z.infer<typeof promoCodeFormInputSchema>
+export type PromoCodeFormInput = PromoCodeFormInputValues
 
 /**
  * API validation schema: Accepts Naira inputs (or direct Kobo) and converts
@@ -84,10 +116,26 @@ export const createPromoCodeSchema = z
     title: z.string().min(2, "Title is required").max(100),
     description: z.string().max(255).optional().nullable(),
 
-    targetSchool: z.string().optional().nullable(),
-    targetCampus: z.string().optional().nullable(),
-    targetVendorId: z.string().optional().nullable(),
-    targetMenuItemId: z.string().optional().nullable(),
+    targetSchool: z
+      .string()
+      .optional()
+      .nullable()
+      .transform((v) => (v && v.trim() ? v.trim() : null)),
+    targetCampus: z
+      .string()
+      .optional()
+      .nullable()
+      .transform((v) => (v && v.trim() ? v.trim() : null)),
+    targetVendorId: z
+      .string()
+      .optional()
+      .nullable()
+      .transform((v) => (v && v.trim() ? v.trim() : null)),
+    targetMenuItemId: z
+      .string()
+      .optional()
+      .nullable()
+      .transform((v) => (v && v.trim() ? v.trim() : null)),
 
     discountType: z.enum(["FIXED_AMOUNT", "PERCENTAGE"]),
     // Accepts either human Naira or direct Kobo
@@ -106,7 +154,7 @@ export const createPromoCodeSchema = z
     budgetAllocatedInKobo: z.number().int().min(1000).optional(),
 
     maxRedemptions: z.number().int().min(1).optional().nullable(),
-    maxRedemptionsPerCustomer: z.number().int().min(1).default(1),
+    maxRedemptionsPerCustomer: z.number().int().min(1).optional().nullable(),
 
     startDate: z.coerce.date().default(() => new Date()),
     endDate: z.coerce.date().optional().nullable(),
@@ -152,11 +200,11 @@ export const createPromoCodeSchema = z
     return {
       code: data.code,
       title: data.title,
-      description: data.description ?? null,
-      targetSchool: data.targetSchool ?? null,
-      targetCampus: data.targetCampus ?? null,
-      targetVendorId: data.targetVendorId ?? null,
-      targetMenuItemId: data.targetMenuItemId ?? null,
+      description: data.description?.trim() || null,
+      targetSchool: data.targetSchool?.trim() || null,
+      targetCampus: data.targetCampus?.trim() || null,
+      targetVendorId: data.targetVendorId?.trim() || null,
+      targetMenuItemId: data.targetMenuItemId?.trim() || null,
       discountType: data.discountType,
       discountValueInKobo,
       discountPercentage: data.discountPercentage ?? null,
@@ -164,7 +212,7 @@ export const createPromoCodeSchema = z
       minOrderValueInKobo,
       budgetAllocatedInKobo,
       maxRedemptions: data.maxRedemptions ?? null,
-      maxRedemptionsPerCustomer: data.maxRedemptionsPerCustomer,
+      maxRedemptionsPerCustomer: data.maxRedemptionsPerCustomer ?? null,
       startDate: data.startDate,
       endDate: data.endDate ?? null,
       isActive: data.isActive,
@@ -172,3 +220,97 @@ export const createPromoCodeSchema = z
   })
 
 export type CreatePromoCodeValues = z.infer<typeof createPromoCodeSchema>
+
+export const updatePromoSchema = z
+  .object({
+    title: z.string().min(2).max(100).optional(),
+    description: z.string().max(255).optional().nullable(),
+    targetSchool: z.string().optional().nullable(),
+    targetCampus: z.string().optional().nullable(),
+    targetVendorId: z.string().optional().nullable(),
+    targetMenuItemId: z.string().optional().nullable(),
+    discountType: z.enum(["FIXED_AMOUNT", "PERCENTAGE"]).optional(),
+    discountInNaira: z.number().min(0).optional(),
+    discountValueInKobo: z.number().int().min(0).optional(),
+    discountPercentage: z.number().int().min(1).max(100).optional().nullable(),
+    maxDiscountInNaira: z.number().min(0).optional().nullable(),
+    maxDiscountInKobo: z.number().int().min(0).optional().nullable(),
+    minOrderValueInNaira: z.number().min(0).optional().nullable(),
+    minOrderValueInKobo: z.number().int().min(0).optional().nullable(),
+    budgetInNaira: z.number().min(10).optional(),
+    budgetAllocatedInKobo: z.number().int().min(1000).optional(),
+    maxRedemptions: z.number().int().min(1).optional().nullable(),
+    maxRedemptionsPerCustomer: z.number().int().min(1).optional().nullable(),
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional().nullable(),
+    isActive: z.boolean().optional(),
+  })
+  .transform((data) => {
+    const updateData: Record<string, unknown> = { ...data }
+
+    if (
+      data.budgetInNaira !== undefined &&
+      data.budgetAllocatedInKobo === undefined
+    ) {
+      updateData.budgetAllocatedInKobo = nairaToKobo(data.budgetInNaira)
+      delete updateData.budgetInNaira
+    }
+    if (
+      data.discountInNaira !== undefined &&
+      data.discountValueInKobo === undefined
+    ) {
+      updateData.discountValueInKobo = nairaToKobo(data.discountInNaira)
+      delete updateData.discountInNaira
+    }
+    if (
+      data.maxDiscountInNaira !== undefined &&
+      data.maxDiscountInKobo === undefined
+    ) {
+      updateData.maxDiscountInKobo =
+        data.maxDiscountInNaira !== null
+          ? nairaToKobo(data.maxDiscountInNaira)
+          : null
+      delete updateData.maxDiscountInNaira
+    }
+    if (
+      data.minOrderValueInNaira !== undefined &&
+      data.minOrderValueInKobo === undefined
+    ) {
+      updateData.minOrderValueInKobo =
+        data.minOrderValueInNaira !== null
+          ? nairaToKobo(data.minOrderValueInNaira)
+          : null
+      delete updateData.minOrderValueInNaira
+    }
+
+    if (data.targetSchool !== undefined) {
+      updateData.targetSchool = data.targetSchool?.trim() || null
+    }
+    if (data.targetCampus !== undefined) {
+      updateData.targetCampus = data.targetCampus?.trim() || null
+    }
+    if (data.targetVendorId !== undefined) {
+      updateData.targetVendorId = data.targetVendorId?.trim() || null
+    }
+    if (data.targetMenuItemId !== undefined) {
+      updateData.targetMenuItemId = data.targetMenuItemId?.trim() || null
+    }
+
+    return updateData
+  })
+
+export type UpdatePromoValues = z.infer<typeof updatePromoSchema>
+export type UpdatePromoInput = UpdatePromoValues
+
+/**
+ * Query schema for admin promo redemptions list
+ */
+export const getPromoRedemptionsQuerySchema = z.object({
+  promoCodeId: z.string().optional().nullable(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})
+
+export type GetPromoRedemptionsQueryValues = z.infer<
+  typeof getPromoRedemptionsQuerySchema
+>

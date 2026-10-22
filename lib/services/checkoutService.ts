@@ -8,7 +8,6 @@
 import Vendor from "@/models/Vendor"
 import Order from "@/models/Order"
 import Customer from "@/models/Customer"
-import MenuItem from "@/models/MenuItem"
 import GlobalSettings from "@/models/GlobalSettings"
 import mongoose from "mongoose"
 import type { IMenuItem } from "@/models/MenuItem"
@@ -16,7 +15,6 @@ import {
   ORDER_STATUS,
   PAYMENT_STATUS,
   generateOrderId,
-  LOW_STOCK_THRESHOLD,
   PLATFORM_FLAT_FEE_IN_KOBO,
   UNPAID_ORDER_EXPIRY_MINUTES,
 } from "@/lib/constants"
@@ -27,34 +25,17 @@ import {
   validateCustomerCheckoutStatus,
 } from "@/lib/services/checkoutHelpers"
 import { processWalletPaymentDeduction } from "@/lib/services/checkoutWalletHelpers"
-import { sendVendorLowStockAlertEmail } from "@/lib/vendorAlertMail"
 import {
   resolveDeliveryFee,
   validateOrderItemsAndCalculateTotal,
 } from "@/lib/services/orderCheckoutService"
+import { resolveCheckoutDiscounts } from "@/lib/services/checkoutDiscountService"
+import { reserveStockAndAlertVendors } from "@/lib/services/checkoutStockService"
 import { Session } from "next-auth"
-import type { CheckoutResult } from "@/types/customer"
+import type { CheckoutResult, ProcessCheckoutData } from "@/types/customer"
 
 export async function processCheckout(
-  parsedData: {
-    vendorId: string
-    items: {
-      menuItemId: string
-      name: string
-      quantity: number
-      priceInKobo: number
-    }[]
-    customerName: string
-    customerEmail: string
-    customerPhone: string
-    location: string
-    exactLocation: string
-    notes?: string
-    paymentMethod: string
-    appliedVoucherCode?: string
-    appliedPromoCode?: string
-    useBHC?: boolean
-  },
+  parsedData: ProcessCheckoutData,
   session: Session | null
 ): Promise<CheckoutResult> {
   const {
@@ -72,7 +53,7 @@ export async function processCheckout(
     useBHC,
   } = parsedData
 
-  // Fetch existing customer record (if any)
+  // 1. Fetch existing customer record (if any) and validate status
   const existingCustomer = await Customer.findOne({
     email: customerEmail.toLowerCase(),
   }).lean()
@@ -84,6 +65,7 @@ export async function processCheckout(
   )
   if (customerValidation) return customerValidation
 
+  // 2. Fetch and validate vendor availability
   const vendor = await Vendor.findById(vendorId).lean()
   if (!vendor || !vendor.isActive) {
     return { error: "Vendor not found or inactive", status: 404 }
@@ -106,7 +88,6 @@ export async function processCheckout(
   }
 
   const finalVendorName = vendor.name
-
   const deliveryFeeInKobo = await resolveDeliveryFee(vendor, location)
 
   let calculatedTotalInKobo: number
@@ -137,103 +118,36 @@ export async function processCheckout(
     }
   }
 
-  let sponsoredDiscountAmountInKobo = 0
-  let isRewardSponsored = false
-  let rewardVoucherId: mongoose.Types.ObjectId | undefined = undefined
+  // 3. Resolve vouchers & promo codes with strict wallet payment invariant
+  const discountResult = await resolveCheckoutDiscounts({
+    appliedVoucherCode,
+    appliedPromoCode,
+    paymentMethod,
+    session,
+    existingCustomer,
+    vendor,
+    vendorId,
+    items,
+    dbMenuItemsMap,
+  })
 
-  if (appliedPromoCode && appliedVoucherCode) {
+  if (!discountResult.success) {
     return {
-      error:
-        "You cannot use both a voucher and a promo code on the same order.",
-      status: 400,
+      error: discountResult.error,
+      requiresSignup: discountResult.requiresSignup,
+      status: discountResult.status,
     }
   }
 
-  if (appliedVoucherCode) {
-    if (paymentMethod !== "wallet") {
-      return {
-        error:
-          "You must use your BiteHub Wallet to pay when using rewards. Please select Wallet as your payment method.",
-        status: 400,
-      }
-    }
-    if (!existingCustomer) {
-      return { error: "You must be logged in to use a voucher.", status: 401 }
-    }
-    const RewardVoucher = (await import("@/models/RewardVoucher")).default
-    const voucher = await RewardVoucher.findOne({
-      code: appliedVoucherCode,
-      customerId: existingCustomer._id,
-    })
+  const {
+    sponsoredDiscountAmountInKobo,
+    isRewardSponsored,
+    rewardVoucherId,
+    promoDiscountInKobo,
+    promoCodeData,
+  } = discountResult
 
-    if (!voucher) {
-      return { error: "Invalid voucher code.", status: 400 }
-    }
-    if (voucher.isUsed) {
-      return { error: "This voucher has already been used.", status: 400 }
-    }
-    if (voucher.expiresAt < new Date()) {
-      return { error: "This voucher has expired.", status: 400 }
-    }
-    const itemInCart = items.find((i) => i.menuItemId === voucher.menuItemId)
-    if (!itemInCart) {
-      return {
-        error: "The meal for this voucher is not in your cart.",
-        status: 400,
-      }
-    }
-
-    sponsoredDiscountAmountInKobo = itemInCart.priceInKobo
-    isRewardSponsored = true
-    rewardVoucherId = voucher._id
-  }
-
-  let promoDiscountInKobo = 0
-  let promoCodeData: { promoCodeId: string; code: string } | null = null
-
-  if (appliedPromoCode) {
-    if (paymentMethod !== "wallet") {
-      return {
-        error:
-          "You must use your BiteHub Wallet to pay when using a promo code. Please select Wallet as your payment method.",
-        status: 400,
-      }
-    }
-    if (!session?.user?.email || !existingCustomer) {
-      return {
-        error:
-          "You must be logged in to your BiteHub account to use a promo code.",
-        status: 401,
-      }
-    }
-
-    // Map items to ground-truth prices from database to prevent client price tampering
-    const sanitizedItemsForPromo = items.map((item) => {
-      const dbItem = dbMenuItemsMap.get(item.menuItemId)
-      return {
-        menuItemId: item.menuItemId,
-        priceInKobo: dbItem?.priceInKobo ?? item.priceInKobo,
-        quantity: item.quantity,
-      }
-    })
-
-    const { validatePromoCode } =
-      await import("@/lib/services/promoCodeService")
-    const promoRes = await validatePromoCode({
-      code: appliedPromoCode,
-      customerId: existingCustomer._id.toString(),
-      vendorId,
-      campus: vendor.campus,
-      school: vendor.school,
-      items: sanitizedItemsForPromo,
-    })
-    if (!promoRes.valid) {
-      return { error: promoRes.error, status: 400 }
-    }
-    promoDiscountInKobo = promoRes.discountAmountInKobo
-    promoCodeData = { promoCodeId: promoRes.promoCodeId, code: promoRes.code }
-  }
-
+  // 4. Financial Calculations (InKobo integer rule)
   const totalDiscountInKobo =
     sponsoredDiscountAmountInKobo + promoDiscountInKobo
   const baseCustomerPaymentInKobo = Math.max(
@@ -279,6 +193,7 @@ export async function processCheckout(
 
   let customerForWallet = null
 
+  // 5. Payment gateway setup or wallet balance pre-check
   if (paymentMethod === "wallet") {
     if (!session?.user?.email) {
       return { error: "Please log in to pay with wallet", status: 401 }
@@ -335,13 +250,14 @@ export async function processCheckout(
     }
   }
 
+  // 6. Execute atomic database transaction
   const mongooseSession = await mongoose.startSession()
   let transactionError: string | null = null
   let orderResponse: typeof Order.prototype | null = null
 
   try {
     await mongooseSession.withTransaction(async () => {
-      // 1. Lock and mark voucher as used (if applied)
+      // 6a. Lock and burn voucher if applied
       if (appliedVoucherCode) {
         const RewardVoucher = (await import("@/models/RewardVoucher")).default
         const lockedVoucher = await RewardVoucher.findOne({
@@ -367,7 +283,7 @@ export async function processCheckout(
         )
       }
 
-      // 1b. Burn promo code redemption (if applied)
+      // 6b. Burn promo code redemption if applied
       if (promoCodeData && (existingCustomer?._id || customerForWallet?._id)) {
         const { redeemPromoCode } =
           await import("@/lib/services/promoCodeService")
@@ -383,60 +299,24 @@ export async function processCheckout(
         })
       }
 
-      // Reserve quantity by decrementing immediately with strict atomic stock check
-      const trackedItems = items.filter((item) => {
-        const dbItem = dbMenuItemsMap.get(item.menuItemId)
-        return (
-          dbItem &&
-          dbItem.quantityAvailable !== null &&
-          dbItem.quantityAvailable !== undefined
-        )
-      })
-
-      if (trackedItems.length > 0) {
-        const bulkOps = trackedItems.map((item) => {
-          const dbItem = dbMenuItemsMap.get(item.menuItemId)!
-          const updateDoc: {
-            $inc: { quantityAvailable: number }
-            $set?: { lowStockAlertSent: boolean }
-          } = { $inc: { quantityAvailable: -item.quantity } }
-
-          const newQuantity = (dbItem.quantityAvailable || 0) - item.quantity
-          if (newQuantity <= LOW_STOCK_THRESHOLD && !dbItem.lowStockAlertSent) {
-            updateDoc.$set = { lowStockAlertSent: true }
-            // Fire-and-forget
-            sendVendorLowStockAlertEmail(
-              vendorId,
-              finalVendorName,
-              dbItem.name || "Unknown Item",
-              newQuantity
-            ).catch((err) =>
-              console.error("[POST /api/orders] Low stock alert failed:", err)
-            )
-          }
-
-          return {
-            updateOne: {
-              filter: {
-                _id: item.menuItemId,
-                quantityAvailable: { $gte: item.quantity },
-              },
-              update: updateDoc,
-            },
-          }
+      // 6c. Reserve item quantities atomically
+      try {
+        await reserveStockAndAlertVendors({
+          items,
+          dbMenuItemsMap,
+          vendorId,
+          finalVendorName,
+          mongooseSession,
         })
-
-        const bulkRes = await MenuItem.bulkWrite(bulkOps, {
-          session: mongooseSession,
-        })
-
-        if (bulkRes.modifiedCount < trackedItems.length) {
-          transactionError =
-            "One or more items in your cart just went out of stock. Please adjust your quantity."
-          throw new Error(transactionError)
-        }
+      } catch (stockErr: unknown) {
+        transactionError =
+          stockErr instanceof Error
+            ? stockErr.message
+            : "Items went out of stock"
+        throw stockErr
       }
 
+      // 6d. Create order record
       const [order] = await Order.create(
         [
           {
@@ -476,6 +356,7 @@ export async function processCheckout(
         { session: mongooseSession }
       )
 
+      // 6e. Deduct funds from BiteHub Wallet
       if (paymentMethod === "wallet" && customerForWallet) {
         try {
           await processWalletPaymentDeduction(
@@ -497,8 +378,6 @@ export async function processCheckout(
           }
           throw err
         }
-
-        // The voucher has already been marked used and the budget decremented earlier in this transaction.
       }
 
       orderResponse = order
@@ -519,8 +398,9 @@ export async function processCheckout(
     return { error: transactionError, status: 400 }
   }
 
-  const order = orderResponse
+  const order = orderResponse!
 
+  // 7. Fire-and-forget notification delivery
   await sendCheckoutNotifications({
     paymentMethod,
     customerEmail,

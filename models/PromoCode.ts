@@ -15,21 +15,21 @@ export interface IPromoCode extends Document {
   // ─── Discount Mechanics ─────────────────────────────────────────────────────
   discountType: "FIXED_AMOUNT" | "PERCENTAGE"
   discountValueInKobo: number // Flat discount in Kobo or base value
-  discountPercentage?: number // 1 to 100 for percentage
-  maxDiscountInKobo?: number // Maximum cap for percentage discounts
-  minOrderValueInKobo?: number // Minimum food subtotal required
+  discountPercentage?: number | null // 1 to 100 for percentage
+  maxDiscountInKobo?: number | null // Maximum cap for percentage discounts
+  minOrderValueInKobo?: number | null // Minimum food subtotal required
 
   // ─── Budget & Fintech Safeguards ─────────────────────────────────────────────
   budgetAllocatedInKobo: number // Total Kobo BiteHub is willing to subsidize
   budgetSpentInKobo: number // Total Kobo redeemed so far
-  maxRedemptions?: number // Optional total usage cap
+  maxRedemptions?: number | null // Optional total usage cap
   currentRedemptions: number // Total times redeemed
-  maxRedemptionsPerCustomer: number // Default 1
+  maxRedemptionsPerCustomer?: number | null // Optional, null = unlimited
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────────
   isActive: boolean
   startDate: Date
-  endDate?: Date
+  endDate?: Date | null
 
   createdAt: Date
   updatedAt: Date
@@ -76,8 +76,8 @@ const PromoCodeSchema = new Schema<IPromoCode>(
       type: Number,
       min: 0,
       validate: {
-        validator: (v: number | undefined) =>
-          v === undefined || Number.isInteger(v),
+        validator: (v: number | undefined | null) =>
+          v == null || Number.isInteger(v),
         message: "{VALUE} is not an integer value",
       },
     },
@@ -85,8 +85,8 @@ const PromoCodeSchema = new Schema<IPromoCode>(
       type: Number,
       min: 0,
       validate: {
-        validator: (v: number | undefined) =>
-          v === undefined || Number.isInteger(v),
+        validator: (v: number | undefined | null) =>
+          v == null || Number.isInteger(v),
         message: "{VALUE} is not an integer value",
       },
     },
@@ -120,9 +120,12 @@ const PromoCodeSchema = new Schema<IPromoCode>(
     },
     maxRedemptionsPerCustomer: {
       type: Number,
-      required: true,
-      default: 1,
       min: 1,
+      validate: {
+        validator: (v: number | undefined | null) =>
+          v == null || (Number.isInteger(v) && v >= 1),
+        message: "{VALUE} must be an integer greater than 0",
+      },
     },
 
     isActive: { type: Boolean, default: true },

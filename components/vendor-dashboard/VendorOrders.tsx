@@ -13,15 +13,7 @@ import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/useDebounce"
 import { ORDER_STATUS, ORDER_STATUS_CONFIG } from "@/lib/constants"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
+import { DataPagination } from "@/components/shared/DataPagination"
 
 const FILTER_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -181,79 +173,14 @@ export function VendorOrders({
         />
 
         {/* Pagination UI */}
-        <div className="mt-6 border-t border-border pt-4">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href={
-                    currentPage > 1
-                      ? `?status=${activeStatus}&page=${currentPage - 1}`
-                      : "#"
-                  }
-                  className={
-                    currentPage <= 1 ? "pointer-events-none opacity-50" : ""
-                  }
-                />
-              </PaginationItem>
-
-              {/* Generate explicit page numbers if we have a small amount of pages, or ellipsize */}
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1
-                // Simple display logic: show first, last, current, and adjacent
-                if (
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                ) {
-                  return (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        href={`?status=${activeStatus}&page=${page}`}
-                        isActive={page === currentPage}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                }
-
-                // Show ellipsis only once per gap
-                if (page === 2 && currentPage > 3) {
-                  return (
-                    <PaginationItem key={page}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )
-                }
-                if (page === totalPages - 1 && currentPage < totalPages - 2) {
-                  return (
-                    <PaginationItem key={page}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )
-                }
-
-                return null
-              })}
-
-              <PaginationItem>
-                <PaginationNext
-                  href={
-                    currentPage < totalPages
-                      ? `?status=${activeStatus}&page=${currentPage + 1}`
-                      : "#"
-                  }
-                  className={
-                    currentPage >= totalPages
-                      ? "pointer-events-none opacity-50"
-                      : ""
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <DataPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={counts[activeStatus] || counts["all"]}
+          pageSize={10}
+          getPageUrl={(p) => `?status=${activeStatus}&page=${p}`}
+          className="mt-6 border-t border-border pt-4"
+        />
       </div>
     </div>
   )

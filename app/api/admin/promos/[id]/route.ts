@@ -3,15 +3,46 @@ import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import PromoCode from "@/models/PromoCode"
 import PromoCodeRedemption from "@/models/PromoCodeRedemption"
-import { serializePromoCode } from "@/lib/serializers/promoSerializer"
-import { z } from "zod"
+import { serializePromoCode } from "@/lib/serializers"
+import { updatePromoSchema } from "@/lib/schemas"
 
-const updatePromoSchema = z.object({
-  isActive: z.boolean().optional(),
-  budgetAllocatedInKobo: z.number().int().min(0).optional(),
-  endDate: z.coerce.date().optional().nullable(),
-  maxRedemptions: z.number().int().min(1).optional().nullable(),
-})
+// ── GET /api/admin/promos/[id] ───────────────────────────────────────────────
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    if (
+      !session ||
+      (session.user?.role !== "admin" && session.user?.role !== "superadmin")
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id } = await params
+    await dbConnect()
+
+    const promo = await PromoCode.findById(id).lean()
+    if (!promo) {
+      return NextResponse.json(
+        { error: "Promo code not found" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(serializePromoCode(promo), { status: 200 })
+  } catch (error) {
+    console.error("[GET /api/admin/promos/[id]]", error)
+    return NextResponse.json(
+      { error: "Failed to fetch promo code" },
+      { status: 500 }
+    )
+  }
+}
+
+// ── PATCH /api/admin/promos/[id] ─────────────────────────────────────────────
 
 export async function PATCH(
   req: Request,
@@ -73,6 +104,13 @@ export async function DELETE(
     }
 
     const { id } = await params
+    if (!id) {
+      return NextResponse.json(
+        { error: "Promo code ID is required" },
+        { status: 400 }
+      )
+    }
+
     await dbConnect()
 
     const promo = await PromoCode.findById(id)

@@ -24,6 +24,8 @@ import {
   AdminOverviewStatsSkeleton,
   AdminAnalyticsDashboardSkeleton,
   AdminFeedbackSkeleton,
+  AdminPromosSkeleton,
+  AdminPromoFormSkeleton,
 } from "./skeletons/AdminSkeletons"
 
 import {
@@ -66,6 +68,8 @@ type SkeletonVariant =
   | "admin-overview-stats"
   | "admin-analytics-dashboard"
   | "admin-feedback"
+  | "admin-promos"
+  | "admin-promo-form"
   | "customer-dashboard"
   | "customer-orders"
   | "customer-wallet"
@@ -131,6 +135,10 @@ export function PageSkeleton({ variant, count = 6 }: PageSkeletonProps) {
       return <AdminAnalyticsDashboardSkeleton />
     case "admin-feedback":
       return <AdminFeedbackSkeleton count={count} />
+    case "admin-promos":
+      return <AdminPromosSkeleton />
+    case "admin-promo-form":
+      return <AdminPromoFormSkeleton />
     default:
       return null
   }

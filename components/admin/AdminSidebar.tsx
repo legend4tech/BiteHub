@@ -23,6 +23,7 @@ import {
   Banknote,
   Gift,
   Megaphone,
+  TicketPercent,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -62,6 +63,7 @@ const navItems: {
   { section: "customers", label: "Customers", icon: User },
   { section: "payouts", label: "Payouts", icon: Banknote },
   { section: "campaigns", label: "Campaigns", icon: Gift },
+  { section: "promos", label: "Promo Codes", icon: TicketPercent },
   { section: "broadcasts", label: "Broadcast", icon: Megaphone },
   { section: "feedback", label: "Feedback", icon: Star },
   { section: "staff", label: "Staff Users", icon: Users },

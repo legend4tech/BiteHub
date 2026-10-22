@@ -13,6 +13,7 @@ import { escapeRegex } from "@/lib/utils"
 import MenuItem from "@/models/MenuItem"
 import {
   serializeVendor,
+  serializePublicVendor,
   serializeMenuItem,
   type LeanVendor,
 } from "@/lib/serializers"
@@ -94,7 +95,7 @@ export async function getVendors(options: GetVendorsOptions = {}) {
   )
 
   const serializedVendors = vendors.map((vendor) => ({
-    ...serializeVendor(vendor),
+    ...serializePublicVendor(vendor),
     itemCount: countMap.get(vendor._id.toString()) || 0,
   }))
 
@@ -125,7 +126,7 @@ export async function getFeaturedVendors(
     .limit(limit)
     .lean()
 
-  return vendorDocs.map((v) => serializeVendor(v as LeanVendor))
+  return vendorDocs.map((v) => serializePublicVendor(v as LeanVendor))
 }
 
 // ─── Vendor Profile (Dashboard) ────────────────────────────────────────────────
@@ -399,7 +400,7 @@ export async function getVendorDataBySlug(
   }))
 
   return {
-    vendor: serializeVendor(vendor as LeanVendor),
+    vendor: serializePublicVendor(vendor as LeanVendor),
     menuItems: mappedItems,
     allCategories: allCategoryDocs,
   }

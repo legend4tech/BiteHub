@@ -3,27 +3,26 @@ import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import { validatePromoCodeInputSchema } from "@/lib/schemas"
 import { validatePromoCode } from "@/lib/services/promoCodeService"
-import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 import Customer from "@/models/Customer"
+import MenuItem from "@/models/MenuItem"
 
 // ── POST /api/customer/promo/validate ─────────────────────────────────────────
 
 export async function POST(req: Request) {
   try {
+    // 1. Auth check (NextAuth session)
     const session = await auth()
+    // Note: Rate limiting for this mutation route is handled at the Edge by proxy.ts
 
-    if (isRateLimitingEnabled) {
-      const rateLimitKey = session?.user?.id
-        ? `promo_val_user_${session.user.id}`
-        : `promo_val_ip_${req.headers.get("x-forwarded-for") || "anonymous"}`
-
-      const { success } = await strictRateLimiter.limit(rateLimitKey)
-      if (!success) {
-        return NextResponse.json(
-          { error: "Too many requests. Please try again later." },
-          { status: 429 }
-        )
-      }
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        {
+          error:
+            "Please sign in or create an account to use promo codes with your BiteHub Wallet.",
+          requiresSignup: true,
+        },
+        { status: 401 }
+      )
     }
 
     const body = await req.json()
@@ -37,21 +36,27 @@ export async function POST(req: Request) {
 
     await dbConnect()
 
-    let customerId: string | null = null
-    if (session?.user?.email) {
-      const customer = await Customer.findOne({
-        email: session.user.email.toLowerCase(),
-      })
-        .select("_id")
-        .lean()
-      if (customer) {
-        customerId = customer._id.toString()
-      }
+    const customer = await Customer.findOne({
+      email: session.user.email.toLowerCase(),
+    })
+      .select("_id")
+      .lean()
+
+    if (!customer) {
+      return NextResponse.json(
+        {
+          error:
+            "Customer account not found. Please create an account to use promo codes.",
+          requiresSignup: true,
+        },
+        { status: 401 }
+      )
     }
+
+    const customerId = customer._id.toString()
 
     // Sanitize item prices against ground-truth database records to prevent client spoofing
     const itemIds = parsed.data.items.map((i) => i.menuItemId)
-    const MenuItem = (await import("@/models/MenuItem")).default
     const dbMenuItems = await MenuItem.find({
       _id: { $in: itemIds },
       vendorId: parsed.data.vendorId,

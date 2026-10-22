@@ -10,12 +10,12 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton"
 import { FetchError } from "@/components/shared/FetchError"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { DataPagination } from "@/components/shared/DataPagination"
 import { cn } from "@/lib/utils"
 
 function CustomerRow({
@@ -228,28 +228,13 @@ export function CustomerList() {
           </div>
 
           {data && data.pages > 1 && (
-            <div className="flex items-center justify-between border-t bg-muted/20 px-6 py-4">
-              <span className="text-sm text-muted-foreground">
-                Page {data.currentPage} of {data.pages}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={data.currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
-                  disabled={data.currentPage === data.pages}
-                >
-                  Next
-                </Button>
-              </div>
+            <div className="border-t bg-muted/20 px-6 py-4">
+              <DataPagination
+                currentPage={data.currentPage}
+                totalPages={data.pages}
+                totalItems={data.total}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </div>

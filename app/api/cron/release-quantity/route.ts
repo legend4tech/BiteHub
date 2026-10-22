@@ -105,7 +105,10 @@ export async function GET(request: Request) {
           // Restore promo code if applied on this expired order
           if (order.promoCode && (order.promoDiscountInKobo || 0) > 0) {
             const { default: PromoCode } = await import("@/models/PromoCode")
-            await PromoCode.findOneAndUpdate(
+            const { default: PromoCodeRedemption } =
+              await import("@/models/PromoCodeRedemption")
+
+            const promo = await PromoCode.findOneAndUpdate(
               { code: order.promoCode.trim().toUpperCase() },
               {
                 $inc: {
@@ -115,6 +118,16 @@ export async function GET(request: Request) {
               },
               { session }
             )
+
+            if (promo) {
+              await PromoCodeRedemption.deleteOne(
+                {
+                  promoCodeId: promo._id,
+                  orderId: order.orderId,
+                },
+                { session }
+              )
+            }
           }
 
           // Mark order as cancelled/expired so we don't process it again

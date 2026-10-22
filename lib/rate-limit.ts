@@ -16,7 +16,7 @@ export const isRateLimitingEnabled = true
 export const strictRateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
-  analytics: true,
+  analytics: false,
   prefix: "bitehub:ratelimit:strict:device",
 })
 
@@ -26,6 +26,6 @@ export const strictRateLimiter = new Ratelimit({
 export const strictIpRateLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(20, "1 m"),
-  analytics: true,
+  analytics: false,
   prefix: "bitehub:ratelimit:strict:ip",
 })

@@ -16,12 +16,12 @@ import { getCanonicalEmail, isDisposableEmail } from "@/lib/emailNormalization"
 import { processReferralSignup } from "@/lib/services/gamificationService"
 
 import dbConnect from "@/lib/db"
-import {
-  serializeWallet,
-  serializeWalletTransaction,
-  serializeCustomer,
-} from "@/lib/serializers"
+import { serializeCustomer } from "@/lib/serializers"
 import { escapeRegex } from "@/lib/utils"
+export {
+  getCustomerWalletData,
+  getCustomerTransactionsList,
+} from "./customerWalletService"
 
 /**
  * Generates a unique username based on the customer's name.
@@ -323,93 +323,6 @@ export const registerOrClaimCustomer = initiateCustomerSignup
 export async function getCustomerByEmail(email: string) {
   await dbConnect()
   return await Customer.findOne({ email }).lean()
-}
-
-export async function getCustomerWalletData(
-  customerId: string | import("mongoose").Types.ObjectId
-) {
-  await dbConnect()
-  const Wallet = (await import("@/models/Wallet")).default
-  const WalletTransaction = (await import("@/models/WalletTransaction")).default
-
-  const wallet = await Wallet.findOne({ customerId }).lean()
-  let transactions: import("@/types/customer").Transaction[] = []
-  let expiringRewards: import("@/types/customer").Transaction[] = []
-
-  if (wallet) {
-    const rawTransactions = await WalletTransaction.find({ customerId })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean()
-
-    transactions = rawTransactions
-      .map(serializeWalletTransaction)
-      .filter(Boolean) as import("@/types/customer").Transaction[]
-
-    const now = new Date()
-    const rawExpiringRewards = await WalletTransaction.find({
-      customerId,
-      type: "reward",
-      direction: "credit",
-      isExpired: false,
-      expiresAt: { $gt: now },
-      $or: [
-        { remainingAmountInKobo: { $gt: 0 } },
-        { remainingAmountInKobo: { $exists: false } },
-      ],
-    })
-      .sort({ expiresAt: 1 })
-      .lean()
-
-    expiringRewards = rawExpiringRewards
-      .map(serializeWalletTransaction)
-      .filter(Boolean) as import("@/types/customer").Transaction[]
-  }
-
-  return { wallet: serializeWallet(wallet), transactions, expiringRewards }
-}
-
-export async function getCustomerTransactionsList(
-  customerId: string | import("mongoose").Types.ObjectId,
-  page: number = 1,
-  limit: number = 10,
-  filter: string = "all"
-) {
-  await dbConnect()
-  const WalletTransaction = (await import("@/models/WalletTransaction")).default
-
-  const query: Record<string, unknown> = { customerId }
-
-  if (filter === "credit") {
-    query.direction = "credit"
-  } else if (filter === "debit") {
-    query.direction = "debit"
-  } else if (filter === "rewards") {
-    query.type = "reward"
-  }
-
-  const skip = (page - 1) * limit
-
-  const [rawTransactions, totalTransactions] = await Promise.all([
-    WalletTransaction.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    WalletTransaction.countDocuments(query),
-  ])
-
-  const transactions = rawTransactions
-    .map(serializeWalletTransaction)
-    .filter(Boolean) as import("@/types/customer").Transaction[]
-
-  return {
-    transactions,
-    page,
-    totalPages: Math.ceil(totalTransactions / limit),
-    totalTransactions,
-    hasMore: skip + transactions.length < totalTransactions,
-  }
 }
 
 export async function getCustomerReferralCode(

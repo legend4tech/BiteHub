@@ -3,7 +3,7 @@ import { auth } from "@/auth"
 import dbConnect from "@/lib/db"
 import PromoCode, { IPromoCode } from "@/models/PromoCode"
 import { createPromoCodeSchema } from "@/lib/schemas"
-import { serializePromoCode } from "@/lib/serializers/promoSerializer"
+import { serializePromoCode } from "@/lib/serializers"
 
 // ── GET /api/admin/promos ─────────────────────────────────────────────────────
 

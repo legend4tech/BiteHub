@@ -11,6 +11,7 @@ import {
 import { DownloadReceiptButton } from "@/components/customer/DownloadReceiptButton"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { DataPagination } from "@/components/shared/DataPagination"
 
 export const dynamic = "force-dynamic"
 
@@ -31,13 +32,12 @@ export default async function CustomerTransactionsPage(props: {
   const page = parseInt(searchParams?.page || "1", 10)
   const filter = searchParams?.filter || "all"
 
-  const { transactions, totalPages, hasMore } =
-    await getCustomerTransactionsList(
-      customer._id.toString(),
-      page,
-      20, // limit
-      filter
-    )
+  const { transactions, totalPages } = await getCustomerTransactionsList(
+    customer._id.toString(),
+    page,
+    20, // limit
+    filter
+  )
 
   return (
     <div className="space-y-6">
@@ -179,35 +179,12 @@ export default async function CustomerTransactionsPage(props: {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4">
-          <Button variant="outline" disabled={page === 1} asChild={page > 1}>
-            {page > 1 ? (
-              <Link
-                href={`/customer/transactions?page=${page - 1}&filter=${filter}`}
-              >
-                Previous
-              </Link>
-            ) : (
-              <span>Previous</span>
-            )}
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          <Button variant="outline" disabled={!hasMore} asChild={hasMore}>
-            {hasMore ? (
-              <Link
-                href={`/customer/transactions?page=${page + 1}&filter=${filter}`}
-              >
-                Next
-              </Link>
-            ) : (
-              <span>Next</span>
-            )}
-          </Button>
-        </div>
-      )}
+      <DataPagination
+        currentPage={page}
+        totalPages={totalPages}
+        getPageUrl={(p) => `/customer/transactions?page=${p}&filter=${filter}`}
+        className="pt-4"
+      />
     </div>
   )
 }
