@@ -78,7 +78,10 @@ export function Navbar() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="pointer-events-auto flex h-20 w-full max-w-7xl items-center justify-between rounded-3xl border border-white/20 bg-background/60 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-2xl sm:px-6 dark:border-white/10"
       >
-        <Link href={`/?${cq}`} className="group flex items-center gap-2.5">
+        <Link
+          href={`/?${cq}`}
+          className="group flex shrink-0 items-center gap-2.5"
+        >
           <Image
             src={APP_LOGO_URL}
             alt={APP_NAME}
@@ -86,7 +89,7 @@ export function Navbar() {
             height={48}
             className="h-12 w-auto rounded-xl object-contain transition-all duration-300 group-hover:scale-105 group-hover:-rotate-2"
           />
-          <div className="flex flex-col -space-y-1">
+          <div className="hidden flex-col -space-y-1 sm:flex">
             <span className="font-heading text-2xl leading-none font-black tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-3xl">
               Bite<span className="text-primary">Hub</span>
             </span>

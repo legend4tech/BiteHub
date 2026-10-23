@@ -12,7 +12,7 @@ export function PWAInstallBanner() {
   if (!isInstallable || dismissed) return null
 
   return (
-    <div className="fixed bottom-4 left-4 z-[98] max-w-[320px] rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300 sm:bottom-6 sm:left-6 sm:max-w-sm">
+    <div className="fixed bottom-4 left-4 z-40 max-w-[320px] rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300 sm:bottom-6 sm:left-6 sm:max-w-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">

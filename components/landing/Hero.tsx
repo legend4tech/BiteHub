@@ -86,8 +86,13 @@ export function Hero() {
           </div>
 
           {/* CTAs */}
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-            <Button asChild variant="hero" size="xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button
+              asChild
+              variant="hero"
+              size="xl"
+              className="w-full sm:w-auto"
+            >
               <Link
                 href={`/menus?${campusQuery}`}
                 onMouseMove={handleMouseMove}
@@ -95,10 +100,15 @@ export function Hero() {
                 onMouseLeave={handleMouseLeave}
               >
                 Browse menus
-                <ExternalLink className="ml-2 size-5" />
+                <ExternalLink className="ml-2 size-4 sm:size-5" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="xl">
+            <Button
+              asChild
+              variant="outline"
+              size="xl"
+              className="w-full sm:w-auto"
+            >
               <Link
                 href={`/vendors?${campusQuery}`}
                 onMouseMove={handleMouseMove}
@@ -106,7 +116,7 @@ export function Hero() {
                 onMouseLeave={handleMouseLeave}
               >
                 Browse vendors
-                <ExternalLink className="ml-2 size-5" />
+                <ExternalLink className="ml-2 size-4 sm:size-5" />
               </Link>
             </Button>
           </div>

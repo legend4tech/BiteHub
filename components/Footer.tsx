@@ -168,12 +168,12 @@ export function Footer() {
                   disabled={isSubmitting}
                   required
                   placeholder="Enter your email"
-                  className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm text-foreground shadow-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:opacity-50"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-4 text-sm text-foreground shadow-sm transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+                  className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
                 >
                   {isSubmitting ? "Subscribing..." : "Subscribe"}
                 </button>
