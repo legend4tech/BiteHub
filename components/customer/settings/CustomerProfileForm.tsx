@@ -13,8 +13,9 @@ import type { AxiosError } from "axios"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Skeleton } from "@/components/ui/skeleton"
 export function CustomerProfileForm() {
-  const { data: profile, error } = useCustomerProfile()
+  const { data: profile, isLoading, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
   const { update } = useSession()
   const {
@@ -112,6 +113,40 @@ export function CustomerProfileForm() {
       }
     )
   }
+
+  if (isLoading || !profile) {
+    return (
+      <div className="space-y-8 rounded-3xl border border-border bg-card p-6">
+        <div>
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="mt-1.5 h-4 w-60" />
+        </div>
+        <div className="max-w-[200px]">
+          <Skeleton className="h-44 w-44 rounded-2xl" />
+        </div>
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-4 rounded" />
+            <Skeleton className="h-4 w-52" />
+          </div>
+        </div>
+        <Skeleton className="h-11 w-32 rounded-xl" />
+      </div>
+    )
+  }
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}

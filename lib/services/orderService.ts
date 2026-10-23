@@ -132,25 +132,56 @@ export async function getCustomerOrdersCount(email: string) {
   return Order.countDocuments({ customerEmail: email })
 }
 
+interface GetCustomerOrdersPaginatedOptions {
+  email: string
+  customerId?: string
+  status?: string
+  page?: number
+  limit?: number
+}
+
 /**
- * Fetches paginated orders for a customer.
+ * Fetches paginated orders for a customer with optional status filtering and counts.
  */
-export async function getCustomerOrdersPaginated(
-  email: string,
+export async function getCustomerOrdersPaginated({
+  email,
+  customerId,
+  status = "all",
   page = 1,
-  limit = 20
-) {
+  limit = 20,
+}: GetCustomerOrdersPaginatedOptions) {
   await dbConnect()
   const skip = (page - 1) * limit
 
-  const [ordersDocs, totalOrders] = await Promise.all([
-    Order.find({ customerEmail: email })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Order.countDocuments({ customerEmail: email }),
+  const baseFilter = customerId
+    ? {
+        $or: [{ customerId }, { customerEmail: email }],
+      }
+    : { customerEmail: email }
+
+  const filter: Record<string, unknown> = { ...baseFilter }
+  if (status && status !== "all") {
+    filter.status = status
+  }
+
+  const [ordersDocs, totalOrders, statusAggregation] = await Promise.all([
+    Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Order.countDocuments(filter),
+    Order.aggregate([
+      { $match: baseFilter },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
   ])
+
+  const counts: Record<string, number> = { all: 0 }
+  let totalAll = 0
+  for (const item of statusAggregation) {
+    if (item._id) {
+      counts[item._id] = item.count
+      totalAll += item.count
+    }
+  }
+  counts["all"] = totalAll
 
   const orders = ordersDocs
     .map((doc) => serializeOrder(doc as LeanOrder))
@@ -160,5 +191,6 @@ export async function getCustomerOrdersPaginated(
     orders,
     totalOrders,
     hasMore: skip + ordersDocs.length < totalOrders,
+    counts,
   }
 }

@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/select"
 import { getSchoolName, getCampusName } from "@/lib/config/campus"
 import { useSystemLandmarks } from "@/hooks/shared/useLandmarks"
+import { SUPPORT_EMAIL } from "@/lib/constants"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { AxiosError } from "axios"
 export function CustomerDeliveryForm() {
-  const { data: profile, error } = useCustomerProfile()
+  const { data: profile, isLoading, error } = useCustomerProfile()
   const updateProfile = useUpdateCustomerProfile()
   const {
     control,
@@ -69,6 +71,40 @@ export function CustomerDeliveryForm() {
       }
     )
   }
+
+  if (isLoading || !profile) {
+    return (
+      <div className="space-y-8 rounded-3xl border border-border bg-card p-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-16 rounded-xl" />
+            <Skeleton className="h-16 rounded-xl" />
+          </div>
+        </div>
+        <hr className="border-border" />
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-52" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-44" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+          </div>
+        </div>
+        <Skeleton className="h-11 w-32 rounded-xl" />
+      </div>
+    )
+  }
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -82,8 +118,14 @@ export function CustomerDeliveryForm() {
             School & Campus
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your school and campus are locked to your registered account.
-            Contact support if you need to change them.
+            Your school and campus are locked to your registered account.{" "}
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+            >
+              Contact support
+            </a>{" "}
+            if you need to change them.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-4">

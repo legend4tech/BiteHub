@@ -167,8 +167,7 @@ interface Props {
 
 export const TransactionReceiptPdf = ({ transaction, customerName }: Props) => {
   const date = new Date(transaction.createdAt).toLocaleString()
-  const isCredit =
-    transaction.type.includes("deposit") || transaction.type === "reward"
+  const isCredit = transaction.direction === "credit"
 
   // Replace weird Naira symbol with NGN in PDF to avoid font rendering issues
   const rawPriceStr = formatPriceExact(transaction.amountInKobo)

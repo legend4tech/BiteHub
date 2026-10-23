@@ -1,18 +1,29 @@
 import { auth } from "@/auth"
 import { CustomerOrderList } from "@/components/customer/orders/CustomerOrderList"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { getCustomerOrdersPaginated } from "@/lib/services/orderService"
-export default async function CustomerOrdersPage() {
+
+export default async function CustomerOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>
+}) {
   const session = await auth()
   if (!session?.user?.email) {
     return null
   }
+
+  const resolvedParams = await searchParams
+  const activeStatus = resolvedParams.status || "all"
   const limit = 20
-  const { orders, hasMore } = await getCustomerOrdersPaginated(
-    session.user.email,
-    1,
-    limit
-  )
+
+  const { orders, hasMore, counts } = await getCustomerOrdersPaginated({
+    email: session.user.email,
+    customerId: session.user.id,
+    status: activeStatus,
+    page: 1,
+    limit,
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -23,16 +34,13 @@ export default async function CustomerOrdersPage() {
           </p>
         </div>
       </div>
-      {orders.length === 0 ? (
-        <EmptyState
-          title="No orders found"
-          description="You haven't placed any orders yet."
-          action={{ label: "Browse Menus", href: "/" }}
-          className="rounded-xl border border-dashed border-border bg-card/50"
-        />
-      ) : (
-        <CustomerOrderList initialOrders={orders} hasMoreInitial={hasMore} />
-      )}
+
+      <CustomerOrderList
+        initialOrders={orders}
+        hasMoreInitial={hasMore}
+        initialCounts={counts}
+        initialStatus={activeStatus}
+      />
     </div>
   )
 }

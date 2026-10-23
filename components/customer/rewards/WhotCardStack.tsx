@@ -97,13 +97,13 @@ export function WhotCardStack() {
                 }}
               >
                 <div
-                  className={`flex h-56 w-40 flex-col justify-between overflow-hidden rounded-xl border-4 border-border bg-card p-3 shadow-xl transition-all duration-300 ${isHovered ? "shadow-2xl shadow-primary/30" : ""} `}
+                  className={`flex h-60 w-44 flex-col justify-between overflow-hidden rounded-xl border-4 border-border bg-card p-3.5 shadow-xl transition-all duration-300 ${isHovered ? "shadow-2xl shadow-primary/30" : ""} `}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Sparkles className="size-3" />
+                      <Sparkles className="size-3.5" />
                     </div>
-                    <span className="text-[10px] font-black tracking-widest text-primary uppercase">
+                    <span className="text-xs font-black tracking-wider text-primary uppercase">
                       FREE MEAL
                     </span>
                   </div>
@@ -115,13 +115,13 @@ export function WhotCardStack() {
                     <h4 className="line-clamp-2 text-xs leading-tight font-bold">
                       {voucher.menuItem?.name || "Secret Reward"}
                     </h4>
-                    <p className="mt-1 text-[10px] font-semibold text-muted-foreground line-through">
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground line-through">
                       {voucher.menuItem?.priceInKobo
                         ? formatPrice(voucher.menuItem.priceInKobo)
                         : ""}
                     </p>
 
-                    <p className="mt-1.5 text-[9px] font-bold tracking-wider text-destructive uppercase">
+                    <p className="mt-1.5 text-xs font-bold tracking-wide text-destructive uppercase">
                       Exp:{" "}
                       {new Date(voucher.expiresAt).toLocaleDateString("en-GB", {
                         day: "numeric",
@@ -134,22 +134,22 @@ export function WhotCardStack() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 w-full text-[10px] font-bold"
+                      className="h-8 w-full text-xs font-bold"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleCopy(voucher.code)
                       }}
                     >
-                      {voucher.code} <Copy className="ml-1 size-2" />
+                      {voucher.code} <Copy className="ml-1.5 size-3.5" />
                     </Button>
 
                     <Button
                       asChild
                       size="sm"
-                      className="h-7 w-full text-[10px] font-bold"
+                      className="h-8 w-full text-xs font-bold"
                     >
                       <Link href={`/menu/${voucher.menuItemId}`}>
-                        Order Now <ExternalLink className="ml-1 size-2" />
+                        Order Now <ExternalLink className="ml-1.5 size-3.5" />
                       </Link>
                     </Button>
                   </div>

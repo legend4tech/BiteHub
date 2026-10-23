@@ -53,6 +53,7 @@ export interface CustomerOrdersPageData {
   page: number
   hasMore: boolean
   totalOrders: number
+  counts?: Record<string, number>
 }
 
 export interface CustomerProfile {

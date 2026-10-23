@@ -24,7 +24,7 @@ export function CookieBanner() {
   if (isDismissed || !show) return null
 
   return (
-    <div className="fixed right-4 bottom-4 z-40 max-w-sm rounded-xl border border-border bg-background p-4 shadow-xl transition-all duration-300 sm:right-6 sm:bottom-6">
+    <div className="fixed right-4 bottom-4 left-4 z-40 max-w-sm rounded-xl border border-border bg-background p-4 shadow-xl transition-all duration-300 sm:right-6 sm:bottom-6 sm:left-auto">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 font-heading font-semibold text-foreground">

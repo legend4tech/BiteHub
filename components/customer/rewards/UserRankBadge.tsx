@@ -50,7 +50,7 @@ export function UserRankBadge({ coins }: UserRankBadgeProps) {
 
       {/* Rank Text */}
       <div className="relative z-10 flex flex-col">
-        <span className="text-[10px] font-black tracking-widest uppercase opacity-80">
+        <span className="text-xs font-black tracking-wider uppercase opacity-90">
           Rank
         </span>
         <span className="text-sm leading-tight font-bold">{rank}</span>

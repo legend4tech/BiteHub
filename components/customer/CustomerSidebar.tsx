@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  Home,
+  UtensilsCrossed,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "@/components/ThemeToggle"
@@ -67,6 +67,29 @@ function NavLinks({
   return (
     <TooltipProvider delayDuration={0}>
       <nav className="flex-1 space-y-1.5 px-3 py-6">
+        <div className="mb-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/menus"
+                onClick={onNavigate}
+                className={cn(
+                  "group flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/10 font-semibold text-primary shadow-2xs transition-all duration-200 hover:border-primary hover:bg-primary hover:text-primary-foreground",
+                  collapsed ? "justify-center p-3" : "px-4 py-2.5 text-sm"
+                )}
+              >
+                <UtensilsCrossed className="size-4.5 shrink-0 transition-transform group-hover:scale-110" />
+                {!collapsed && <span>Browse Menus</span>}
+              </Link>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right" className="font-semibold">
+                Browse Menus
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+
         {navItems.map((item) => {
           const href = `/customer/${item.section}`
           const active =
@@ -141,7 +164,7 @@ function SidebarContent({
               <span className="font-heading text-xl leading-none font-black tracking-tight text-foreground transition-colors group-hover:text-primary">
                 Bite<span className="text-primary">Hub</span>
               </span>
-              <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Customer
               </span>
             </div>
@@ -193,27 +216,6 @@ function SidebarContent({
         )}
       >
         <TooltipProvider delayDuration={0}>
-          {/* Back to site */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className={cn(
-                  "group flex w-full items-center gap-3 rounded-xl text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-accent/50 hover:text-foreground",
-                  collapsed ? "justify-center p-3" : "px-4 py-3"
-                )}
-              >
-                <Home className="size-4.5 shrink-0 transition-transform group-hover:-translate-x-0.5" />
-                {!collapsed && "Back to site"}
-              </Link>
-            </TooltipTrigger>
-            {collapsed && (
-              <TooltipContent side="right" className="font-medium">
-                Back to site
-              </TooltipContent>
-            )}
-          </Tooltip>
-
           {/* Theme toggle row */}
           <div
             className={cn(

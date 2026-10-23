@@ -4,9 +4,12 @@ export function CustomerDashboardSkeleton() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <Skeleton className="mb-2 h-8 w-64" />
-        <Skeleton className="h-4 w-96" />
+      <div className="flex items-center gap-4">
+        <Skeleton className="size-14 shrink-0 rounded-full sm:size-16" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-7 w-48 max-w-full sm:h-8 sm:w-64" />
+          <Skeleton className="h-4 w-full max-w-xs" />
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -14,11 +17,11 @@ export function CustomerDashboardSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm"
+            className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6"
           >
             <div className="flex items-center gap-4">
-              <Skeleton className="size-12 rounded-full" />
-              <div className="space-y-2">
+              <Skeleton className="size-12 shrink-0 rounded-full" />
+              <div className="min-w-0 space-y-2">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-8 w-32" />
               </div>
@@ -34,18 +37,20 @@ export function CustomerDashboardSkeleton() {
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Milestones Skeleton */}
         <div className="space-y-6 lg:col-span-7">
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Skeleton className="size-9 rounded-lg" />
-                <Skeleton className="h-6 w-40" />
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b border-border bg-primary/5 p-4 sm:px-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Skeleton className="size-12 shrink-0 rounded-xl sm:size-14" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-5 w-36 sm:w-44" />
+                  <Skeleton className="h-3.5 w-48 max-w-full" />
+                </div>
               </div>
-              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="hidden h-8 w-24 shrink-0 rounded-md sm:block" />
             </div>
-            <Skeleton className="mb-4 h-4 w-3/4" />
-            <div className="space-y-4">
-              <Skeleton className="h-24 w-full rounded-xl" />
-              <Skeleton className="h-24 w-full rounded-xl" />
+            <div className="space-y-4 p-5 sm:p-6">
+              <Skeleton className="h-20 w-full rounded-xl sm:h-24" />
+              <Skeleton className="h-20 w-full rounded-xl sm:h-24" />
             </div>
           </div>
         </div>
@@ -60,20 +65,20 @@ export function CustomerDashboardSkeleton() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className={`flex items-center justify-between p-4 ${
+                className={`flex items-center justify-between gap-3 p-4 ${
                   i !== 0 ? "border-t border-border" : ""
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <Skeleton className="size-10 rounded-lg" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-3 w-40" />
+                <div className="flex min-w-0 items-center gap-3">
+                  <Skeleton className="size-9 shrink-0 rounded-lg sm:size-10" />
+                  <div className="min-w-0 space-y-1.5">
+                    <Skeleton className="h-4 w-28 sm:w-32" />
+                    <Skeleton className="h-3 w-20 sm:w-28" />
                   </div>
                 </div>
-                <div className="flex flex-col items-end space-y-2">
-                  <Skeleton className="h-5 w-20" />
-                  <Skeleton className="h-4 w-16 rounded-full" />
+                <div className="flex shrink-0 flex-col items-end space-y-1.5">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
                 </div>
               </div>
             ))}
@@ -86,33 +91,40 @@ export function CustomerDashboardSkeleton() {
 
 export function CustomerOrderCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       {/* Header */}
-      <div className="flex flex-col border-b border-border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-3 w-56" />
+      <div className="border-b border-border bg-muted/10 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-10 rounded-xl sm:size-12" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-5 w-36 sm:w-48" />
+            </div>
+          </div>
+          <Skeleton className="h-6 w-24 rounded-full" />
         </div>
-        <div className="mt-2 flex flex-col items-end gap-2 sm:mt-0">
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-6 w-20 rounded-full" />
+        <div className="mt-3 flex gap-3 border-t border-border/40 pt-2.5">
+          <Skeleton className="h-3.5 w-32" />
+          <Skeleton className="h-3.5 w-28" />
         </div>
       </div>
       {/* Body */}
-      <div className="space-y-4 p-4">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-16" />
+      <div className="space-y-3 p-4 sm:p-5">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-10 w-full rounded-xl" />
+      </div>
+      {/* Footer */}
+      <div className="border-t border-border bg-muted/5 p-4 sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Skeleton className="h-4 w-36" />
+          <div className="flex items-center justify-between gap-4 border-t border-border/40 pt-3 sm:justify-end sm:border-0 sm:pt-0">
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <Skeleton className="h-9 w-28 rounded-xl" />
           </div>
-          <div className="flex justify-between">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-16" />
-          </div>
-        </div>
-        <div className="mt-4 flex justify-between border-t border-border pt-4">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-20" />
         </div>
       </div>
     </div>
@@ -145,7 +157,7 @@ export function CustomerWalletSkeleton() {
     <div className="space-y-6">
       <div>
         <Skeleton className="mb-2 h-8 w-32" />
-        <Skeleton className="h-4 w-80" />
+        <Skeleton className="h-4 w-full max-w-80" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -154,6 +166,7 @@ export function CustomerWalletSkeleton() {
           <div className="space-y-4">
             <Skeleton className="h-6 w-40" />
             <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-14 w-full rounded-lg" />
           </div>
           <div className="mt-8 space-y-3 border-t border-border pt-6">
             <Skeleton className="h-10 w-full rounded-md" />
@@ -176,28 +189,7 @@ export function CustomerWalletSkeleton() {
       {/* Transactions */}
       <div className="space-y-4">
         <Skeleton className="h-6 w-48" />
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex items-center justify-between p-4 ${
-                i !== 0 ? "border-t border-border" : ""
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <Skeleton className="size-10 rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-              <div className="flex flex-col items-end space-y-2">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-4 w-16 rounded-full" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <CustomerTransactionListSkeleton count={3} />
       </div>
     </div>
   )
@@ -208,17 +200,21 @@ export function CustomerRewardsSkeleton() {
     <div className="space-y-6">
       <div>
         <Skeleton className="mb-2 h-8 w-48" />
-        <Skeleton className="h-4 w-96" />
+        <Skeleton className="h-4 w-full max-w-md" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Main Balance */}
-        <div className="flex h-64 flex-col justify-between rounded-2xl border border-border bg-card p-8 shadow-sm md:col-span-2">
+        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8 md:col-span-2">
           <div className="space-y-4">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-12 w-48" />
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
+            <Skeleton className="h-12 w-40" />
+            <Skeleton className="h-4 w-60 max-w-full" />
           </div>
-          <div className="mt-8 flex gap-4">
+          <div className="mt-6 flex gap-3 sm:gap-4">
             <Skeleton className="h-16 flex-1 rounded-xl" />
             <Skeleton className="h-16 flex-1 rounded-xl" />
           </div>
@@ -241,8 +237,8 @@ export function CustomerRewardsSkeleton() {
 
       {/* History */}
       <div className="space-y-4">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-6 w-40" />
+        <CustomerTransactionListSkeleton count={3} />
       </div>
     </div>
   )
@@ -307,6 +303,37 @@ export function CustomerReviewNewSkeleton() {
       <Skeleton className="h-64 rounded-[24px]" />
       <Skeleton className="h-96 rounded-[24px]" />
       <Skeleton className="h-14 rounded-md" />
+    </div>
+  )
+}
+
+export function CustomerTransactionListSkeleton({
+  count = 6,
+}: {
+  count?: number
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6 ${
+            i !== 0 ? "border-t border-border" : ""
+          }`}
+        >
+          <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+            <Skeleton className="size-12 shrink-0 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-40 sm:w-56" />
+              <Skeleton className="h-3 w-48 sm:w-72" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

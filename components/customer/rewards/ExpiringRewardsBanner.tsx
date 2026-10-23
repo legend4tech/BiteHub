@@ -29,18 +29,20 @@ export function ExpiringRewardsBanner({ rewards }: { rewards: Transaction[] }) {
 
   return (
     <>
-      <div className="mt-2 flex items-center justify-between rounded-lg border border-warning/20 bg-warning/10 px-3 py-2">
-        <div className="flex items-center gap-2 text-warning">
-          <AlertCircle className="size-4" />
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2 text-warning">
+          <AlertCircle className="size-4 shrink-0" />
           <span className="text-xs font-medium">
-            {nearestAmount} BHC expire on {nearestDate}
+            <span className="font-bold">{nearestAmount} BHC</span> expires{" "}
+            {nearestDate}
           </span>
         </div>
         <button
+          type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center text-xs font-medium text-warning hover:underline"
+          className="flex shrink-0 cursor-pointer items-center gap-0.5 text-xs font-semibold whitespace-nowrap text-warning hover:underline"
         >
-          View All <ChevronRight className="size-3" />
+          View All <ChevronRight className="size-3 shrink-0" />
         </button>
       </div>
 

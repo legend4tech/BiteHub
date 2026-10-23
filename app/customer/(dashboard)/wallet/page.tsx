@@ -2,18 +2,12 @@ export const dynamic = "force-dynamic"
 import { auth } from "@/auth"
 import Link from "next/link"
 import { formatPriceExact } from "@/lib/format"
-import {
-  Wallet as WalletIcon,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Landmark,
-  Banknote,
-} from "lucide-react"
+import { Wallet as WalletIcon, Landmark, Banknote } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
 import { ActivateWalletForm } from "@/components/customer/ActivateWalletForm"
+import { TransactionRow } from "@/components/customer/TransactionRow"
 import { FundWalletFlow } from "@/components/customer/FundWalletFlow"
-import { WalletAutoRefresher } from "@/components/customer/WalletAutoRefresher"
 import type { Transaction } from "@/types/customer"
 import {
   getCustomerByEmail,
@@ -32,10 +26,11 @@ export default async function CustomerWalletPage() {
     customer._id.toString()
   )
   const walletBalance = wallet ? wallet.balanceInKobo : 0
+  const promoBalance = wallet ? wallet.promoBalanceInKobo || 0 : 0
+  const depositBalance = wallet ? wallet.depositBalanceInKobo || 0 : 0
   const isActive = !!wallet?.accountNumber
   return (
     <div className="space-y-6">
-      <WalletAutoRefresher />
       <div>
         <h1 className="font-heading text-2xl font-bold">My Wallet</h1>
         <p className="text-muted-foreground">
@@ -57,6 +52,24 @@ export default async function CustomerWalletPage() {
             <h2 className="text-4xl font-bold tracking-tight">
               {formatPriceExact(walletBalance)}
             </h2>
+            {wallet && (
+              <div className="mt-4 space-y-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Deposited</span>
+                  <span className="font-semibold">
+                    {formatPriceExact(depositBalance)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    BiteHub Coins (BHC)
+                  </span>
+                  <span className="font-semibold text-primary">
+                    {formatPriceExact(promoBalance)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <div className="mt-8 border-t border-border pt-6">
             {!isActive ? (
@@ -122,59 +135,14 @@ export default async function CustomerWalletPage() {
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-card">
-            {transactions.map((tx: Transaction, i: number) => {
-              const isCredit =
-                tx.type.includes("deposit") || tx.type === "reward"
-              return (
-                <div
-                  key={tx.id}
-                  className={`flex items-center justify-between p-4 ${
-                    i !== 0 ? "border-t border-border" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`rounded-lg p-2 ${
-                        isCredit
-                          ? "bg-success/10 text-success"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {isCredit ? (
-                        <ArrowDownLeft className="size-5" />
-                      ) : (
-                        <ArrowUpRight className="size-5" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(tx.createdAt).toLocaleString()} • Ref:{" "}
-                        {tx.reference}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={`font-bold ${
-                        isCredit ? "text-success" : "text-destructive"
-                      }`}
-                    >
-                      {isCredit ? "+" : "-"}
-                      {formatPriceExact(tx.amountInKobo)}
-                    </p>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
-                      {tx.type.replace("_", " ")}
-                    </span>
-                    {tx.balanceAfterInKobo !== undefined && (
-                      <p className="mt-1 text-xs font-medium text-muted-foreground">
-                        Bal: {formatPriceExact(tx.balanceAfterInKobo)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+            {transactions.map((tx: Transaction, i: number) => (
+              <TransactionRow
+                key={tx.id}
+                tx={tx}
+                customerName={customer.name}
+                isFirst={i === 0}
+              />
+            ))}
           </div>
         )}
       </div>

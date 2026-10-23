@@ -94,7 +94,7 @@ function CustomerReviewsContent() {
           <TabsTrigger value="pending">
             To Review
             {pending.length > 0 && (
-              <span className="ml-2 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              <span className="ml-2 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                 {pending.length}
               </span>
             )}
@@ -129,11 +129,11 @@ function CustomerReviewsContent() {
 
                     <div>
                       <div className="mb-4 flex items-center justify-between gap-4">
-                        <span className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+                        <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           {formatDate(order.createdAt!)}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${statusConfig.className}`}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase ${statusConfig.className}`}
                         >
                           {statusConfig.label}
                         </span>
@@ -159,7 +159,7 @@ function CustomerReviewsContent() {
                             <span className="font-medium text-foreground">
                               ₦{order.totalAmountInKobo.toLocaleString()}
                             </span>
-                            <span className="text-[10px] opacity-50">•</span>
+                            <span className="text-xs opacity-50">•</span>
                             <span>
                               {order.items.length} item
                               {order.items.length !== 1 && "s"}
@@ -175,7 +175,7 @@ function CustomerReviewsContent() {
                         </div>
                         <Link
                           href={`/order/${order.orderId}`}
-                          className="font-mono text-[10px] font-semibold text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
+                          className="font-mono text-xs font-semibold text-muted-foreground uppercase underline underline-offset-4 transition-colors hover:text-primary"
                           title="Track Order"
                         >
                           #{order.orderId.substring(0, 10)}
@@ -196,7 +196,7 @@ function CustomerReviewsContent() {
                                 alt={item.name}
                                 className="object-cover"
                               />
-                              <AvatarFallback className="text-[9px] font-medium text-foreground">
+                              <AvatarFallback className="text-xs font-medium text-foreground">
                                 {item.name.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
@@ -247,11 +247,11 @@ function CustomerReviewsContent() {
                   <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/5 blur-2xl transition-all group-hover:bg-primary/10" />
 
                   <div className="mb-4 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+                    <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                       {formatDate(review.updatedAt!)}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-success uppercase">
-                      <Star className="size-3" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-2.5 py-0.5 text-xs font-bold tracking-wide text-success uppercase">
+                      <Star className="size-3.5" />
                       Reviewed
                     </span>
                   </div>

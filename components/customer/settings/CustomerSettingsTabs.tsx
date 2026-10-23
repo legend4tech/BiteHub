@@ -38,35 +38,38 @@ export function CustomerSettingsTabs({
       </div>
 
       {/* Custom Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-border pb-[2px] whitespace-nowrap">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-2">
         <button
+          type="button"
           onClick={() => handleTabChange("profile")}
-          className={`flex items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm ${
             activeTab === "profile"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+              ? "border border-primary bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
           }`}
         >
           <Settings className="size-4" />
           Personal Details
         </button>
         <button
+          type="button"
           onClick={() => handleTabChange("delivery")}
-          className={`flex items-center gap-2 border-b-2 px-4 pb-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm ${
             activeTab === "delivery"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+              ? "border border-primary bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
           }`}
         >
           <MapPin className="size-4" />
           Delivery Preferences
         </button>
         <button
+          type="button"
           onClick={() => handleTabChange("security")}
-          className={`flex items-center gap-2 border-b-2 px-4 pb-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm ${
             activeTab === "security"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+              ? "border border-primary bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
           }`}
         >
           <Shield className="size-4" />

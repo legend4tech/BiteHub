@@ -29,7 +29,7 @@ export function MilestonesProgress() {
   }
 
   return (
-    <div className="grid max-h-[420px] gap-4 overflow-y-auto pr-2">
+    <div className="grid gap-4">
       {data.campaigns.map(
         (campaign: {
           id: string
@@ -59,22 +59,24 @@ export function MilestonesProgress() {
           return (
             <div
               key={campaign.id}
-              className="rounded-2xl border bg-card p-4 transition-all hover:shadow-sm"
+              className="min-w-0 rounded-2xl border bg-card p-4 transition-all hover:shadow-sm"
             >
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <h3 className="text-sm font-bold">{campaign.title}</h3>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-foreground">
+                    {campaign.title}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {campaign.description ||
                       "Keep going to unlock your reward!"}
                   </p>
                 </div>
                 {isFullyCompleted ? (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-primary uppercase">
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase">
                     Completed
                   </span>
                 ) : timesCompleted > 0 ? (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-primary uppercase">
+                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary uppercase">
                     Completed x{timesCompleted}
                   </span>
                 ) : null}
@@ -82,7 +84,7 @@ export function MilestonesProgress() {
 
               <div className="mt-3 space-y-1.5">
                 {campaign.maxCompletionsPerUser > 0 && (
-                  <div className="mb-2 flex justify-between text-[10px] font-medium text-muted-foreground">
+                  <div className="mb-2 flex justify-between text-xs font-medium text-muted-foreground">
                     <span>Claim Limit</span>
                     <span className="font-bold text-foreground">
                       {timesCompleted} / {campaign.maxCompletionsPerUser}{" "}
@@ -117,8 +119,8 @@ export function MilestonesProgress() {
               </div>
 
               {campaign.endDate && (
-                <div className="mt-3 flex items-center gap-1.5 text-[9px] font-medium text-muted-foreground">
-                  <Clock className="size-3" />
+                <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Clock className="size-3.5" />
                   Ends {new Date(campaign.endDate).toLocaleDateString()}
                 </div>
               )}

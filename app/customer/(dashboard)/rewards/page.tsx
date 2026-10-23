@@ -70,12 +70,12 @@ export default async function CustomerRewardsPage() {
     <div className="space-y-8 pb-8">
       {/* Header */}
       <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center md:gap-0">
-        <div className="relative z-20 flex flex-col items-start gap-3">
+        <div className="relative z-20 flex flex-col items-start gap-3 pr-24 sm:pr-28 md:pr-0">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <Sparkles className="size-3.5" />
             Loyalty Program
           </div>
-          <div className="pr-24 md:pr-0">
+          <div>
             <h1 className="font-heading text-3xl font-black tracking-tight text-foreground">
               Rewards & Coins
             </h1>
@@ -87,7 +87,7 @@ export default async function CustomerRewardsPage() {
         </div>
 
         {/* Fun Mascot Element */}
-        <div className="pointer-events-none absolute -top-16 right-12 z-50 size-32 animate-[bounce_3s_infinite] md:relative md:top-auto md:right-auto md:size-48 md:shrink-0 md:pr-4">
+        <div className="pointer-events-none absolute top-0 right-0 z-10 size-24 sm:size-28 md:relative md:top-auto md:right-auto md:size-44 md:shrink-0 md:animate-[bounce_3s_infinite] md:pr-4">
           <Image
             src="/avatars/header_mascot.png"
             alt="Rewards Mascot"
@@ -98,51 +98,65 @@ export default async function CustomerRewardsPage() {
       </div>
 
       {/* Top Section: Balance Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/20 via-primary/10 to-background p-8 shadow-sm">
-        <div className="pointer-events-none absolute top-0 right-0 p-8 opacity-10">
-          <Trophy className="size-48 text-primary" />
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/20 via-primary/10 to-background p-5 shadow-sm sm:p-8">
+        <div className="pointer-events-none absolute top-0 right-0 p-4 opacity-10 sm:p-8">
+          <Trophy className="size-36 text-primary sm:size-48" />
         </div>
 
-        <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-0">
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-0">
           <div className="min-w-0 flex-1">
-            <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/20 p-2 text-primary">
-                  <Coins className="size-6" />
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-xl bg-primary/20 p-2 text-primary">
+                  <Coins className="size-5 sm:size-6" />
                 </div>
-                <p className="font-semibold text-foreground">Available Coins</p>
+                <p className="font-heading text-sm font-bold text-foreground sm:text-base">
+                  Available Coins
+                </p>
               </div>
-              <UserRankBadge coins={availableCoins} />
+              <div className="self-start sm:self-auto">
+                <UserRankBadge coins={availableCoins} />
+              </div>
             </div>
-            <h2 className="flex items-baseline gap-2 text-5xl font-black tracking-tight">
-              {availableCoins}{" "}
-              <span className="text-2xl font-bold text-muted-foreground">
-                BHC
-              </span>
-            </h2>
-            <p className="mt-2 text-sm font-medium text-muted-foreground">
-              1 BHC = ₦1. Join active campaigns to score coins and level up!
-            </p>
+
+            <div className="my-2">
+              <h2 className="flex items-baseline gap-2 text-4xl font-black tracking-tight sm:text-5xl">
+                {availableCoins}{" "}
+                <span className="text-xl font-bold text-muted-foreground sm:text-2xl">
+                  BHC
+                </span>
+              </h2>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
+                1 BHC = ₦1. Join active campaigns to score coins and level up!
+              </p>
+            </div>
+
             <div className="mt-4 max-w-sm">
               <ExpiringRewardsBanner rewards={expiringRewards} />
             </div>
           </div>
 
-          <div className="mt-8 flex w-full gap-3 lg:mt-0 lg:w-auto lg:gap-4">
-            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-background/80 p-4 backdrop-blur-sm lg:min-w-[140px] lg:p-5">
-              <p className="mb-1 truncate text-[10px] font-semibold text-muted-foreground uppercase md:text-xs">
+          <div className="mt-6 flex w-full gap-3 sm:mt-8 lg:mt-0 lg:w-auto lg:gap-4">
+            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-background/80 p-3.5 backdrop-blur-sm sm:p-4 lg:min-w-[140px] lg:p-5">
+              <p className="mb-1 truncate text-xs font-semibold text-muted-foreground uppercase">
                 Lifetime Earned
               </p>
-              <p className="text-xl font-bold text-foreground md:text-2xl">
-                {lifetimeEarned}
+              <p className="text-lg font-black text-foreground sm:text-xl md:text-2xl">
+                {lifetimeEarned}{" "}
+                <span className="text-xs font-semibold text-muted-foreground">
+                  BHC
+                </span>
               </p>
             </div>
-            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-background/80 p-4 backdrop-blur-sm lg:min-w-[140px] lg:p-5">
-              <p className="mb-1 truncate text-[10px] font-semibold text-muted-foreground uppercase md:text-xs">
+            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-background/80 p-3.5 backdrop-blur-sm sm:p-4 lg:min-w-[140px] lg:p-5">
+              <p className="mb-1 truncate text-xs font-semibold text-muted-foreground uppercase">
                 Lifetime Spent
               </p>
-              <p className="text-xl font-bold text-foreground md:text-2xl">
-                {lifetimeSpent}
+              <p className="text-lg font-black text-foreground sm:text-xl md:text-2xl">
+                {lifetimeSpent}{" "}
+                <span className="text-xs font-semibold text-muted-foreground">
+                  BHC
+                </span>
               </p>
             </div>
           </div>
@@ -212,7 +226,7 @@ export default async function CustomerRewardsPage() {
           </h2>
           {rewardHistory.length > 0 && (
             <Link
-              href="/customer/transactions"
+              href="/customer/transactions?filter=rewards"
               className="text-sm font-medium text-primary hover:underline"
             >
               View all
@@ -268,7 +282,7 @@ export default async function CustomerRewardsPage() {
                       {isCredit ? "+" : "-"}
                       {toMajorUnit(tx.amountInKobo)} BHC
                     </p>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent px-2.5 py-0.5 text-center text-xs font-semibold whitespace-nowrap text-foreground uppercase">
                       REWARD
                     </span>
                   </div>

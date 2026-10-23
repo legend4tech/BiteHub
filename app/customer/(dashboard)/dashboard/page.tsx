@@ -7,8 +7,12 @@ import {
   Gift,
   User,
   ArrowRight,
+  Calendar,
+  Receipt,
+  UtensilsCrossed,
 } from "lucide-react"
 import { formatPriceExact } from "@/lib/format"
+import { formatDate } from "@/lib/timeUtils"
 import { toMajorUnit } from "@/lib/money"
 import Link from "next/link"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -53,38 +57,47 @@ export default async function CustomerDashboardPage() {
   const orderCount = await getCustomerOrdersCount(session.user.email)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <CustomerTermsChecker
         initialAcceptedVersion={customer.acceptedTermsVersion}
         currentVersion={CURRENT_TERMS_VERSION}
       />
-      <div className="flex items-center gap-4">
-        {customer.image ? (
-          <div className="size-16 shrink-0 overflow-hidden rounded-full border-2 border-border shadow-sm">
-            <Image
-              src={customer.image}
-              alt={customer.name}
-              width={64}
-              height={64}
-              className="size-full object-cover"
-            />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          {customer.image ? (
+            <div className="size-16 shrink-0 overflow-hidden rounded-full border-2 border-border shadow-sm">
+              <Image
+                src={customer.image}
+                alt={customer.name}
+                width={64}
+                height={64}
+                className="size-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/10 shadow-sm">
+              <User className="size-8 text-primary" />
+            </div>
+          )}
+          <div>
+            <h1 className="font-heading text-2xl font-bold">
+              Welcome back, {customer.name.split(" ")[0]}!
+            </h1>
+            <p className="text-muted-foreground">
+              Here is what is happening with your account today.
+            </p>
           </div>
-        ) : (
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/10 shadow-sm">
-            <User className="size-8 text-primary" />
-          </div>
-        )}
-        <div>
-          <h1 className="font-heading text-2xl font-bold">
-            Welcome back, {customer.name.split(" ")[0]}!
-          </h1>
-          <p className="text-muted-foreground">
-            Here is what is happening with your account today.
-          </p>
         </div>
+
+        <Button asChild className="gap-2 font-semibold shadow-xs sm:hidden">
+          <Link href="/menus">
+            <UtensilsCrossed className="size-4" />
+            Browse Menus
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {/* Wallet Card */}
         <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-4">
@@ -109,7 +122,9 @@ export default async function CustomerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Promo (BHC)</span>
+                <span className="text-muted-foreground">
+                  BiteHub Coins (BHC)
+                </span>
                 <span className="font-semibold text-primary">
                   {formatPriceExact(promoBalance)}
                 </span>
@@ -164,23 +179,29 @@ export default async function CustomerDashboardPage() {
         </div>
 
         {/* Rewards Card */}
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="rounded-full bg-status-ready/10 p-3">
-              <Gift className="size-6 text-status-ready" />
+        <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm sm:col-span-2 xl:col-span-1">
+          <div>
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-status-ready/10 p-3">
+                <Gift className="size-6 text-status-ready" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  BiteHub Coins
+                </p>
+                <h3 className="text-2xl font-bold">
+                  {toMajorUnit(promoBalance)}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    BHC
+                  </span>
+                </h3>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                BiteHub Coins
-              </p>
-              <h3 className="text-2xl font-bold">
-                {toMajorUnit(promoBalance)}{" "}
-                <span className="text-sm font-normal text-muted-foreground">
-                  BHC
-                </span>
-              </h3>
-              <ExpiringRewardsBanner rewards={expiringRewards} />
-            </div>
+            {expiringRewards && expiringRewards.length > 0 && (
+              <div className="mt-3">
+                <ExpiringRewardsBanner rewards={expiringRewards} />
+              </div>
+            )}
           </div>
           <div className="mt-4 border-t border-border pt-4">
             <Button
@@ -197,8 +218,8 @@ export default async function CustomerDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div className="space-y-6 lg:col-span-7">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-12">
+        <div className="min-w-0 space-y-6 lg:col-span-7">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             {/* Header Banner */}
             <div className="flex items-center justify-between border-b border-border bg-primary/5 px-6 py-4">
@@ -234,7 +255,7 @@ export default async function CustomerDashboardPage() {
             </div>
 
             {/* Content Area */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="mb-6 flex justify-end sm:hidden">
                 <Button
                   asChild
@@ -253,7 +274,7 @@ export default async function CustomerDashboardPage() {
         </div>
 
         {/* Right Column: Recent Orders */}
-        <div className="space-y-4 lg:col-span-5">
+        <div className="min-w-0 space-y-4 lg:col-span-5">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-lg font-bold">Recent Orders</h2>
             <Link
@@ -269,46 +290,90 @@ export default async function CustomerDashboardPage() {
               size="sm"
               title="No orders yet"
               description="Start ordering your favorite meals!"
-              action={{ label: "Order Food", href: "/" }}
+              action={{ label: "Order Food", href: "/menus" }}
               className="rounded-xl border border-dashed border-border bg-card/50"
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
-              {recentOrders.map((order: OrderRecord, i: number) => (
+            <div className="space-y-3">
+              {recentOrders.map((order: OrderRecord) => (
                 <div
-                  key={order.id}
-                  className={`flex items-center justify-between p-4 ${
-                    i !== 0 ? "border-t border-border" : ""
-                  }`}
+                  key={order.id || order.orderId}
+                  className="rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-xs"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-lg bg-muted p-2">
-                      <ShoppingBag className="size-5 text-muted-foreground" />
+                  {/* Top row: Vendor Info & Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <ShoppingBag className="size-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                          Ordered from
+                        </span>
+                        <h3 className="font-heading text-sm font-bold break-words text-foreground">
+                          {order.vendorName}
+                        </h3>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">
-                        <span className="font-normal text-muted-foreground">
-                          Ordered from:
-                        </span>{" "}
-                        {order.vendorName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()} •{" "}
-                        {order.items.length} items
-                      </p>
-                    </div>
+                    <StatusBadge
+                      status={order.status as OrderStatus}
+                      paymentStatus={order.paymentStatus}
+                      className="shrink-0 px-2 py-0.5 text-[11px] uppercase"
+                    />
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">
-                      {formatPriceExact(order.totalAmountInKobo)}
+
+                  {/* Metadata: Order ID, Date, Item Count */}
+                  <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Receipt className="size-3.5 text-primary" />
+                      <Link
+                        href={`/order/${order.orderId}`}
+                        className="font-mono font-bold text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
+                      >
+                        #{order.orderId}
+                      </Link>
+                    </span>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="size-3.5" />
+                      <span>{formatDate(order.createdAt)}</span>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {order.items.length}{" "}
+                      {order.items.length === 1 ? "item" : "items"}
+                    </span>
+                  </div>
+
+                  {/* Purchased items preview (wrap naturally, zero truncation) */}
+                  {order.items && order.items.length > 0 && (
+                    <p className="mt-2 text-xs leading-relaxed break-words text-muted-foreground">
+                      {order.items
+                        .map((it) => `${it.quantity}x ${it.name}`)
+                        .join(", ")}
                     </p>
-                    <div className="mt-1 flex justify-end">
-                      <StatusBadge
-                        status={order.status as OrderStatus}
-                        paymentStatus={order.paymentStatus}
-                        className="px-2 py-0.5 text-[10px] uppercase"
-                      />
+                  )}
+
+                  {/* Bottom row: Total amount & Direct Track Order button */}
+                  <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2.5">
+                    <div>
+                      <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                        Total
+                      </span>
+                      <p className="font-heading text-base font-bold text-primary">
+                        {formatPriceExact(order.totalAmountInKobo)}
+                      </p>
                     </div>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 gap-1 px-2.5 text-xs font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Link href={`/order/${order.orderId}`}>
+                        Track Order <ArrowRight className="size-3.5" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               ))}

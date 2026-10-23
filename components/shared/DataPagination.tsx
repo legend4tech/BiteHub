@@ -17,6 +17,11 @@ export interface DataPaginationProps {
   pageSize?: number
   onPageChange?: (page: number) => void
   getPageUrl?: (page: number) => string
+  /**
+   * Serializable alternative to `getPageUrl` for Server Components, which can't
+   * pass functions to Client Components. e.g. "/customer/transactions?filter=all"
+   */
+  baseUrl?: string
   className?: string
 }
 
@@ -27,6 +32,7 @@ export function DataPagination({
   pageSize = 10,
   onPageChange,
   getPageUrl,
+  baseUrl,
   className = "",
 }: DataPaginationProps) {
   if (totalPages <= 1 && (totalItems === undefined || totalItems <= pageSize)) {
@@ -60,8 +66,16 @@ export function DataPagination({
   const prevDisabled = currentPage <= 1
   const nextDisabled = currentPage >= totalPages
 
+  // Link mode when either a function or a plain base URL string is provided
+  const resolveUrl =
+    getPageUrl ??
+    (baseUrl
+      ? (page: number) =>
+          `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}page=${page}`
+      : undefined)
+
   const handlePageClick = (page: number, e: React.MouseEvent) => {
-    if (!getPageUrl) {
+    if (!resolveUrl) {
       e.preventDefault()
       onPageChange?.(page)
     }
@@ -99,10 +113,10 @@ export function DataPagination({
           <PaginationItem>
             <PaginationPrevious
               href={
-                getPageUrl
+                resolveUrl
                   ? prevDisabled
                     ? "#"
-                    : getPageUrl(currentPage - 1)
+                    : resolveUrl(currentPage - 1)
                   : "#"
               }
               onClick={(e) => {
@@ -127,7 +141,7 @@ export function DataPagination({
               ) : (
                 <PaginationItem key={page}>
                   <PaginationLink
-                    href={getPageUrl ? getPageUrl(page) : "#"}
+                    href={resolveUrl ? resolveUrl(page) : "#"}
                     isActive={page === currentPage}
                     onClick={(e) => handlePageClick(page, e)}
                     className="cursor-pointer"
@@ -148,10 +162,10 @@ export function DataPagination({
           <PaginationItem>
             <PaginationNext
               href={
-                getPageUrl
+                resolveUrl
                   ? nextDisabled
                     ? "#"
-                    : getPageUrl(currentPage + 1)
+                    : resolveUrl(currentPage + 1)
                   : "#"
               }
               onClick={(e) => {

@@ -10,6 +10,7 @@ import {
   Info,
   PhoneCall,
   LogIn,
+  LogOut,
   Search,
   Menu,
   ChevronRight,
@@ -44,7 +45,16 @@ export function Navbar() {
   // Campus query string — appended to any link that triggers a server-side filtered page
   const cq = `school=${schoolId}&campus=${campusId}`
 
-  const navLinks = [
+  const dashboardHref =
+    session?.user?.role === "admin" || session?.user?.role === "superadmin"
+      ? "/admin"
+      : session?.user?.role === "vendor"
+        ? "/vendor/dashboard"
+        : session?.user?.role === "vendor_manager"
+          ? "/vendor-manager"
+          : "/customer/dashboard"
+
+  const rawNavLinks = [
     { name: "Vendors", href: `/vendors?${cq}`, base: "/vendors", icon: Store },
     {
       name: "Menu",
@@ -59,16 +69,23 @@ export function Navbar() {
       base: "/customer/login",
       icon: LogIn,
       mobileOnly: true,
+      authOnly: false,
     },
     {
       name: "Vendor Login",
       href: "/vendor/login",
       base: "/vendor/login",
       icon: Store,
+      authOnly: false,
     },
     { name: "About Us", href: "/about", base: "/about", icon: Info },
     { name: "Contact Us", href: "/contact", base: "/contact", icon: PhoneCall },
   ]
+
+  const navLinks = rawNavLinks.filter((link) => {
+    if (session?.user && link.authOnly === false) return false
+    return true
+  })
 
   return (
     <header className="pointer-events-none sticky top-0 z-50 flex w-full justify-center px-4 py-4 sm:px-6">
@@ -171,20 +188,7 @@ export function Navbar() {
                   asChild
                   className="cursor-pointer rounded-lg px-3 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground"
                 >
-                  <Link
-                    href={
-                      session.user.role === "admin" ||
-                      session.user.role === "superadmin"
-                        ? "/admin"
-                        : session.user.role === "vendor"
-                          ? "/vendor/dashboard"
-                          : session.user.role === "vendor_manager"
-                            ? "/vendor-manager"
-                            : "/customer/dashboard"
-                    }
-                  >
-                    Go to Dashboard
-                  </Link>
+                  <Link href={dashboardHref}>Go to Dashboard</Link>
                 </DropdownMenuItem>
                 <ConfirmDialog
                   title="Log out"
@@ -235,15 +239,8 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex h-full w-[85vw] max-w-[350px] flex-col overflow-hidden border-l border-white/10 bg-background/90 p-0 shadow-2xl backdrop-blur-2xl data-[side=right]:w-[85vw] data-[side=right]:max-w-[350px]"
+              className="flex h-full w-[85vw] max-w-[350px] flex-col overflow-hidden border-l border-border bg-background p-0 shadow-2xl data-[side=right]:w-[85vw] data-[side=right]:max-w-[350px]"
             >
-              {/* Decorative Background Orbs */}
-              <div className="pointer-events-none absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
-                <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/20 blur-[80px]" />
-                <div className="absolute top-1/2 -left-20 h-48 w-48 rounded-full bg-status-confirmed/10 blur-[60px]" />
-                <div className="absolute right-0 -bottom-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-              </div>
-
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-border/50 px-6 py-6">
                 <Image
@@ -257,6 +254,37 @@ export function Navbar() {
                   Bite<span className="text-primary">Hub</span>
                 </span>
               </div>
+
+              {/* Compact Clickable Profile Card (When logged in) */}
+              {session?.user && (
+                <div className="border-b border-border/50 px-4 py-3">
+                  <SheetClose asChild>
+                    <Link
+                      href={dashboardHref}
+                      className="group flex items-center gap-3 rounded-2xl border border-border/40 bg-muted/40 p-3 transition-colors hover:border-primary/30 hover:bg-muted active:scale-[0.99]"
+                    >
+                      <Avatar className="h-10 w-10 border border-primary/20">
+                        <AvatarImage
+                          src={session.user.image || ""}
+                          alt={session.user.name || "User"}
+                        />
+                        <AvatarFallback className="bg-primary/10 font-bold text-primary">
+                          {session.user.name?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
+                          {session.user.name || "My Account"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {session.user.email}
+                        </p>
+                      </div>
+                      <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                    </Link>
+                  </SheetClose>
+                </div>
+              )}
 
               {/* ── Scrollable Nav ── */}
               <div
@@ -306,31 +334,43 @@ export function Navbar() {
 
               {/* Footer CTA & Info */}
               <div className="mt-auto border-t border-border/50 bg-background/50 p-6 backdrop-blur-md">
-                <SheetClose asChild>
-                  {session?.user ? (
-                    <Button
-                      asChild
-                      variant="hero"
-                      size="lg"
-                      className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
-                    >
-                      <Link
-                        href={
-                          session.user.role === "admin" ||
-                          session.user.role === "superadmin"
-                            ? "/admin"
-                            : session.user.role === "vendor"
-                              ? "/vendor/dashboard"
-                              : session.user.role === "vendor_manager"
-                                ? "/vendor-manager"
-                                : "/customer/dashboard"
-                        }
-                        className="flex items-center justify-center gap-2"
+                {session?.user ? (
+                  <div className="space-y-2">
+                    <SheetClose asChild>
+                      <Button
+                        asChild
+                        variant="hero"
+                        size="lg"
+                        className="h-12 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]"
                       >
-                        Go to Dashboard
-                      </Link>
-                    </Button>
-                  ) : (
+                        <Link
+                          href={dashboardHref}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          Go to Dashboard
+                        </Link>
+                      </Button>
+                    </SheetClose>
+                    <ConfirmDialog
+                      title="Log out"
+                      description="Are you sure you want to log out?"
+                      confirmText="Log out"
+                      isDestructive={true}
+                      onConfirm={() => signOut({ callbackUrl: "/" })}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <LogOut className="mr-1.5 size-4" />
+                          Log out
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <SheetClose asChild>
                     <Button
                       asChild
                       variant="hero"
@@ -345,8 +385,8 @@ export function Navbar() {
                         Login to order
                       </Link>
                     </Button>
-                  )}
-                </SheetClose>
+                  </SheetClose>
+                )}
                 <p className="mt-4 text-center text-xs font-medium text-muted-foreground opacity-80">
                   Empowering campus food businesses.
                 </p>

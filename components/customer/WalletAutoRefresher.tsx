@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { playWalletFundedSound } from "@/lib/audio"
 
 export function WalletAutoRefresher() {
   const router = useRouter()
@@ -17,7 +18,9 @@ export function WalletAutoRefresher() {
 
       eventSource.onmessage = (event) => {
         if (event.data === "update") {
-          // Play a nice success toast but ensure we don't spam if multiple events fire somehow
+          // Play sweet wallet funded chime and success toast
+          playWalletFundedSound()
+
           if (!hasToastedRef.current) {
             hasToastedRef.current = true
             toast.success("Wallet credited successfully!", {

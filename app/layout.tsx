@@ -15,6 +15,7 @@ import { MaintenanceGuard } from "@/components/shared/MaintenanceGuard"
 import { CookieBanner } from "@/components/CookieBanner"
 import { PWAInstallBanner } from "@/components/shared/PWAInstallBanner"
 import { TawkToChat } from "@/components/shared/TawkToChat"
+import { PullToRefreshContainer } from "@/components/shared/PullToRefresh"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -102,7 +103,9 @@ export default function RootLayout({
                 <Suspense fallback={null}>
                   <CampusProvider>
                     <MaintenanceGuard>
-                      {children}
+                      <PullToRefreshContainer>
+                        {children}
+                      </PullToRefreshContainer>
                       <CookieBanner />
                       <PWAInstallBanner />
                       <TawkToChat />

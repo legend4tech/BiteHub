@@ -1,17 +1,11 @@
+import { Suspense } from "react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { formatPriceExact } from "@/lib/format"
-import { ArrowDownLeft, ArrowUpRight, ArrowLeft } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
-import type { Transaction } from "@/types/customer"
-import {
-  getCustomerByEmail,
-  getCustomerTransactionsList,
-} from "@/lib/services/customerService"
-import { DownloadReceiptButton } from "@/components/customer/DownloadReceiptButton"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { DataPagination } from "@/components/shared/DataPagination"
+import { PageSkeleton } from "@/components/shared/PageSkeleton"
+import { TransactionsList } from "@/components/customer/TransactionsList"
 
 export const dynamic = "force-dynamic"
 
@@ -24,20 +18,8 @@ export default async function CustomerTransactionsPage(props: {
     return redirect("/customer/login")
   }
 
-  const customer = await getCustomerByEmail(session.user.email)
-  if (!customer) {
-    return redirect("/customer/login")
-  }
-
   const page = parseInt(searchParams?.page || "1", 10)
   const filter = searchParams?.filter || "all"
-
-  const { transactions, totalPages } = await getCustomerTransactionsList(
-    customer._id.toString(),
-    page,
-    20, // limit
-    filter
-  )
 
   return (
     <div className="space-y-6">
@@ -104,87 +86,17 @@ export default async function CustomerTransactionsPage(props: {
         </Button>
       </div>
 
-      {transactions.length === 0 ? (
-        <EmptyState
-          title="No transactions yet"
-          description="Your wallet history will appear here once you make a deposit or purchase."
-          className="rounded-xl border border-dashed border-border bg-card/50"
+      {/* Keyed so every tab/page change re-suspends and only the list skeletons */}
+      <Suspense
+        key={`${filter}-${page}`}
+        fallback={<PageSkeleton variant="transaction-list" count={6} />}
+      >
+        <TransactionsList
+          customerEmail={session.user.email}
+          page={page}
+          filter={filter}
         />
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          {transactions.map((tx: Transaction, i: number) => {
-            const isCredit = tx.type.includes("deposit") || tx.type === "reward"
-            return (
-              <div
-                key={tx.id}
-                className={`flex items-center justify-between p-4 sm:p-6 ${
-                  i !== 0 ? "border-t border-border" : ""
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`rounded-lg p-3 ${
-                      isCredit
-                        ? "bg-success/10 text-success"
-                        : "bg-destructive/10 text-destructive"
-                    }`}
-                  >
-                    {isCredit ? (
-                      <ArrowDownLeft className="size-6" />
-                    ) : (
-                      <ArrowUpRight className="size-6" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold">{tx.description}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(tx.createdAt).toLocaleString()} • Ref:{" "}
-                      <span className="font-mono text-xs">{tx.reference}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6 text-right">
-                  <div>
-                    <p
-                      className={`text-lg font-bold ${
-                        isCredit ? "text-success" : "text-destructive"
-                      }`}
-                    >
-                      {isCredit ? "+" : "-"}
-                      {formatPriceExact(tx.amountInKobo)}
-                    </p>
-                    <div className="mt-1 flex items-center justify-end gap-2">
-                      <span className="inline-flex items-center justify-center rounded-full bg-accent px-2 py-0.5 text-center text-[10px] font-medium whitespace-nowrap text-foreground uppercase">
-                        {tx.type.replace("_", " ")}
-                      </span>
-                      {tx.balanceAfterInKobo !== undefined && (
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Bal: {formatPriceExact(tx.balanceAfterInKobo)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Download Receipt Button */}
-                  <div className="hidden sm:block">
-                    <DownloadReceiptButton
-                      transaction={tx}
-                      customerName={customer.name}
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      <DataPagination
-        currentPage={page}
-        totalPages={totalPages}
-        getPageUrl={(p) => `/customer/transactions?page=${p}&filter=${filter}`}
-        className="pt-4"
-      />
+      </Suspense>
     </div>
   )
 }

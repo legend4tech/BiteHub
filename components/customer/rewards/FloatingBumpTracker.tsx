@@ -177,8 +177,8 @@ export function FloatingBumpTracker() {
                     />
                   </div>
 
-                  <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Gift className="size-3 text-primary" />
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Gift className="size-3.5 text-primary" />
                     {remaining === 1
                       ? "1 more to go"
                       : `${remaining} more to go`}
