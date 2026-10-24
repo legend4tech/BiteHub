@@ -43,6 +43,9 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 }
+
+export const dynamic = "force-dynamic"
+
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function VendorListContent({
   q,

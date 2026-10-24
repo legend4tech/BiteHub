@@ -17,6 +17,7 @@ import {
   generateOrderId,
   PLATFORM_FLAT_FEE_IN_KOBO,
   UNPAID_ORDER_EXPIRY_MINUTES,
+  DEFAULT_PLATFORM_FEE_PERCENTAGE,
 } from "@/lib/constants"
 import { computeMonnifyServiceFee } from "@/lib/fees"
 import { initMonnifyTransaction } from "@/lib/monnify"
@@ -164,9 +165,8 @@ export async function processCheckout(
   const finalTotalInKobo = baseCustomerPaymentInKobo + serviceFeeInKobo
 
   const settings = await GlobalSettings.findOne()
-  const platformFeePercentage = settings
-    ? settings.platformFeePercentage
-    : Number(process.env.NEXT_PUBLIC_PLATFORM_FEE_PERCENTAGE || 5)
+  const platformFeePercentage =
+    settings?.platformFeePercentage ?? DEFAULT_PLATFORM_FEE_PERCENTAGE
 
   const foodSubtotalInKobo = calculatedTotalInKobo - deliveryFeeInKobo
   const finalFoodSubtotalInKobo = Math.max(
@@ -411,8 +411,11 @@ export async function processCheckout(
     finalTotalInKobo,
     deliveryFeeInKobo,
     serviceFeeInKobo,
-    discountAmountInKobo:
-      sponsoredDiscountAmountInKobo + (order.walletPromoAmountUsedInKobo || 0),
+    discountAmountInKobo: sponsoredDiscountAmountInKobo || 0,
+    promoCode: order.promoCode || null,
+    promoDiscountInKobo: order.promoDiscountInKobo || 0,
+    coinsUsedInKobo: order.walletPromoAmountUsedInKobo || 0,
+    rewardDiscountInKobo: sponsoredDiscountAmountInKobo || 0,
     vendorRevenueInKobo,
     platformCommissionInKobo,
     items,

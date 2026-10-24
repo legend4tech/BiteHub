@@ -22,6 +22,8 @@ interface OrderSummaryCardProps {
   serviceFeeInKobo: number
   finalTotal: number
   loading: boolean
+  isRedirecting?: boolean
+  redirectMessage?: string | null
   isSyncing: boolean
   selectedLocation: string | undefined
   isValidLocation: boolean
@@ -54,6 +56,8 @@ export function OrderSummaryCard({
   serviceFeeInKobo,
   finalTotal,
   loading,
+  isRedirecting = false,
+  redirectMessage = null,
   isSyncing,
   isValidLocation,
   noZonesAvailable,
@@ -289,13 +293,19 @@ export function OrderSummaryCard({
           className="w-full text-lg"
           disabled={
             loading ||
+            isRedirecting ||
             isSyncing ||
             cart.items.length === 0 ||
             !isValidLocation ||
             noZonesAvailable
           }
         >
-          {loading || isSyncing ? (
+          {isRedirecting && redirectMessage ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="size-5 animate-spin" />
+              <span>{redirectMessage}</span>
+            </span>
+          ) : loading || isSyncing ? (
             <Loader2 className="size-5 animate-spin" />
           ) : (
             `Pay ${formatPriceExact(discountedTotal)}`

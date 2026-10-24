@@ -1,53 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useTransition } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { RotateCw, ArrowDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { playPullToRefreshHaptic } from "@/lib/audio"
+
 export interface PullToRefreshContainerProps {
   children: React.ReactNode
   threshold?: number
   maxPull?: number
-}
-
-function playHapticFeedback() {
-  // 1. Physical vibration for supported Android devices
-  if (typeof navigator !== "undefined" && navigator.vibrate) {
-    try {
-      navigator.vibrate(12)
-    } catch {
-      // Ignored if vibration is restricted
-    }
-  }
-
-  // 2. Synthesized acoustic tactile tick (works on iOS Safari, Android, and Desktop)
-  try {
-    const AudioCtx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-
-    osc.type = "sine"
-    osc.frequency.setValueAtTime(140, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.02)
-
-    gain.gain.setValueAtTime(0.06, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.02)
-
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-
-    osc.start()
-    osc.stop(ctx.currentTime + 0.02)
-  } catch {
-    // Ignored if AudioContext is blocked before user interaction
-  }
 }
 
 export function PullToRefreshContainer({
@@ -57,6 +21,9 @@ export function PullToRefreshContainer({
 }: PullToRefreshContainerProps) {
   const queryClient = useQueryClient()
   const router = useRouter()
+  const [isTransitionPending, startTransition] = useTransition()
+  const transitionResolverRef = useRef<(() => void) | null>(null)
+  const isTransitionPendingRef = useRef(isTransitionPending)
 
   const [pullDistance, setPullDistance] = useState(0)
   const [status, setStatus] = useState<
@@ -76,6 +43,17 @@ export function PullToRefreshContainer({
   useEffect(() => {
     statusRef.current = status
   }, [status])
+
+  // Track React Concurrent Transition completion for Server Component re-renders
+  useEffect(() => {
+    if (isTransitionPendingRef.current && !isTransitionPending) {
+      if (transitionResolverRef.current) {
+        transitionResolverRef.current()
+        transitionResolverRef.current = null
+      }
+    }
+    isTransitionPendingRef.current = isTransitionPending
+  }, [isTransitionPending])
 
   // A transformed ancestor offsets sticky headers (navbar) and re-parents fixed elements, so
   // if the user scrolls while the refresh offset is held open, collapse it immediately.
@@ -112,7 +90,7 @@ export function PullToRefreshContainer({
       if (
         target &&
         target.closest(
-          "input, textarea, select, [role='dialog'], [data-no-ptr]"
+          "input, textarea, select, [role='dialog'], [data-no-ptr], [data-radix-scroll-area-viewport]"
         )
       ) {
         return
@@ -176,7 +154,7 @@ export function PullToRefreshContainer({
 
       if (distance >= threshold) {
         if (!hasTriggeredHapticRef.current) {
-          playHapticFeedback()
+          playPullToRefreshHaptic("trigger")
           hasTriggeredHapticRef.current = true
         }
         setStatus("can-release")
@@ -198,12 +176,56 @@ export function PullToRefreshContainer({
       setPullDistance(56) // Resting height showing the spinner while loading
 
       try {
-        await Promise.all([
+        // 1. Kick off Server Component refresh inside React concurrent transition
+        const serverRefreshPromise = new Promise<void>((resolve) => {
+          transitionResolverRef.current = resolve
+          startTransition(() => {
+            router.refresh()
+          })
+
+          // Safety timeout: if transition never entered pending within 350ms, resolve safely
+          setTimeout(() => {
+            if (
+              !isTransitionPendingRef.current &&
+              transitionResolverRef.current === resolve
+            ) {
+              resolve()
+              transitionResolverRef.current = null
+            }
+          }, 350)
+        })
+
+        // 2. Concurrently refetch all active on-screen client queries and invalidate cache
+        const clientQueriesPromise = Promise.all([
+          queryClient.refetchQueries(
+            { type: "active" },
+            { throwOnError: false }
+          ),
           queryClient.invalidateQueries(),
-          Promise.resolve(router.refresh()),
-          new Promise((resolve) => setTimeout(resolve, 600)),
         ])
 
+        // 3. Minimum pleasant UX animation duration (prevents violent layout flickers)
+        const minSpinPromise = new Promise((resolve) =>
+          setTimeout(resolve, 550)
+        )
+
+        // 4. Maximum safety timeout (3000ms) so slow networks never leave user stuck
+        const boundedServerPromise = Promise.race([
+          serverRefreshPromise,
+          new Promise((resolve) => setTimeout(resolve, 3000)),
+        ])
+
+        // Await all data sources and minimum spin time simultaneously
+        await Promise.all([
+          clientQueriesPromise,
+          boundedServerPromise,
+          minSpinPromise,
+        ])
+
+        // Clean up resolver ref if safety timeout finished first
+        transitionResolverRef.current = null
+
+        playPullToRefreshHaptic("success")
         setStatus("completed")
         await new Promise((resolve) => setTimeout(resolve, 350))
       } catch (err) {
@@ -216,7 +238,7 @@ export function PullToRefreshContainer({
       setPullDistance(0)
       setStatus("idle")
     }
-  }, [queryClient, router])
+  }, [queryClient, router, startTransition])
 
   useEffect(() => {
     // Touch event listeners for mobile phones
@@ -241,18 +263,21 @@ export function PullToRefreshContainer({
 
     const onTouchEnd = () => handleEnd()
 
-    // Pointer event listeners for desktop mouse drag / simulators
+    // Pointer event listeners for desktop mouse drag / simulators only
     const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return
+      if (e.pointerType !== "mouse" || e.button !== 0) return
       handleStart(e.clientY, e.clientX, e.target as HTMLElement | null)
     }
 
     const onPointerMove = (e: PointerEvent) => {
-      if (e.pointerType === "mouse" && e.buttons !== 1) return
+      if (e.pointerType !== "mouse" || e.buttons !== 1) return
       handleMove(e.clientY, e.clientX, e.cancelable, () => e.preventDefault())
     }
 
-    const onPointerUp = () => handleEnd()
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return
+      handleEnd()
+    }
 
     window.addEventListener("touchstart", onTouchStart, { passive: true })
     window.addEventListener("touchmove", onTouchMove, { passive: false })

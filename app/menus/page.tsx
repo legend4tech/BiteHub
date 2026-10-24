@@ -45,6 +45,8 @@ export const metadata: Metadata = {
 // ── Page-size constant — must match on server AND client ────────────────────
 const PAGE_LIMIT = 20
 
+export const dynamic = "force-dynamic"
+
 // ── Isolated async component: only this throws if DB is down ─────────────────
 async function MenuListContent({
   q,

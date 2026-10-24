@@ -49,7 +49,11 @@ export async function sendOrderReceiptEmail(
   items: Array<{ name: string; quantity: number; priceInKobo: number }>,
   trackingUrl: string,
   paymentMethod?: string,
-  discountAmountInKobo?: number
+  discountAmountInKobo?: number,
+  promoCode?: string | null,
+  promoDiscountInKobo?: number,
+  coinsUsedInKobo?: number,
+  rewardDiscountInKobo?: number
 ) {
   if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     console.warn(
@@ -71,6 +75,10 @@ export async function sendOrderReceiptEmail(
         trackingUrl,
         paymentMethod,
         discountAmountInKobo,
+        promoCode,
+        promoDiscountInKobo,
+        coinsUsedInKobo,
+        rewardDiscountInKobo,
       })
     )
     await mailer.sendMail({

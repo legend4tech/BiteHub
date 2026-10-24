@@ -14,6 +14,10 @@ export const SUPPORT_EMAIL = "contact@bitehubapp.com"
 export const CONTACT_EMAIL = "contact@bitehubapp.com"
 export const NO_REPLY_EMAIL = "no-reply@bitehubapp.com"
 export const LOW_STOCK_THRESHOLD = 5
+/** Default platform commission percentage charged on food subtotal per order.
+ * This is the bootstrap value used if no GlobalSettings doc exists in DB yet.
+ * The live value is stored in and read from the GlobalSettings collection. */
+export const DEFAULT_PLATFORM_FEE_PERCENTAGE = 2
 export const PLATFORM_FLAT_FEE_IN_KOBO = 15000
 
 // ─── Discovery Score Weights ───────────────────────────────────────────────────

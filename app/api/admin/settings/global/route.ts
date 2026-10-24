@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db"
 import GlobalSettings from "@/models/GlobalSettings"
 import { auth } from "@/auth"
 import { globalSettingsSchema } from "@/lib/schemas"
+import { DEFAULT_PLATFORM_FEE_PERCENTAGE } from "@/lib/constants"
 
 const settingsSchema = globalSettingsSchema.partial()
 
@@ -11,9 +12,7 @@ async function getSettings() {
   let settings = await GlobalSettings.findOne()
   if (!settings) {
     settings = await GlobalSettings.create({
-      platformFeePercentage: Number(
-        process.env.NEXT_PUBLIC_PLATFORM_FEE_PERCENTAGE || 5
-      ),
+      platformFeePercentage: DEFAULT_PLATFORM_FEE_PERCENTAGE,
       maintenanceMode: process.env.MAINTENANCE_MODE === "true",
       updatedBy: "system",
     })

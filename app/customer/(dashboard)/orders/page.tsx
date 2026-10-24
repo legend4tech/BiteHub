@@ -2,6 +2,8 @@ import { auth } from "@/auth"
 import { CustomerOrderList } from "@/components/customer/orders/CustomerOrderList"
 import { getCustomerOrdersPaginated } from "@/lib/services/orderService"
 
+export const dynamic = "force-dynamic"
+
 export default async function CustomerOrdersPage({
   searchParams,
 }: {

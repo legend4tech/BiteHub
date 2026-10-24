@@ -8,6 +8,7 @@ import GlobalSettings from "@/models/GlobalSettings"
 import { createMonnifySubaccount, getSubaccounts } from "@/lib/monnify"
 import { sendBankSetupConfirmationEmail } from "@/lib/mail"
 import { monnifySubaccountRequestSchema } from "@/lib/schemas"
+import { DEFAULT_PLATFORM_FEE_PERCENTAGE } from "@/lib/constants"
 
 const BANK_UPDATE_LOCK_DAYS = Number(process.env.BANK_UPDATE_LOCK_DAYS || 14)
 
@@ -82,7 +83,8 @@ export async function POST(
     try {
       // Calculate the exact split percentage for the vendor
       const settings = await GlobalSettings.findOne()
-      const platformFee = settings ? settings.platformFeePercentage : 5
+      const platformFee =
+        settings?.platformFeePercentage ?? DEFAULT_PLATFORM_FEE_PERCENTAGE
       const vendorSplitPercentage = 100 - platformFee
 
       const subaccount = await createMonnifySubaccount(

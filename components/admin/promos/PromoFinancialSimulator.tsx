@@ -33,39 +33,61 @@ export function PromoFinancialSimulator({
       : null
   const minOrder = Number(minOrderValueInNaira) || 0
 
-  // Calculate projected minimum subsidy per order
-  let minSubsidyPerOrder = 0
+  // Calculate projected subsidy per order bounds
+  const baseOrder = minOrder > 0 ? minOrder : 1000
+  // Standard campus order upper bound for uncapped estimation (matches the ₦1,000–₦10,000 range below)
+  const typicalMaxOrder = Math.max(10000, baseOrder)
+
+  let minSubsidy = 0
+  let maxSubsidy = 0
 
   if (discountType === "FIXED_AMOUNT") {
-    minSubsidyPerOrder = flatDiscount
+    minSubsidy = flatDiscount
+    maxSubsidy = flatDiscount
   } else {
-    // Min discount assuming minOrderValue or small order (₦1,000)
-    const baseOrder = minOrder > 0 ? minOrder : 1000
-    minSubsidyPerOrder = Math.round(baseOrder * (percentage / 100))
+    minSubsidy = Math.round(baseOrder * (percentage / 100))
     if (customCap !== null && customCap > 0) {
-      minSubsidyPerOrder = Math.min(minSubsidyPerOrder, customCap)
+      minSubsidy = Math.min(minSubsidy, customCap)
+      maxSubsidy = customCap
+    } else {
+      // Uncapped percentage: estimated max subsidy on typical campus orders (up to ₦10,000)
+      maxSubsidy = Math.round(typicalMaxOrder * (percentage / 100))
+    }
+    if (maxSubsidy < minSubsidy) {
+      maxSubsidy = minSubsidy
     }
   }
 
   // Estimated orders supported by this budget
   let supportedOrdersText = "0 orders"
+  let supportedOrdersSubtitle = "Supported within budget"
+
   if (budget > 0) {
-    if (discountType === "FIXED_AMOUNT" && flatDiscount > 0) {
-      const count = Math.floor(budget / flatDiscount)
-      supportedOrdersText = `Exactly ${count.toLocaleString()} orders`
+    if (discountType === "FIXED_AMOUNT") {
+      if (flatDiscount > 0) {
+        const count = Math.floor(budget / flatDiscount)
+        supportedOrdersText = `${count.toLocaleString()} orders`
+        supportedOrdersSubtitle = "Supported within budget"
+      }
     } else if (discountType === "PERCENTAGE" && percentage > 0) {
-      if (customCap !== null && customCap > 0) {
-        const minOrders = Math.floor(budget / customCap)
-        const maxOrders =
-          minSubsidyPerOrder > 0
-            ? Math.floor(budget / minSubsidyPerOrder)
-            : minOrders
-        supportedOrdersText =
-          minOrders === maxOrders
-            ? `~${minOrders.toLocaleString()} orders`
-            : `${minOrders.toLocaleString()} – ${maxOrders.toLocaleString()} orders`
+      const minOrders = maxSubsidy > 0 ? Math.floor(budget / maxSubsidy) : 0
+      const maxOrders =
+        minSubsidy > 0 ? Math.floor(budget / minSubsidy) : minOrders
+
+      if (minOrders === 0 && maxOrders === 0) {
+        supportedOrdersText = "0 orders"
+      } else if (minOrders === 0) {
+        supportedOrdersText = `Up to ${maxOrders.toLocaleString()} orders`
+      } else if (minOrders === maxOrders) {
+        supportedOrdersText = `~${minOrders.toLocaleString()} orders`
       } else {
-        supportedOrdersText = "Variable (uncapped percentage)"
+        supportedOrdersText = `${minOrders.toLocaleString()} – ${maxOrders.toLocaleString()} orders`
+      }
+
+      if (customCap === null || customCap <= 0) {
+        supportedOrdersSubtitle = "Est. for ₦1k–₦10k orders"
+      } else {
+        supportedOrdersSubtitle = "Supported within budget"
       }
     }
   }
@@ -86,6 +108,10 @@ export function PromoFinancialSimulator({
     }
   }
   const simulatedCustomerPays = Math.max(0, testOrderValue - simulatedDiscount)
+  const testOrderCapacity =
+    budget > 0 && simulatedDiscount > 0
+      ? Math.floor(budget / simulatedDiscount)
+      : null
 
   return (
     <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
@@ -111,11 +137,17 @@ export function PromoFinancialSimulator({
           <span className="block font-medium text-muted-foreground">
             Projected Orders
           </span>
-          <span className="mt-0.5 block truncate text-base font-bold text-primary">
+          <span
+            className="mt-0.5 block truncate text-base font-bold text-primary"
+            title={supportedOrdersText}
+          >
             {supportedOrdersText}
           </span>
-          <span className="text-[10px] text-muted-foreground">
-            Supported within budget
+          <span
+            className="block truncate text-[10px] text-muted-foreground"
+            title={supportedOrdersSubtitle}
+          >
+            {supportedOrdersSubtitle}
           </span>
         </div>
       </div>
@@ -198,6 +230,14 @@ export function PromoFinancialSimulator({
                   ₦{simulatedCustomerPays.toLocaleString()}
                 </span>
               </div>
+              {testOrderCapacity !== null && (
+                <div className="flex justify-between border-t border-border/30 pt-1 text-[11px] text-muted-foreground">
+                  <span>Capacity at this order size:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    ~{testOrderCapacity.toLocaleString()} orders
+                  </span>
+                </div>
+              )}
             </>
           )}
         </div>

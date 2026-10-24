@@ -27,23 +27,50 @@ interface OrderReceiptEmailProps {
   trackingUrl: string
   paymentMethod?: string
   discountAmountInKobo?: number
+  promoCode?: string | null
+  promoDiscountInKobo?: number
+  coinsUsedInKobo?: number
+  rewardDiscountInKobo?: number
 }
 export const OrderReceiptEmail = ({
   customerName,
   orderId,
   vendorName,
-
+  totalAmountInKobo,
   deliveryFeeInKobo = 0,
   serviceFeeInKobo = 0,
   items = [],
   trackingUrl,
   paymentMethod = "monnify",
   discountAmountInKobo = 0,
+  promoCode,
+  promoDiscountInKobo = 0,
+  coinsUsedInKobo = 0,
+  rewardDiscountInKobo = 0,
 }: OrderReceiptEmailProps) => {
   const rawSubtotal = items.reduce(
     (acc, item) => acc + item.priceInKobo * item.quantity,
     0
   )
+  const effectiveRewardDiscount =
+    rewardDiscountInKobo > 0
+      ? rewardDiscountInKobo
+      : !coinsUsedInKobo
+        ? discountAmountInKobo || 0
+        : 0
+  const finalTotalPaid =
+    totalAmountInKobo !== undefined && totalAmountInKobo !== null
+      ? Math.max(0, totalAmountInKobo - coinsUsedInKobo)
+      : Math.max(
+          0,
+          rawSubtotal +
+            deliveryFeeInKobo +
+            serviceFeeInKobo -
+            promoDiscountInKobo -
+            coinsUsedInKobo -
+            effectiveRewardDiscount
+        )
+
   return (
     <EmailLayout
       preview={`Your BiteHub Receipt for Order ${orderId}`}
@@ -74,11 +101,29 @@ export const OrderReceiptEmail = ({
           <Text style={summaryLabel}>Items Subtotal</Text>
           <Text style={summaryValue}>{formatPrice(rawSubtotal)}</Text>
         </div>
-        {discountAmountInKobo > 0 && (
+        {promoDiscountInKobo > 0 && (
           <div style={summaryRow}>
-            <Text style={summaryLabel}>Rewards Discount</Text>
+            <Text style={summaryLabel}>
+              Promo Discount{promoCode ? ` (${promoCode.toUpperCase()})` : ""}
+            </Text>
             <Text style={{ ...summaryValue, color: "#10B981" }}>
-              -{formatPrice(discountAmountInKobo)}
+              -{formatPrice(promoDiscountInKobo)}
+            </Text>
+          </div>
+        )}
+        {coinsUsedInKobo > 0 && (
+          <div style={summaryRow}>
+            <Text style={summaryLabel}>BiteHub Coins (BHC)</Text>
+            <Text style={{ ...summaryValue, color: "#10B981" }}>
+              -{formatPrice(coinsUsedInKobo)}
+            </Text>
+          </div>
+        )}
+        {effectiveRewardDiscount > 0 && (
+          <div style={summaryRow}>
+            <Text style={summaryLabel}>Reward Voucher</Text>
+            <Text style={{ ...summaryValue, color: "#10B981" }}>
+              -{formatPrice(effectiveRewardDiscount)}
             </Text>
           </div>
         )}
@@ -96,14 +141,7 @@ export const OrderReceiptEmail = ({
         )}
         <div style={totalRow}>
           <Text style={totalLabel}>Total Paid</Text>
-          <Text style={totalValue}>
-            {formatPrice(
-              rawSubtotal +
-                deliveryFeeInKobo +
-                serviceFeeInKobo -
-                discountAmountInKobo
-            )}
-          </Text>
+          <Text style={totalValue}>{formatPrice(finalTotalPaid)}</Text>
         </div>
       </Section>
       <Section style={buttonContainer}>
@@ -112,8 +150,8 @@ export const OrderReceiptEmail = ({
         </Button>
       </Section>
       <Text style={text}>
-        If you have any issues with your order, please contact the vendor
-        directly from your tracking page or reach out to us at{" "}
+        If you have any issues with your order, please reach out to BiteHub
+        support at{" "}
         <Link href={`mailto:${SUPPORT_EMAIL}`} style={link}>
           {SUPPORT_EMAIL}
         </Link>

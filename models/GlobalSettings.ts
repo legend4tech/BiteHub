@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose"
+import { DEFAULT_PLATFORM_FEE_PERCENTAGE } from "@/lib/constants"
 
 export interface IGlobalSettings extends Document {
   platformFeePercentage: number
@@ -10,7 +11,7 @@ const GlobalSettingsSchema = new Schema<IGlobalSettings>(
   {
     platformFeePercentage: {
       type: Number,
-      default: 5,
+      default: DEFAULT_PLATFORM_FEE_PERCENTAGE,
       min: 0,
       max: 100,
     },

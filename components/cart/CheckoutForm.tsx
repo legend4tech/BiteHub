@@ -48,6 +48,8 @@ export function CheckoutForm() {
     setUseBHC,
   } = useCart()
   const [loading, setLoading] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+  const [redirectMessage, setRedirectMessage] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [requiresLogin, setRequiresLogin] = useState(false)
   const [requiresSignup, setRequiresSignup] = useState(false)
@@ -68,6 +70,14 @@ export function CheckoutForm() {
     refetch: refetchZones,
   } = useVendorDeliveryZones(cart.vendorId)
   const isSyncing = feeLoading || zonesLoading
+
+  // Freeze cart and totals snapshot so OrderSummaryCard keeps displaying items during redirect
+  const [frozenSnapshot, setFrozenSnapshot] = useState<{
+    cart: typeof cart
+    total: number
+    serviceFeeInKobo: number
+    finalTotal: number
+  } | null>(null)
 
   const form = useForm<OrderFormInputValues>({
     resolver: zodResolver(
@@ -231,6 +241,7 @@ export function CheckoutForm() {
       : computeMonnifyServiceFee(targetAmountToReceive)
   const serviceFeeInKobo = monnifyFee + PLATFORM_FLAT_FEE_IN_KOBO
   const finalTotal = calculatedTotal + serviceFeeInKobo
+
   const bhcDiscount = useBHC
     ? Math.min(customerWallet?.wallet?.promoBalanceInKobo || 0, itemSubtotal)
     : 0
@@ -294,8 +305,9 @@ export function CheckoutForm() {
         useBHC: useBHC,
       },
       {
-        onSuccess: (data: { checkoutUrl: string }) => {
-          const { checkoutUrl } = data
+        onSuccess: (data: { checkoutUrl: string; orderId: string }) => {
+          setFrozenSnapshot({ cart, total, serviceFeeInKobo, finalTotal })
+          setIsRedirecting(true)
 
           if (isCustomer) {
             // Fire and forget to save their latest delivery preferences
@@ -307,11 +319,21 @@ export function CheckoutForm() {
               .catch(console.error)
           }
 
-          toast.success("Redirecting to secure payment...")
-          clearCart()
-          window.location.href = checkoutUrl
+          if (values.paymentMethod === "wallet") {
+            setRedirectMessage("Redirecting to order...")
+            toast.success("Order placed successfully!")
+            clearCart()
+            router.replace(`/order/${data.orderId}`)
+          } else {
+            setRedirectMessage("Redirecting to payment...")
+            toast.success("Redirecting to secure payment...")
+            clearCart()
+            window.location.href = data.checkoutUrl
+          }
         },
         onError: (error: unknown) => {
+          setIsRedirecting(false)
+          setRedirectMessage(null)
           if (
             error instanceof AxiosError &&
             error.response?.data?.requiresLogin
@@ -340,8 +362,8 @@ export function CheckoutForm() {
     return <CheckoutSkeleton />
   }
 
-  // Handle empty cart state
-  if (cart.items.length === 0) {
+  // Handle empty cart state (only show when not actively redirecting after order placement)
+  if (cart.items.length === 0 && !isRedirecting) {
     return (
       <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center p-4 text-center">
         <h1 className="mb-4 font-heading text-3xl font-bold">
@@ -454,11 +476,17 @@ export function CheckoutForm() {
         {/* Right Column: Order Summary */}
         <div className="lg:col-span-5 xl:col-span-4">
           <OrderSummaryCard
-            cart={cart}
-            total={total}
-            serviceFeeInKobo={serviceFeeInKobo}
-            finalTotal={finalTotal}
+            cart={frozenSnapshot ? frozenSnapshot.cart : cart}
+            total={frozenSnapshot ? frozenSnapshot.total : total}
+            serviceFeeInKobo={
+              frozenSnapshot
+                ? frozenSnapshot.serviceFeeInKobo
+                : serviceFeeInKobo
+            }
+            finalTotal={frozenSnapshot ? frozenSnapshot.finalTotal : finalTotal}
             loading={loading}
+            isRedirecting={isRedirecting}
+            redirectMessage={redirectMessage}
             isSyncing={isSyncing}
             selectedLocation={selectedLocation}
             isValidLocation={isValidLocation}

@@ -8,6 +8,7 @@ import { sendBankChangeConfirmationEmail } from "@/lib/mail"
 import { updateMonnifySubaccount, getSubaccounts } from "@/lib/monnify"
 import GlobalSettings from "@/models/GlobalSettings"
 import { monnifyBankVerifySchema } from "@/lib/schemas"
+import { DEFAULT_PLATFORM_FEE_PERCENTAGE } from "@/lib/constants"
 import crypto from "crypto"
 
 export async function POST(
@@ -107,7 +108,8 @@ export async function POST(
     let subaccountCode = vendor.monnifySubAccountCode
     try {
       const settings = await GlobalSettings.findOne()
-      const platformFee = settings ? settings.platformFeePercentage : 5
+      const platformFee =
+        settings?.platformFeePercentage ?? DEFAULT_PLATFORM_FEE_PERCENTAGE
       const vendorSplitPercentage = 100 - platformFee
 
       const subaccount = await updateMonnifySubaccount(

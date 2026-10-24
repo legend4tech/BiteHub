@@ -25,6 +25,10 @@ export async function sendCheckoutNotifications({
   location,
   notes,
   customerForWallet,
+  promoCode,
+  promoDiscountInKobo,
+  coinsUsedInKobo,
+  rewardDiscountInKobo,
 }: {
   paymentMethod: string
   customerEmail: string
@@ -45,6 +49,10 @@ export async function sendCheckoutNotifications({
   location: string
   notes?: string | null
   customerForWallet?: unknown
+  promoCode?: string | null
+  promoDiscountInKobo?: number
+  coinsUsedInKobo?: number
+  rewardDiscountInKobo?: number
 }) {
   if (paymentMethod === "wallet" && customerForWallet) {
     const { sendOrderReceiptEmail, sendVendorNewOrderEmail } =
@@ -62,7 +70,11 @@ export async function sendCheckoutNotifications({
       items,
       redirectUrl,
       paymentMethod,
-      discountAmountInKobo
+      discountAmountInKobo,
+      promoCode,
+      promoDiscountInKobo,
+      coinsUsedInKobo,
+      rewardDiscountInKobo
     ).catch(console.error)
 
     if (finalWhatsapp) {

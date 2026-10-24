@@ -33,6 +33,8 @@ import { CURRENT_TERMS_VERSION } from "@/lib/constants"
 import { CustomerTermsChecker } from "@/components/customer/dashboard/CustomerTermsChecker"
 import { ExpiringRewardsBanner } from "@/components/customer/rewards/ExpiringRewardsBanner"
 
+export const dynamic = "force-dynamic"
+
 export default async function CustomerDashboardPage() {
   const session = await auth()
   if (!session?.user?.email) {

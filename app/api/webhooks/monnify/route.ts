@@ -44,11 +44,27 @@ async function processSuccessfulTransaction(paymentReference: string) {
         reference: paymentReference,
       })
       if (!existingTx) {
-        const rawAmount = Number(
-          monnifyData.amountPaid ||
-            monnifyData.amount ||
-            monnifyData.settlementAmount
-        )
+        // Prefer net settlement amount received by BiteHub after Monnify fee deduction.
+        // Fallback to (amountPaid - fee) or raw amountPaid if settlementAmount is unavailable.
+        let rawAmount: number
+        if (
+          typeof monnifyData.settlementAmount === "number" &&
+          monnifyData.settlementAmount > 0
+        ) {
+          rawAmount = monnifyData.settlementAmount
+        } else if (
+          typeof monnifyData.amountPaid === "number" &&
+          typeof monnifyData.fee === "number"
+        ) {
+          rawAmount = Math.max(0, monnifyData.amountPaid - monnifyData.fee)
+        } else {
+          rawAmount = Number(
+            monnifyData.settlementAmount ||
+              monnifyData.amountPaid ||
+              monnifyData.amount ||
+              0
+          )
+        }
         const amountInKobo = nairaToKobo(rawAmount)
 
         const mongoose = (await import("mongoose")).default

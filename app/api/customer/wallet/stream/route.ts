@@ -27,6 +27,9 @@ export async function GET(req: NextRequest) {
   const writer = responseStream.writable.getWriter()
   const encoder = new TextEncoder()
 
+  // Immediate handshake flush so mobile Safari and reverse proxies transition to OPEN immediately
+  writer.write(encoder.encode(": connected\n\n")).catch(() => {})
+
   // Heartbeat to keep connection alive
   const heartbeatInterval = setInterval(() => {
     writer.write(encoder.encode(": heartbeat\n\n")).catch(() => {})
@@ -50,8 +53,9 @@ export async function GET(req: NextRequest) {
   return new Response(responseStream.readable, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
+      "Cache-Control": "no-cache, no-transform, no-store",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
     },
   })
 }

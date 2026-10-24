@@ -47,6 +47,9 @@ async function LandingMenuSection({
   const { items } = await getMenus({ category, school, campus, limit: 10 })
   return <AllProducts initialItems={items} activeCategory={category} />
 }
+
+export const dynamic = "force-dynamic"
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default async function Page({
   searchParams,

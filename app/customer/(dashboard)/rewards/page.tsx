@@ -24,6 +24,8 @@ import {
 } from "@/lib/services/customerService"
 import { ExpiringRewardsBanner } from "@/components/customer/rewards/ExpiringRewardsBanner"
 
+export const dynamic = "force-dynamic"
+
 export default async function CustomerRewardsPage() {
   const session = await auth()
   if (!session?.user?.email) {
