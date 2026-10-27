@@ -19,6 +19,8 @@ export const LOW_STOCK_THRESHOLD = 5
  * The live value is stored in and read from the GlobalSettings collection. */
 export const DEFAULT_PLATFORM_FEE_PERCENTAGE = 2
 export const PLATFORM_FLAT_FEE_IN_KOBO = 15000
+/** Minutes an admin security verification OTP is valid before expiring. */
+export const ADMIN_OTP_EXPIRY_MINUTES = 15
 
 // ─── Discovery Score Weights ───────────────────────────────────────────────────
 // Used by menuService.ts to rank items on the /menus page (Recommended sort).

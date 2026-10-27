@@ -20,6 +20,9 @@ export {
   sendBankChangeConfirmationEmail,
   sendAdminPasswordChangedEmail,
   sendVendorWelcomeEmail,
+  sendAdminPlatformFeeOtpEmail,
+  sendRewardSystemSecurityAlertEmail,
+  type RewardSystemAlertPayload,
 } from "./authMail"
 
 export {

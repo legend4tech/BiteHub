@@ -16,3 +16,11 @@ export async function getPlatformFeePercentage(): Promise<number> {
   } | null
   return settings?.platformFeePercentage ?? DEFAULT_PLATFORM_FEE_PERCENTAGE
 }
+
+export async function getMaintenanceMode(): Promise<boolean> {
+  await dbConnect()
+  const settings = (await GlobalSettings.findOne().lean()) as {
+    maintenanceMode?: boolean
+  } | null
+  return settings?.maintenanceMode ?? process.env.MAINTENANCE_MODE === "true"
+}

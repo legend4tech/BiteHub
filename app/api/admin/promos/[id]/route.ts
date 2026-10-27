@@ -4,7 +4,9 @@ import dbConnect from "@/lib/db"
 import PromoCode from "@/models/PromoCode"
 import PromoCodeRedemption from "@/models/PromoCodeRedemption"
 import { serializePromoCode } from "@/lib/serializers"
-import { updatePromoSchema } from "@/lib/schemas"
+import { updatePromoSchema, idParamSchema } from "@/lib/schemas"
+import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { sendRewardSystemSecurityAlertEmail } from "@/lib/mail"
 
 // ── GET /api/admin/promos/[id] ───────────────────────────────────────────────
 
@@ -21,7 +23,17 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
+    const parsedParams = idParamSchema.safeParse(await params)
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid promo code ID",
+          details: parsedParams.error.format(),
+        },
+        { status: 400 }
+      )
+    }
+    const { id } = parsedParams.data
     await dbConnect()
 
     const promo = await PromoCode.findById(id).lean()
@@ -57,7 +69,29 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `admin-promo-${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too Many Requests" },
+          { status: 429 }
+        )
+      }
+    }
+
+    const parsedParams = idParamSchema.safeParse(await params)
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid promo code ID",
+          details: parsedParams.error.format(),
+        },
+        { status: 400 }
+      )
+    }
+    const { id } = parsedParams.data
     const body = await req.json()
     const parsed = updatePromoSchema.safeParse(body)
     if (!parsed.success) {
@@ -79,6 +113,23 @@ export async function PATCH(
         { status: 404 }
       )
     }
+
+    sendRewardSystemSecurityAlertEmail({
+      action:
+        Object.keys(parsed.data).length === 1 && "isActive" in parsed.data
+          ? "Promo Code Status Toggled"
+          : "Promo Code Modified",
+      entityTitle: updated.code,
+      adminName: session.user.name || "Admin",
+      adminEmail: session.user.email || "Unknown",
+      details: Object.entries(parsed.data).map(([key, val]) => ({
+        label: key,
+        value: String(val),
+      })),
+      dashboardPath: "/admin/promos",
+    }).catch((err) =>
+      console.error("Failed to send promo update alert email:", err)
+    )
 
     return NextResponse.json(serializePromoCode(updated), { status: 200 })
   } catch (error) {
@@ -103,13 +154,29 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = await params
-    if (!id) {
+    if (isRateLimitingEnabled) {
+      const { success } = await strictRateLimiter.limit(
+        `admin-promo-${session.user.id}`
+      )
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too Many Requests" },
+          { status: 429 }
+        )
+      }
+    }
+
+    const parsedParams = idParamSchema.safeParse(await params)
+    if (!parsedParams.success) {
       return NextResponse.json(
-        { error: "Promo code ID is required" },
+        {
+          error: "Invalid promo code ID",
+          details: parsedParams.error.format(),
+        },
         { status: 400 }
       )
     }
+    const { id } = parsedParams.data
 
     await dbConnect()
 
@@ -129,6 +196,23 @@ export async function DELETE(
       // If code was already redeemed, don't delete history; soft deactivate
       promo.isActive = false
       await promo.save()
+
+      sendRewardSystemSecurityAlertEmail({
+        action: "Promo Code Deactivated",
+        entityTitle: promo.code,
+        adminName: session.user.name || "Admin",
+        adminEmail: session.user.email || "Unknown",
+        details: [
+          {
+            label: "Reason",
+            value: "Soft-deactivated (has redemption history)",
+          },
+        ],
+        dashboardPath: "/admin/promos",
+      }).catch((err) =>
+        console.error("Failed to send promo deactivation alert email:", err)
+      )
+
       return NextResponse.json(
         { message: "Promo code has existing redemptions and was deactivated." },
         { status: 200 }
@@ -136,6 +220,18 @@ export async function DELETE(
     }
 
     await PromoCode.findByIdAndDelete(id)
+
+    sendRewardSystemSecurityAlertEmail({
+      action: "Promo Code Deleted",
+      entityTitle: promo.code,
+      adminName: session.user.name || "Admin",
+      adminEmail: session.user.email || "Unknown",
+      details: [{ label: "Status", value: "Permanently deleted" }],
+      dashboardPath: "/admin/promos",
+    }).catch((err) =>
+      console.error("Failed to send promo delete alert email:", err)
+    )
+
     return NextResponse.json(
       { message: "Promo code deleted successfully." },
       { status: 200 }

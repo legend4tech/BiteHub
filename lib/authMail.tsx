@@ -20,7 +20,17 @@ import AdminPasswordChangedEmail from "@/emails/AdminPasswordChangedEmail"
 import VendorWelcomeEmail from "@/emails/VendorWelcomeEmail"
 import CustomerWelcomeEmail from "@/emails/CustomerWelcomeEmail"
 import CustomerVerificationOtpEmail from "@/emails/CustomerVerificationOtpEmail"
-import { NO_REPLY_EMAIL } from "./constants"
+import AdminPlatformFeeOtpEmail from "@/emails/AdminPlatformFeeOtpEmail"
+import RewardSystemAlertEmail, {
+  RewardSystemAlertDetail,
+} from "@/emails/RewardSystemAlertEmail"
+import {
+  NO_REPLY_EMAIL,
+  ADMIN_OTP_EXPIRY_MINUTES,
+  SUPPORT_EMAIL,
+} from "./constants"
+import dbConnect from "./db"
+import AdminUser from "@/models/AdminUser"
 
 // ─── Shared helper ────────────────────────────────────────────────────────────
 
@@ -308,6 +318,116 @@ export async function sendCustomerVerificationOtpEmail(
     return { success: true, data: info }
   } catch (error) {
     console.error("Failed to send customer verification OTP email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendAdminPlatformFeeOtpEmail(
+  email: string,
+  adminName: string,
+  otp: string,
+  expiryMinutes: number = ADMIN_OTP_EXPIRY_MINUTES
+) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.warn(
+      `⚠️ AWS credentials missing. Logged Platform Fee OTP for ${email}: ${otp}`
+    )
+    return { success: false, error: "Email provider key missing" }
+  }
+  try {
+    const html = await render(
+      <AdminPlatformFeeOtpEmail
+        adminName={adminName}
+        otp={otp}
+        expiryMinutes={expiryMinutes}
+      />
+    )
+    const info = await mailer.sendMail({
+      from: resolveFrom(),
+      to: email,
+      subject: `BiteHub Security Verification Code: ${otp}`,
+      html,
+    })
+    return { success: true, data: info }
+  } catch (error) {
+    console.error("Failed to send admin platform fee OTP email:", error)
+    return { success: false, error }
+  }
+}
+
+export interface RewardSystemAlertPayload {
+  action: string
+  entityTitle: string
+  adminName: string
+  adminEmail: string
+  details?: RewardSystemAlertDetail[]
+  dashboardPath?: string
+}
+
+export async function sendRewardSystemSecurityAlertEmail({
+  action,
+  entityTitle,
+  adminName,
+  adminEmail,
+  details = [],
+  dashboardPath = "/admin/campaigns",
+}: RewardSystemAlertPayload) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.warn(
+      `⚠️ AWS credentials missing. Reward alert: ${action} on ${entityTitle} by ${adminEmail}`
+    )
+    return { success: false, error: "Email provider key missing" }
+  }
+
+  try {
+    await dbConnect()
+    const superadmins = await AdminUser.find(
+      { role: "superadmin", isActive: true },
+      "email"
+    ).lean()
+
+    const recipientEmails = Array.from(
+      new Set(
+        [
+          ...superadmins
+            .map((sa: { email: string }) => sa.email)
+            .filter(Boolean),
+          process.env.ADMIN_ALERT_EMAIL,
+          SUPPORT_EMAIL,
+        ].filter(Boolean) as string[]
+      )
+    )
+
+    if (recipientEmails.length === 0) {
+      console.warn(
+        "⚠️ No superadmin or support recipient found for reward alert."
+      )
+      return { success: false, error: "No recipients configured" }
+    }
+
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}${dashboardPath}`
+
+    const html = await render(
+      <RewardSystemAlertEmail
+        action={action}
+        entityTitle={entityTitle}
+        adminName={adminName}
+        adminEmail={adminEmail}
+        details={details}
+        dashboardUrl={dashboardUrl}
+      />
+    )
+
+    const info = await mailer.sendMail({
+      from: resolveFrom(),
+      to: recipientEmails,
+      subject: `[Security Alert] ${action}: ${entityTitle}`,
+      html,
+    })
+
+    return { success: true, data: info }
+  } catch (error) {
+    console.error("Failed to send reward system security alert email:", error)
     return { success: false, error }
   }
 }

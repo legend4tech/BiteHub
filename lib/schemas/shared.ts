@@ -150,3 +150,13 @@ export const subscribeSchema = z.object({
   email: z.string().email("Invalid email address").toLowerCase().trim(),
 })
 export type SubscribeValues = z.infer<typeof subscribeSchema>
+
+export const deleteUploadSchema = z.object({
+  publicId: z.string().trim().min(1, "Public ID is required"),
+})
+export type DeleteUploadValues = z.infer<typeof deleteUploadSchema>
+
+export const idParamSchema = z.object({
+  id: z.string().trim().min(1, "ID is required"),
+})
+export type IdParamValues = z.infer<typeof idParamSchema>

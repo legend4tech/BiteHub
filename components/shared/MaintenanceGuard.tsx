@@ -1,13 +1,13 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { useGlobalSettings } from "@/hooks/shared/useGlobalSettings"
+import { useMaintenanceMode } from "@/hooks/shared/useMaintenanceMode"
 import { Wrench } from "lucide-react"
 
 export function MaintenanceGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const { data, isLoading } = useGlobalSettings({
+  const { data, isLoading } = useMaintenanceMode({
     refetchInterval: 1000 * 60, // Poll every minute to detect changes
     staleTime: 1000 * 30,
   })

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { uploadStream, deleteFromCloudinary } from "@/lib/cloudinary"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
+import { deleteUploadSchema } from "@/lib/schemas"
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,30 @@ export async function POST(request: Request) {
     if (!type || !["vendor", "menu", "customer", "broadcast"].includes(type)) {
       return NextResponse.json(
         { error: "Invalid upload type" },
+        { status: 400 }
+      )
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB limit
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File size exceeds the 5MB maximum limit." },
+        { status: 400 }
+      )
+    }
+
+    const ALLOWED_MIME_TYPES = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ]
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid file format. Only JPEG, PNG, WebP, and AVIF images are permitted.",
+        },
         { status: 400 }
       )
     }
@@ -87,10 +112,15 @@ export async function DELETE(request: Request) {
       }
     }
 
-    const { publicId } = await request.json()
-    if (!publicId || typeof publicId !== "string") {
-      return NextResponse.json({ error: "Missing publicId" }, { status: 400 })
+    const body = await request.json()
+    const parsed = deleteUploadSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: parsed.error.format() },
+        { status: 400 }
+      )
     }
+    const { publicId } = parsed.data
 
     // Role-based namespace check to prevent cross-account asset deletion
     const role = session.user.role

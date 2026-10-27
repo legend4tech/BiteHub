@@ -7,6 +7,7 @@ import {
 } from "@/lib/services/gamificationQueryService"
 import { rewardCampaignFormSchema } from "@/lib/schemas/admin"
 import { strictRateLimiter } from "@/lib/rate-limit"
+import { sendRewardSystemSecurityAlertEmail } from "@/lib/mail"
 
 export async function GET() {
   try {
@@ -64,6 +65,33 @@ export async function POST(req: Request) {
 
     await dbConnect()
     const newCampaign = await createAdminCampaign(data)
+
+    // Trigger security alert email to superadmins
+    sendRewardSystemSecurityAlertEmail({
+      action: "Reward Campaign Created",
+      entityTitle: newCampaign?.title || data.title,
+      adminName: session.user.name || "Admin",
+      adminEmail: session.user.email || "Unknown",
+      details: [
+        { label: "Action Type", value: data.actionType },
+        { label: "Reward Type", value: data.rewardType },
+        {
+          label: "Reward Value",
+          value:
+            data.rewardType === "BITEHUB_COINS"
+              ? `${(data.rewardValueInKobo || 0) / 100} Coins`
+              : "Free Meal",
+        },
+        {
+          label: "Max Per User",
+          value: `${data.maxCompletionsPerUser}`,
+        },
+        { label: "Active", value: data.isActive ? "Yes" : "No" },
+      ],
+      dashboardPath: "/admin/campaigns",
+    }).catch((err) =>
+      console.error("Failed to send reward campaign alert email:", err)
+    )
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import dbConnect from "@/lib/db"
 import Order from "@/models/Order"
 import { auth } from "@/auth"
@@ -56,9 +57,18 @@ export async function POST(request: Request) {
     const session = await auth()
 
     if (isRateLimitingEnabled) {
+      const cookieStore = await cookies()
+      const cookieDeviceId = cookieStore.get("bitehub_device_id")?.value
+      const forwardedFor = request.headers.get("x-forwarded-for")
+      const clientIp = forwardedFor
+        ? forwardedFor.split(",")[0].trim()
+        : "127.0.0.1"
+
       const rateLimitKey = session?.user?.id
         ? `order_user_${session.user.id}`
-        : `order_email_${parsedBody.data.customerEmail}`
+        : cookieDeviceId
+          ? `order_device_${cookieDeviceId}`
+          : `order_ip_${clientIp}`
 
       const { success } = await strictRateLimiter.limit(rateLimitKey)
       if (!success) {

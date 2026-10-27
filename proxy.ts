@@ -41,10 +41,10 @@ export default auth(async (req) => {
   const userId = session?.user?.id
 
   if (isRateLimitingEnabled) {
+    const forwardedFor = req.headers.get("x-forwarded-for")
     const ip =
       (req as { ip?: string }).ip ??
-      req.headers.get("x-forwarded-for") ??
-      "127.0.0.1"
+      (forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1")
     const path = req.nextUrl.pathname
 
     // Only rate-limit auth mutations (signin, callback, signout).

@@ -25,6 +25,20 @@ export const globalSettingsSchema = z.object({
 
 export type GlobalSettingsValues = z.infer<typeof globalSettingsSchema>
 
+export const updateGlobalSettingsSchema = globalSettingsSchema
+  .partial()
+  .extend({
+    otp: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, "Security verification code must be exactly 6 digits")
+      .optional(),
+  })
+
+export type UpdateGlobalSettingsValues = z.infer<
+  typeof updateGlobalSettingsSchema
+>
+
 export const adminLandmarkSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   school: z.string().trim().min(1, "School is required"),

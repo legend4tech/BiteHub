@@ -7,6 +7,7 @@ import { auth } from "@/auth"
 import { serializeMenuItem } from "@/lib/serializers"
 import { isItemAvailableNow } from "@/lib/timeUtils"
 import { menuItemFormSchema } from "@/lib/schemas"
+import { escapeRegex } from "@/lib/utils"
 
 export async function GET(request: Request) {
   try {
@@ -31,8 +32,9 @@ export async function GET(request: Request) {
 
     // Build filter — always scope to the authenticated vendor
     const filter: Record<string, unknown> = { vendorId }
-    if (search) filter.name = { $regex: search, $options: "i" }
-    if (category) filter.category = { $regex: category, $options: "i" }
+    if (search) filter.name = { $regex: escapeRegex(search), $options: "i" }
+    if (category)
+      filter.category = { $regex: escapeRegex(category), $options: "i" }
 
     const items = await MenuItem.find(filter)
       .sort({ createdAt: -1 })

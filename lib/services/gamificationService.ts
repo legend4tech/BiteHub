@@ -13,6 +13,8 @@ import CampaignProgress from "@/models/CampaignProgress"
 import RewardVoucher from "@/models/RewardVoucher"
 import Wallet from "@/models/Wallet"
 import WalletTransaction from "@/models/WalletTransaction"
+import { revalidatePath } from "next/cache"
+import { eventBus } from "@/lib/events"
 import crypto from "crypto"
 // Helper to generate secure voucher codes with high entropy
 function generateVoucherCode(): string {
@@ -353,6 +355,13 @@ async function issueCoins(
       campaignTitle,
       `${toMajorUnit(amountInKobo)} BHC`
     ).catch(console.error)
+  }
+
+  try {
+    revalidatePath("/customer/wallet")
+    eventBus.emit("wallet_funded", customerId.toString())
+  } catch {
+    // Non-blocking in non-request contexts
   }
 }
 /**

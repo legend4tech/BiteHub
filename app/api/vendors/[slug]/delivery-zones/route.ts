@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
+import mongoose from "mongoose"
 import dbConnect from "@/lib/db"
 import Landmark from "@/models/Landmark"
 import SubLandmark from "@/models/SubLandmark"
 import Vendor from "@/models/Vendor"
+import { escapeRegex } from "@/lib/utils"
 
 export async function GET(
   request: Request,
@@ -12,16 +14,22 @@ export async function GET(
     await dbConnect()
     const { slug } = await params
 
-    const vendor = await Vendor.findById(slug).lean()
+    const vendor = mongoose.Types.ObjectId.isValid(slug)
+      ? await Vendor.findById(slug).lean()
+      : await Vendor.findOne({ slug }).lean()
+
     if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 })
     }
 
     // 1. Fetch Admin Landmarks and SubLandmarks for the vendor's campus
     // Using case-insensitive regex to handle "coou" vs "COOU"
+    const escapedSchool = escapeRegex(vendor.school || "")
+    const escapedCampus = escapeRegex(vendor.campus || "")
+
     const landmarks = await Landmark.find({
-      school: { $regex: new RegExp(`^${vendor.school}$`, "i") },
-      campus: { $regex: new RegExp(`^${vendor.campus}$`, "i") },
+      school: { $regex: new RegExp(`^${escapedSchool}$`, "i") },
+      campus: { $regex: new RegExp(`^${escapedCampus}$`, "i") },
       isActive: true,
     })
       .sort({ name: 1 })

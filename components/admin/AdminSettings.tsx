@@ -6,15 +6,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import { useGlobalSettings } from "@/hooks/shared/useGlobalSettings"
-import { Settings, Shield, Search, Loader2, Eye, EyeOff } from "lucide-react"
+import { Settings, Shield, Loader2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Field, FieldError } from "@/components/ui/field"
 import {
   useAdminUpdatePassword,
   useAdminUpdateGlobalSettings,
-  useAdminVerifyOrder,
 } from "@/hooks/admin/useAdminMutations"
+import { AdminOrderRecovery } from "./AdminOrderRecovery"
 import {
   adminPasswordSchema,
   type AdminPasswordValues,
@@ -22,6 +22,8 @@ import {
   type GlobalSettingsValues,
 } from "@/lib/schemas"
 import { PasswordStrengthMeter } from "@/components/shared/PasswordStrengthMeter"
+import { PlatformFeeOtpDialog } from "./PlatformFeeOtpDialog"
+import apiClient from "@/lib/axios"
 
 // ─── Admin Settings Component ─────────────────────────────────────────────────
 
@@ -93,7 +95,36 @@ export function AdminSettings() {
 
   const updateSettingsMutation = useAdminUpdateGlobalSettings()
 
-  const handleSettingsSubmit = (values: GlobalSettingsValues) => {
+  const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false)
+  const [pendingValues, setPendingValues] =
+    useState<GlobalSettingsValues | null>(null)
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false)
+
+  const handleSettingsSubmit = async (values: GlobalSettingsValues) => {
+    // If platformFeePercentage is modified, prompt for 2FA OTP verification
+    if (
+      currentSettings &&
+      values.platformFeePercentage !== currentSettings.platformFeePercentage
+    ) {
+      setPendingValues(values)
+      setIsRequestingOtp(true)
+      try {
+        await apiClient.post("/admin/settings/global/request-otp")
+        toast.info(
+          "A security verification code has been sent to your registered email."
+        )
+        setIsOtpDialogOpen(true)
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { error?: string } } }
+        toast.error(
+          error.response?.data?.error || "Failed to request verification code"
+        )
+      } finally {
+        setIsRequestingOtp(false)
+      }
+      return
+    }
+
     updateSettingsMutation.mutate(values, {
       onSuccess: () => {
         toast.success("Global settings updated")
@@ -106,27 +137,29 @@ export function AdminSettings() {
     })
   }
 
-  const onSettingsSubmit = (values: GlobalSettingsValues) => {
-    handleSettingsSubmit(values)
+  const handleOtpConfirm = (otp: string) => {
+    if (!pendingValues) return
+    updateSettingsMutation.mutate(
+      { ...pendingValues, otp },
+      {
+        onSuccess: () => {
+          toast.success("Global settings updated successfully")
+          setIsOtpDialogOpen(false)
+          setPendingValues(null)
+          queryClient.invalidateQueries({
+            queryKey: ["admin-global-settings"],
+          })
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } }
+          toast.error(err.response?.data?.error || "Failed to update settings")
+        },
+      }
+    )
   }
 
-  // ── Manual Order Verification ──
-  const [orderIdToVerify, setOrderIdToVerify] = useState("")
-  const verifyOrderMutation = useAdminVerifyOrder()
-
-  const handleVerifyOrder = () => {
-    if (!orderIdToVerify.trim()) return
-
-    verifyOrderMutation.mutate(orderIdToVerify.trim(), {
-      onSuccess: (data) => {
-        toast.success(data?.message || "Order verified successfully")
-        setOrderIdToVerify("")
-      },
-      onError: (error: unknown) => {
-        const err = error as { response?: { data?: { error?: string } } }
-        toast.error(err.response?.data?.error || "Verification failed")
-      },
-    })
+  const onSettingsSubmit = (values: GlobalSettingsValues) => {
+    handleSettingsSubmit(values)
   }
 
   return (
@@ -256,52 +289,7 @@ export function AdminSettings() {
           </div>
 
           {/* Manual Order Verification */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-confirmed/10 text-status-confirmed-foreground">
-                <Search className="size-5" />
-              </div>
-              <div>
-                <h2 className="font-heading text-lg font-semibold">
-                  Order Recovery
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Manually sync a stuck order with Monnify
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Order ID</label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g. BH-XXXXXX-XXXX"
-                    value={orderIdToVerify}
-                    onChange={(e) => setOrderIdToVerify(e.target.value)}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleVerifyOrder}
-                    disabled={
-                      !orderIdToVerify.trim() || verifyOrderMutation.isPending
-                    }
-                  >
-                    {verifyOrderMutation.isPending ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      "Verify"
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  If a vendor reports a successful payment is showing as
-                  pending, paste the Order ID here to forcefully sync the status
-                  from Monnify.
-                </p>
-              </div>
-            </div>
-          </div>
+          <AdminOrderRecovery />
         </div>
 
         {/* Right Column */}
@@ -381,9 +369,9 @@ export function AdminSettings() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={updateSettingsMutation.isPending}
+                  disabled={updateSettingsMutation.isPending || isRequestingOtp}
                 >
-                  {updateSettingsMutation.isPending ? (
+                  {updateSettingsMutation.isPending || isRequestingOtp ? (
                     <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : null}
                   Save Global Settings
@@ -393,6 +381,17 @@ export function AdminSettings() {
           </div>
         </div>
       </div>
+
+      <PlatformFeeOtpDialog
+        isOpen={isOtpDialogOpen}
+        onClose={() => {
+          setIsOtpDialogOpen(false)
+          setPendingValues(null)
+        }}
+        onConfirm={handleOtpConfirm}
+        isSubmitting={updateSettingsMutation.isPending}
+        targetFeePercentage={pendingValues?.platformFeePercentage ?? 0}
+      />
     </div>
   )
 }
