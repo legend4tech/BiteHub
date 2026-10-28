@@ -151,6 +151,12 @@ export const subscribeSchema = z.object({
 })
 export type SubscribeValues = z.infer<typeof subscribeSchema>
 
+export const unsubscribeSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase().trim(),
+  token: z.string().min(1, "Token is required"),
+})
+export type UnsubscribeValues = z.infer<typeof unsubscribeSchema>
+
 export const deleteUploadSchema = z.object({
   publicId: z.string().trim().min(1, "Public ID is required"),
 })

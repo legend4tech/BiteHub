@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     }
 
     const orders = await Order.aggregate(pipeline)
-    return NextResponse.json(orders.map(serializeOrder))
+    return NextResponse.json(orders.map((order) => serializeOrder(order)))
   } catch (error) {
     console.error("[vendor/orders GET]", error)
     return NextResponse.json(

@@ -87,7 +87,14 @@ export async function POST(
 
     // Verify OTP
     const hashedInputOtp = crypto.createHash("sha256").update(otp).digest("hex")
-    if (!vendor.bankUpdateOtp || vendor.bankUpdateOtp !== hashedInputOtp) {
+    const storedHash = vendor.bankUpdateOtp || ""
+    const isOtpValid =
+      storedHash.length === hashedInputOtp.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(storedHash, "utf-8"),
+        Buffer.from(hashedInputOtp, "utf-8")
+      )
+    if (!isOtpValid) {
       vendor.bankUpdateOtpAttempts = (vendor.bankUpdateOtpAttempts || 0) + 1
       await vendor.save()
       const remainingAttempts = 5 - vendor.bankUpdateOtpAttempts

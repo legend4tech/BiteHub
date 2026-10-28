@@ -10,8 +10,26 @@ import { LeanDoc, safeDate } from "./base"
 
 export type LeanOrder = LeanDoc<IOrder>
 
-export function serializeOrder(doc: LeanOrder | null) {
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 7) return ""
+  const prefix = phone.slice(0, 4)
+  const suffix = phone.slice(-3)
+  return `${prefix} •••• ${suffix}`
+}
+
+export interface SerializeOrderOptions {
+  isPublic?: boolean
+}
+
+export function serializeOrder(
+  doc: LeanOrder | null,
+  options?: SerializeOrderOptions | unknown
+) {
   if (!doc) return null
+  const isPublic =
+    typeof options === "object" && options !== null && "isPublic" in options
+      ? Boolean((options as SerializeOrderOptions).isPublic)
+      : false
 
   return {
     id: doc._id?.toString() || "",
@@ -21,10 +39,12 @@ export function serializeOrder(doc: LeanOrder | null) {
         ? String((doc.vendorId as unknown as { _id: unknown })._id)
         : String(doc.vendorId || ""),
     vendorName: doc.vendorName || "Unknown Vendor",
-    vendorWhatsappNumber: doc.vendorWhatsappNumber || "",
+    vendorWhatsappNumber: isPublic ? "" : doc.vendorWhatsappNumber || "",
     vendorPrepTime: doc.vendorPrepTime ?? "",
     customerName: doc.customerName || "Customer",
-    customerPhone: doc.customerPhone || "",
+    customerPhone: isPublic
+      ? maskPhone(doc.customerPhone || "")
+      : doc.customerPhone || "",
     location: doc.location || "",
     items: Array.isArray(doc.items)
       ? doc.items.map((item) => ({
@@ -38,13 +58,15 @@ export function serializeOrder(doc: LeanOrder | null) {
     notes: doc.notes ?? "",
     deliveryFeeInKobo: Number(doc.deliveryFeeInKobo) || 0,
     serviceFeeInKobo: Number(doc.serviceFeeInKobo) || 0,
-    platformCommissionInKobo: Number(doc.platformCommissionInKobo) || 0,
-    vendorRevenueInKobo: Number(doc.vendorRevenueInKobo) || 0,
+    platformCommissionInKobo: isPublic
+      ? 0
+      : Number(doc.platformCommissionInKobo) || 0,
+    vendorRevenueInKobo: isPublic ? 0 : Number(doc.vendorRevenueInKobo) || 0,
     totalAmountInKobo: Number(doc.totalAmountInKobo) || 0,
     status: doc.status || "pending",
     paymentMethod: doc.paymentMethod ?? "monnify",
     paymentStatus: doc.paymentStatus ?? "pending",
-    monnifyReference: doc.monnifyReference ?? null,
+    monnifyReference: isPublic ? null : (doc.monnifyReference ?? null),
     isFullyRated: doc.isFullyRated ?? false,
     isVendorRated: doc.isVendorRated ?? false,
     ratedItems: Array.isArray(doc.ratedItems) ? doc.ratedItems : [],
@@ -55,4 +77,8 @@ export function serializeOrder(doc: LeanOrder | null) {
     createdAt: safeDate(doc.createdAt),
     updatedAt: safeDate(doc.updatedAt),
   }
+}
+
+export function serializePublicOrder(doc: LeanOrder | null) {
+  return serializeOrder(doc, { isPublic: true })
 }

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
 
     // Save
     adminUser.password = hashedPassword
+    adminUser.lastPasswordChangeAt = new Date()
     await adminUser.save()
 
     // Send security alert email

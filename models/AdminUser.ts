@@ -7,6 +7,7 @@ export interface IAdminUser extends Document {
   role: "superadmin" | "admin" | "vendor_manager"
   isActive: boolean
   lastLoginAt?: Date
+  lastPasswordChangeAt?: Date
   platformFeeUpdateOtpHash?: string
   platformFeeUpdateOtpExpires?: Date
   platformFeeUpdateOtpAttempts?: number
@@ -37,6 +38,9 @@ const AdminUserSchema = new Schema<IAdminUser>(
       default: true,
     },
     lastLoginAt: {
+      type: Date,
+    },
+    lastPasswordChangeAt: {
       type: Date,
     },
     platformFeeUpdateOtpHash: { type: String },

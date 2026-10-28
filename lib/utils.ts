@@ -12,6 +12,9 @@ export function escapeRegex(string: string) {
 import { createHmac } from "crypto"
 
 export function generateUnsubscribeToken(email: string) {
-  const secret = process.env.NEXTAUTH_SECRET || "fallback-secret"
-  return createHmac("sha256", secret).update(email).digest("hex")
+  const secret =
+    process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret"
+  return createHmac("sha256", secret)
+    .update(email.toLowerCase().trim())
+    .digest("hex")
 }

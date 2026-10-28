@@ -28,7 +28,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    const serializedOrder = serializeOrder(order)
+    const session = await auth()
+    const isOwner = Boolean(
+      session?.user &&
+      (session.user.role === "admin" ||
+        session.user.role === "superadmin" ||
+        (order.customerId && String(order.customerId) === session.user.id) ||
+        (order.vendorId && String(order.vendorId) === session.user.vendorId))
+    )
+
+    const serializedOrder = serializeOrder(order, { isPublic: !isOwner })
     return NextResponse.json(serializedOrder)
   } catch (error) {
     console.error("Error fetching order:", error)

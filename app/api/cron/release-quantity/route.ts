@@ -8,30 +8,28 @@ import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/constants"
 
 export async function GET(request: Request) {
   try {
-    if (process.env.NODE_ENV === "production") {
-      const cronSecret = process.env.CRON_SECRET
-      if (!cronSecret) {
-        console.error(
-          "[CRON release-quantity] Missing CRON_SECRET env variable"
-        )
-        return NextResponse.json(
-          { error: "Server misconfiguration" },
-          { status: 500 }
-        )
-      }
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
+      console.error("[CRON release-quantity] Missing CRON_SECRET env variable")
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      )
+    }
 
-      const authHeader = request.headers.get("authorization")
-      const expectedHeader = `Bearer ${cronSecret}`
-      if (
-        !authHeader ||
-        authHeader.length !== expectedHeader.length ||
-        !crypto.timingSafeEqual(
-          Buffer.from(authHeader),
-          Buffer.from(expectedHeader)
-        )
-      ) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      }
+    const authHeader =
+      request.headers.get("authorization") ||
+      request.headers.get("Authorization")
+    const expectedHeader = `Bearer ${cronSecret}`
+    if (
+      !authHeader ||
+      authHeader.length !== expectedHeader.length ||
+      !crypto.timingSafeEqual(
+        Buffer.from(authHeader),
+        Buffer.from(expectedHeader)
+      )
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     await dbConnect()

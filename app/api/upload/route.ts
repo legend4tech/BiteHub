@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import dbConnect from "@/lib/db"
+import CustomerModel from "@/models/Customer"
+import VendorModel from "@/models/Vendor"
+import MenuItem from "@/models/MenuItem"
 import { uploadStream, deleteFromCloudinary } from "@/lib/cloudinary"
 import { isRateLimitingEnabled, strictRateLimiter } from "@/lib/rate-limit"
 import { deleteUploadSchema } from "@/lib/schemas"
@@ -35,6 +39,32 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Invalid upload type" },
         { status: 400 }
+      )
+    }
+
+    const role = session.user.role
+    const isAdmin = role === "admin" || role === "superadmin"
+    const isVendor = role === "vendor"
+    const isCustomer = role === "customer"
+
+    if (type === "broadcast" && !isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden: Only administrators can upload broadcasts" },
+        { status: 403 }
+      )
+    }
+
+    if (isCustomer && type !== "customer") {
+      return NextResponse.json(
+        { error: "Forbidden: Customers can only upload profile images" },
+        { status: 403 }
+      )
+    }
+
+    if (isVendor && type !== "vendor" && type !== "menu") {
+      return NextResponse.json(
+        { error: "Forbidden: Vendors can only upload store or menu images" },
+        { status: 403 }
       )
     }
 
@@ -122,24 +152,78 @@ export async function DELETE(request: Request) {
     }
     const { publicId } = parsed.data
 
-    // Role-based namespace check to prevent cross-account asset deletion
+    // Role-based namespace and ownership check to prevent cross-account asset deletion
     const role = session.user.role
     const isAdmin = role === "admin" || role === "superadmin"
     const isVendor = role === "vendor"
     const isCustomer = role === "customer"
 
-    const isAllowed =
-      isAdmin ||
-      (isVendor &&
-        (publicId.startsWith("bitehub/vendorsimg/") ||
-          publicId.startsWith("bitehub/menuimg/"))) ||
-      (isCustomer && publicId.startsWith("bitehub/customerimg/"))
-
-    if (!isAllowed || !publicId.startsWith("bitehub/")) {
+    if (!publicId.startsWith("bitehub/")) {
       return NextResponse.json(
         { error: "Forbidden: You are not authorized to delete this asset" },
         { status: 403 }
       )
+    }
+
+    if (!isAdmin) {
+      if (isCustomer) {
+        if (!publicId.startsWith("bitehub/customerimg/")) {
+          return NextResponse.json(
+            { error: "Forbidden: You are not authorized to delete this asset" },
+            { status: 403 }
+          )
+        }
+        await dbConnect()
+        const customer = await CustomerModel.findById(session.user.id)
+          .select("image imagePublicId")
+          .lean()
+        const matchesAvatar =
+          customer?.imagePublicId === publicId ||
+          (customer?.image && customer.image.includes(publicId))
+        if (!matchesAvatar) {
+          return NextResponse.json(
+            { error: "Forbidden: You do not own this asset" },
+            { status: 403 }
+          )
+        }
+      } else if (isVendor) {
+        if (
+          !publicId.startsWith("bitehub/vendorsimg/") &&
+          !publicId.startsWith("bitehub/menuimg/")
+        ) {
+          return NextResponse.json(
+            { error: "Forbidden: You are not authorized to delete this asset" },
+            { status: 403 }
+          )
+        }
+        await dbConnect()
+        const vendorId = session.user.vendorId
+        if (!vendorId) {
+          return NextResponse.json(
+            { error: "Forbidden: Vendor profile not found" },
+            { status: 403 }
+          )
+        }
+        const isVendorLogo = await VendorModel.exists({
+          _id: vendorId,
+          "image.publicId": publicId,
+        })
+        const isMenuItemImg = await MenuItem.exists({
+          vendorId,
+          "image.publicId": publicId,
+        })
+        if (!isVendorLogo && !isMenuItemImg) {
+          return NextResponse.json(
+            { error: "Forbidden: You do not own this asset" },
+            { status: 403 }
+          )
+        }
+      } else {
+        return NextResponse.json(
+          { error: "Forbidden: You are not authorized to delete this asset" },
+          { status: 403 }
+        )
+      }
     }
 
     await deleteFromCloudinary(publicId)

@@ -88,11 +88,21 @@ async function validateSession(token: JWT): Promise<JWT | null> {
       // Sync display fields so the JWT self-heals on every refresh
       if (dbUser.name) token.name = dbUser.name
       if (dbUser.image) token.image = dbUser.image
-    } else if (token.role === "admin" || token.role === "superadmin") {
+    } else if (
+      token.role === "admin" ||
+      token.role === "superadmin" ||
+      token.role === "vendor_manager"
+    ) {
       const dbUser = await AdminUser.findById(token.id)
-        .select("isActive name")
+        .select("isActive name lastPasswordChangeAt")
         .lean()
       if (!dbUser || !dbUser.isActive) return null
+      if (dbUser.lastPasswordChangeAt && token.iat) {
+        const changedAtSeconds = Math.floor(
+          dbUser.lastPasswordChangeAt.getTime() / 1000
+        )
+        if (changedAtSeconds > token.iat) return null
+      }
       if (dbUser.name) token.name = dbUser.name
     } else if (token.role === "customer") {
       const dbUser = await CustomerModel.findById(token.id)
