@@ -127,11 +127,6 @@ export function PromoCodeInput({
               Have a Promo Code?
             </span>
           </div>
-          {!isAuthenticated && !appliedPromoCode && (
-            <span className="text-[10px] font-medium text-primary">
-              Wallet Required
-            </span>
-          )}
         </div>
 
         {appliedPromoCode ? (
@@ -204,10 +199,11 @@ export function PromoCodeInput({
                   </div>
                   <div className="leading-tight">
                     <p className="font-semibold text-foreground">
-                      Promo codes require a Wallet
+                      Account & Wallet Required
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Sign up to claim discounts on your order.
+                      Create a free account or sign in to activate your wallet
+                      and claim discounts.
                     </p>
                   </div>
                 </div>
@@ -239,12 +235,11 @@ export function PromoCodeInput({
               Sign Up to Claim Promo Codes
             </DialogTitle>
             <DialogDescription className="pt-1 text-sm text-muted-foreground">
-              All promo code discounts and subsidies are paid directly via your{" "}
-              <strong className="text-foreground">
-                BiteHub Student Wallet
-              </strong>
-              . Create an account or sign in to activate your wallet and claim
-              this discount!
+              Promo code discounts are exclusive to registered customers with an
+              activated{" "}
+              <strong className="text-foreground">BiteHub Wallet</strong>.
+              Create a free account or sign in to activate your wallet and claim
+              your discount!
             </DialogDescription>
           </DialogHeader>
 
