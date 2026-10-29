@@ -20,6 +20,10 @@ import AdminOrderCancelledEmail from "@/emails/AdminOrderCancelledEmail"
 import CustomerOrderStatusEmail from "@/emails/CustomerOrderStatusEmail"
 import OrderCompletedEmail from "@/emails/OrderCompletedEmail"
 import CustomerOrderCancelledEmail from "@/emails/CustomerOrderCancelledEmail"
+import AdminOrderAttentionEmail, {
+  type OrderAttentionItem,
+} from "@/emails/AdminOrderAttentionEmail"
+import VendorOrderReminderEmail from "@/emails/VendorOrderReminderEmail"
 import { NO_REPLY_EMAIL } from "./constants"
 
 // ─── Shared helper ────────────────────────────────────────────────────────────
@@ -261,6 +265,158 @@ export async function sendCustomerOrderCancelledEmail(
     return { success: true }
   } catch (error) {
     console.error("Failed to send customer order cancelled email:", error)
+    return { success: false, error }
+  }
+}
+
+export async function sendAdminOrderAttentionEmail({
+  recipients,
+  orderId,
+  tier,
+  elapsedMinutes,
+  currentStatus,
+  vendorName,
+  vendorWhatsappNumber,
+  customerName,
+  customerPhone,
+  deliveryLocation,
+  items,
+  totalAmountInKobo,
+}: {
+  recipients: string[]
+  orderId: string
+  tier: 1 | 2 | 3
+  elapsedMinutes: number
+  currentStatus: string
+  vendorName: string
+  vendorWhatsappNumber?: string
+  customerName: string
+  customerPhone: string
+  deliveryLocation: string
+  items: OrderAttentionItem[]
+  totalAmountInKobo: number
+}) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
+  if (!recipients || recipients.length === 0) {
+    return { success: false, error: "No recipients provided" }
+  }
+
+  const subjectPrefix =
+    tier === 3
+      ? "🔥 [CRITICAL DELAY]"
+      : tier === 2
+        ? "🚨 [ESCALATION]"
+        : "⚠️ [OPS ALERT]"
+  const subject = `${subjectPrefix} Order #${orderId} awaiting fulfillment (${elapsedMinutes}m elapsed) - ${vendorName}`
+  const adminDashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/admin/orders?search=${encodeURIComponent(orderId)}`
+
+  try {
+    const html = await render(
+      React.createElement(AdminOrderAttentionEmail, {
+        orderId,
+        tier,
+        elapsedMinutes,
+        currentStatus,
+        vendorName,
+        vendorWhatsappNumber,
+        customerName,
+        customerPhone,
+        deliveryLocation,
+        items,
+        totalAmountInKobo,
+        adminDashboardUrl,
+      })
+    )
+
+    await mailer.sendMail({
+      from: resolveFrom(),
+      to: recipients,
+      subject,
+      html,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error(
+      `Failed to send admin order attention email (${orderId}):`,
+      error
+    )
+    return { success: false, error }
+  }
+}
+
+export async function sendVendorOrderReminderEmail({
+  vendorEmail,
+  orderId,
+  tier,
+  elapsedMinutes,
+  currentStatus,
+  vendorName,
+  customerName,
+  deliveryLocation,
+  items,
+  vendorRevenueInKobo,
+}: {
+  vendorEmail: string
+  orderId: string
+  tier: 1 | 2 | 3
+  elapsedMinutes: number
+  currentStatus?: string
+  vendorName: string
+  customerName: string
+  deliveryLocation: string
+  items: OrderAttentionItem[]
+  vendorRevenueInKobo: number
+}) {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY)
+    return missingKey()
+  if (!vendorEmail) {
+    return { success: false, error: "No vendor email provided" }
+  }
+
+  const isReady = (currentStatus || "").toLowerCase() === "ready"
+  const subject =
+    tier === 3
+      ? `🚨 URGENT: Order #${orderId} has been waiting for 1 hour — Please update status!`
+      : tier === 2
+        ? isReady
+          ? `🛵 Reminder: Student is waiting for delivery of Order #${orderId}`
+          : `⏰ Reminder: Customer is waiting for Order #${orderId}`
+        : isReady
+          ? `🛵 Ready for Delivery: Order #${orderId} needs to be dispatched!`
+          : `🍳 Friendly Reminder: Order #${orderId} is waiting for preparation!`
+  const vendorDashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://bitehubapp.com"}/vendor/orders`
+
+  try {
+    const html = await render(
+      React.createElement(VendorOrderReminderEmail, {
+        orderId,
+        tier,
+        elapsedMinutes,
+        currentStatus,
+        vendorName,
+        customerName,
+        deliveryLocation,
+        items,
+        vendorRevenueInKobo,
+        vendorDashboardUrl,
+      })
+    )
+
+    await mailer.sendMail({
+      from: resolveFrom(),
+      to: vendorEmail,
+      subject,
+      html,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error(
+      `Failed to send vendor order reminder email (${orderId}):`,
+      error
+    )
     return { success: false, error }
   }
 }

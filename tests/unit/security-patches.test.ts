@@ -95,6 +95,21 @@ describe("Security Patch Invariants", () => {
           crypto.timingSafeEqual(validBuf, forgedBuf)
       ).toBe(false)
     })
+
+    it("throws an explicit error when no secret is configured, preventing predictable fallbacks", () => {
+      const originalAuth = process.env.AUTH_SECRET
+      const originalNextAuth = process.env.NEXTAUTH_SECRET
+      try {
+        delete process.env.AUTH_SECRET
+        delete process.env.NEXTAUTH_SECRET
+        expect(() => generateUnsubscribeToken("test@example.com")).toThrow(
+          "AUTH_SECRET or NEXTAUTH_SECRET must be configured"
+        )
+      } finally {
+        process.env.AUTH_SECRET = originalAuth
+        process.env.NEXTAUTH_SECRET = originalNextAuth
+      }
+    })
   })
 
   describe("Vendor Bank OTP Timing Attack Defense", () => {

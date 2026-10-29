@@ -53,6 +53,11 @@ export interface IOrder extends Document {
   // Promo Code Fields
   promoCode?: string
   promoDiscountInKobo?: number
+
+  // Operations Delay Alert Tracking & Pre-orders
+  attentionAlertLevel?: number
+  lastAttentionAlertAt?: Date
+  isPreorder?: boolean
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -206,6 +211,11 @@ const OrderSchema = new Schema<IOrder>(
         message: "{VALUE} is not an integer value",
       },
     },
+
+    // Operations Delay Alert Tracking & Pre-orders
+    attentionAlertLevel: { type: Number, default: 0 },
+    lastAttentionAlertAt: { type: Date },
+    isPreorder: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -247,6 +257,9 @@ OrderSchema.index({ paymentStatus: 1, createdAt: -1 })
 
 // Gamification Analytics index for BHC Spent
 OrderSchema.index({ status: 1, walletPromoAmountUsedInKobo: -1 })
+
+// Compound index for Operations Delayed Paid Orders Watchdog
+OrderSchema.index({ paymentStatus: 1, status: 1, attentionAlertLevel: 1 })
 
 export default mongoose.models.Order ||
   mongoose.model<IOrder>("Order", OrderSchema)

@@ -326,6 +326,10 @@ export async function processCheckout(
             vendorWhatsappNumber: finalWhatsapp,
             vendorPrepTime:
               maxHours !== -1 ? maxItemPrepTime : vendor.prepTime || "",
+            isPreorder:
+              maxHours === 999999 ||
+              maxItemPrepTime.toLowerCase().includes("pre-order") ||
+              maxItemPrepTime.toLowerCase().startsWith("delivery:"),
             items,
             customerId: existingCustomer?._id,
             customerName,

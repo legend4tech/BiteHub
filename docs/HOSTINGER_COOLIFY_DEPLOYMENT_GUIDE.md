@@ -179,7 +179,61 @@ In Hostinger hPanel $\rightarrow$ **VPS** $\rightarrow$ **Backups**:
 
 ---
 
-## 8. Troubleshooting & Maintenance Commands
+## 8. Phase 7: Automated Scheduled Tasks (Crons) in Coolify
+
+BiteHub has 5 automated background cron jobs that manage order timeouts, bulk payouts, coin expiration, customer engagement, and delayed paid order escalation. 
+
+On a self-hosted VPS, you **do not need Upstash QStash or any third-party scheduler**. Coolify v4 includes a native **Scheduled Tasks** engine that executes commands directly inside your application container via internal loopback (`http://localhost:3000`).
+
+### Advantages of Coolify Native Crons:
+- **100% Free & Unlimited:** Zero monthly request quotas or execution penalties.
+- **Direct Environment Access:** Environment variables configured in Coolify (like `$CRON_SECRET`) are automatically available to your commands.
+- **Built-in Execution History:** View status codes, execution duration, and live console output for every run directly in the Coolify UI.
+- **Instant Testing:** Click **Execute Now** at any time to verify a task without waiting for the schedule timer.
+
+---
+
+### Step-by-Step Dashboard Setup
+
+1. In your Coolify dashboard, navigate to **Projects** $\rightarrow$ **Default** $\rightarrow$ Click your **BiteHub** application.
+2. In the top navigation tabs, select **Scheduled Tasks**.
+3. Click **+ Add Task** and configure each of the 5 BiteHub background jobs:
+
+| Task Name | Cron Schedule | Frequency / Purpose | Command |
+| :--- | :--- | :--- | :--- |
+| **Release Expired Inventory** | `*/15 * * * *` | Every 15 minutes (matches `UNPAID_ORDER_EXPIRY_MINUTES = 15`). Unlocks reserved inventory from abandoned checkouts, restores vouchers, and cancels unpaid orders. | `curl -s -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/release-quantity` |
+| **Daily Vendor Payouts** | `0 23 * * *` | Nightly at 11:00 PM. Triggers Monnify Bulk Disbursement API to sweep vendor pending balances to their bank accounts. | `curl -s -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/disburse-funds` |
+| **Rewards Expiry & Warnings** | `0 0 * * *` | Daily at midnight (12:00 AM). Deducts expired BiteHub Coins and sends 7-day expiration warning emails. | `curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/rewards-expiry` |
+| **Re-engage Dormant Customers** | `0 10 * * 1` | Weekly on Monday at 10:00 AM. Sends automated re-engagement emails to customers inactive for 30–90 days. | `curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/re-engage-dormant` |
+| **Delayed Paid Orders Watchdog** | `*/5 * * * *` | Every 5 minutes. Monitors paid uncompleted instant orders (safely excludes scheduled pre-orders) and sends tiered escalation emails to Ops (Admins & Vendor Managers) and Kitchen reminders to Vendors at 10m, 20m, and 60m milestones. | `curl -s -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/order-attention` |
+
+---
+
+### Fallback: Node.js Native Fetch Command
+
+If your container base image does not include `curl`, you can use Node.js's native `fetch` directly without installing any packages:
+
+```bash
+# Example for release-quantity:
+node -e 'fetch("http://localhost:3000/api/cron/release-quantity", { headers: { Authorization: "Bearer " + process.env.CRON_SECRET } }).then(r => r.json()).then(console.log)'
+
+# Example for POST endpoints (rewards-expiry):
+node -e 'fetch("http://localhost:3000/api/cron/rewards-expiry", { method: "POST", headers: { Authorization: "Bearer " + process.env.CRON_SECRET } }).then(r => r.json()).then(console.log)'
+```
+
+---
+
+### Testing & Verification
+After saving each task:
+1. Click **Execute Now** next to the task in Coolify.
+2. Click on the task row to inspect the execution log:
+   - For `release-quantity`, you should see: `{"status":"success","releasedCount":0,"expiredOrdersCount":0}`.
+   - For `disburse-funds`, you should see: `{"message":"No pending wallet payouts or all currently processing","processed":0}`.
+3. Confirm the status displays a green checkmark (`Exit code: 0`).
+
+---
+
+## 9. Troubleshooting & Maintenance Commands
 
 ### View Live Container Logs
 ```bash
