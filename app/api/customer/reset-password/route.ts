@@ -20,11 +20,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, token, password } = parsed.data
-    const canonicalEmail = getCanonicalEmail(email)
+    const normalizedEmail = email.toLowerCase().trim()
+    const canonicalEmail = getCanonicalEmail(normalizedEmail)
 
     if (isRateLimitingEnabled) {
       const { success } = await strictRateLimiter.limit(
-        `reset_password_${email}`
+        `reset_password_${normalizedEmail}`
       )
       if (!success) {
         return NextResponse.json(
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const user = await CustomerModel.findOne({
       $or: [
-        { email: email.toLowerCase() },
+        { email: normalizedEmail },
         { canonicalEmail },
         { email: canonicalEmail },
       ],

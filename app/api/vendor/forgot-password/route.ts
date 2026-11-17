@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     await dbConnect()
 
-    const user = await VendorUserModel.findOne({ email: email.toLowerCase() })
+    const user = await VendorUserModel.findOne({ email: normalizedEmail })
 
     // For security, always return success to prevent email harvesting.
     if (!user || !user.isActive) {

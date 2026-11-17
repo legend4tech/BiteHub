@@ -40,7 +40,7 @@ export function isItemAvailableNow(
     weekday: "long",
   }).format(now)
 
-  if (availableDays && availableDays.length > 0) {
+  if (Array.isArray(availableDays) && availableDays.length > 0) {
     if (!availableDays.includes(dayName)) {
       return false
     }

@@ -102,6 +102,22 @@ export function serializePublicVendor(doc: LeanVendor | null) {
 export function serializeMenuItem(doc: LeanMenuItem | null) {
   if (!doc) return null
 
+  const resolvedAvailableDays = Array.isArray(doc.availableDays)
+    ? doc.availableDays
+    : Array.isArray(
+          (doc.availableDays as unknown as { default?: string[] })?.default
+        )
+      ? (doc.availableDays as unknown as { default: string[] }).default
+      : [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ]
+
   return {
     id: doc._id.toString(),
     vendorId: doc.vendorId.toString(),
@@ -116,15 +132,7 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
     prepTimeValue: doc.prepTimeValue ?? null,
     prepTimeUnit: doc.prepTimeUnit ?? null,
     quantityAvailable: doc.quantityAvailable ?? null,
-    availableDays: doc.availableDays ?? [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ],
+    availableDays: resolvedAvailableDays,
     isPreorder: doc.isPreorder ?? false,
     preorderEndDate: doc.preorderEndDate
       ? safeDate(doc.preorderEndDate)
@@ -134,7 +142,7 @@ export function serializeMenuItem(doc: LeanMenuItem | null) {
       doc.isAvailable,
       doc.availableFrom,
       doc.availableTo,
-      doc.availableDays,
+      resolvedAvailableDays,
       doc.quantityAvailable,
       doc.isPreorder,
       doc.preorderEndDate

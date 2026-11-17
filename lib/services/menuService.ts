@@ -173,7 +173,7 @@ export async function getMenus(options: GetMenusOptions = {}) {
           $and: [
             {
               $or: [
-                { availableDays: { $size: 0 } },
+                { availableDays: [] },
                 { availableDays: { $exists: false } },
                 { availableDays: currentDayOfWeek },
               ],

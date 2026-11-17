@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
 
     const user = await VendorUserModel.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: new Date() },
     })

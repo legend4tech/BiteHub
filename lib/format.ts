@@ -106,7 +106,7 @@ export function formatPrepTime(
 }
 
 export function isItemAvailableToday(availableDays?: string[] | null): boolean {
-  if (!availableDays || availableDays.length === 0) return true
+  if (!Array.isArray(availableDays) || availableDays.length === 0) return true
   const currentDayOfWeek = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     timeZone: "Africa/Lagos",

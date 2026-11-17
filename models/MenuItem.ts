@@ -59,6 +59,7 @@ const MenuItemSchema: Schema = new Schema(
       min: [0, "Quantity available cannot be negative"],
     },
     availableDays: {
+      type: [String],
       default: [
         "Sunday",
         "Monday",
