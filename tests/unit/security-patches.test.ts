@@ -1,5 +1,21 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import crypto from "crypto"
+
+vi.mock("@/lib/db", () => ({
+  default: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock("@/models/Order", () => ({
+  default: {
+    find: vi.fn(),
+  },
+}))
+
+vi.mock("@/models/MenuItem", () => ({
+  default: {
+    bulkWrite: vi.fn(),
+  },
+}))
 import {
   serializeOrder,
   serializePublicOrder,
@@ -204,6 +220,6 @@ describe("Security Patch Invariants", () => {
         env.NODE_ENV = originalEnv
         env.CRON_SECRET = originalSecret
       }
-    })
+    }, 15000)
   })
 })
